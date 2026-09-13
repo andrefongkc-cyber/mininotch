@@ -1,0 +1,30 @@
+# macOS
+.DS_Store
+
+# Xcode
+build/
+DerivedData/
+*.xcuserstate
+*.xcworkspace/xcuserdata/
+xcuserdata/
+*.moved-aside
+*.hmap
+*.ipa
+*.dSYM.zip
+*.dSYM
+
+# Swift Package Manager
+.swiftpm/
+.build/
+Packages/
+
+# Local secrets and signing
+*.p12
+*.mobileprovision
+Config/Local.xcconfig
+
+# Preview output from Scripts/preview.sh
+Previews/
+
+# Personal scratch: prompt drafts and working notes, not part of the project
+Claude outputs/

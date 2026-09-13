@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<!--
+	  A real Info.plist rather than GENERATE_INFOPLIST_FILE.
+
+	  Xcode only maps a known allowlist of INFOPLIST_KEY_* build settings into the generated
+	  plist, and silently drops anything outside it. NSAudioCaptureUsageDescription is one of
+	  the ones it drops, and a missing usage description means the permission prompt never
+	  fires at all, which looks exactly like the permission being refused. Owning the file
+	  outright removes that failure mode for every key we add from here on.
+	-->
+	<key>CFBundleDevelopmentRegion</key>
+	<string>$(DEVELOPMENT_LANGUAGE)</string>
+	<key>CFBundleExecutable</key>
+	<string>$(EXECUTABLE_NAME)</string>
+	<key>CFBundleIdentifier</key>
+	<string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
+	<key>CFBundleInfoDictionaryVersion</key>
+	<string>6.0</string>
+	<key>CFBundleName</key>
+	<string>$(PRODUCT_NAME)</string>
+	<key>CFBundleDisplayName</key>
+	<string>MinNotch</string>
+	<key>CFBundlePackageType</key>
+	<string>APPL</string>
+	<key>CFBundleShortVersionString</key>
+	<string>$(MARKETING_VERSION)</string>
+	<key>CFBundleVersion</key>
+	<string>$(CURRENT_PROJECT_VERSION)</string>
+	<key>LSMinimumSystemVersion</key>
+	<string>$(MACOSX_DEPLOYMENT_TARGET)</string>
+	<key>LSApplicationCategoryType</key>
+	<string>public.app-category.utilities</string>
+
+	<!-- Accessory app: no Dock icon, no menu bar of its own. -->
+	<key>LSUIElement</key>
+	<true/>
+	<key>NSPrincipalClass</key>
+	<string>NSApplication</string>
+	<key>NSHumanReadableCopyright</key>
+	<string></string>
+
+	<key>NSCalendarsUsageDescription</key>
+	<string>MinNotch shows your upcoming events in the notch.</string>
+	<key>NSCalendarsFullAccessUsageDescription</key>
+	<string>MinNotch shows your upcoming events in the notch.</string>
+	<key>NSRemindersUsageDescription</key>
+	<string>MinNotch shows your reminders in the notch.</string>
+	<key>NSRemindersFullAccessUsageDescription</key>
+	<string>MinNotch shows your reminders in the notch.</string>
+	<key>NSAppleEventsUsageDescription</key>
+	<string>MinNotch controls Music and Spotify so it can show and control what you are listening to.</string>
+
+	<!-- Core Audio process tap. A separate permission from the microphone and from screen
+	     recording, and the reason the ambient lighting no longer asks for screen access. -->
+	<key>NSAudioCaptureUsageDescription</key>
+	<string>MinNotch listens to what is playing so the ambient lighting can follow the beat. The audio becomes a handful of numbers and is discarded; nothing is recorded or saved.</string>
+
+	<!-- App Transport Security. These are already the platform defaults; they are written out
+	     so that relaxing them has to be a deliberate edit to this file rather than something
+	     that happens by accident. The app makes exactly one kind of outbound request, to
+	     lrclib.net, and only when the user turns the online lyrics lookup on.
+
+	     This does not cover file: URLs, which ATS ignores entirely. Scheme checking is done
+	     in BoundedHTTPClient, which every outbound request goes through. -->
+	<key>NSAppTransportSecurity</key>
+	<dict>
+		<key>NSAllowsArbitraryLoads</key>
+		<false/>
+		<key>NSExceptionDomains</key>
+		<dict>
+			<key>lrclib.net</key>
+			<dict>
+				<key>NSIncludesSubdomains</key>
+				<true/>
+				<key>NSExceptionMinimumTLSVersion</key>
+				<string>TLSv1.2</string>
+				<key>NSExceptionRequiresForwardSecrecy</key>
+				<true/>
+			</dict>
+		</dict>
+	</dict>
+</dict>
+</plist>
