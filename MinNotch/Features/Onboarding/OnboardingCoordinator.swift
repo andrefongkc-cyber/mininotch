@@ -1,19 +1,25 @@
 import AppKit
+import SwiftUI
 
-/// Hook point for the first-launch flow.
+/// The first-launch tutorial: when it appears, and what finishing or skipping it does.
 ///
-/// The flow itself is not built yet, but where it goes and what it has to cover are
-/// settled: Calendar access, Apple Events access for media control, and notification
-/// permission, each explained before the system prompt appears rather than after. The
-/// launch-time call site already exists in `AppEnvironment.start()`, so building the flow
-/// is a matter of filling in `present()`.
-final class OnboardingCoordinator {
+/// It asks for no permission on its own. The permissions page explains each one and offers an
+/// "Allow Now" button, which is the one moment a prompt is welcome: the user has just read why,
+/// and the tutorial window is frontmost, which an accessory app otherwise never is and a
+/// system prompt needs.
+///
+/// Closing the window counts as skipping. A tutorial that reappears on every launch because
+/// someone closed it with the red button instead of pressing Skip is the thing people most
+/// dislike about tutorials.
+final class OnboardingCoordinator: NSObject, NSWindowDelegate {
     private static let completedKey = "onboarding.completedVersion"
-    /// Bumped when onboarding gains a step existing users also need to see.
+    /// Bumped when the tutorial gains something existing users also need to see.
     private static let currentVersion = 1
 
     private unowned let environment: AppEnvironment
     private let defaults: UserDefaults
+    private var window: NSWindow?
+    private var model: OnboardingModel?
 
     init(environment: AppEnvironment, defaults: UserDefaults = .standard) {
         self.environment = environment
@@ -24,29 +30,90 @@ final class OnboardingCoordinator {
         defaults.integer(forKey: Self.completedKey) < Self.currentVersion
     }
 
-    /// Permissions the flow will explain, in the order it will ask for them.
-    enum Step: CaseIterable {
-        case welcome
-        case calendarAccess
-        case mediaControlAccess
-        case notifications
-        case shortcuts
-        case done
+    /// Shows the tutorial.
+    ///
+    /// A first run starts the checklist from the Recommended preset. A rerun, from Settings,
+    /// starts it from whatever is switched on now, because offering to reset someone's
+    /// configuration to a preset they never chose is not what "show me the welcome again" means.
+    func present(isRerun: Bool = false) {
+        if let window {
+            NSApp.activate(ignoringOtherApps: true)
+            window.makeKeyAndOrderFront(nil)
+            return
+        }
+
+        let model: OnboardingModel
+        if isRerun {
+            let current = Set(OnboardingFeature.available.filter { $0.isOn(in: environment.settings) })
+            model = OnboardingModel(
+                selection: current,
+                preset: OnboardingPreset.allCases.first { $0.features == current }
+            )
+        } else {
+            model = OnboardingModel(selection: OnboardingPreset.recommended.features, preset: .recommended)
+        }
+        self.model = model
+
+        let window = Self.makeWindow(
+            model: model,
+            environment: environment,
+            onSkip: { [weak self] in self?.close() },
+            onFinish: { [weak self] openSettings in
+                self?.close()
+                if openSettings { self?.environment.openSettings() }
+            }
+        )
+        window.delegate = self
+        self.window = window
+
+        NSApp.activate(ignoringOtherApps: true)
+        window.center()
+        window.makeKeyAndOrderFront(nil)
     }
 
-    func present() {
-        // Until the flow exists, a first launch quietly asks for nothing and lets the user
-        // grant permissions from the relevant settings pane instead. Nothing here should
-        // prompt: an unexplained permission dialog on first launch is worse than none.
-        AppLog.app.info("First launch detected; onboarding is not built yet")
+    /// Builds the window without showing it. Shared with `--capture-onboarding`, so what gets
+    /// captured is the window users see and not a lookalike assembled by the tool.
+    static func makeWindow(
+        model: OnboardingModel,
+        environment: AppEnvironment,
+        onSkip: @escaping () -> Void,
+        onFinish: @escaping (Bool) -> Void
+    ) -> NSWindow {
+        let root = OnboardingView(model: model, onSkip: onSkip, onFinish: onFinish)
+            .environment(environment)
+            .environment(environment.settings)
+
+        let window = NSWindow(
+            contentRect: CGRect(origin: .zero, size: OnboardingView.size),
+            styleMask: [.titled, .closable, .fullSizeContentView],
+            backing: .buffered,
+            defer: false
+        )
+        window.title = "Welcome to MinNotch"
+        window.titleVisibility = .hidden
+        window.titlebarAppearsTransparent = true
+        window.isMovableByWindowBackground = true
+        window.isReleasedWhenClosed = false
+        window.contentView = NSHostingView(rootView: root)
+        window.setContentSize(OnboardingView.size)
+        return window
+    }
+
+    private func close() {
+        window?.close()
+    }
+
+    func windowWillClose(_ notification: Notification) {
         markCompleted()
+        environment.settings.flush()
+        window = nil
+        model = nil
     }
 
     func markCompleted() {
         defaults.set(Self.currentVersion, forKey: Self.completedKey)
     }
 
-    /// Lets Settings > Advanced offer a "Show onboarding again" action once it exists.
     func reset() {
         defaults.removeObject(forKey: Self.completedKey)
     }

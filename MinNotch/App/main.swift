@@ -16,6 +16,8 @@ if MainActor.assumeIsolated({ DebugPermissionsCheck.runIfRequested() }) { exit(0
 if MainActor.assumeIsolated({ DebugAudioCheck.runIfRequested() }) { exit(0) }
 if MainActor.assumeIsolated({ DebugGlowCheck.runIfRequested() }) { exit(0) }
 if MainActor.assumeIsolated({ DebugSettingsCheck.runIfRequested() }) { exit(0) }
+if MainActor.assumeIsolated({ DebugSettingsCapture.runIfRequested() }) { exit(0) }
+if MainActor.assumeIsolated({ DebugOnboardingCapture.runIfRequested() }) { exit(0) }
 #endif
 
 let application = NSApplication.shared

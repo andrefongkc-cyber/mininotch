@@ -22,10 +22,10 @@ Everything else on this list is ordinary work; this one needs the user to sign i
 **Do these next, in this order:**
 
 1. Signing (below). It unblocks the audio tap and stops permissions resetting.
-2. App icon. The asset catalog is empty and it shows every time the app launches.
-3. Onboarding. Permissions are demonstrably the app's weakest point and a new user hits the
-   same walls the developer did.
-4. A test target. Nothing is verified automatically across 96 files.
+2. App icon. The asset catalog is empty and it shows every time the app launches, including
+   in the new welcome window, which is the first thing a new user sees.
+3. A test target. Nothing is verified automatically across more than a hundred files.
+4. The link shelf, below.
 
 ---
 
@@ -96,7 +96,7 @@ Everything else on this list is ordinary work; this one needs the user to sign i
 ### Settings
 - [x] Panel top strip: tabs, settings button, and battery arranged either side of the
       cutout, with all readable content below it
-- [x] `NavigationSplitView` window with all ten panes and System Settings styling
+- [x] `NavigationSplitView` window with all eleven panes and System Settings styling
 - [x] General, Appearance, Media, Calendar, Battery fully wired
 - [x] HUDs, Shelf: real persisted controls, disabled and badged
 - [x] Shortcuts: click-to-record with conflict detection
@@ -123,9 +123,17 @@ Everything else on this list is ordinary work; this one needs the user to sign i
 Known gaps in what is already built, after the signing blocker above.
 
 - [ ] **App icon.** `Assets.xcassets/AppIcon.appiconset` is empty; the build warns.
-- [ ] **Onboarding flow.** `OnboardingCoordinator.present()` currently marks itself done and
-      returns. Build the five steps already enumerated in `Step`, explaining each permission
-      before the system prompt appears.
+- [x] **First-launch tutorial.** Five pages: welcome, a checklist of fourteen features
+      starting from a Recommended preset (with Everything and Minimal), how to get around,
+      what will be asked for with optional "Allow Now" buttons, and done. Skippable from any
+      page; closing the window counts as skipping. Every checkbox reads and writes the real
+      setting it stands for. Rerun from Advanced > Show Welcome Again, which starts the
+      checklist from the current settings instead of the preset. Verify with
+      `--capture-onboarding`.
+- [x] **Settings search.** A search field at the top of the sidebar, ⌘F to focus. Matches
+      panes by name and synonyms, and rows by title, card header, and subtitle, ranked.
+      Choosing a row opens its pane, scrolls to it, and flashes it. Check ranking with
+      `--check-settings-search`, and index coverage with `Scripts/audit-search.sh`.
 - [ ] **Tests.** No test target exists. The first ones worth writing, in order:
       `LRCParser`, `SettingsSnapshot` lenient decoding and migration, `NotchGeometry` for
       notched and non-notched displays, `CalendarService.days(for:)` across month boundaries
@@ -287,6 +295,18 @@ look like they should.
       races the overlay's own appearance, so it can flash before it goes. Unloading the launch
       agent would be clean but is refused under System Integrity Protection, and a sandboxed
       build cannot spawn `pkill` at all.
+- [ ] **Link shelf.** The same idea as the file shelf, for URLs. Paste or drag a link onto
+      the notch and it is bookmarked there; click it and it opens in the default browser.
+      Shape it after `ShelfService`: its own `Features/` folder, an ordered list with a
+      configurable cap, and its own `NotchTab` and widget. Differences worth planning for
+      before starting. A URL is not a file, so there are no security-scoped bookmarks and it
+      can persist as plain values in the settings store rather than as bookmark data. It
+      should read the page title where it can, since a bare URL is unreadable in a row that
+      narrow, which means a network fetch and therefore `BoundedHTTPClient` rather than a
+      bare `URLSession`. Dropped payloads arrive as `.url` and as `.text` that happens to
+      parse, and `ClipboardHistoryService.isWebURL` already has the scheme-and-host check
+      worth reusing. Opening goes through `NSWorkspace.open`, which respects the default
+      browser without asking for anything.
 - [ ] **Shelf polish.** Dragging several files out at once, and a Quick Share target.
 - [ ] Weather widget.
 - [x] System stats: CPU, GPU, memory, and network, sampled only while the System tab is

@@ -92,7 +92,11 @@ final class AppEnvironment {
         menuBar.update()
 
         if onboarding.shouldPresentOnboarding {
-            onboarding.present()
+            // After the notch is on screen rather than during launch, so the first thing
+            // someone sees is the window pointing at a notch that already exists.
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) { [weak self] in
+                self?.onboarding.present()
+            }
         }
     }
 

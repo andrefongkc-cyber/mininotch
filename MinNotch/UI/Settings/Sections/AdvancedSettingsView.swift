@@ -247,11 +247,11 @@ struct AdvancedSettingsView: View {
                 SettingsDivider()
 
                 SettingsRow(
-                    title: "Show Onboarding Again",
-                    subtitle: "Replay the first-launch permission explanations.",
+                    title: "Show Welcome Again",
+                    subtitle: "Open the first-launch tutorial again. Its checklist starts from what is switched on now, so nothing changes unless you change it.",
                     systemImage: "sparkles"
                 ) {
-                    Button("Reset") { environment.onboarding.reset() }
+                    Button("Show") { environment.onboarding.present(isRerun: true) }
                         .controlSize(.small)
                 }
             }

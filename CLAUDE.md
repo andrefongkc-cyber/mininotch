@@ -9,7 +9,7 @@ Read this file first in a new session, then `WORKPLAN.md` for what to build next
 ## Start here
 
 The app builds clean, runs, and is feature-complete for everything in `WORKPLAN.md` marked
-`[x]`. About 12,700 lines across 96 Swift files. One thing blocks progress on several fronts
+`[x]`. Roughly 115 Swift files. One thing blocks progress on several fronts
 at once:
 
 **There is no code signing identity on this machine.** The app is ad-hoc signed, which means
@@ -31,9 +31,10 @@ assuming it has been done; check with `security find-identity -v -p codesigning`
 Scripts/build.sh          # build Debug, print only warnings/errors
 Scripts/run.sh            # build, kill any running copy, relaunch
 Scripts/preview.sh        # render notch views to PNGs in Previews/
+Scripts/audit-search.sh   # every Settings row is in the search index, and nothing stale is
 ```
 
-Six debug-only command line flags on the binary itself, all `#if DEBUG`:
+Debug-only command line flags on the binary itself, all `#if DEBUG`:
 
 ```bash
 MinNotch --render-previews <dir>                                  # what preview.sh calls
@@ -45,6 +46,8 @@ MinNotch --check-stats 5                                          # CPU/GPU/memo
 MinNotch --check-audio 8 [--out f]                                # Core Audio tap
 MinNotch --check-glow 2 [--source step|fallback]                  # glow shaping chain
 MinNotch --check-settings file.minnotch                           # import bounds
+MinNotch --check-settings-search pomodoro glow                    # search ranking
+MinNotch --capture-onboarding <dir> [--rerun]                     # tutorial, every page
 MinNotch --check-permissions [--request] [--out f]                # TCC state
 ```
 
@@ -147,10 +150,11 @@ MinNotch/
     Timer/        countdown and the Pomodoro cycle on top of it
     HUD/          volume, brightness and keyboard backlight monitors
     AmbientGlow/  glow styles, geometry, and the Core Audio tap
-    Onboarding/   first-launch hook (not built)
+    Onboarding/   first-launch tutorial: feature catalogue, presets, coordinator
   UI/
     Notch/        the notch surface and its widgets
-    Settings/     the Settings window, sidebar, and one file per pane
+    Settings/     the Settings window, sidebar, search index, and one file per pane
+    Onboarding/   the tutorial's pages
 Config/           Info.plist and entitlements, outside the synced folder so neither is
                   copied in as a resource
 Scripts/          build, run, preview
@@ -398,8 +402,50 @@ open -n -a <path to MinNotch.app> --args --check-permissions --out /tmp/perm.log
 | Automation (Music, Spotify) | Apple Events | First media read |
 | Notifications | `UNUserNotificationCenter` | First low-battery alert |
 
-None are requested at launch. `OnboardingCoordinator` is the hook for explaining them first;
-it is called from `AppEnvironment.start()` and currently does nothing but mark itself done.
+None are requested at launch. The first-launch tutorial explains each one on its permissions
+page, only for features that were ticked, and offers an "Allow Now" button for Calendar and
+Notifications. That is the one moment a prompt is welcome: the reason is on screen, and the
+tutorial window is frontmost, which this accessory app otherwise never is.
+
+## Settings search
+
+The index, `SettingsSearchIndex.all`, is a flat list, because SwiftUI cannot be asked what rows
+a pane contains. It was generated from the panes, and it drifts the moment a row is added or
+renamed without it. **Run `Scripts/audit-search.sh` after touching any `SettingsRow`.** It
+caught a rename on its first run.
+
+Three things about ranking were wrong first, and `--check-settings-search` is how each showed:
+
+- **Card headers have to be searchable.** "Pomodoro" is in no row's title or subtitle, only in
+  the header above the rows, so the search a user would actually type returned nothing.
+- **A pane's synonyms belong to the pane, not to its rows.** Applying them to rows matched every
+  row in the pane at once: "monitor" returned all nineteen Advanced rows alphabetically, with
+  the display ones buried under Clipboard History. Synonyms surface the pane as its own result.
+- **A word that starts with the query ranks like a title that does.** Otherwise "Glow Radius"
+  beats "Enable Ambient Glow" on a technicality.
+
+Rows and panes do not know search exists. `SettingsRow` and `SettingsPane` read
+`settingsSearchTarget` from the environment, scroll and flash when it names them, and the root
+view clears it after a moment so returning to the pane later does not replay the flash.
+
+**Neither Settings nor anything using materials can be captured.** `NavigationSplitView` and the
+sidebar come back from `cacheDisplay` as a blank white rectangle, not just from `ImageRenderer`.
+That is why the search check is text, and why the tutorial is drawn in plain colours: so
+`--capture-onboarding` can read every page back from the real window.
+
+## First-launch tutorial
+
+Every checkbox is an `OnboardingFeature` that reads and writes the real settings it stands for,
+so the tutorial never holds a second copy of the configuration. Nothing is written until the
+checklist is confirmed, and confirming writes every available feature, ticked or not, so the
+result is exactly what was on screen. Skipping keeps the defaults. A feature whose `FeatureFlag`
+is off is not offered at all.
+
+Recommended leaves out anything that sends data off the Mac, watches the clipboard, or costs
+real power. Those are fine features, but each is a choice someone should make on purpose.
+
+A rerun from Settings starts the checklist from the current configuration, not the preset,
+because "show me the welcome again" does not mean "reset me to Recommended".
 
 ## No setting may be inert
 
@@ -562,7 +608,7 @@ called out explicitly, because several things here can only be checked on a sign
 
 **Known to be missing**
 
-App icon, onboarding flow, and any test target. See `WORKPLAN.md`.
+App icon and any test target. See `WORKPLAN.md`.
 
 ## Working with this user
 

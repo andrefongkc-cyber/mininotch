@@ -44,6 +44,30 @@ struct SettingsCard<Content: View>: View {
 ///
 /// The label column is leading-aligned, the control column trailing-aligned, and an
 /// optional helper line sits under the label in secondary grey.
+/// The row a Settings search result points at.
+///
+/// Carries a token that changes every time a result is chosen, so choosing the same result
+/// twice still scrolls to it and flashes it. Without the token the second choice is equal to
+/// the first, nothing observes a change, and the click appears to do nothing.
+struct SettingsSearchTarget: Equatable {
+    var tab: SettingsTab
+    var title: String
+    var token = UUID()
+}
+
+private struct SettingsSearchTargetKey: EnvironmentKey {
+    static let defaultValue: SettingsSearchTarget? = nil
+}
+
+extension EnvironmentValues {
+    /// Set by the Settings window while a search result is being shown; read by every row
+    /// and pane, so a result can land on a row without any pane knowing search exists.
+    var settingsSearchTarget: SettingsSearchTarget? {
+        get { self[SettingsSearchTargetKey.self] }
+        set { self[SettingsSearchTargetKey.self] = newValue }
+    }
+}
+
 struct SettingsRow<Control: View>: View {
     var title: String
     var subtitle: String?
@@ -53,6 +77,9 @@ struct SettingsRow<Control: View>: View {
     var badge: SettingsBadge?
     var isEnabled: Bool = true
     @ViewBuilder var control: Control
+
+    @Environment(\.settingsSearchTarget) private var searchTarget
+    @State private var isFlashing = false
 
     var body: some View {
         HStack(alignment: .center, spacing: 10) {
@@ -93,7 +120,35 @@ struct SettingsRow<Control: View>: View {
         .frame(minHeight: subtitle == nil ? Metrics.rowHeight : Metrics.tallRowHeight)
         .opacity(isEnabled ? 1 : 0.5)
         .disabled(!isEnabled)
+        // Behind the disabled dimming rather than inside it, so a search that lands on a
+        // row which is currently switched off still visibly lands.
+        .background(
+            RoundedRectangle(cornerRadius: 6, style: .continuous)
+                .fill(Palette.controlAccent.opacity(isFlashing ? 0.22 : 0))
+                .padding(.horizontal, 4)
+        )
+        // The anchor `SettingsPane` scrolls to. Titles are unique within a pane in practice;
+        // where one is not, the scroll lands on the first, which is still the right card.
+        .id(SettingsSearchTarget.anchor(title))
+        .onAppear { flashIfTargeted() }
+        .onChange(of: searchTarget) { flashIfTargeted() }
     }
+
+    private func flashIfTargeted() {
+        guard let searchTarget, searchTarget.title == title else { return }
+        withAnimation(.easeOut(duration: 0.2)) { isFlashing = true }
+        // Long enough to find with the eye after the scroll settles, short enough that the
+        // pane does not look permanently selected.
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.4) {
+            withAnimation(.easeInOut(duration: 0.6)) { isFlashing = false }
+        }
+    }
+}
+
+extension SettingsSearchTarget {
+    /// Scroll anchor for a row. Prefixed so it cannot collide with any other `.id` a pane
+    /// happens to use for its own purposes.
+    static func anchor(_ title: String) -> String { "settings-row:\(title)" }
 }
 
 /// Hairline divider between rows, inset to match System Settings.
@@ -113,22 +168,36 @@ struct SettingsPane<Content: View>: View {
     var subtitle: String?
     @ViewBuilder var content: Content
 
+    @Environment(\.settingsSearchTarget) private var searchTarget
+
     var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: Metrics.cardSpacing) {
-                if let subtitle {
-                    Text(subtitle)
-                        .font(Typography.helper)
-                        .foregroundStyle(Palette.secondaryText)
-                        .fixedSize(horizontal: false, vertical: true)
+        ScrollViewReader { proxy in
+            ScrollView {
+                VStack(alignment: .leading, spacing: Metrics.cardSpacing) {
+                    if let subtitle {
+                        Text(subtitle)
+                            .font(Typography.helper)
+                            .foregroundStyle(Palette.secondaryText)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                    content
                 }
-                content
+                .padding(.horizontal, Metrics.paneMargin)
+                .padding(.vertical, Metrics.paneMargin)
+                .frame(maxWidth: .infinity, alignment: .leading)
             }
-            .padding(.horizontal, Metrics.paneMargin)
-            .padding(.vertical, Metrics.paneMargin)
-            .frame(maxWidth: .infinity, alignment: .leading)
+            .scrollBounceBehavior(.basedOnSize)
+            // Keyed on the token, so it runs again when the same result is chosen twice.
+            .task(id: searchTarget?.token) {
+                guard let searchTarget else { return }
+                // A pane that has just been switched to has not laid its rows out yet, and a
+                // scroll requested before layout lands nowhere. One short wait is enough.
+                try? await Task.sleep(for: .milliseconds(90))
+                withAnimation(.easeInOut(duration: 0.35)) {
+                    proxy.scrollTo(SettingsSearchTarget.anchor(searchTarget.title), anchor: .center)
+                }
+            }
         }
-        .scrollBounceBehavior(.basedOnSize)
         .navigationTitle(title)
         .background(Palette.paneBackground)
     }

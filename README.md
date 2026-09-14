@@ -26,6 +26,11 @@ Scripts/run.sh --no-build
 The app has no Dock icon. It appears as a pill at the top of the screen and, unless you turn
 it off, as a menu bar icon. Press ⌃⌥N to open or close it.
 
+The first launch opens a short welcome tour. It explains how to use the notch, lets you pick
+which features to switch on from a list with a recommended starting point, and says what each
+permission is for before anything asks. Skip it whenever you like; it is available again from
+Settings › Advanced › Show Welcome Again.
+
 ## What it does today
 
 - **Now Playing** for Apple Music, Spotify, and a system-wide fallback that covers other
@@ -50,7 +55,8 @@ it off, as a menu bar icon. Press ⌃⌥N to open or close it.
 - **Two-finger swipes** to change tab or open and close, with optional haptics.
 - **Drag-to-arrange layouts** for the transport controls, the closed pill's two sides, and
   the panel's top strip.
-- **Settings** in a separate window laid out like macOS System Settings.
+- **Settings** in a separate window laid out like macOS System Settings, with search: press
+  ⌘F and type, and choosing a result takes you straight to the setting.
 
 Some panes contain controls marked "Coming soon". Those settings are saved and will apply
 once the feature ships. See `WORKPLAN.md`.
