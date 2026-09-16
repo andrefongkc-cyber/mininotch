@@ -15,9 +15,10 @@ Open `MinNotch.xcodeproj` in Xcode 16 or later and run, or from the terminal:
 Scripts/run.sh
 ```
 
-The project signs with the author's free personal Apple team. To build it yourself, set your
-own team in Xcode under Signing & Capabilities, or your build will fail to sign. To relaunch
-the existing build without rebuilding:
+Signing needs your own Apple team, including a free one. Copy `Config/Local.xcconfig.example`
+to `Config/Local.xcconfig` and put your team in it; that file is gitignored, so no identifier
+of yours ends up in the repository. Without it the build stops and says a development team is
+required. To relaunch the existing build without rebuilding:
 
 ```bash
 Scripts/run.sh --no-build
@@ -86,6 +87,18 @@ anything. `WORKPLAN.md` tracks what is built and what comes next.
 
 There is no test target yet, and no licence has been chosen, so all rights are reserved by
 default until one is added.
+
+## Making a release
+
+```bash
+Scripts/release.sh              # builds Release, writes dist/MinNotch-<version>.dmg
+Scripts/release.sh --anonymous  # …re-signed ad-hoc, carrying no Apple team or ID
+```
+
+The script prints the `gh release create` command that publishes the DMG, with
+`Scripts/release-notes.sh` as the description, so the GitHub page and the app's own What's New
+window say the same thing. Bump `MARKETING_VERSION` and update `ReleaseNotes.latest` first; the
+script warns when the two disagree.
 
 ## A note on signing
 

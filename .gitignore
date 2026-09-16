@@ -28,3 +28,6 @@ Previews/
 
 # Personal scratch: prompt drafts and working notes, not part of the project
 Claude outputs/
+
+# Release output from Scripts/release.sh
+dist/

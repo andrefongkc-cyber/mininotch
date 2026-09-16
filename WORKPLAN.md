@@ -33,11 +33,11 @@ at last. Notarisation still needs a paid membership nobody is buying.
 
 ## Blocking
 
-- [x] **Real signing.** Done 2026-09-15 with a free personal team: `CODE_SIGN_STYLE = Automatic`,
-      `DEVELOPMENT_TEAM = YOUR_TEAM_ID`, Apple Development certificate (valid to September 2027),
-      `ENABLE_RESOURCE_ACCESS_AUDIO_INPUT = YES`. The built app now signs with the hardened
-      runtime (`flags=0x10000(runtime)`), a real team identifier, and
-      `com.apple.security.device.audio-input`.
+- [x] **Real signing.** Done 2026-09-15 with a free personal team: `CODE_SIGN_STYLE = Automatic`
+      plus `ENABLE_RESOURCE_ACCESS_AUDIO_INPUT = YES`, and the team itself in the gitignored
+      `Config/Local.xcconfig` (see `Config/Local.xcconfig.example`) rather than in the
+      repository. The built app signs with the hardened runtime (`flags=0x10000(runtime)`), a
+      real team identifier, and `com.apple.security.device.audio-input`.
 
       What that leaves open:
 
@@ -418,7 +418,11 @@ Decisions still open, but nothing in the code should make these harder.
 - [ ] **App Store build.** Cannot include the MediaRemote bridge. Plan is a compile-time flag
       that removes `MediaRemoteBridge` and makes `SystemNowPlayingSource` report unavailable,
       leaving Apple Music and Spotify working.
-- [ ] **Direct build.** Notarised, hardened runtime already on, Sparkle for updates.
+- [~] **Direct build.** `Scripts/release.sh` builds Release and wraps it in
+      `dist/MinNotch-<version>.dmg`, with `--anonymous` to re-sign ad-hoc so the download does
+      not carry the signer's Apple ID, and `Scripts/release-notes.sh` for the GitHub release
+      description. Hardened runtime is on. Notarisation needs a paid membership; Sparkle for
+      updates is still to come.
 - [ ] **Homebrew cask** once there is a notarised download.
 - [x] **What's New panel.** Built as a window, see V2 — customisation; About > Release Notes opens it.
 - [ ] **Monetisation.** Undecided. When decided, add a `.requiresPro` case to

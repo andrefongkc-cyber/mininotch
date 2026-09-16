@@ -19,10 +19,14 @@ The app builds clean, runs, and is feature-complete for everything in `WORKPLAN.
 `[x]`. Roughly 120 Swift files.
 
 **It is signed, as of 2026-09-15, with the user's free personal team** (`CODE_SIGN_STYLE =
-Automatic`, `DEVELOPMENT_TEAM = YOUR_TEAM_ID`, Apple Development certificate valid to September
-2027, no provisioning profile needed for a local Mac build). `codesign -dv` on the built app
-must show `flags=0x10000(runtime)` and a real `TeamIdentifier`; an ad-hoc build shows
-`flags=0x2(adhoc)` and means signing has broken. What that changed, and what it did not:
+Automatic`, an Apple Development certificate, no provisioning profile needed for a local Mac
+build). The team itself is **not in the repository**: it lives in `Config/Local.xcconfig`, which
+is gitignored and is the project's base configuration, with `Config/Local.xcconfig.example`
+committed beside it. Without that file the build fails with "requires a development team" and
+"Unable to open base configuration reference file", which is the intended message for anyone
+else cloning this. `codesign -dv` on the built app must show `flags=0x10000(runtime)` and a real
+`TeamIdentifier`; an ad-hoc build shows `flags=0x2(adhoc)` and means signing has broken. What
+that changed, and what it did not:
 
 1. The signature is stable across rebuilds, so TCC grants should now survive a build rather
    than resetting every time. Not yet confirmed by watching a grant survive one.
@@ -42,6 +46,9 @@ Scripts/build.sh          # build Debug, print only warnings/errors
 Scripts/run.sh            # build, kill any running copy, relaunch
 Scripts/preview.sh        # render notch views to PNGs in Previews/
 Scripts/audit-search.sh   # every Settings row is in the search index, and nothing stale is
+Scripts/release.sh        # Release build wrapped in dist/MinNotch-<version>.dmg
+Scripts/release.sh --anonymous   # …re-signed ad-hoc, carrying no team or Apple ID
+Scripts/release-notes.sh  # the same release notes as Markdown, for the GitHub release
 ```
 
 Debug-only command line flags on the binary itself, all `#if DEBUG`:
@@ -520,6 +527,24 @@ open panel's top bar has What's New and Tutorial buttons (`AdvancedSettings.show
 defaulting on only under `#if DEBUG`) for checking both at a glance. Review it with
 `--capture-whats-new`, which renders the notes on their own because a window capture does not
 draw `ScrollView` content.
+
+## Releases
+
+`Scripts/release.sh` builds Release, stages the app next to an Applications symlink, makes
+`dist/MinNotch-<version>.dmg`, and prints the `gh release create` line that publishes it with
+`Scripts/release-notes.sh` as the description, so GitHub and the in-app What's New window say the
+same thing. It warns when `ReleaseNotes.latest.id` and `MARKETING_VERSION` disagree, because that
+combination means nobody updating sees the window.
+
+**A signature made with a personal team carries the Apple ID it was issued to.** `codesign -dvvv`
+on a build signed here prints the user's iCloud address, and that travels in every DMG. That is
+what `--anonymous` is for: it re-signs the staged copy ad-hoc, keeping the entitlements, so the
+download carries no team and no address. It costs the people who install it the system audio
+permission, which cannot be granted to an ad-hoc build at all, and resets their other grants on
+every version. Neither choice is free; do not make it silently on the user's behalf.
+
+Nothing is notarised, because that needs a paid membership, so every download needs
+Privacy & Security > Open Anyway once.
 
 ## No setting may be inert
 

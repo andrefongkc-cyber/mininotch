@@ -1,0 +1,9 @@
+// Copy this file to Config/Local.xcconfig and put your own Apple team in it. That file is
+// gitignored, so nobody's team identifier ends up in the repository.
+//
+// Without it the project still builds, with a warning that this configuration file is missing
+// and a code signing error, because macOS will not sign an app for a team it has not been told
+// about. Any Apple ID works, including a free one: sign in under Xcode > Settings > Accounts,
+// then read the team from Signing & Capabilities.
+//
+DEVELOPMENT_TEAM = YOUR_TEAM_ID
