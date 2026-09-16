@@ -38,7 +38,7 @@ BUILD_DIR="build/release"
 STAGE="build/dmg/MinNotch"
 DMG="dist/MinNotch-$VERSION.dmg"
 
-echo "Building MinNotch $VERSION (Release)…"
+echo "Building MinNotch ${VERSION} (Release)..."
 rm -rf "$BUILD_DIR" "build/dmg"
 xcodebuild -project MinNotch.xcodeproj -scheme MinNotch -configuration Release \
   -derivedDataPath "$BUILD_DIR" build 2>&1 \
@@ -53,13 +53,13 @@ cp -R "$APP" "$STAGE/MinNotch.app"
 ln -s /Applications "$STAGE/Applications"
 
 if [ "$ANONYMOUS" = "1" ]; then
-  echo "Re-signing ad-hoc, keeping the entitlements the build produced…"
+  echo "Re-signing ad-hoc, keeping the entitlements the build produced..."
   ENTITLEMENTS="build/dmg/entitlements.plist"
   codesign -d --entitlements "$ENTITLEMENTS" --xml "$STAGE/MinNotch.app" 2>/dev/null
   codesign --force --sign - --options runtime --entitlements "$ENTITLEMENTS" "$STAGE/MinNotch.app"
 fi
 
-echo "Packing $DMG…"
+echo "Packing ${DMG}..."
 rm -f "$DMG"
 hdiutil create -volname "MinNotch" -srcfolder "$STAGE" -ov -format UDZO -quiet "$DMG"
 hdiutil verify "$DMG" >/dev/null && echo "DMG verified"
@@ -73,7 +73,7 @@ echo "sha256: $(shasum -a 256 "$DMG" | cut -d' ' -f1)"
 echo
 echo "To publish it, with the release notes as the description:"
 echo
-echo "  gh release create v$VERSION \"$DMG\" --title \"MinNotch $VERSION\" --notes-file <(Scripts/release-notes.sh)"
+echo "  gh release create v$VERSION \"$DMG\" --title \"MinNotch ${VERSION}\" --notes-file <(Scripts/release-notes.sh)"
 echo
 echo "Downloads are not notarised, so tell people to open it once from"
 echo "System Settings > Privacy & Security > Open Anyway."
