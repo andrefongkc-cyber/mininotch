@@ -76,6 +76,17 @@ final class NotchViewModel {
 
     // MARK: Geometry
 
+    /// Width of the open panel on this display.
+    ///
+    /// Capped by the geometry's ceiling, which is what lets the preview renderer squeeze the
+    /// panel narrower than its content for the clip check.
+    var expandedPanelWidth: CGFloat {
+        min(
+            NotchGeometry.panelWidth(settings: settings, cutoutWidth: geometry.collapsedSize.width),
+            geometry.expandedSize.width
+        )
+    }
+
     func update(geometry: NotchGeometry) {
         self.geometry = geometry
     }
@@ -83,8 +94,7 @@ final class NotchViewModel {
     /// Tabs currently worth showing. Recomputed on every read so toggling a feature in
     /// Settings updates the strip immediately.
     var availableTabs: [NotchTab] {
-        let tabs = NotchWidgetRegistry.availableTabs(settings)
-        return tabs.isEmpty ? [.system] : tabs
+        NotchWidgetRegistry.shownTabs(settings)
     }
 
     /// Keeps `selectedTab` pointing at something that still exists after a feature is

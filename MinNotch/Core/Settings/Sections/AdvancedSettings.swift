@@ -67,6 +67,12 @@ struct AdvancedSettings: Codable, Equatable {
     /// Unpinned items kept before the oldest is dropped. Pinned items are not counted.
     var clipboardHistoryLimit: Int = 20
 
+    /// Keep links on the notch, in the Links tab.
+    var linkShelfEnabled: Bool = false
+
+    /// Links kept before the oldest is dropped.
+    var linkShelfLimit: Int = 25
+
     /// Show the CPU, GPU, memory, and network readout in the System tab.
     var showSystemStats: Bool = true
 
@@ -99,6 +105,22 @@ struct AdvancedSettings: Codable, Equatable {
     /// Draw the notch's hit-test region so window placement problems are visible.
     var showDebugOverlay: Bool = false
 
+    /// Put What's New and Tutorial buttons in the open panel's top bar, for checking both
+    /// without hunting through menus.
+    ///
+    /// On by default in a Debug build, which is what `Scripts/run.sh` produces and what the
+    /// person working on the app looks at; off in a Release build, so people it is shared with
+    /// do not get two buttons they have no use for.
+    var showDebugButtons: Bool = AdvancedSettings.debugButtonsDefault
+
+    static let debugButtonsDefault: Bool = {
+        #if DEBUG
+        return true
+        #else
+        return false
+        #endif
+    }()
+
     init() {}
 
     init(from decoder: Decoder) throws {
@@ -109,6 +131,8 @@ struct AdvancedSettings: Codable, Equatable {
         nonNotchDefaultTab = c.value(.nonNotchDefaultTab, NotchTab.timer)
         clipboardHistoryEnabled = c.value(.clipboardHistoryEnabled, false)
         clipboardHistoryLimit = c.value(.clipboardHistoryLimit, 20, in: 5...100)
+        linkShelfEnabled = c.value(.linkShelfEnabled, false)
+        linkShelfLimit = c.value(.linkShelfLimit, 25, in: 5...100)
         showSystemStats = c.value(.showSystemStats, true)
         statsRefreshInterval = c.value(.statsRefreshInterval, 2, in: 0.5...5)
         virtualNotchHeight = c.value(.virtualNotchHeight, 32, in: 22...48)
@@ -119,5 +143,6 @@ struct AdvancedSettings: Codable, Equatable {
         hapticFeedbackEnabled = c.value(.hapticFeedbackEnabled, false)
         hapticStrength = c.value(.hapticStrength, HapticStrength.firm)
         showDebugOverlay = c.value(.showDebugOverlay, false)
+        showDebugButtons = c.value(.showDebugButtons, AdvancedSettings.debugButtonsDefault)
     }
 }

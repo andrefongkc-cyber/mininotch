@@ -46,6 +46,8 @@ struct ExpandedPanelView: View {
             ShelfView()
         case .clipboard:
             ClipboardWidgetView()
+        case .links:
+            LinkShelfWidgetView()
         case .timer:
             TimerWidgetView(viewModel: viewModel)
         }
@@ -53,64 +55,106 @@ struct ExpandedPanelView: View {
 
     // MARK: Top strip
 
-    /// Tabs on the left of the cutout, settings and battery on the right.
+    /// Where each item goes this time, from the user's arrangement and the room available.
+    private var topStripLayout: TopStripLayout {
+        let battery = environment.battery.status
+        return TopStripLayout.make(
+            leading: settings.appearance.topStripLeading,
+            trailing: settings.appearance.topStripTrailing,
+            availableTabs: tabs,
+            batteryWidth: battery.isPresent
+                ? TopStripLayout.batteryWidth(showPercentage: settings.battery.showPercentage)
+                : nil,
+            showsDebug: settings.advanced.showDebugButtons,
+            panelWidth: viewModel.expandedPanelWidth,
+            cutoutWidth: geometry.collapsedSize.width
+        )
+    }
+
+    /// Items either side of the cutout, as arranged in Settings > Appearance > Top Bar.
     ///
     /// The middle is a fixed-width spacer the exact width of the notch. Because the panel is
     /// centred on the cutout, that spacer lands precisely over it, and a `Spacer` does not
-    /// hit-test, so clicks in the dead zone fall through rather than being swallowed.
+    /// hit-test, so clicks in the dead zone fall through rather than being swallowed. Nothing
+    /// is ever placed there: an item that does not fit on its side moves to the other side
+    /// instead, which is what keeps a seventh tab from hiding behind the camera housing.
     private var topStrip: some View {
-        HStack(spacing: 0) {
-            HStack(spacing: 3) {
-                if tabs.count > 1 {
-                    ForEach(tabs) { tab in
-                        NotchIconButton(
-                            systemImage: tab.symbolName,
-                            help: tab.title,
-                            accent: settings.appearance.resolvedAccent,
-                            isActive: viewModel.selectedTab == tab
-                        ) {
-                            viewModel.selectedTab = tab
-                        }
-                        .accessibilityAddTraits(viewModel.selectedTab == tab ? [.isSelected] : [])
-                    }
+        let layout = topStripLayout
+
+        return HStack(spacing: 0) {
+            HStack(spacing: TopStripLayout.itemSpacing) {
+                ForEach(layout.leading) { item in
+                    view(for: item, buttonWidth: layout.buttonWidth)
                 }
             }
             .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(.leading, Metrics.topStripPadding + Metrics.notchShoulderRadius)
+            .padding(.leading, TopStripLayout.outerInset)
+            .padding(.trailing, TopStripLayout.cutoutClearance)
 
             Spacer(minLength: 0)
                 .frame(width: geometry.collapsedSize.width)
 
-            // Arranged by the user. The tab strip above and the spacer between them are
-            // deliberately not: the strip's position is what aligns it left of the cutout,
-            // and the spacer is a click-through dead zone that only works while nothing is
-            // drawn in it.
-            HStack(spacing: 6) {
-                ForEach(settings.appearance.topStripTrailing) { item in
-                    view(for: item)
+            HStack(spacing: TopStripLayout.itemSpacing) {
+                ForEach(layout.trailing) { item in
+                    view(for: item, buttonWidth: layout.buttonWidth)
                 }
             }
             .frame(maxWidth: .infinity, alignment: .trailing)
-            .padding(.trailing, Metrics.topStripPadding + Metrics.notchShoulderRadius)
+            .padding(.leading, TopStripLayout.cutoutClearance)
+            .padding(.trailing, TopStripLayout.outerInset)
         }
         .frame(height: Self.topStripHeight(for: geometry))
         .animation(Motion.hover, value: viewModel.selectedTab)
+        .animation(Motion.content, value: layout)
     }
 
     @ViewBuilder
-    private func view(for item: TopStripItem) -> some View {
-        switch item {
-        case .settings:
+    private func view(for item: TopStripItem, buttonWidth: CGFloat) -> some View {
+        if let tab = item.tab {
+            NotchIconButton(
+                systemImage: tab.symbolName,
+                help: tab.title,
+                accent: settings.appearance.resolvedAccent,
+                isActive: viewModel.selectedTab == tab,
+                width: buttonWidth
+            ) {
+                viewModel.selectedTab = tab
+            }
+            .accessibilityAddTraits(viewModel.selectedTab == tab ? [.isSelected] : [])
+        } else if item == .settings {
             NotchIconButton(
                 systemImage: "gearshape",
                 help: "MinNotch Settings",
-                accent: settings.appearance.resolvedAccent
+                accent: settings.appearance.resolvedAccent,
+                width: buttonWidth
             ) {
                 environment.openSettings()
                 viewModel.collapse()
             }
-        case .battery:
+        } else if item == .battery {
             battery
+        } else if item == .whatsNew {
+            NotchIconButton(
+                systemImage: item.layoutSymbol,
+                help: "Show What's New (debug)",
+                accent: settings.appearance.resolvedAccent,
+                width: buttonWidth
+            ) {
+                viewModel.collapse()
+                environment.whatsNew.present()
+            }
+        } else if item == .tutorial {
+            NotchIconButton(
+                systemImage: item.layoutSymbol,
+                help: "Show the tutorial (debug)",
+                accent: settings.appearance.resolvedAccent,
+                width: buttonWidth
+            ) {
+                viewModel.collapse()
+                // A rerun starts the checklist from the current settings, so looking at it
+                // changes nothing unless a box is changed.
+                environment.onboarding.present(isRerun: true)
+            }
         }
     }
 
@@ -118,7 +162,7 @@ struct ExpandedPanelView: View {
     private var battery: some View {
         let status = environment.battery.status
         if status.isPresent {
-            HStack(spacing: 4) {
+            HStack(spacing: TopStripLayout.batteryLabelSpacing) {
                 if settings.battery.showPercentage {
                     Text("\(status.percentage)%")
                         .font(Typography.timecode)
@@ -128,6 +172,8 @@ struct ExpandedPanelView: View {
                     .font(.system(size: 13))
                     .symbolRenderingMode(.hierarchical)
                     .foregroundStyle(status.tint)
+                    // A fixed width, so `TopStripLayout` knows exactly how much room it takes.
+                    .frame(width: TopStripLayout.batteryIconWidth)
             }
             .fixedSize()
             .accessibilityElement(children: .combine)
@@ -146,6 +192,8 @@ struct NotchIconButton: View {
     var help: String
     var accent: Color
     var isActive: Bool = false
+    /// Narrowed by `TopStripLayout` when the bar is short of room.
+    var width: CGFloat = 28
     var action: () -> Void
 
     @State private var isHovering = false
@@ -154,7 +202,7 @@ struct NotchIconButton: View {
         Button(action: action) {
             Image(systemName: systemImage)
                 .font(.system(size: 12, weight: .medium))
-                .frame(width: 28, height: 21)
+                .frame(width: width, height: 21)
                 .foregroundStyle(foreground)
                 .background(
                     RoundedRectangle(cornerRadius: 6, style: .continuous)

@@ -90,12 +90,12 @@ enum MediaControl: String, Codable, CaseIterable, Identifiable {
     /// Controls wired to a real command in V1.
     var isImplemented: Bool {
         switch self {
-        case .previous, .playPause, .next: return true
-        case .shuffle, .repeatMode, .favorite: return false
+        case .previous, .playPause, .next, .shuffle: return true
+        case .repeatMode, .favorite: return false
         }
     }
 
-    static let defaultOrder: [MediaControl] = [.previous, .playPause, .next]
+    static let defaultOrder: [MediaControl] = [.shuffle, .previous, .playPause, .next]
 }
 
 extension MediaControl: LayoutArrangeable {
@@ -207,7 +207,11 @@ struct MediaSettings: Codable, Equatable {
     // MARK: V2 scaffolding (persisted now, rendered as "Coming soon")
 
     /// Brief Dynamic-Island-style expand-and-collapse when the track changes.
-    var sneakPeekOnTrackChange: Bool = false
+    var sneakPeekOnTrackChange: Bool = true
+
+    /// Show the next few tracks under the current one. Apple Music only: Spotify's scripting
+    /// dictionary has no queue to read.
+    var showUpNext: Bool = true
     /// Audio visualiser keyed to the artwork's colours.
     var showVisualizer: Bool = false
     /// Replace the built-in visualiser with a user-supplied Lottie animation.
@@ -231,7 +235,8 @@ struct MediaSettings: Codable, Equatable {
         cardStyle = c.value(.cardStyle, NowPlayingCardStyle.classic)
         floatingWindow = c.value(.floatingWindow, false)
         controlOrder = c.value(.controlOrder, MediaControl.defaultOrder)
-        sneakPeekOnTrackChange = c.value(.sneakPeekOnTrackChange, false)
+        sneakPeekOnTrackChange = c.value(.sneakPeekOnTrackChange, true)
+        showUpNext = c.value(.showUpNext, true)
         showVisualizer = c.value(.showVisualizer, false)
         customVisualizerPath = c.value(.customVisualizerPath, nil as String?)
         pollInterval = c.value(.pollInterval, 1.0, in: 0.5...5)

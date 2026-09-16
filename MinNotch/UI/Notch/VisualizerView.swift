@@ -40,6 +40,14 @@ struct VisualizerView: View {
     var isPlaying: Bool
     var customImagePath: String?
 
+    /// True when this view will draw the bars rather than a custom image. The card uses it to
+    /// decide whether to lay a scrim under them: the bars need one, and someone's own animated
+    /// image was chosen to be seen as it is.
+    static func drawsBars(customImagePath: String?) -> Bool {
+        guard let customImagePath else { return true }
+        return NSImage(contentsOfFile: customImagePath) == nil
+    }
+
     var body: some View {
         if let customImagePath, let image = NSImage(contentsOfFile: customImagePath) {
             AnimatedImageView(image: image, isAnimating: isPlaying)
@@ -64,25 +72,30 @@ struct VisualizerView: View {
         }
     }
 
-    /// Each bar carries its own dark outline and drop shadow.
+    /// One bar, in the cover's colours lifted to full strength.
     ///
-    /// The bars sit on top of album art, which can be any colour including near-white, and a
-    /// plain coloured bar disappears against a bright cover. The outline gives every bar an
-    /// edge regardless of what is behind it.
+    /// They used to be painted in `palette.primary` and `secondary` as sampled, which are the
+    /// cover's own dominant colours and therefore the colours least likely to stand out
+    /// against that cover: on a dark red sleeve the bars were dark red on dark red. Their
+    /// black outline and shadow, meant to separate them from bright covers, disappeared into
+    /// dark ones. Now the colours go through the same lift the ambient glow uses, so hue is
+    /// kept but saturation and brightness have a floor, and the card lays a dark scrim under
+    /// the bars so the area behind them is dark whatever the cover is. Against a guaranteed
+    /// dark ground a bright bar needs a light rim, not a dark one.
     private func bar(height: CGFloat) -> some View {
         Capsule()
             .fill(
                 LinearGradient(
-                    colors: [palette.primary, palette.secondary],
+                    colors: [palette.glowPrimary, palette.glowSecondary],
                     startPoint: .bottom,
                     endPoint: .top
                 )
             )
             .overlay(
-                Capsule().strokeBorder(Color.black.opacity(0.55), lineWidth: 0.75)
+                Capsule().strokeBorder(Color.white.opacity(0.4), lineWidth: 0.5)
             )
             .frame(width: 4, height: height)
-            .shadow(color: .black.opacity(0.5), radius: 1.5, y: 0.5)
+            .shadow(color: palette.glowPrimary.opacity(0.55), radius: 2)
     }
 
     private func height(index: Int, at time: TimeInterval) -> CGFloat {

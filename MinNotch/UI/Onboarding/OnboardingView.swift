@@ -453,7 +453,7 @@ private struct HowToPage: View {
                     "Click the gear in the open notch or the MinNotch icon in the menu bar. In Settings, press ⌘F to search for anything.")
                 tip("hand.draw", .systemTeal,
                     "Arrange it your way",
-                    "Drag what shows beside the notch, the play controls, and the top strip into the order you like, in General and Appearance.")
+                    "Drag what shows beside the notch, the play controls, and the top bar's tabs into the order you like, in General and Appearance.")
                 tip("cursorarrow.click.2", .systemPink,
                     "Right-click for more",
                     "The effects button on Now Playing has glow styles and a choice of where the light shows.")

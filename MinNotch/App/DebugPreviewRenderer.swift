@@ -92,9 +92,19 @@ enum DebugPreviewRenderer {
             // Clip check: force the panel narrower than its content needs. Nothing may be
             // drawn outside the black shape, which is what keeps the open and close
             // transitions from trailing pale text as the box changes size.
+            // The panel never goes below what its top bar needs, so the squeeze is applied to
+            // the geometry's ceiling as well as the setting.
             let fullWidth = settings.appearance.expandedWidth
             settings.appearance.expandedWidth = 240
-            let clipModel = NotchViewModel(settings: settings, geometry: geometry)
+            let narrow = NotchGeometry(
+                displayID: geometry.displayID,
+                screenFrame: geometry.screenFrame,
+                hasPhysicalNotch: geometry.hasPhysicalNotch,
+                collapsedSize: geometry.collapsedSize,
+                expandedSize: CGSize(width: 240, height: geometry.expandedSize.height),
+                windowFrame: geometry.windowFrame
+            )
+            let clipModel = NotchViewModel(settings: settings, geometry: narrow)
             clipModel.selectedTab = .media
             clipModel.expand()
             write(

@@ -130,6 +130,86 @@ final class VolumeMonitor {
         onChange?(reading.0, reading.1)
     }
 
+    // MARK: Setting
+
+    /// Does what a volume or mute key does to the default output, and returns the new level and
+    /// mute state. Nil when this output cannot do it in software, so the key can go to macOS.
+    ///
+    /// Steps on the same grid macOS uses, sixteenths, or sixty-fourths with Shift and Option,
+    /// rounding the current level onto the grid first so a level set by a slider elsewhere does
+    /// not leave every later step off by a fraction. Stepping up unmutes; reaching zero mutes.
+    func apply(_ key: SystemKeyInterceptor.Key, fineStep: Bool) -> (level: Double, muted: Bool)? {
+        guard let device = Self.defaultOutputDevice() else { return nil }
+
+        var level = Float32(0)
+        var levelSize = UInt32(MemoryLayout<Float32>.size)
+        guard AudioObjectGetPropertyData(device, &volumeAddress, 0, nil, &levelSize, &level) == noErr else {
+            return nil
+        }
+
+        let hasMute = Self.isSettable(device, &muteAddress)
+        var mutedValue = UInt32(0)
+        if hasMute {
+            var size = UInt32(MemoryLayout<UInt32>.size)
+            AudioObjectGetPropertyData(device, &muteAddress, 0, nil, &size, &mutedValue)
+        }
+        var muted = mutedValue != 0
+
+        switch key {
+        case .mute:
+            guard hasMute else { return nil }
+            muted.toggle()
+        case .volumeUp, .volumeDown:
+            guard Self.isSettable(device, &volumeAddress) else { return nil }
+            let steps: Float32 = fineStep ? 64 : 16
+            let direction: Float32 = key == .volumeUp ? 1 : -1
+            let next = min(max(((level * steps).rounded() + direction) / steps, 0), 1)
+            var value = next
+            guard AudioObjectSetPropertyData(device, &volumeAddress, 0, nil, levelSize, &value) == noErr else {
+                return nil
+            }
+            level = next
+            muted = hasMute ? next <= 0 : false
+        default:
+            return nil
+        }
+
+        if hasMute, muted != (mutedValue != 0) {
+            var value = UInt32(muted ? 1 : 0)
+            AudioObjectSetPropertyData(device, &muteAddress, 0, nil, UInt32(MemoryLayout<UInt32>.size), &value)
+        }
+        return (Double(level), muted)
+    }
+
+    /// True when the default output's volume can be set in software, which is when the volume
+    /// keys can be taken at all.
+    var canSetVolume: Bool {
+        guard let device = Self.defaultOutputDevice() else { return false }
+        return Self.isSettable(device, &volumeAddress)
+    }
+
+    /// Read fresh on each key press rather than taken from the listener, which only tracks the
+    /// device while the volume indicator is on.
+    private static func defaultOutputDevice() -> AudioObjectID? {
+        var address = AudioObjectPropertyAddress(
+            mSelector: kAudioHardwarePropertyDefaultOutputDevice,
+            mScope: kAudioObjectPropertyScopeGlobal,
+            mElement: kAudioObjectPropertyElementMain
+        )
+        var device = AudioObjectID(kAudioObjectUnknown)
+        var size = UInt32(MemoryLayout<AudioObjectID>.size)
+        let status = AudioObjectGetPropertyData(AudioObjectID(kAudioObjectSystemObject), &address, 0, nil, &size, &device)
+        guard status == noErr, device != kAudioObjectUnknown else { return nil }
+        return device
+    }
+
+    private static func isSettable(_ device: AudioObjectID, _ address: inout AudioObjectPropertyAddress) -> Bool {
+        guard AudioObjectHasProperty(device, &address) else { return false }
+        var settable = DarwinBoolean(false)
+        guard AudioObjectIsPropertySettable(device, &address, &settable) == noErr else { return false }
+        return settable.boolValue
+    }
+
     /// Current level and mute state, or nil when the device exposes neither.
     func read() -> (Double, Bool)? {
         guard deviceID != kAudioObjectUnknown else { return nil }
@@ -158,9 +238,11 @@ final class VolumeMonitor {
 /// switched on, and only while it is switched on.
 final class BrightnessMonitor {
     private typealias GetBrightnessFunction = @convention(c) (CGDirectDisplayID, UnsafeMutablePointer<Float>) -> Int32
+    private typealias SetBrightnessFunction = @convention(c) (CGDirectDisplayID, Float) -> Int32
 
     private var handle: UnsafeMutableRawPointer?
     private var getBrightness: GetBrightnessFunction?
+    private var setBrightness: SetBrightnessFunction?
 
     private(set) var isBrightnessSupported = false
     private(set) var isKeyboardBacklightSupported = false
@@ -175,19 +257,50 @@ final class BrightnessMonitor {
         guard let handle = dlopen(path, RTLD_NOW) else { return }
         self.handle = handle
 
+        if let setter = dlsym(handle, "DisplayServicesSetBrightness") {
+            setBrightness = unsafeBitCast(setter, to: SetBrightnessFunction.self)
+        }
         guard let symbol = dlsym(handle, "DisplayServicesGetBrightness") else { return }
         getBrightness = unsafeBitCast(symbol, to: GetBrightnessFunction.self)
         isBrightnessSupported = readBrightness() != nil
     }
 
-    /// Brightness of the main display, 0...1.
+    /// Brightness of the display the brightness keys control, 0...1.
     func readBrightness() -> Double? {
         guard let getBrightness else { return nil }
         var level: Float = 0
-        let display = CGMainDisplayID()
-        guard getBrightness(display, &level) == 0 else { return nil }
+        guard getBrightness(Self.keyboardDisplay, &level) == 0 else { return nil }
         guard level.isFinite, level >= 0 else { return nil }
         return Double(level)
+    }
+
+    /// True when brightness can be both read and set, which is when the brightness keys can be
+    /// taken at all.
+    var canSetBrightness: Bool { setBrightness != nil && readBrightness() != nil }
+
+    /// Does what a brightness key does, and returns the new level, or nil if it could not be set.
+    /// Steps in sixteenths, or sixty-fourths with Shift and Option, as macOS does.
+    func apply(_ key: SystemKeyInterceptor.Key, fineStep: Bool) -> Double? {
+        guard key == .brightnessUp || key == .brightnessDown,
+              let setBrightness, let current = readBrightness() else { return nil }
+
+        let steps = fineStep ? 64.0 : 16.0
+        let direction = key == .brightnessUp ? 1.0 : -1.0
+        let next = min(max(((current * steps).rounded() + direction) / steps, 0), 1)
+        guard setBrightness(Self.keyboardDisplay, Float(next)) == 0 else { return nil }
+        return next
+    }
+
+    /// The built-in display when there is one, which is the one a Mac's brightness keys
+    /// adjust, even when an external monitor is the main display.
+    private static var keyboardDisplay: CGDirectDisplayID {
+        var displays = [CGDirectDisplayID](repeating: 0, count: 16)
+        var count: UInt32 = 0
+        if CGGetOnlineDisplayList(UInt32(displays.count), &displays, &count) == .success,
+           let builtIn = displays.prefix(Int(count)).first(where: { CGDisplayIsBuiltin($0) != 0 }) {
+            return builtIn
+        }
+        return CGMainDisplayID()
     }
 
     /// Keyboard backlight level, 0...1, or nil on a keyboard that does not report it.

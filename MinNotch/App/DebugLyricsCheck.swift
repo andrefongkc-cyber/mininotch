@@ -3,7 +3,9 @@ import AppKit
 
 /// Runs the real lyrics pipeline from the command line and prints what it found.
 ///
-/// Run with `MinNotch --check-lyrics "<artist>" "<title>" [duration]`. Lyrics involve a
+/// Run with `MinNotch --check-lyrics "<artist>" "<title>" [duration] [--no-cache]`. Run it twice:
+/// the first lookup goes to LRCLIB and fills the cache, the second should say "hit" and take
+/// a few milliseconds. `--no-cache` empties the cache first. Lyrics involve a
 /// third-party lookup and a parser, and neither is visible from the UI when it fails, so
 /// this exercises `LRCLIBClient` and `LRCParser` together against a real track without
 /// having to play something and watch the notch.
@@ -35,7 +37,35 @@ enum DebugLyricsCheck {
             trackIdentity: "check"
         )
 
+        if arguments.contains("--no-cache") { LyricsCache.shared.removeAll() }
+        let before = LyricsCache.shared.lookup(track)
+        report("cache before lookup: \(Self.describe(before))")
+        let started = Date()
+
         LRCLIBClient.shared.lyrics(for: track) { lyrics in
+            report(String(format: "lookup took %.0f ms", Date().timeIntervalSince(started) * 1000))
+            // The store is asynchronous; give it a moment before asking what it holds.
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                report("cache after lookup:  \(Self.describe(LyricsCache.shared.lookup(track)))")
+                Self.printResult(lyrics, artist: artist, title: title)
+            }
+        }
+
+        RunLoop.main.run(until: Date().addingTimeInterval(20))
+        report("Timed out")
+        exit(1)
+    }
+
+    private static func describe(_ lookup: LyricsCache.Lookup) -> String {
+        switch lookup {
+        case .hit(let text): return "hit (\(text.count) characters)"
+        case .knownMissing: return "known missing"
+        case .miss: return "miss"
+        }
+    }
+
+    private static func printResult(_ lyrics: Lyrics?, artist: String, title: String) {
+        do {
             guard let lyrics, !lyrics.isEmpty else {
                 report("No lyrics found for \(artist) — \(title)")
                 exit(1)
@@ -66,11 +96,6 @@ enum DebugLyricsCheck {
             }
             exit(0)
         }
-
-        // The lookup is asynchronous, so the run loop has to keep turning until it lands.
-        RunLoop.main.run(until: Date().addingTimeInterval(20))
-        report("Timed out waiting for a response")
-        exit(1)
     }
 
     private static func report(_ message: String) {

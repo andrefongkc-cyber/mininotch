@@ -133,11 +133,33 @@ struct MediaSettingsView: View {
             SettingsCard(header: "Display") {
                 SettingsRow(
                     title: "Floating Window",
-                    subtitle: "Also show Now Playing in a small window above other apps. Drag it anywhere; it remembers where you put it.",
+                    subtitle: "Also show Now Playing in a small window above other apps. Drag it anywhere; it remembers where you put it. The pop-out button on the Now Playing card does the same.",
                     systemImage: "macwindow.on.rectangle",
                     isEnabled: settings.media.enabled
                 ) {
                     SettingsToggle(isOn: $settings.media.floatingWindow)
+                }
+
+                SettingsDivider()
+
+                SettingsRow(
+                    title: "Sneak Peek on Track Change",
+                    subtitle: "When a new song starts, the closed notch drops down for a moment to show what it is.",
+                    systemImage: "rectangle.expand.vertical",
+                    isEnabled: settings.media.enabled
+                ) {
+                    SettingsToggle(isOn: $settings.media.sneakPeekOnTrackChange)
+                }
+
+                SettingsDivider()
+
+                SettingsRow(
+                    title: "Show Up Next",
+                    subtitle: "The next songs under the one playing. Apple Music only, and only when playing from a playlist or album with shuffle off, because that is all Music tells other apps.",
+                    systemImage: "text.line.first.and.arrowtriangle.forward",
+                    isEnabled: settings.media.enabled
+                ) {
+                    SettingsToggle(isOn: $settings.media.showUpNext)
                 }
 
                 SettingsDivider()
@@ -201,7 +223,7 @@ struct MediaSettingsView: View {
 
                     SettingsRow(
                         title: "Not Yet Wired Up",
-                        subtitle: "Shuffle, repeat, and favourite are arranged here but have no command behind them yet, so they will not appear on the card.",
+                        subtitle: "Repeat and favourite can be arranged here but have no command behind them yet, so they will not appear on the card. Shuffle works with Apple Music and Spotify.",
                         systemImage: "exclamationmark.triangle",
                         badge: .comingSoon
                     ) { EmptyView() }
@@ -223,17 +245,6 @@ struct MediaSettingsView: View {
 
             }
 
-            SettingsCard(header: "Coming Soon") {
-                SettingsRow(
-                    title: "Sneak Peek on Track Change",
-                    subtitle: "Briefly expand the notch when a new track starts.",
-                    systemImage: "rectangle.expand.vertical",
-                    badge: .comingSoon
-                ) {
-                    SettingsToggle(isOn: $settings.media.sneakPeekOnTrackChange)
-                        .comingSoon()
-                }
-            }
         }
     }
 

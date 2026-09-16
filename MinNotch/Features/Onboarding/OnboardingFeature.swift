@@ -13,6 +13,7 @@ enum OnboardingFeature: String, CaseIterable, Identifiable {
     case systemStats
     case closedIndicators
     case clipboardHistory
+    case linkShelf
     case shelf
     case ambientLighting
     case huds
@@ -35,7 +36,7 @@ enum OnboardingFeature: String, CaseIterable, Identifiable {
         switch self {
         case .nowPlaying, .onlineLyrics, .calendar, .timer, .systemStats, .closedIndicators:
             return .notch
-        case .clipboardHistory, .shelf, .ambientLighting, .huds, .gestures, .floatingWindow:
+        case .clipboardHistory, .linkShelf, .shelf, .ambientLighting, .huds, .gestures, .floatingWindow:
             return .extras
         case .launchAtLogin, .menuBarIcon:
             return .startup
@@ -51,6 +52,7 @@ enum OnboardingFeature: String, CaseIterable, Identifiable {
         case .systemStats: return "System Stats"
         case .closedIndicators: return "Show Indicators When Closed"
         case .clipboardHistory: return "Clipboard History"
+        case .linkShelf: return "Link Shelf"
         case .shelf: return "File Shelf"
         case .ambientLighting: return "Ambient Lighting"
         case .huds: return "Volume and Brightness HUDs"
@@ -78,10 +80,12 @@ enum OnboardingFeature: String, CaseIterable, Identifiable {
             return "Widens the closed notch to show battery, artwork and a running timer either side of the camera."
         case .clipboardHistory:
             return "Everything you copy, one click from being copied again."
+        case .linkShelf:
+            return "Drop or paste links onto the notch to keep them, then click one to open it."
         case .shelf:
             return "Drop files on the notch to hold them, then drag them out wherever they need to go."
         case .ambientLighting:
-            return "A soft glow around the notch or the album art, coloured from the cover."
+            return "A soft glow around the notch, coloured from the album cover."
         case .huds:
             return "Volume, brightness and keyboard backlight shown at the notch instead of mid-screen."
         case .gestures:
@@ -109,6 +113,8 @@ enum OnboardingFeature: String, CaseIterable, Identifiable {
             return "macOS asks to let MinNotch control Music or Spotify the first time one plays."
         case .clipboardHistory:
             return "Kept in memory only. Copies an app marks as private, like passwords, are skipped."
+        case .linkShelf:
+            return "Reads each link's title and icon from its site when you add it."
         case .ambientLighting:
             return "Uses noticeably more power while it animates."
         case .closedIndicators:
@@ -129,6 +135,7 @@ enum OnboardingFeature: String, CaseIterable, Identifiable {
         case .systemStats: return "gauge.with.dots.needle.33percent"
         case .closedIndicators: return "rectangle.expand.vertical"
         case .clipboardHistory: return "doc.on.clipboard"
+        case .linkShelf: return "link"
         case .shelf: return "tray.full"
         case .ambientLighting: return "light.beacon.max"
         case .huds: return "speaker.wave.2"
@@ -147,6 +154,7 @@ enum OnboardingFeature: String, CaseIterable, Identifiable {
         case .systemStats: return Color(nsColor: .systemGreen)
         case .closedIndicators, .menuBarIcon, .launchAtLogin: return Color(nsColor: .systemGray)
         case .clipboardHistory: return Color(nsColor: .systemBlue)
+        case .linkShelf: return Color(nsColor: .systemCyan)
         case .shelf: return Color(nsColor: .systemTeal)
         case .ambientLighting: return Color(nsColor: .systemPink)
         case .huds: return Color(nsColor: .systemPurple)
@@ -164,6 +172,7 @@ enum OnboardingFeature: String, CaseIterable, Identifiable {
         case .timer: return .pomodoro
         case .systemStats: return .systemStats
         case .clipboardHistory: return .clipboardHistory
+        case .linkShelf: return .linkShelf
         case .shelf: return .shelf
         case .huds: return .hud
         case .gestures: return .gestures
@@ -190,6 +199,7 @@ enum OnboardingFeature: String, CaseIterable, Identifiable {
         case .systemStats: return settings.advanced.showSystemStats
         case .closedIndicators: return settings.general.extendPillForIndicators
         case .clipboardHistory: return settings.advanced.clipboardHistoryEnabled
+        case .linkShelf: return settings.advanced.linkShelfEnabled
         case .shelf: return settings.shelf.enabled
         case .ambientLighting: return settings.appearance.ambientGlow.isEnabled
         case .huds:
@@ -224,6 +234,8 @@ enum OnboardingFeature: String, CaseIterable, Identifiable {
             settings.general.extendPillForIndicators = isOn
         case .clipboardHistory:
             settings.advanced.clipboardHistoryEnabled = isOn
+        case .linkShelf:
+            settings.advanced.linkShelfEnabled = isOn
         case .shelf:
             settings.shelf.enabled = isOn
         case .ambientLighting:

@@ -42,7 +42,7 @@ enum DebugWindowCapture {
         let environment = DebugSupport.makeEnvironment()
         let settings = environment.settings
         environment.battery.applySampleStatus()
-        environment.nowPlaying.applySample()
+        environment.nowPlaying.applySample(settings: settings)
 
         // The calendar reads real data rather than a sample, so its service has to be
         // started or it reports its default not-determined state and the capture shows the
@@ -56,6 +56,22 @@ enum DebugWindowCapture {
         settings.advanced.clipboardHistoryEnabled = true
         settings.timer.enabled = true
         environment.clipboard.applySample()
+        settings.advanced.linkShelfEnabled = true
+        environment.linkShelf.applySample()
+
+        // Squeezes or widens the panel, which is how the top bar's overflow gets reviewed.
+        if let index = arguments.firstIndex(of: "--width"),
+           arguments.indices.contains(index + 1),
+           let width = Double(arguments[index + 1]) {
+            settings.appearance.expandedWidth = width
+        }
+        // Puts the given items on the right of the notch, e.g. `--right timer,settings,battery`.
+        if let index = arguments.firstIndex(of: "--right"),
+           arguments.indices.contains(index + 1) {
+            let right = arguments[index + 1].split(separator: ",").compactMap { TopStripItem(rawValue: String($0)) }
+            settings.appearance.topStripLeading.removeAll { right.contains($0) }
+            settings.appearance.topStripTrailing = right
+        }
 
         // A running timer, so the pill's activity and the panel's running state can both be
         // captured. Without it the timer is idle and neither is on screen.
@@ -85,6 +101,15 @@ enum DebugWindowCapture {
         // The closed pill shows nothing at all unless the indicators are switched on, so a
         // capture of it is blank without this.
         if arguments.contains("--extended") { settings.general.extendPillForIndicators = true }
+        // Which states the glow shows in: `closed`, `open`, or `closed,open`. The glow behaves
+        // differently when it is on for only one of them, so both cases have to be capturable.
+        if let index = arguments.firstIndex(of: "--placements"), arguments.indices.contains(index + 1) {
+            let names = arguments[index + 1].split(separator: ",").map(String.init)
+            var placements = Set<AmbientGlowPlacement>()
+            if names.contains("closed") { placements.insert(.collapsedNotch) }
+            if names.contains("open") { placements.insert(.expandedPanel) }
+            settings.appearance.ambientGlow.placements = placements
+        }
         // `--debug` also turns on the outline and the glow's level readout, which is the
         // only way to review the tuning overlay without changing the real configuration.
         settings.advanced.showDebugOverlay = arguments.contains("--debug")
@@ -119,6 +144,9 @@ enum DebugWindowCapture {
             midway = Double(arguments[i + 1])
         }
         if expanded && midway == nil { viewModel.expand() }
+        // The track-change drop below the pill. Held for longer than the real one, so the
+        // capture lands while it is still out.
+        if arguments.contains("--peek") { viewModel.peek(for: 60) }
 
         let panel = NotchPanel(contentRect: geometry.windowFrame)
         let hosting = NSHostingView(
@@ -127,6 +155,7 @@ enum DebugWindowCapture {
                 .environment(settings)
         )
         hosting.frame = CGRect(origin: .zero, size: geometry.windowFrame.size)
+        if arguments.contains("--no-sizing") { hosting.sizingOptions = [] }
         hosting.wantsLayer = true
         hosting.layer?.backgroundColor = .clear
         panel.contentView = hosting
@@ -150,10 +179,28 @@ enum DebugWindowCapture {
             RunLoop.main.run(until: Date().addingTimeInterval(1.0))
             withAnimation(Motion.notch) { viewModel.expand() }
             RunLoop.main.run(until: Date().addingTimeInterval(midway))
+        } else if hold > 2 {
+            // A long hold is for sampling CPU, and that has to happen inside a real
+            // `NSApplication` run loop. Turning `RunLoop.main` by hand instead makes SwiftUI's
+            // animation driver spin: a single ticking label measured 112% of a core that way
+            // and 10% under `NSApp.run()`. Every "an animation costs a core" figure this
+            // project once recorded came from the hand-turned loop.
+            Timer.scheduledTimer(withTimeInterval: hold, repeats: false) { _ in
+                MainActor.assumeIsolated {
+                    writeCapture(of: hosting, to: path)
+                    return
+                }
+            }
+            NSApplication.shared.setActivationPolicy(.accessory)
+            NSApplication.shared.run()
         } else {
             RunLoop.main.run(until: Date().addingTimeInterval(hold))
         }
 
+        writeCapture(of: hosting, to: path)
+    }
+
+    private static func writeCapture(of hosting: NSView, to path: String) {
         guard let representation = hosting.bitmapImageRepForCachingDisplay(in: hosting.bounds) else {
             report("Could not create a bitmap"); exit(1)
         }

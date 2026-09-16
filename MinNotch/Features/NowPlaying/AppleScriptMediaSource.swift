@@ -21,6 +21,11 @@ struct PlayerDescriptor {
     var shuffleScript: String
     var repeatScript: String
     var favoriteScript: String
+    /// The property holding shuffle state, as the player's dictionary names it.
+    var shuffleStateProperty: String?
+    /// Script listing upcoming tracks, with `LIMIT` replaced by a count, or nil when the
+    /// player exposes no queue.
+    var upNextScript: String?
 
     static let appleMusic = PlayerDescriptor(
         kind: .appleMusic,
@@ -51,6 +56,47 @@ struct PlayerDescriptor {
                 set loved of current track to not (loved of current track)
             end try
         end tell
+        """,
+        shuffleStateProperty: "shuffle enabled",
+        // Music does not expose its real Up Next queue to AppleScript. What it does expose is
+        // the playlist or album the current track is playing from, and the current track's
+        // position in it, which gives the next tracks in order. With shuffle on that order is
+        // not the play order, so it says so instead of listing tracks that will not come next.
+        //
+        // Checked for another way in, and there is none: the dictionary has no queue, shuffle
+        // mode, or "playing next" class at all, and the session Music saves to
+        // ~/Library/Application Support/Music/PlaybackSessions holds the current item and the
+        // shuffle setting, not the shuffled order. Reading the Playing Next sidebar through
+        // Accessibility would need that sidebar open in a Music window.
+        upNextScript: """
+        if application "Music" is running then
+            tell application "Music"
+                try
+                    if shuffle enabled then
+                        set sourceName to ""
+                        try
+                            set sourceName to (name of current playlist) as text
+                        end try
+                        return {"shuffle", sourceName}
+                    end if
+                    set sourceList to current playlist
+                    set position to index of current track
+                    set total to count of tracks of sourceList
+                    set lastPosition to position + LIMIT
+                    if lastPosition > total then set lastPosition to total
+                    set upcoming to {"ok"}
+                    repeat with i from (position + 1) to lastPosition
+                        set nextTrack to track i of sourceList
+                        set end of upcoming to {(name of nextTrack) as text, (artist of nextTrack) as text}
+                    end repeat
+                    return upcoming
+                on error
+                    return {"unavailable"}
+                end try
+            end tell
+        else
+            return {"unavailable"}
+        end if
         """
     )
 
@@ -65,7 +111,11 @@ struct PlayerDescriptor {
         artworkURLScript: "tell application \"Spotify\" to get artwork url of current track",
         shuffleScript: "tell application \"Spotify\" to set shuffling to not shuffling",
         repeatScript: "tell application \"Spotify\" to set repeating to not repeating",
-        favoriteScript: ""
+        favoriteScript: "",
+        shuffleStateProperty: "shuffling",
+        // Spotify's dictionary has no queue at all: current track, position, state, nothing
+        // after. Up Next is Apple Music only for that reason, not by choice.
+        upNextScript: nil
     )
 }
 
@@ -106,7 +156,9 @@ final class AppleScriptMediaSource: MediaSource {
                     set playerStateText to (player state as text)
                     if playerStateText is "stopped" then return {"stopped"}
                     set currentItem to current track
-                    return {playerStateText, (name of currentItem) as text, (artist of currentItem) as text, (album of currentItem) as text, (duration of currentItem), (player position), (id of currentItem) as text}
+                    set shuffleState to missing value
+                    \(shuffleRead)
+                    return {playerStateText, (name of currentItem) as text, (artist of currentItem) as text, (album of currentItem) as text, (duration of currentItem), (player position), (id of currentItem) as text, shuffleState}
                 on error
                     return {"stopped"}
                 end try
@@ -116,6 +168,18 @@ final class AppleScriptMediaSource: MediaSource {
         end if
         """
     }
+
+    /// Reads shuffle state inside its own `try`, so a player build that lacks the property
+    /// still reports the track rather than failing the whole snapshot.
+    private var shuffleRead: String {
+        guard let property = descriptor.shuffleStateProperty else { return "" }
+        return "try\n                        set shuffleState to (\(property))\n                    end try"
+    }
+
+    #if DEBUG
+    /// The snapshot script as sent, for `--check-media --scripts` to compile.
+    var debugSnapshotScript: String { snapshotScript }
+    #endif
 
     func snapshot() -> NowPlayingTrack? {
         guard isAvailable else { return nil }
@@ -137,8 +201,54 @@ final class AppleScriptMediaSource: MediaSource {
             isPlaying: state == "playing",
             sourceKind: descriptor.kind,
             sourceAppName: descriptor.displayName,
-            trackIdentity: result.atIndex(7)?.stringValue ?? ""
+            trackIdentity: result.atIndex(7)?.stringValue ?? "",
+            isShuffling: Self.bool(from: result.atIndex(8))
         )
+    }
+
+    /// A boolean from an Apple Event descriptor, or nil for `missing value` or anything else.
+    private static func bool(from descriptor: NSAppleEventDescriptor?) -> Bool? {
+        guard let descriptor else { return nil }
+        switch descriptor.descriptorType {
+        case typeTrue: return true
+        case typeFalse: return false
+        case typeBoolean: return descriptor.booleanValue
+        default: return nil
+        }
+    }
+
+    // MARK: Up Next
+
+    func upNext(limit: Int) -> UpNextState {
+        guard let template = descriptor.upNextScript else { return .idle }
+        guard isAvailable else { return .unavailable("Music is not running.") }
+
+        let script = template.replacingOccurrences(of: "LIMIT", with: String(max(limit, 1)))
+        guard let result = AppleScriptRunner.shared.run(script), result.numberOfItems >= 1 else {
+            return .unavailable("Up Next could not be read from Music.")
+        }
+
+        switch result.atIndex(1)?.stringValue {
+        case "shuffle":
+            let source = result.numberOfItems >= 2 ? (result.atIndex(2)?.stringValue ?? "") : ""
+            return .unavailable(
+                source.isEmpty
+                    ? "Shuffling. Music doesn't share the shuffled order."
+                    : "Shuffling \u{201C}\(source)\u{201D}. Music doesn't share the order."
+            )
+        case "ok":
+            guard result.numberOfItems >= 2 else {
+                return .unavailable("Nothing after this in the current playlist.")
+            }
+            let items: [UpNextItem] = (2...result.numberOfItems).compactMap { index in
+                guard let pair = result.atIndex(index), pair.numberOfItems >= 2,
+                      let title = pair.atIndex(1)?.stringValue, !title.isEmpty else { return nil }
+                return UpNextItem(title: title, artist: pair.atIndex(2)?.stringValue ?? "")
+            }
+            return items.isEmpty ? .unavailable("Nothing after this in the current playlist.") : .loaded(items)
+        default:
+            return .unavailable("Up Next is only known when playing from a playlist or album.")
+        }
     }
 
     // MARK: Artwork

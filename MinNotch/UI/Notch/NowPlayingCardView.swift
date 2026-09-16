@@ -12,14 +12,16 @@ struct NowPlayingCardView: View {
     /// The transport row now sits inside the text column beside the artwork rather than
     /// under both, so the card is exactly as tall as the artwork unless lyrics are showing.
     /// That is what makes the panel short and wide rather than tall and narrow.
-    static func preferredHeight(showingLyrics: Bool) -> CGFloat {
-        let artworkRow = Metrics.artworkSize
-        let lyricStrip: CGFloat = 40
-        let spacing: CGFloat = 8
-
-        guard showingLyrics else { return artworkRow }
-        return artworkRow + spacing + lyricStrip
+    static func preferredHeight(showingLyrics: Bool, showingUpNext: Bool = false) -> CGFloat {
+        var height = Metrics.artworkSize
+        if showingUpNext { height += spacing + upNextRowHeight }
+        if showingLyrics { height += spacing + lyricStripHeight }
+        return height
     }
+
+    private static let spacing: CGFloat = 8
+    private static let lyricStripHeight: CGFloat = 40
+    static let upNextRowHeight: CGFloat = 18
 
     var body: some View {
         if let track = controller.track {
@@ -36,6 +38,9 @@ struct NowPlayingCardView: View {
                     }
                     .frame(height: Metrics.artworkSize)
                 }
+                if controller.showsUpNext {
+                    upNextRow
+                }
                 if settings.media.showLyrics {
                     lyricStrip
                 }
@@ -43,6 +48,55 @@ struct NowPlayingCardView: View {
         } else {
             emptyState
         }
+    }
+
+    /// The next track, and how many follow it, on one line. Or the reason it cannot say.
+    ///
+    /// One line because the card's height is fixed per state: a row that grew with the queue
+    /// would resize the panel on every track change.
+    @ViewBuilder
+    private var upNextRow: some View {
+        HStack(spacing: 6) {
+            Text("UP NEXT")
+                .font(.system(size: 9, weight: .bold))
+                .foregroundStyle(.white.opacity(0.4))
+
+            switch controller.upNext {
+            case .loaded(let items):
+                if let first = items.first {
+                    Text(first.title)
+                        .font(Typography.helper.weight(.medium))
+                        .foregroundStyle(.white.opacity(0.85))
+                        .lineLimit(1)
+                    if !first.artist.isEmpty {
+                        Text(first.artist)
+                            .font(Typography.helper)
+                            .foregroundStyle(.white.opacity(0.5))
+                            .lineLimit(1)
+                    }
+                    if items.count > 1 {
+                        Text("then \(items.dropFirst().map(\.title).joined(separator: ", "))")
+                            .font(Typography.helper)
+                            .foregroundStyle(.white.opacity(0.35))
+                            .lineLimit(1)
+                            .truncationMode(.tail)
+                    }
+                }
+            case .unavailable(let reason):
+                Text(reason)
+                    .font(Typography.helper)
+                    .foregroundStyle(.white.opacity(0.4))
+                    .lineLimit(1)
+            case .idle:
+                Text("Reading the queue…")
+                    .font(Typography.helper)
+                    .foregroundStyle(.white.opacity(0.3))
+            }
+
+            Spacer(minLength: 0)
+        }
+        .frame(height: Self.upNextRowHeight)
+        .accessibilityElement(children: .combine)
     }
 
     /// Either the lyrics or the reason there are none. Never nothing: a strip that
@@ -91,40 +145,38 @@ struct NowPlayingCardView: View {
         )
         .overlay(alignment: .bottomLeading) {
             if settings.media.showVisualizer {
-                VisualizerView(
-                    palette: controller.palette,
-                    isPlaying: controller.track?.isPlaying ?? false,
-                    customImagePath: settings.media.customVisualizerPath
-                )
-                .frame(height: 22)
-                .padding(.horizontal, 6)
-                .padding(.bottom, 5)
+                ZStack(alignment: .bottomLeading) {
+                    // A dark fade up from the bottom edge, so the bars always have a dark
+                    // ground to stand out against, whether the cover is black, red, or white.
+                    // Clipped to the artwork's corners, and clear by halfway up, so the cover
+                    // still reads as itself.
+                    if VisualizerView.drawsBars(customImagePath: settings.media.customVisualizerPath) {
+                        LinearGradient(
+                            stops: [
+                                .init(color: .clear, location: 0.45),
+                                .init(color: .black.opacity(0.35), location: 0.72),
+                                .init(color: .black.opacity(0.62), location: 1)
+                            ],
+                            startPoint: .top,
+                            endPoint: .bottom
+                        )
+                        .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+                        .allowsHitTesting(false)
+                    }
+
+                    VisualizerView(
+                        palette: controller.palette,
+                        isPlaying: controller.track?.isPlaying ?? false,
+                        customImagePath: settings.media.customVisualizerPath
+                    )
+                    .frame(height: 22)
+                    .padding(.horizontal, 6)
+                    .padding(.bottom, 5)
+                }
             }
         }
-        .background(artworkGlow)
         .shadow(color: .black.opacity(0.3), radius: 6, y: 3)
         .animation(Motion.content, value: controller.artwork)
-    }
-
-    /// The album art placement of the ambient glow.
-    ///
-    /// Traces the artwork's own rounded square rather than the notch outline, and sits behind
-    /// the artwork so the light appears to come out from under it.
-    @ViewBuilder
-    private var artworkGlow: some View {
-        let glow = settings.appearance.ambientGlow
-
-        if glow.isActive(isLowPower: environment.battery.status.isLowPowerMode),
-           glow.placements.contains(.albumArt) {
-            AmbientGlowView(
-                pathBuilder: AmbientGlowGeometry.artworkPath(cornerRadius: 8),
-                settings: glow,
-                palette: controller.palette,
-                isPlaying: controller.track?.isPlaying ?? false,
-                audio: environment.audioAnalyzer.current == nil ? nil : environment.audioAnalyzer,
-                outlineSize: CGSize(width: Metrics.artworkSize, height: Metrics.artworkSize)
-            )
-        }
     }
 
     private func metadata(_ track: NowPlayingTrack) -> some View {
@@ -183,7 +235,7 @@ struct NowPlayingCardView: View {
     }
 
     private var controls: some View {
-        HStack(spacing: 18) {
+        HStack(spacing: 14) {
             Spacer(minLength: 0)
             ForEach(settings.media.controlOrder) { control in
                 if controller.supports(control) {
@@ -192,9 +244,51 @@ struct NowPlayingCardView: View {
             }
             Spacer(minLength: 0)
         }
-        // Overlaid rather than placed in the row, so adding it does not shift the transport
+        // Room on both sides for the pop-out and effects buttons, so the transport stays
+        // centred and can never run underneath them. With shuffle in the row as well it
+        // otherwise touched them in the narrower floating window.
+        .padding(.horizontal, Self.trailingClusterWidth)
+        // Overlaid rather than placed in the row, so adding them does not shift the transport
         // buttons off centre.
-        .overlay(alignment: .trailing) { effectsButton }
+        .overlay(alignment: .trailing) {
+            HStack(spacing: 6) {
+                popOutButton
+                effectsButton
+            }
+        }
+    }
+
+    /// Two 26-point buttons and the gap between them.
+    private static let trailingClusterWidth: CGFloat = 58
+
+    /// Pops this card out into the floating window, or puts it away again.
+    ///
+    /// The floating window used to be reachable only from Settings > Media, which is a long
+    /// way to go for something you want on and off as you move between screens. This is the
+    /// same stored setting, so the button, the Settings switch, and the window's own close
+    /// button can never disagree. The card inside the floating window shows this button too,
+    /// already in its "open" state, so it doubles as that window's way back in.
+    private var popOutButton: some View {
+        let isOpen = settings.media.floatingWindow
+
+        return Button {
+            settings.media.floatingWindow.toggle()
+            Haptics.perform(enabled: settings.advanced.hapticFeedbackEnabled, strength: settings.advanced.hapticStrength)
+        } label: {
+            Image(systemName: isOpen ? "pip.exit" : "pip.enter")
+                .font(.system(size: 13, weight: .medium))
+                .foregroundStyle(isOpen ? settings.appearance.resolvedAccent : Color.white.opacity(0.35))
+                .frame(width: 26, height: 24)
+                .background(
+                    RoundedRectangle(cornerRadius: 6, style: .continuous)
+                        .fill(Color.white.opacity(isOpen ? 0.12 : 0))
+                )
+                .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .help(isOpen ? "Close the floating Now Playing window" : "Pop Now Playing out into a floating window")
+        .accessibilityLabel(isOpen ? "Close floating window" : "Open floating window")
+        .animation(Motion.hover, value: isOpen)
     }
 
     /// Cycles the two visual effects through their four combinations.
@@ -322,13 +416,28 @@ struct NowPlayingCardView: View {
             }
         } label: {
             Image(systemName: symbolName(for: control, isPlaying: isPlaying))
-                .font(.system(size: isPlayPause ? 24 : 17, weight: .medium))
-                .foregroundStyle(.white.opacity(isPlayPause ? 1 : 0.8))
+                .font(.system(size: isPlayPause ? 24 : (control == .shuffle ? 14 : 17), weight: .medium))
+                .foregroundStyle(foreground(for: control))
                 .frame(width: isPlayPause ? 30 : 26, height: 28)
                 .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
         .accessibilityLabel(control.title)
+        .accessibilityValue(control == .shuffle ? (controller.track?.isShuffling == true ? "On" : "Off") : "")
+        .help(control == .shuffle ? (controller.track?.isShuffling == true ? "Shuffle is on" : "Shuffle is off") : control.title)
+    }
+
+    /// Shuffle is a state, not an action, so it shows which state it is in: the accent when
+    /// on, dim when off. The other controls are plain actions and stay white.
+    private func foreground(for control: MediaControl) -> Color {
+        switch control {
+        case .playPause: return .white
+        case .shuffle:
+            return controller.track?.isShuffling == true
+                ? settings.appearance.resolvedAccent
+                : .white.opacity(0.45)
+        default: return .white.opacity(0.8)
+        }
     }
 
     private func symbolName(for control: MediaControl, isPlaying: Bool) -> String {

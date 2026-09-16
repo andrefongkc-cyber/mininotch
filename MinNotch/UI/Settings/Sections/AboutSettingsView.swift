@@ -36,11 +36,11 @@ struct AboutSettingsView: View {
             SettingsCard(header: "What's New") {
                 SettingsRow(
                     title: "Release Notes",
-                    subtitle: "An in-app changelog arrives with the first update.",
-                    systemImage: "sparkles",
-                    badge: .comingSoon
+                    subtitle: "What changed in this version, and where to find it. Also shown once after each update.",
+                    systemImage: "sparkles"
                 ) {
-                    EmptyView()
+                    Button("Show") { environment.whatsNew.present() }
+                        .controlSize(.small)
                 }
             }
 

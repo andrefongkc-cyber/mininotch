@@ -29,12 +29,14 @@ struct NotchRootView: View {
     @Environment(AppEnvironment.self) private var environment
     @Environment(SettingsStore.self) private var settings
 
-    private var isExpanded: Bool { viewModel.state == .expanded || viewModel.state == .peeking }
+    private var isExpanded: Bool { viewModel.state == .expanded }
 
-    /// True from the moment the surface starts growing or shrinking until it has settled.
-    ///
-    /// Only the glow reads it. See `AmbientGlowView.isTransitioning` for why it exists.
-    @State private var isTransitioning = false
+    /// The brief drop below the pill on a track change. Separate from `isExpanded` because it
+    /// is not the panel: it has its own size, its own content, and it uses the closed notch's
+    /// glow placement. It needs a track to show, so a peek with nothing playing is just the pill.
+    private var isPeeking: Bool {
+        viewModel.state == .peeking && environment.nowPlaying.track != nil
+    }
 
     var body: some View {
         VStack(spacing: 0) {
@@ -63,62 +65,55 @@ struct NotchRootView: View {
         // No `GeometryReader` here. It aligns its content top-leading, and the glow's layer
         // is deliberately larger than the outline it traces, so the whole thing was pushed
         // down and right by the spill and the light no longer sat on the panel. A plain
-        // overlay centres it, which is what puts the outline back on the edge it traces.
-        .overlay(ambientGlow(outlineSize: CGSize(width: surfaceWidth, height: surfaceHeight)))
+        // overlay centres it and hands it the frame as it animates.
+        .overlay(ambientGlow)
         .overlay(debugOverlay)
         .contentShape(shape)
         .onHover { viewModel.hoverChanged($0) }
         .onTapGesture { viewModel.clicked() }
-        .onDrop(of: [.fileURL], isTargeted: dragEnteredBinding) { _ in false }
+        // One target that decides, not two stacked ones. A file is also a URL, so a separate
+        // link target could have caught a file drag and opened Links instead of the Shelf.
+        .onDrop(of: [.fileURL, .url, .plainText], delegate: NotchDragOpener(
+            openShelf: openShelfForDrag,
+            openLinks: openLinksForDrag
+        ))
         // One animation keyed to the whole geometry. Animating width and height off
         // separate values with separate curves is what made the box grow unevenly: the
         // width would arrive before the height and the shape would visibly shear.
         .animation(Motion.notch, value: surfaceMetrics)
-        .onChange(of: surfaceMetrics) {
-            isTransitioning = true
-            let generation = UUID()
-            transitionGeneration = generation
-            Task { @MainActor in
-                // Slightly past the spring, so the glow does not resume onto a box that is
-                // still settling. A later change supersedes this one rather than racing it.
-                try? await Task.sleep(for: .milliseconds(600))
-                guard transitionGeneration == generation else { return }
-                isTransitioning = false
-            }
-        }
         .accessibilityElement(children: .contain)
         .accessibilityLabel(isExpanded ? "MinNotch panel" : "MinNotch")
     }
 
     /// Opens the notch on the Shelf tab when a file is dragged over the closed pill.
     ///
-    /// The drop itself is refused here and left to `ShelfView`, which is the thing that
-    /// actually holds files. This target exists only to notice the drag arriving, because a
-    /// collapsed pill is far too small a target to drop onto accurately.
-    private var dragEnteredBinding: Binding<Bool> {
-        Binding(
-            get: { environment.shelf.isDropTargeted },
-            set: { isTargeted in
-                guard isTargeted,
-                      settings.shelf.enabled,
-                      settings.shelf.expandOnDragEnter,
-                      FeatureFlag.shelf.isEnabled else { return }
-
-                viewModel.selectedTab = .shelf
-                viewModel.expand()
-            }
-        )
+    /// The drop itself is refused and left to `ShelfView`, which is the thing that actually
+    /// holds files. This exists only to notice the drag arriving, because a collapsed pill is
+    /// far too small a target to drop onto accurately.
+    private func openShelfForDrag() {
+        guard settings.shelf.enabled,
+              settings.shelf.expandOnDragEnter,
+              FeatureFlag.shelf.isEnabled else { return }
+        viewModel.selectedTab = .shelf
+        viewModel.expand()
     }
 
-    /// Identifies the most recent transition, so an earlier one cannot clear the flag for it.
-    @State private var transitionGeneration = UUID()
+    /// Opens the notch on the Links tab when a link or text is dragged over the closed pill.
+    private func openLinksForDrag() {
+        guard settings.advanced.linkShelfEnabled,
+              FeatureFlag.linkShelf.isEnabled else { return }
+        viewModel.selectedTab = .links
+        viewModel.expand()
+    }
 
     private var shapeStyle: NotchShape {
         NotchShape(
             shoulderRadius: Metrics.notchShoulderRadius,
             bottomRadius: isExpanded
                 ? CGFloat(settings.appearance.panelCornerRadius)
-                : min(CGFloat(settings.appearance.panelCornerRadius), geometry.collapsedSize.height / 2)
+                : isPeeking
+                    ? min(CGFloat(settings.appearance.panelCornerRadius), SneakPeekView.cornerRadius)
+                    : min(CGFloat(settings.appearance.panelCornerRadius), geometry.collapsedSize.height / 2)
         )
     }
 
@@ -176,12 +171,23 @@ struct NotchRootView: View {
                 }
                 .transition(Self.contentTransition)
             } else if let reading = environment.hud.current {
+                // Before the peek: a volume change is something the user just did, and it
+                // outranks something the notch decided to show on its own.
                 HUDView(
                     reading: reading,
                     geometry: geometry,
                     style: settings.huds.style,
                     showsNumericValue: settings.huds.showNumericValue,
                     accent: settings.appearance.resolvedAccent
+                )
+                .transition(Self.contentTransition)
+            } else if isPeeking, let track = environment.nowPlaying.track {
+                SneakPeekView(
+                    geometry: geometry,
+                    pillContent: peekPillContent,
+                    track: track,
+                    artwork: environment.nowPlaying.artwork,
+                    palette: environment.nowPlaying.palette
                 )
                 .transition(Self.contentTransition)
             } else {
@@ -226,27 +232,35 @@ struct NotchRootView: View {
     /// Placement is a separate setting from style, so the closed pill and the open panel are
     /// independently switchable and only the one currently on screen is ever drawn.
     @ViewBuilder
-    private func ambientGlow(outlineSize: CGSize) -> some View {
+    private var ambientGlow: some View {
         let glow = settings.appearance.ambientGlow
         let placement: AmbientGlowPlacement = isExpanded ? .expandedPanel : .collapsedNotch
 
+        // Present whenever the glow is on for either state, and shown or hidden with
+        // `isVisible`, rather than inserted and removed as the notch opens and closes. An
+        // inserted view takes its final layout on its first frame, so with the glow off for
+        // the closed notch and on for the open panel, the glow arrived at the fully open
+        // outline while the black box was still growing towards it: measured, 494 pixels of
+        // fill against 1,092 of glow, 120 ms into the spring. A view that was already there
+        // follows the box, and `isVisible` fades it in on the same spring, which is also the
+        // cross-fade between the two states.
         if glow.isActive(isLowPower: environment.battery.status.isLowPowerMode),
-           glow.placements.contains(placement) {
+           !glow.placements.isEmpty {
             AmbientGlowView(
-                pathBuilder: AmbientGlowGeometry.notchPath(shapeStyle),
+                outline: .notch(shapeStyle),
                 settings: glow,
                 palette: environment.nowPlaying.palette,
                 isPlaying: environment.nowPlaying.track?.isPlaying ?? false,
                 audio: environment.audioAnalyzer.current == nil ? nil : environment.audioAnalyzer,
                 showsLevelReadout: settings.advanced.showDebugOverlay,
-                outlineSize: outlineSize,
+                sizeHint: CGSize(width: surfaceWidth, height: surfaceHeight),
 
                 // Only as much room as this radius actually needs. The constant is the
                 // ceiling, for the widest radius the slider offers; asking for all of it at
                 // the default radius made the rasterised layer twice the area for a falloff
                 // that had already reached nothing.
                 spill: min(CGFloat(glow.glowRadius) * 2, Metrics.notchGlowSpill),
-                isTransitioning: isTransitioning
+                isVisible: glow.placements.contains(placement)
             )
         }
     }
@@ -303,6 +317,16 @@ struct NotchRootView: View {
         return environment.nowPlaying.artwork
     }
 
+    /// The pill's indicators as they appear above a peek: without the artwork and the
+    /// playing glyph, because the peek shows the cover and the song right underneath and the
+    /// same picture twice in one small surface reads as a mistake.
+    private var peekPillContent: CollapsedPillContent {
+        var content = pillContent
+        content.artwork = nil
+        content.isPlaying = false
+        return content
+    }
+
     private var pillContent: CollapsedPillContent {
         CollapsedPillContent(
             artwork: collapsedArtwork,
@@ -335,11 +359,14 @@ struct NotchRootView: View {
 
     private var surfaceWidth: CGFloat {
         guard !isExpanded else {
-            return min(CGFloat(settings.appearance.expandedWidth), geometry.expandedSize.width)
+            return viewModel.expandedPanelWidth
         }
         // A HUD takes over the closed surface entirely, and needs both flanks to show an
         // icon and a level rather than the pill's narrower strips.
         if environment.hud.current != nil { return HUDView.width(for: geometry) }
+        if isPeeking {
+            return SneakPeekView.size(for: geometry, pillWidth: pillContent.width(for: geometry)).width
+        }
         return pillContent.width(for: geometry)
     }
 
@@ -354,13 +381,19 @@ struct NotchRootView: View {
             guard environment.hud.current == nil else {
                 return HUDView.height(for: geometry, style: settings.huds.style)
             }
+            if isPeeking {
+                return SneakPeekView.size(for: geometry, pillWidth: pillContent.width(for: geometry)).height
+            }
             return geometry.collapsedSize.height
         }
 
         var height: CGFloat
         switch viewModel.selectedTab {
         case .media:
-            height = NowPlayingCardView.preferredHeight(showingLyrics: settings.media.showLyrics)
+            height = NowPlayingCardView.preferredHeight(
+                showingLyrics: settings.media.showLyrics,
+                showingUpNext: environment.nowPlaying.showsUpNext
+            )
         case .calendar:
             height = CalendarWidgetView.preferredHeight(
                 mode: settings.calendar.viewMode,
@@ -374,6 +407,8 @@ struct NotchRootView: View {
             height = ShelfView.preferredHeight
         case .clipboard:
             height = ClipboardWidgetView.preferredHeight
+        case .links:
+            height = LinkShelfWidgetView.preferredHeight
         case .timer:
             height = TimerWidgetView.preferredHeight
         }
@@ -384,4 +419,28 @@ struct NotchRootView: View {
         height += ExpandedPanelView.topStripHeight(for: geometry)
         return min(height + Metrics.notchPanelPadding, geometry.expandedSize.height)
     }
+}
+
+/// Notices a drag arriving over the notch and opens the tab that can take it.
+///
+/// Files are checked first, because a file drag also carries a URL: checked the other way round,
+/// dragging a document would open Links. Every drop is refused here; the widget that opens
+/// underneath the pointer is what accepts it.
+private struct NotchDragOpener: DropDelegate {
+    let openShelf: () -> Void
+    let openLinks: () -> Void
+
+    func validateDrop(info: DropInfo) -> Bool {
+        info.hasItemsConforming(to: [.fileURL, .url, .plainText])
+    }
+
+    func dropEntered(info: DropInfo) {
+        if info.hasItemsConforming(to: [.fileURL]) {
+            openShelf()
+        } else {
+            openLinks()
+        }
+    }
+
+    func performDrop(info: DropInfo) -> Bool { false }
 }

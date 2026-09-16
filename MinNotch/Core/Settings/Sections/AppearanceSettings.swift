@@ -59,7 +59,11 @@ struct AppearanceSettings: Codable, Equatable {
     /// either side of the notch cutout, and a wide panel keeps the track title on one line.
     var expandedWidth: Double = 560
 
-    /// What sits to the right of the cutout in the open panel's top strip, in order.
+    /// What sits either side of the cutout in the open panel's top bar, in order.
+    ///
+    /// Tabs are items like any other, so a tab can live on the right. Whatever does not fit on
+    /// its own side moves across at display time, see `TopStripLayout`.
+    var topStripLeading: [TopStripItem] = TopStripItem.defaultLeading
     var topStripTrailing: [TopStripItem] = TopStripItem.defaultTrailing
 
     /// Settings > Appearance > Ambient Lighting.
@@ -85,6 +89,9 @@ struct AppearanceSettings: Codable, Equatable {
         panelCornerRadius = c.value(.panelCornerRadius, Double(Metrics.notchPanelCornerRadius), in: 8...32)
         expandedWidth = c.value(.expandedWidth, 560, in: 460...820)
         topStripTrailing = c.value(.topStripTrailing, TopStripItem.defaultTrailing)
+        // A file from before the tabs could be arranged has no leading list, and every tab
+        // then sits on the left, which is exactly where they were.
+        topStripLeading = c.value(.topStripLeading, TopStripItem.defaultLeading)
         showPanelShadow = c.value(.showPanelShadow, false)
         ambientGlow = c.value(.ambientGlow, AmbientGlowSettings())
     }
@@ -98,22 +105,55 @@ struct AppearanceSettings: Codable, Equatable {
     }
 }
 
-/// Something the open panel's top strip can show in its trailing flank.
+/// Something the open panel's top bar can show either side of the cutout.
 ///
-/// Only the trailing flank is arrangeable. The leading side holds the tab strip, whose
-/// position is what keeps it aligned to the left of the cutout, and the band between them is
-/// a click-through dead zone that only works because nothing is drawn or dropped in it.
-/// Neither is offered as a destination.
+/// Every tab is an item, so the user can put any of them on either side. The band between the
+/// two sides is not a destination: it is a click-through dead zone over the camera housing that
+/// only works because nothing is drawn or dropped in it.
+///
+/// A tab's raw value is its `NotchTab` raw value, and `init(_:)` is an exhaustive switch, so a
+/// new tab that is not given an item here fails to compile rather than silently never showing.
 enum TopStripItem: String, Codable, CaseIterable, Identifiable, LayoutArrangeable {
+    case media
+    case calendar
+    case system
+    case shelf
+    case clipboard
+    case links
+    case timer
     case settings
     case battery
+    /// Debug buttons, shown only while Settings > Advanced > Debug Buttons in Top Bar is on.
+    case whatsNew
+    case tutorial
 
     var id: String { rawValue }
+
+    /// True for the two debug buttons, which exist only while their setting is on.
+    var isDebug: Bool { self == .whatsNew || self == .tutorial }
+
+    init(_ tab: NotchTab) {
+        switch tab {
+        case .media: self = .media
+        case .calendar: self = .calendar
+        case .system: self = .system
+        case .shelf: self = .shelf
+        case .clipboard: self = .clipboard
+        case .links: self = .links
+        case .timer: self = .timer
+        }
+    }
+
+    /// The tab this item opens, or nil for settings and battery.
+    var tab: NotchTab? { NotchTab(rawValue: rawValue) }
 
     var layoutTitle: String {
         switch self {
         case .settings: return "Settings"
         case .battery: return "Battery"
+        case .whatsNew: return "What's New"
+        case .tutorial: return "Tutorial"
+        default: return tab?.title ?? rawValue
         }
     }
 
@@ -121,9 +161,14 @@ enum TopStripItem: String, Codable, CaseIterable, Identifiable, LayoutArrangeabl
         switch self {
         case .settings: return "gearshape"
         case .battery: return "battery.100percent"
+        case .whatsNew: return "sparkles"
+        case .tutorial: return "graduationcap"
+        default: return tab?.symbolName ?? "questionmark"
         }
     }
 
-    /// What the strip held before it was arrangeable.
+    /// Every tab on the left, in the order they were always shown.
+    static let defaultLeading: [TopStripItem] = NotchTab.allCases.map(TopStripItem.init)
+    /// What the right side held before it was arrangeable.
     static let defaultTrailing: [TopStripItem] = [.settings, .battery]
 }

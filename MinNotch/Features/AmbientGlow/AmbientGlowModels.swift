@@ -34,9 +34,12 @@ enum AmbientGlowStyleKind: String, Codable, CaseIterable, Identifiable {
     var usesColorMode: Bool { self != .rainbow }
 }
 
-/// Where a glow is drawn. Any style can render at any of these.
+/// Where a glow is drawn. Any style can render at either.
+///
+/// There is no album-art placement. There used to be, drawing light out from behind the cover
+/// on the Now Playing card, and the user wanted the artwork left as a still picture. Settings
+/// files that still name it decode without it; see `AmbientGlowSettings.init(from:)`.
 enum AmbientGlowPlacement: String, Codable, CaseIterable, Identifiable, Hashable {
-    case albumArt
     case collapsedNotch
     case expandedPanel
 
@@ -44,7 +47,6 @@ enum AmbientGlowPlacement: String, Codable, CaseIterable, Identifiable, Hashable
 
     var title: String {
         switch self {
-        case .albumArt: return "Album Art"
         case .collapsedNotch: return "Closed Notch"
         case .expandedPanel: return "Open Panel"
         }
@@ -52,7 +54,6 @@ enum AmbientGlowPlacement: String, Codable, CaseIterable, Identifiable, Hashable
 
     var symbolName: String {
         switch self {
-        case .albumArt: return "photo"
         case .collapsedNotch: return "rectangle.topthird.inset.filled"
         case .expandedPanel: return "rectangle.expand.vertical"
         }
@@ -171,7 +172,14 @@ struct AmbientGlowSettings: Codable, Equatable {
         let c = try decoder.container(keyedBy: CodingKeys.self)
         isEnabled = c.value(.isEnabled, false)
         style = c.value(.style, AmbientGlowStyleKind.rainbow)
-        placements = c.value(.placements, Set<AmbientGlowPlacement>([.collapsedNotch, .expandedPanel]))
+        // Read as strings and filtered, not as the enum directly. A saved set that still names
+        // the removed album-art placement would otherwise fail to decode as a whole and fall
+        // back to the default, throwing away whichever of the other two the user had chosen.
+        if let names = try? c.decodeIfPresent([String].self, forKey: .placements) {
+            placements = Set(names.compactMap(AmbientGlowPlacement.init(rawValue:)))
+        } else {
+            placements = [.collapsedNotch, .expandedPanel]
+        }
         colorMode = c.value(.colorMode, GlowColorMode.albumArt)
         staticColor = c.value(.staticColor, RGBAColor.systemBlue)
         isAudioReactive = c.value(.isAudioReactive, false)

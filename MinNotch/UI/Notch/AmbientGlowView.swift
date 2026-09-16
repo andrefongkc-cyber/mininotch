@@ -11,8 +11,8 @@ import SwiftUI
 /// Two passes: a wide blurred one that is the spill, and a narrow crisp one that is the
 /// filament. Together they read as light rather than as a thick coloured border.
 struct AmbientGlowView: View {
-    /// Builds the outline this glow traces. Each placement supplies its own geometry.
-    var pathBuilder: (CGRect) -> Path
+    /// The outline this glow traces.
+    var outline: GlowOutline
     var settings: AmbientGlowSettings
     var palette: ArtworkPalette
     var isPlaying: Bool
@@ -21,18 +21,13 @@ struct AmbientGlowView: View {
     /// Prints the raw and shaped levels over the glow, for tuning the envelope and spring by
     /// eye instead of guessing at the constants. Follows Settings > Advanced > debug overlay.
     var showsLevelReadout: Bool = false
-    /// The size of the outline to trace.
+    /// The size the outline is settling at, used only to cap the blur.
     ///
-    /// Passed in rather than measured. A `GeometryReader` anywhere inside this view reports
-    /// the layout the surface is heading for rather than the one it currently has, because
-    /// the timeline's redraws are their own transaction and take no part in the surface's
-    /// animation. During an open that meant the glow tracked the box for a single frame and
-    /// then jumped to the fully open outline while the black fill behind it was still two
-    /// thirds of the way there. Measured on the real panel, 140 ms into a 520 ms spring: fill
-    /// 670 points wide, glow already drawing 1170. Moving the reader outside the timeline did
-    /// not help, and neither did removing `drawingGroup()`; the reader is the problem in every
-    /// arrangement. A caller whose size is not animating can read it once and hand it over.
-    var outlineSize: CGSize
+    /// Not the size the outline is drawn at. That comes from layout, through `GlowStroke`,
+    /// which is re-pathed at the rect it is actually rendered in on every frame of the surface
+    /// animation. This is a hint for one cap, where being the destination rather than the
+    /// in-between size does no harm.
+    var sizeHint: CGSize
     /// How far outside the outline this glow is allowed to spread, in points.
     ///
     /// `drawingGroup()` rasterises into a layer the size of this view, so a blur cannot
@@ -42,18 +37,15 @@ struct AmbientGlowView: View {
     /// the panel. The caller states how much room it can give and the blur is capped to
     /// half of it, so the light always reaches nothing before the layer runs out.
     ///
-    /// Zero means "no room", which is correct for a glow drawn inside a laid-out box, such
-    /// as the album artwork.
+    /// Zero means "no room", which is correct for a glow drawn inside a laid-out box.
     var spill: CGFloat = 0
-    /// True while the surface is growing or shrinking around this glow.
+    /// False while the glow is switched off for the state the notch is in.
     ///
-    /// Holds the timeline still for the length of the transition. The size above is layout,
-    /// and layout interpolates correctly, but a timeline tick landing mid-animation answers
-    /// every geometry question with the size the surface is heading for rather than the one
-    /// it has. One tick was enough: the glow tracked the box until the first one and then sat
-    /// at the fully open outline for the rest of the spring. Paused, no tick can arrive to
-    /// overrule the layout, and the light resumes the moment the box stops moving.
-    var isTransitioning: Bool = false
+    /// Hidden rather than removed, so the view stays in place and follows the surface when the
+    /// notch opens or closes; see the note at the notch call site. Hidden also pauses the
+    /// timeline, so a glow waiting behind a closed notch all day is a still, transparent layer
+    /// that costs nothing, not an animation running at zero opacity.
+    var isVisible: Bool = true
 
     /// The envelope, gain, and spring state for this glow.
     ///
@@ -65,22 +57,18 @@ struct AmbientGlowView: View {
     @State private var dynamics = GlowDynamics()
 
     var body: some View {
-        // The padded box the outline is drawn into, entirely from values handed in.
-        let padded = CGSize(width: outlineSize.width + spill * 2, height: outlineSize.height + spill * 2)
-        let outline = CGRect(origin: CGPoint(x: spill, y: spill), size: outlineSize)
-
-        TimelineView(.animation(minimumInterval: frameInterval, paused: !isAnimating || isTransitioning)) { context in
+        TimelineView(.animation(minimumInterval: frameInterval, paused: !isAnimating || !isVisible)) { context in
             let input = makeInput(at: context.date)
             let segments = AmbientGlowStyleFactory.make(settings.style).segments(input: input)
 
             ZStack {
-                strokes(segments, in: outline, size: padded, widthScale: 1.6)
+                strokes(segments, widthScale: 1.6)
                     // The spill breathes with the level too. A blur that stays the same
                     // width while the stroke inside it grows reads as the stroke getting
                     // fatter; a blur that swells with it reads as more light.
-                    .blur(radius: blurRadius(for: outlineSize, level: input.energy))
+                    .blur(radius: blurRadius(for: sizeHint, level: input.energy))
 
-                strokes(segments, in: outline, size: padded, widthScale: 0.45)
+                strokes(segments, widthScale: 0.45)
                     .blur(radius: 1)
                     .opacity(0.9)
             }
@@ -96,23 +84,28 @@ struct AmbientGlowView: View {
                 levelReadout.padding(spill + 14)
             }
         }
-        .frame(width: padded.width, height: padded.height)
+        // Grows the layer past the thing it decorates by the spill on every side. Negative
+        // padding enlarges what the content is offered and keeps it centred on the caller's
+        // frame, which a `GeometryReader` or an explicit frame did not: one aligned the layer
+        // top-leading, the other pinned it to the destination size.
+        .padding(-spill)
+        // Animated by the surface's own spring, since `isVisible` changes in the same update as
+        // the open or closed state.
+        .opacity(isVisible ? 1 : 0)
         .allowsHitTesting(false)
     }
 
-    /// Strokes one pass of the segments into a fixed box.
+    /// Strokes one pass of the segments.
     ///
-    /// Handed its rect rather than reading one. A `GeometryReader` here, nested inside the
-    /// one above and inside a `TimelineView`, made AppKit lay the hosting view's whole
-    /// subtree out again on every frame: profiling put nearly all of the glow's cost in that
-    /// layout pass, which is why a single-segment Pulse cost exactly as much as a
-    /// sixteen-segment Bars. Nothing about the geometry needed measuring, only passing down.
-    private func strokes(
-        _ segments: [GlowSegment], in rect: CGRect, size: CGSize, widthScale: CGFloat
-    ) -> some View {
-        let path = pathBuilder(rect)
-
-        return ZStack {
+    /// Each stretch is a `GlowStroke` shape rather than a `Path` built here. A `Path` is a
+    /// value computed once from whatever size this body was told, and the only size a body
+    /// can be told mid-animation is the destination: that is why the glow used to jump to the
+    /// fully open outline while the fill behind it was still growing. A `Shape` is asked for
+    /// its path at render time, at the rect it is actually being drawn in, which during the
+    /// surface's spring is the in-between rect. It is the same reason the fill's own clip
+    /// shape has always tracked the box.
+    private func strokes(_ segments: [GlowSegment], widthScale: CGFloat) -> some View {
+        ZStack {
             ForEach(segments) { segment in
                 if segment.coversWholePath {
                     // Stroking the closed path directly, rather than a trim from 0 to 1.
@@ -120,28 +113,19 @@ struct AmbientGlowView: View {
                     // two overlap at the seam. On a shape as small as the closed pill that
                     // overlap is a visible bright spot, which is most of what made the
                     // closed glow look uneven.
-                    path.stroke(
-                        segment.color,
-                        style: StrokeStyle(lineWidth: segment.width * widthScale)
-                    )
+                    GlowStroke(outline: outline, inset: spill, trim: nil)
+                        .stroke(segment.color, style: StrokeStyle(lineWidth: segment.width * widthScale))
                 } else {
                     ForEach(Array(wrap(segment).enumerated()), id: \.offset) { _, range in
-                        path.trimmedPath(from: range.lowerBound, to: range.upperBound)
+                        GlowStroke(outline: outline, inset: spill, trim: range)
                             .stroke(
                                 segment.color,
-                                style: StrokeStyle(
-                                    lineWidth: segment.width * widthScale,
-                                    lineCap: .round
-                                )
+                                style: StrokeStyle(lineWidth: segment.width * widthScale, lineCap: .round)
                             )
                     }
                 }
             }
         }
-        // A `Path` used as a view draws at its own absolute coordinates, so the box it is
-        // given has to be the full padded bounds pinned to the top leading corner, or the
-        // stack sizes itself to the path's bounds and the drawing shifts.
-        .frame(width: size.width, height: size.height, alignment: .topLeading)
     }
 
     /// Splits a segment that runs past the end of the path.
@@ -286,18 +270,58 @@ struct AmbientGlowView: View {
     }
 }
 
-/// The outlines each placement traces.
+/// The outline a glow traces, as a value rather than a closure.
 ///
-/// Kept together so a new placement is one case here plus one in the enum, rather than
-/// geometry scattered across whichever views happen to own each shape.
-enum AmbientGlowGeometry {
-    /// The notch outline, closed or open.
-    static func notchPath(_ shape: NotchShape) -> (CGRect) -> Path {
-        { rect in shape.path(in: rect) }
+/// A value, so it can live inside a `Shape` and be re-pathed at render time. The corner radius
+/// is the one number that changes between the closed pill and the open panel besides the size,
+/// so it is the animatable part.
+struct GlowOutline: Equatable {
+    enum Kind: Equatable {
+        /// The notch outline, with its concave shoulders.
+        case notch(shoulderRadius: CGFloat)
+        /// A plain rounded rectangle, for the Settings preview.
+        case roundedRect
     }
 
-    /// A rounded square matching the album artwork's corner radius.
-    static func artworkPath(cornerRadius: CGFloat) -> (CGRect) -> Path {
-        { rect in Path(roundedRect: rect, cornerRadius: cornerRadius, style: .continuous) }
+    var kind: Kind
+    /// The bottom corner radius for the notch, or the corner radius for a rounded rectangle.
+    var radius: CGFloat
+
+    static func notch(_ shape: NotchShape) -> GlowOutline {
+        GlowOutline(kind: .notch(shoulderRadius: shape.shoulderRadius), radius: shape.bottomRadius)
+    }
+
+    static func roundedRect(cornerRadius: CGFloat) -> GlowOutline {
+        GlowOutline(kind: .roundedRect, radius: cornerRadius)
+    }
+
+    func path(in rect: CGRect) -> Path {
+        switch kind {
+        case .notch(let shoulderRadius):
+            return NotchShape(shoulderRadius: shoulderRadius, bottomRadius: radius).path(in: rect)
+        case .roundedRect:
+            return Path(roundedRect: rect, cornerRadius: radius, style: .continuous)
+        }
+    }
+}
+
+/// One stroked stretch of a glow's outline, pathed at the rect it is drawn in.
+///
+/// The rect is the whole padded layer, so the outline is inset by the spill before it is
+/// traced, which puts it back on the edge of the thing being decorated.
+struct GlowStroke: Shape {
+    var outline: GlowOutline
+    var inset: CGFloat
+    var trim: ClosedRange<CGFloat>?
+
+    var animatableData: CGFloat {
+        get { outline.radius }
+        set { outline.radius = newValue }
+    }
+
+    func path(in rect: CGRect) -> Path {
+        let full = outline.path(in: rect.insetBy(dx: inset, dy: inset))
+        guard let trim else { return full }
+        return full.trimmedPath(from: trim.lowerBound, to: trim.upperBound)
     }
 }

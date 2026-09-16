@@ -27,6 +27,7 @@ enum FeatureFlag: String, CaseIterable {
     case weather
     case shortcutsWidget
     case clipboardHistory
+    case linkShelf
     case quickNotes
     case pomodoro
     case focusMode
@@ -45,7 +46,7 @@ enum FeatureFlag: String, CaseIterable {
         case .lyrics:
             return .beta
         case .gestures, .haptics, .shelf, .hud, .reminders, .customVisualizers, .audioReactiveGlow,
-             .clipboardHistory, .pomodoro, .liveActivities:
+             .clipboardHistory, .pomodoro, .liveActivities, .linkShelf:
             return .beta
         case .weather, .shortcutsWidget, .quickNotes, .focusMode, .mirror:
             return .hidden

@@ -65,6 +65,7 @@ enum DebugSettingsCheck {
         report(String(format: "  timer.intervals      %10d   (2...8)", settings.timer.intervalsBeforeLongBreak))
         report(String(format: "  timer.countdown      %10.2f   (1...180)", settings.timer.defaultCountdownMinutes))
         report("  nonNotchDefaultTab   \(settings.advanced.nonNotchDefaultTab.rawValue)  (must be a real tab)")
+        report("  glow.placements      \(settings.appearance.ambientGlow.placements.map(\.rawValue).sorted())  (unknown names dropped, the rest kept)")
         report("")
         report("Every value must sit inside the range beside it, whatever the file asked for.")
 

@@ -22,11 +22,19 @@ enum NotchWidgetRegistry {
         NotchWidgetDescriptor(tab: .system, flag: .systemStats) { _ in true },
         NotchWidgetDescriptor(tab: .shelf, flag: .shelf) { $0.shelf.enabled },
         NotchWidgetDescriptor(tab: .clipboard, flag: .clipboardHistory) { $0.advanced.clipboardHistoryEnabled },
+        NotchWidgetDescriptor(tab: .links, flag: .linkShelf) { $0.advanced.linkShelfEnabled },
         NotchWidgetDescriptor(tab: .timer, flag: .pomodoro) { $0.timer.enabled }
     ]
 
     /// Tabs the panel should currently render, in display order.
     static func availableTabs(_ settings: SettingsStore) -> [NotchTab] {
         all.filter { $0.flag.isEnabled && $0.isEnabled(settings) }.map(\.tab)
+    }
+
+    /// What the panel actually offers: the available tabs, or System alone when every feature
+    /// is switched off, so the panel always has something to show.
+    static func shownTabs(_ settings: SettingsStore) -> [NotchTab] {
+        let tabs = availableTabs(settings)
+        return tabs.isEmpty ? [.system] : tabs
     }
 }

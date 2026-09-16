@@ -22,6 +22,7 @@ final class AppEnvironment {
     @ObservationIgnored private let gestures = NotchGestureMonitor()
     let liveActivities = LiveActivityCenter()
     let clipboard = ClipboardHistoryService()
+    let linkShelf = LinkShelfService()
     let timer = TimerService()
 
     @ObservationIgnored private(set) lazy var notchWindows = NotchWindowManager(environment: self)
@@ -29,6 +30,7 @@ final class AppEnvironment {
     @ObservationIgnored private(set) lazy var menuBar = MenuBarController(environment: self)
     @ObservationIgnored private(set) lazy var settingsWindow = SettingsWindowController(environment: self)
     @ObservationIgnored private(set) lazy var onboarding = OnboardingCoordinator(environment: self)
+    @ObservationIgnored private(set) lazy var whatsNew = WhatsNewCoordinator()
 
     init(settings: SettingsStore = SettingsStore()) {
         self.settings = settings
@@ -84,6 +86,7 @@ final class AppEnvironment {
         calendarService.start(settings: settings)
         nowPlaying.start(settings: settings)
         clipboard.start(settings: settings)
+        linkShelf.start(settings: settings)
         timer.start(settings: settings)
 
         notchWindows.start()
@@ -97,6 +100,12 @@ final class AppEnvironment {
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) { [weak self] in
                 self?.onboarding.present()
             }
+            // A first launch has nothing to compare against, so this release counts as seen.
+            whatsNew.markSeen()
+        } else if whatsNew.shouldPresent {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) { [weak self] in
+                self?.whatsNew.present()
+            }
         }
     }
 
@@ -104,9 +113,11 @@ final class AppEnvironment {
         nowPlaying.stop()
         calendarService.stop()
         clipboard.stop()
+        linkShelf.stop()
         timer.stop()
         battery.stop()
         shelf.stop()
+        // Also removes the key tap, so the volume and brightness keys go straight back to macOS.
         hud.stop()
         audioAnalyzer.stop()
         notchWindows.stop()
@@ -132,6 +143,7 @@ final class AppEnvironment {
         bluetooth.refresh()
         shelf.settingsChanged()
         clipboard.settingsChanged()
+        linkShelf.settingsChanged()
         hud.applySettings()
         applyAudioAnalysisSetting()
         gestures.applySettings()
@@ -207,9 +219,12 @@ final class AppEnvironment {
             )
         )
 
-        // The sneak peek is a V2 feature, so it stays behind both the flag and the setting.
-        guard FeatureFlag.liveActivities.isEnabled, settings.media.sneakPeekOnTrackChange else { return }
-        notchWindows.peekAll()
+        // Only for a track that is actually playing. A paused track loading when a player
+        // opens is not news, and peeking for it announces a song nobody is hearing.
+        guard FeatureFlag.liveActivities.isEnabled,
+              settings.media.sneakPeekOnTrackChange,
+              track.isPlaying else { return }
+        notchWindows.peekAll(duration: 2.6)
     }
 
     /// Mirrors the timer into the pill, so a countdown is visible with the notch closed.

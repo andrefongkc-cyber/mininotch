@@ -36,8 +36,9 @@ struct HUDSettings: Codable, Equatable {
 
     /// Hide macOS's own overlay so only MinNotch's indicator appears.
     ///
-    /// Works by terminating the system's overlay helper, which launchd restarts on demand.
-    /// Off by default because killing a system process should be a deliberate choice.
+    /// Works by taking the volume and brightness keys before macOS sees them, which needs
+    /// Accessibility access; see `SystemKeyInterceptor`. Off by default, because an app reading
+    /// key presses should be something the user chose.
     var suppressSystemOverlay: Bool = false
 
     init() {}

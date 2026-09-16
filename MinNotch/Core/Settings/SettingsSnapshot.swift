@@ -8,7 +8,7 @@ import Foundation
 struct SettingsSnapshot: Codable, Equatable {
     /// Bumped only for changes a lenient decode cannot absorb, e.g. a key whose meaning
     /// changed. `SettingsMigrator` handles those.
-    static let currentSchemaVersion = 1
+    static let currentSchemaVersion = 2
 
     var schemaVersion: Int = SettingsSnapshot.currentSchemaVersion
     var general = GeneralSettings()
@@ -47,8 +47,19 @@ struct SettingsSnapshot: Codable, Equatable {
 enum SettingsMigrator {
     static func migrate(_ snapshot: SettingsSnapshot) -> SettingsSnapshot {
         var result = snapshot
-        // Example shape for a future migration:
-        // if result.schemaVersion < 2 { ...; }
+
+        // Version 2 turned on two things that could not be turned on before. Shuffle was not
+        // offered in the transport arrangement and the sneak peek's switch was a disabled
+        // "Coming soon" control, so a saved file without shuffle, or with the peek off,
+        // records no decision the user made. Both are applied once; after the next save the
+        // file says version 2 and whatever the user then chooses is left alone.
+        if result.schemaVersion < 2 {
+            if !result.media.controlOrder.contains(.shuffle) {
+                result.media.controlOrder.insert(.shuffle, at: 0)
+            }
+            result.media.sneakPeekOnTrackChange = true
+        }
+
         result.schemaVersion = SettingsSnapshot.currentSchemaVersion
         return result
     }

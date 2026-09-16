@@ -17,6 +17,8 @@ final class NowPlayingController {
     /// Why the lyric strip looks the way it does. Without this the strip silently renders
     /// nothing when a lookup fails, which is indistinguishable from the feature being broken.
     private(set) var lyricsStatus: LyricsStatus = .idle
+    /// The next few tracks, or why they cannot be listed. Apple Music only.
+    private(set) var upNext: UpNextState = .idle
 
     /// True while the user is dragging the scrubber, so incoming positions are ignored
     /// until they let go and the seek lands.
@@ -74,6 +76,12 @@ final class NowPlayingController {
     /// Called when Settings > Media changes, since the poll interval and preferred source
     /// both live there.
     func settingsChanged() {
+        // Switching the online lookup off also forgets what it found. The cache is a record
+        // of songs looked up online, and turning that off is the user saying they would
+        // rather it had not happened, not merely that it should stop.
+        if let settings, !settings.media.lyricsSource.usesNetwork {
+            LyricsCache.shared.removeAll()
+        }
         restartTimer()
         refresh()
     }
@@ -183,9 +191,45 @@ final class NowPlayingController {
         onTrackChange?(snapshot)
         loadArtwork(from: source, for: snapshot)
         loadLyrics(for: snapshot)
+        loadUpNext(from: source, for: snapshot)
+    }
+
+    // MARK: Up Next
+
+    /// How many upcoming tracks the row reads. Three is what fits on one line after the first.
+    static let upNextLimit = 3
+
+    /// Whether the card should reserve and draw its Up Next row right now.
+    ///
+    /// Read by the card and by both surfaces that size it, so the row's height is only ever
+    /// counted when the row is actually there.
+    var showsUpNext: Bool {
+        guard let settings, settings.media.showUpNext, settings.media.enabled else { return false }
+        return track?.sourceKind == .appleMusic
+    }
+
+    /// Reads the queue once per track, not once per poll.
+    ///
+    /// The read is a separate Apple Event round trip that walks the playlist, so doing it on
+    /// every position poll would cost a tenth of a second on the queue every media read
+    /// shares. The queue only changes when the track does, or when shuffle is flipped.
+    private func loadUpNext(from source: MediaSource, for snapshot: NowPlayingTrack) {
+        guard showsUpNext else {
+            upNext = .idle
+            return
+        }
+        let key = snapshot.artworkKey
+        AppleScriptRunner.shared.queue.async { [weak self] in
+            let state = source.upNext(limit: Self.upNextLimit)
+            DispatchQueue.main.async {
+                guard let self, self.track?.artworkKey == key else { return }
+                self.upNext = state
+            }
+        }
     }
 
     private func clear() {
+        upNext = .idle
         track = nil
         artwork = nil
         palette = .fallback
@@ -343,10 +387,23 @@ final class NowPlayingController {
         guard let kind = track?.sourceKind ?? stickySource else { return }
         let source = sourceFor(kind)
 
+        // Shuffle is shown flipped at once and confirmed by the read-back below. Waiting for
+        // the round trip left the button looking unresponsive for a noticeable beat.
+        if command == .toggleShuffle, let current = track?.isShuffling {
+            track?.isShuffling = !current
+        }
+
         AppleScriptRunner.shared.queue.async { [weak self] in
             source.send(command)
             // Read back promptly so the button state reflects reality rather than a guess.
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) { self?.refresh() }
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
+                guard let self else { return }
+                self.refresh()
+                // Shuffle changes what plays next, so the queue has to be read again.
+                if command == .toggleShuffle, let track = self.track {
+                    self.loadUpNext(from: source, for: track)
+                }
+            }
         }
     }
 
@@ -369,7 +426,13 @@ final class NowPlayingController {
     /// Whether a control is backed by a real command for the active source.
     func supports(_ control: MediaControl) -> Bool {
         guard control.isImplemented else { return false }
-        return true
+        switch control {
+        case .shuffle:
+            // Only the scriptable players have a shuffle to flip; MediaRemote clients do not.
+            return track?.sourceKind == .appleMusic || track?.sourceKind == .spotify
+        default:
+            return true
+        }
     }
 
     private func sourceFor(_ kind: MediaSourceKind) -> MediaSource {
@@ -391,7 +454,11 @@ final class NowPlayingController {
 #if DEBUG
 extension NowPlayingController {
     /// Injects a fixed track and artwork for offscreen design review.
-    func applySample() {
+    /// `settings` is attached without starting anything, so a capture can see the settings-
+    /// dependent parts of the card, such as whether Up Next shows, without the controller
+    /// polling the real player and replacing the sample with whatever is actually playing.
+    func applySample(settings: SettingsStore? = nil) {
+        if let settings { self.settings = settings }
         track = NowPlayingTrack(
             title: "Weightless in the Blue Hour",
             artist: "Aoife Lennox",
@@ -401,8 +468,14 @@ extension NowPlayingController {
             isPlaying: true,
             sourceKind: .appleMusic,
             sourceAppName: "Music",
-            trackIdentity: "sample"
+            trackIdentity: "sample",
+            isShuffling: false
         )
+        upNext = .loaded([
+            UpNextItem(title: "Paper Lanterns", artist: "Aoife Lennox"),
+            UpNextItem(title: "Low Tide Radio", artist: "Aoife Lennox"),
+            UpNextItem(title: "Everything Is Quiet Here", artist: "Aoife Lennox")
+        ])
 
         // A flat two-tone square stands in for artwork; it exercises the same layout and
         // the same palette extraction path as a real cover would.

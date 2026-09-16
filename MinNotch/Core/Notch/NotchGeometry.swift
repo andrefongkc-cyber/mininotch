@@ -46,9 +46,7 @@ struct NotchGeometry: Equatable {
         }
 
         let expanded = CGSize(
-            // The expanded panel's top strip puts controls either side of the cutout, so
-            // the panel has to be wide enough to leave usable room on both flanks.
-            width: max(CGFloat(settings.appearance.expandedWidth), collapsed.width + 260),
+            width: max(panelWidth(settings: settings, cutoutWidth: collapsed.width), collapsed.width + 260),
             height: Metrics.maxPanelHeight
         )
 
@@ -73,6 +71,23 @@ struct NotchGeometry: Equatable {
             expandedSize: expanded,
             windowFrame: windowFrame
         )
+    }
+
+    /// Width of the open panel: the user's choice, widened only if the top bar cannot fit every
+    /// item either side of the cutout even with its buttons at their tightest.
+    ///
+    /// The top bar puts controls either side of the cutout, so the panel also has to leave
+    /// usable room on both flanks, which `make` adds on top.
+    static func panelWidth(settings: SettingsStore, cutoutWidth: CGFloat) -> CGFloat {
+        let minimum = TopStripLayout.minimumPanelWidth(
+            leading: settings.appearance.topStripLeading,
+            trailing: settings.appearance.topStripTrailing,
+            availableTabs: NotchWidgetRegistry.shownTabs(settings),
+            showPercentage: settings.battery.showPercentage,
+            showsDebug: settings.advanced.showDebugButtons,
+            cutoutWidth: cutoutWidth
+        )
+        return max(CGFloat(settings.appearance.expandedWidth), minimum)
     }
 
     /// Measures the hardware notch, or returns nil when the display has none.

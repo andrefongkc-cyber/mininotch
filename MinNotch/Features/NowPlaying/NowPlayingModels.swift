@@ -17,6 +17,8 @@ struct NowPlayingTrack: Equatable {
     var sourceAppName: String
     /// Player-specific identity, used to tell a genuine track change from a metadata refresh.
     var trackIdentity: String
+    /// Whether the player is shuffling, or nil when the source cannot say.
+    var isShuffling: Bool? = nil
 
     /// Identity of the artwork, so it is only re-fetched when the album actually changes.
     var artworkKey: String { "\(sourceKind.rawValue)|\(album)|\(artist)|\(title)" }
@@ -43,6 +45,27 @@ struct NowPlayingTrack: Equatable {
             trackIdentity: ""
         )
     }
+}
+
+/// A track that plays after the current one.
+struct UpNextItem: Equatable, Identifiable {
+    let id = UUID()
+    var title: String
+    var artist: String
+
+    static func == (lhs: UpNextItem, rhs: UpNextItem) -> Bool {
+        lhs.title == rhs.title && lhs.artist == rhs.artist
+    }
+}
+
+/// What the Up Next row has to show.
+enum UpNextState: Equatable {
+    /// Not asked, or the source has no concept of a queue.
+    case idle
+    case loaded([UpNextItem])
+    /// Asked, and there is a reason nothing can be listed. The message is shown in the row,
+    /// so an empty row always explains itself.
+    case unavailable(String)
 }
 
 /// A transport command sent back to the active player.
@@ -74,10 +97,13 @@ protocol MediaSource: AnyObject {
     func send(_ command: MediaCommand)
     /// Distributed notification names this source posts, used to avoid polling where possible.
     var changeNotificationNames: [String] { get }
+    /// The next few tracks, when the source can read them. Called off the main thread.
+    func upNext(limit: Int) -> UpNextState
 }
 
 extension MediaSource {
     var changeNotificationNames: [String] { [] }
+    func upNext(limit: Int) -> UpNextState { .idle }
 }
 
 /// One word of a lyric line, with the window during which it is being sung.

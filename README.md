@@ -15,9 +15,9 @@ Open `MinNotch.xcodeproj` in Xcode 16 or later and run, or from the terminal:
 Scripts/run.sh
 ```
 
-Building re-signs the app, and because it is currently signed ad-hoc rather than with a real
-identity, that resets every permission you have granted it. To relaunch the existing build
-without losing them:
+The project signs with the author's free personal Apple team. To build it yourself, set your
+own team in Xcode under Signing & Capabilities, or your build will fail to sign. To relaunch
+the existing build without rebuilding:
 
 ```bash
 Scripts/run.sh --no-build
@@ -34,7 +34,8 @@ Settings › Advanced › Show Welcome Again.
 ## What it does today
 
 - **Now Playing** for Apple Music, Spotify, and a system-wide fallback that covers other
-  apps. Album art, a scrubber you can drag to seek, transport controls, and optional lyrics.
+  apps. Album art, a scrubber you can drag to seek, transport controls with shuffle, optional
+  lyrics, Up Next for Apple Music, and a small sneak peek when the song changes.
 - **Calendar** showing the current week or month with your upcoming events, from the system
   Calendar, with per-calendar visibility.
 - **Battery** in the pill and in more detail when expanded, with a low-battery alert.
@@ -43,8 +44,10 @@ Settings › Advanced › Show Welcome Again.
 - **Reminders** mixed into the upcoming list, tickable from the notch, with a quick-add field
   for new events and reminders.
 - **Shelf** to park files on the notch and drag them out somewhere else.
-- **HUDs** showing volume, brightness, and keyboard backlight at the notch.
-- **Ambient lighting** around the notch, the panel, or the album art, in five styles, with
+- **Link Shelf** to keep web links in the notch with their page titles, and open or copy them.
+- **HUDs** showing volume, brightness, and keyboard backlight at the notch, optionally
+  instead of Apple's own overlay (needs Accessibility access).
+- **Ambient lighting** around the closed notch or the open panel, in five styles, with
   colours taken from the cover. It follows the beat when the system audio permission can be
   granted, and animates on its own when it cannot.
 - **Clipboard history** for text, links, colours, and images, with pinning. Kept in memory
@@ -54,7 +57,7 @@ Settings › Advanced › Show Welcome Again.
 - **Floating Now Playing window**, for an external display with no notch to look at.
 - **Two-finger swipes** to change tab or open and close, with optional haptics.
 - **Drag-to-arrange layouts** for the transport controls, the closed pill's two sides, and
-  the panel's top strip.
+  the open panel's top bar, tabs included.
 - **Settings** in a separate window laid out like macOS System Settings, with search: press
   ⌘F and type, and choosing a result takes you straight to the setting.
 
@@ -86,7 +89,8 @@ default until one is added.
 
 ## A note on signing
 
-This project has no code signing identity, so builds are ad-hoc signed. That has three
-consequences worth knowing before you file a bug: the system audio permission cannot be
-granted at all, every rebuild resets every other permission you have granted, and the app
-cannot be notarised or distributed. A free Apple ID is enough to fix the first two.
+The app is signed with a free personal Apple team, which is enough to keep the permissions you
+grant it across rebuilds, and enough for macOS to offer the system audio permission the
+ambient lighting wants. It is not enough to notarise the app: that needs a paid Apple Developer
+Program membership, so a downloaded build still has to be opened once through
+Privacy & Security > Open Anyway.

@@ -190,20 +190,17 @@ struct AmbientLightingCard: View {
             RoundedRectangle(cornerRadius: 8, style: .continuous)
                 .fill(Color.black)
 
-            // A reader at the call site rather than inside the glow. Nothing here animates,
-            // so measuring is safe, which it is not on the notch.
-            GeometryReader { proxy in
-                AmbientGlowView(
-                    pathBuilder: AmbientGlowGeometry.artworkPath(cornerRadius: 10),
-                    settings: previewSettings(glow),
-                    palette: environment.nowPlaying.palette,
-                    // Always animates here, so the preview shows the style even with nothing
-                    // playing. The real surfaces settle when playback stops.
-                    isPlaying: true,
-                    audio: environment.audioAnalyzer.current == nil ? nil : environment.audioAnalyzer,
-                    outlineSize: proxy.size
-                )
-            }
+            AmbientGlowView(
+                outline: .roundedRect(cornerRadius: 10),
+                settings: previewSettings(glow),
+                palette: environment.nowPlaying.palette,
+                // Always animates here, so the preview shows the style even with nothing
+                // playing. The real surfaces settle when playback stops.
+                isPlaying: true,
+                audio: environment.audioAnalyzer.current == nil ? nil : environment.audioAnalyzer,
+                // Roughly the preview box; only used to cap the blur.
+                sizeHint: CGSize(width: 300, height: 50)
+            )
             .padding(18)
 
             if !glow.isEnabled {
@@ -218,12 +215,12 @@ struct AmbientLightingCard: View {
         .padding(.vertical, 10)
     }
 
-    /// The preview ignores the enabled switch and the placement set, since it is showing what
-    /// the style looks like rather than where it would appear.
+    /// The preview ignores the enabled switch, since it is showing what the style looks like
+    /// rather than whether it is on. It draws against a rounded square because that reads at
+    /// this size; the glow itself only appears on the notch.
     private func previewSettings(_ glow: AmbientGlowSettings) -> AmbientGlowSettings {
         var preview = glow
         preview.isEnabled = true
-        preview.placements = [.albumArt]
         preview.glowRadius = min(glow.glowRadius, 14)
         return preview
     }

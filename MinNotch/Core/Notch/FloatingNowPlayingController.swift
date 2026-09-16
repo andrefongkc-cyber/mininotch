@@ -32,7 +32,8 @@ final class FloatingNowPlayingController {
     /// leave the strip clipped against the bottom of the window.
     private var size: CGSize {
         let card = NowPlayingCardView.preferredHeight(
-            showingLyrics: environment.settings.media.showLyrics
+            showingLyrics: environment.settings.media.showLyrics,
+            showingUpNext: environment.nowPlaying.showsUpNext
         )
         return CGSize(width: Self.width, height: card + Self.topChrome + Self.bottomChrome)
     }
@@ -55,7 +56,7 @@ final class FloatingNowPlayingController {
     ///
     /// Anchored at the top left, because an `NSWindow` frame grows upward from its origin
     /// and the window would otherwise appear to jump when the lyric strip is switched on.
-    private func resizeToFitCard() {
+    func resizeToFitCard() {
         guard let panel else { return }
         let target = size
         guard abs(panel.frame.height - target.height) > 0.5 else { return }
@@ -92,7 +93,10 @@ final class FloatingNowPlayingController {
         panel.animationBehavior = .utilityWindow
         panel.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary]
 
-        let root = FloatingNowPlayingView { [weak self] in self?.dismissFromChrome() }
+        let root = FloatingNowPlayingView(
+            onClose: { [weak self] in self?.dismissFromChrome() },
+            onLayoutChange: { [weak self] in self?.resizeToFitCard() }
+        )
             .environment(environment)
             .environment(environment.settings)
 
@@ -131,6 +135,11 @@ final class FloatingNowPlayingController {
 /// mode.
 private struct FloatingNowPlayingView: View {
     var onClose: () -> Void
+    /// Called when something the window's height depends on changes without a settings
+    /// change, such as switching from Spotify to Music, which adds the Up Next row.
+    var onLayoutChange: () -> Void
+
+    @Environment(AppEnvironment.self) private var environment
 
     @State private var isHovering = false
 
@@ -144,6 +153,7 @@ private struct FloatingNowPlayingView: View {
             .overlay(alignment: .topLeading) { closeButton }
             .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
             .onHover { isHovering = $0 }
+            .onChange(of: environment.nowPlaying.showsUpNext) { onLayoutChange() }
     }
 
     /// Appears on hover, the way a media window's chrome usually does, so the card is not

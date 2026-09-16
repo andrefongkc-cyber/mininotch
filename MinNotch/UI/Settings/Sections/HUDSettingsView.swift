@@ -54,15 +54,31 @@ struct HUDSettingsView: View {
 
             SettingsCard(
                 header: "System Overlay",
-                footer: "There is no supported way to hide Apple's overlay. This terminates the helper process that draws it, which macOS restarts on demand, so nothing is permanently changed. It can still flicker into view before it goes."
+                footer: "MinNotch takes the volume and brightness keys before macOS sees them, sets the level itself, and shows only its own indicator. This needs Accessibility access. Keyboard backlight keys are left to macOS. Quitting MinNotch gives the keys straight back."
             ) {
                 SettingsRow(
                     title: "Hide the System Overlay",
-                    subtitle: "Show only MinNotch's indicator instead of both.",
-                    systemImage: "rectangle.slash",
-                    isEnabled: SystemOSDSuppressor.isAvailable
+                    subtitle: "Show only MinNotch's volume and brightness indicator instead of both. Works for whichever of those two is switched on above.",
+                    systemImage: "rectangle.slash"
                 ) {
                     SettingsToggle(isOn: $settings.huds.suppressSystemOverlay)
+                }
+                .onChange(of: settings.huds.suppressSystemOverlay) { _, isOn in
+                    // Asked for here, when the user has just switched it on, and never at launch.
+                    if isOn, !SystemKeyInterceptor.isTrusted { coordinator.requestAccessibility() }
+                }
+
+                if coordinator.needsAccessibility {
+                    SettingsDivider()
+
+                    SettingsRow(
+                        title: "Accessibility Access Needed",
+                        subtitle: "Turn on MinNotch in Privacy & Security > Accessibility. Until then Apple's overlay still appears. After installing a new copy of MinNotch, remove it from the list and add it again.",
+                        systemImage: "exclamationmark.triangle"
+                    ) {
+                        Button("Open Settings") { SystemKeyInterceptor.openAccessibilitySettings() }
+                            .controlSize(.small)
+                    }
                 }
             }
 

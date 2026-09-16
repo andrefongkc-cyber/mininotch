@@ -63,6 +63,9 @@ struct SlotLayoutEditor<Item: LayoutArrangeable>: View {
     var paletteHint: String = "Drag here to remove"
     /// Restricts what the palette offers, for a caller whose catalogue is context-dependent.
     var catalogue: [Item] = Item.arrangeableCatalogue
+    /// False for an item that may be moved but never taken out, such as a top bar tab, which
+    /// would otherwise leave a feature that is switched on with no way to reach it.
+    var canRemove: (Item) -> Bool = { _ in true }
 
     @State private var targetedZone: String?
 
@@ -84,8 +87,8 @@ struct SlotLayoutEditor<Item: LayoutArrangeable>: View {
                 id: Self.paletteID,
                 items: unplaced,
                 emptyHint: "Everything is in use",
-                onDropItem: { removeEverywhere($0) },
-                chipDrop: { dropped, _ in removeEverywhere(dropped) }
+                onDropItem: { remove($0) },
+                chipDrop: { dropped, _ in remove(dropped) }
             )
         }
     }
@@ -107,7 +110,8 @@ struct SlotLayoutEditor<Item: LayoutArrangeable>: View {
                 .font(Typography.helper)
                 .foregroundStyle(Palette.secondaryText)
 
-            HStack(spacing: 6) {
+            // Wraps rather than running off the card: the top bar's lanes can hold every tab.
+            WrappingRow(spacing: 6) {
                 if items.isEmpty {
                     Text(emptyHint)
                         .font(Typography.helper)
@@ -125,7 +129,6 @@ struct SlotLayoutEditor<Item: LayoutArrangeable>: View {
                             }
                     }
                 }
-                Spacer(minLength: 0)
             }
             .frame(maxWidth: .infinity, minHeight: 30, alignment: .leading)
             .padding(.horizontal, 8)
@@ -199,9 +202,67 @@ struct SlotLayoutEditor<Item: LayoutArrangeable>: View {
         zone.items.wrappedValue.insert(item, at: index)
     }
 
+    /// Dropping on the palette takes the item out, unless it is one that has to stay placed.
+    private func remove(_ item: Item) {
+        guard canRemove(item) else { return }
+        removeEverywhere(item)
+    }
+
     private func removeEverywhere(_ item: Item) {
         for zone in zones {
             zone.items.wrappedValue.removeAll { $0 == item }
         }
+    }
+}
+
+/// Lays its children out left to right, starting a new line when the next one would not fit.
+struct WrappingRow: Layout {
+    var spacing: CGFloat = 6
+
+    func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
+        let rows = arrange(subviews, width: proposal.width ?? .infinity)
+        let width = proposal.width ?? rows.map(\.width).max() ?? 0
+        let height = rows.reduce(0) { $0 + $1.height } + spacing * CGFloat(max(rows.count - 1, 0))
+        return CGSize(width: width, height: height)
+    }
+
+    func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) {
+        var y = bounds.minY
+        for row in arrange(subviews, width: bounds.width) {
+            var x = bounds.minX
+            for index in row.indices {
+                let size = subviews[index].sizeThatFits(.unspecified)
+                subviews[index].place(
+                    at: CGPoint(x: x, y: y + (row.height - size.height) / 2),
+                    proposal: ProposedViewSize(size)
+                )
+                x += size.width + spacing
+            }
+            y += row.height + spacing
+        }
+    }
+
+    private struct Row {
+        var indices: [Int] = []
+        var width: CGFloat = 0
+        var height: CGFloat = 0
+    }
+
+    private func arrange(_ subviews: Subviews, width: CGFloat) -> [Row] {
+        var rows: [Row] = []
+        var current = Row()
+        for index in subviews.indices {
+            let size = subviews[index].sizeThatFits(.unspecified)
+            let needed = current.indices.isEmpty ? size.width : current.width + spacing + size.width
+            if needed > width, !current.indices.isEmpty {
+                rows.append(current)
+                current = Row()
+            }
+            current.width = current.indices.isEmpty ? size.width : current.width + spacing + size.width
+            current.height = max(current.height, size.height)
+            current.indices.append(index)
+        }
+        if !current.indices.isEmpty { rows.append(current) }
+        return rows
     }
 }

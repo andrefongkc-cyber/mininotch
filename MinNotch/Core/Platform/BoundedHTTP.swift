@@ -27,6 +27,14 @@ import Foundation
 final class BoundedHTTPClient: NSObject {
     private let maxBytes: Int
     private let allowedHosts: Set<String>?
+    /// Deliver the first `maxBytes` instead of nothing when a body is larger. For reading a
+    /// page's title, which sits at the top, a truncated page is exactly as useful as a whole
+    /// one; for a lyric sheet or an image it would be corrupt, so it is off by default.
+    private let truncatesAtLimit: Bool
+    /// Follow redirects to a different HTTPS host. Off by default, because a lyrics query names
+    /// what someone is listening to and must not be handed on; a link someone dropped on the
+    /// shelf is a page they chose to visit, and most short links redirect somewhere else.
+    private let followsCrossHostRedirects: Bool
     private var session: URLSession!
 
     /// Per-task buffer and completion, guarded because `fetch` registers on the caller's
@@ -35,6 +43,7 @@ final class BoundedHTTPClient: NSObject {
         var buffer = Data()
         var host: String
         var completion: (Data?) -> Void
+        var wasTruncated = false
     }
     private var pending: [Int: Pending] = [:]
     private let lock = NSLock()
@@ -43,9 +52,17 @@ final class BoundedHTTPClient: NSObject {
     ///   - maxBytes: hard ceiling on one response body.
     ///   - allowedHosts: lower-cased hosts this client may talk to, or nil for any HTTPS host.
     ///   - timeout: seconds before a request is abandoned.
-    init(maxBytes: Int, allowedHosts: Set<String>? = nil, timeout: TimeInterval = 8) {
+    init(
+        maxBytes: Int,
+        allowedHosts: Set<String>? = nil,
+        timeout: TimeInterval = 8,
+        truncatesAtLimit: Bool = false,
+        followsCrossHostRedirects: Bool = false
+    ) {
         self.maxBytes = maxBytes
         self.allowedHosts = allowedHosts
+        self.truncatesAtLimit = truncatesAtLimit
+        self.followsCrossHostRedirects = followsCrossHostRedirects
         super.init()
 
         let configuration = URLSessionConfiguration.ephemeral
@@ -134,7 +151,8 @@ extension BoundedHTTPClient: URLSessionDataDelegate {
         }
         // A declared length over the cap is refused before a single byte of body is read.
         // `expectedContentLength` is -1 when the server does not say, which is not an error.
-        guard response.expectedContentLength <= Int64(maxBytes) else {
+        // A truncating client reads the start of it anyway and stops at the cap.
+        guard truncatesAtLimit || response.expectedContentLength <= Int64(maxBytes) else {
             completionHandler(.cancel)
             return
         }
@@ -148,6 +166,10 @@ extension BoundedHTTPClient: URLSessionDataDelegate {
         guard var entry = pending[identifier] else { lock.unlock(); return }
         entry.buffer.append(data)
         let overflowed = entry.buffer.count > maxBytes
+        if overflowed && truncatesAtLimit {
+            entry.buffer = entry.buffer.prefix(maxBytes)
+            entry.wasTruncated = true
+        }
         pending[identifier] = entry
         lock.unlock()
 
@@ -170,7 +192,7 @@ extension BoundedHTTPClient: URLSessionDataDelegate {
         guard let url = request.url,
               accepts(url),
               let host = url.host?.lowercased(),
-              host == origin
+              host == origin || followsCrossHostRedirects
         else {
             // nil declines the redirect and completes the task with what it has, which is
             // nothing, so this surfaces as an ordinary failure.
@@ -187,7 +209,9 @@ extension BoundedHTTPClient: URLSessionDataDelegate {
         let entry = pending[identifier]
         lock.unlock()
 
-        guard error == nil, let entry, !entry.buffer.isEmpty, entry.buffer.count <= maxBytes else {
+        // A truncated body ends in a cancellation this client asked for, which is not a failure.
+        let succeeded = error == nil || entry?.wasTruncated == true
+        guard succeeded, let entry, !entry.buffer.isEmpty, entry.buffer.count <= maxBytes else {
             finish(identifier, with: nil)
             return
         }

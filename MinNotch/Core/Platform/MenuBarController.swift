@@ -62,6 +62,14 @@ final class MenuBarController {
         settings.target = self
         menu.addItem(settings)
 
+        let whatsNew = NSMenuItem(
+            title: "What's New…",
+            action: #selector(openWhatsNew),
+            keyEquivalent: ""
+        )
+        whatsNew.target = self
+        menu.addItem(whatsNew)
+
         menu.addItem(.separator())
 
         let quit = NSMenuItem(title: "Quit MinNotch", action: #selector(quit), keyEquivalent: "q")
@@ -73,5 +81,6 @@ final class MenuBarController {
 
     @objc private func toggleNotch() { environment.notchWindows.toggleFrontmost() }
     @objc private func openSettings() { environment.openSettings() }
+    @objc private func openWhatsNew() { environment.whatsNew.present() }
     @objc private func quit() { environment.quit() }
 }

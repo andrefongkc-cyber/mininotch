@@ -6,24 +6,34 @@ NotchNook, Alcove, and TheBoringNotch.
 
 Read this file first in a new session, then `WORKPLAN.md` for what to build next.
 
+**Keeping the workplan current is part of every task, not a wrap-up step.** The first line of
+`WORKPLAN.md` is `Status: doing X, next: Y`. Set it when a task starts, and flip that task's
+checkbox (`[ ]` not started, `[~]` in progress, `[x]` done) after each meaningful change, not
+only at the end. The point is that a fresh session, or this one after context compaction, can
+read one line and resume. Do not create a second workplan or a second CLAUDE.md; these two are
+the only ones, and they are updated in place.
+
 ## Start here
 
 The app builds clean, runs, and is feature-complete for everything in `WORKPLAN.md` marked
-`[x]`. Roughly 115 Swift files. One thing blocks progress on several fronts
-at once:
+`[x]`. Roughly 120 Swift files.
 
-**There is no code signing identity on this machine.** The app is ad-hoc signed, which means
-every rebuild is a different app to macOS. Consequences, in order of how much they hurt:
+**It is signed, as of 2026-09-15, with the user's free personal team** (`CODE_SIGN_STYLE =
+Automatic`, `DEVELOPMENT_TEAM = YOUR_TEAM_ID`, Apple Development certificate valid to September
+2027, no provisioning profile needed for a local Mac build). `codesign -dv` on the built app
+must show `flags=0x10000(runtime)` and a real `TeamIdentifier`; an ad-hoc build shows
+`flags=0x2(adhoc)` and means signing has broken. What that changed, and what it did not:
 
-1. The system audio permission cannot be granted at all, so the audio-reactive ambient glow
-   is permanently on its fallback animation and its FFT has never seen real signal.
-2. Calendar, Reminders, Automation, and screen recording grants reset on every build. Use
-   `Scripts/run.sh --no-build` to relaunch without losing them.
-3. Nothing can be notarised or distributed.
+1. The signature is stable across rebuilds, so TCC grants should now survive a build rather
+   than resetting every time. Not yet confirmed by watching a grant survive one.
+2. `ENABLE_RESOURCE_ACCESS_AUDIO_INPUT = YES` is set, the hardened runtime is applied, and the
+   binary carries `com.apple.security.device.audio-input`, so the system audio permission is
+   no longer refused before it is asked for. Whether the tap now delivers real signal is
+   **still unverified**; `--check-audio` is how to find out.
+3. Notarisation still needs a paid Developer Program membership, which the user does not have,
+   so shared builds are still an unsigned-looking DMG that needs Open Anyway.
 
-The fix is the user signing in to Xcode with any Apple ID, including a free one, then setting
-`DEVELOPMENT_TEAM` and `CODE_SIGN_STYLE = Automatic` in `project.pbxproj`. Ask before
-assuming it has been done; check with `security find-identity -v -p codesigning`.
+Anyone else building this has to set their own team, or signing fails.
 
 ## Build, run, review
 
@@ -40,7 +50,7 @@ Debug-only command line flags on the binary itself, all `#if DEBUG`:
 MinNotch --render-previews <dir>                                  # what preview.sh calls
 MinNotch --capture-notch out.png [--collapsed] [--tab system] [--glow bars|off] [--debug]
                                  [--hold 12] [--midway 0.14] [--extended] [--virtual]
-                                 [--timer 12]
+                                 [--timer 12] [--width 460] [--right timer,settings,battery]
 MinNotch --check-lyrics "Khalid" "8TEEN" 229                      # LRCLIBClient + LRCParser
 MinNotch --check-stats 5                                          # CPU/GPU/memory/network
 MinNotch --check-audio 8 [--out f]                                # Core Audio tap
@@ -48,7 +58,11 @@ MinNotch --check-glow 2 [--source step|fallback]                  # glow shaping
 MinNotch --check-settings file.minnotch                           # import bounds
 MinNotch --check-settings-search pomodoro glow                    # search ranking
 MinNotch --capture-onboarding <dir> [--rerun]                     # tutorial, every page
+MinNotch --capture-whats-new <dir>                                # release notes window and notes
 MinNotch --check-permissions [--request] [--out f]                # TCC state
+MinNotch --check-media [--scripts <dir>] [--out f]                # snapshot, shuffle, Up Next
+MinNotch --check-keys [--simulate] [--control] [--out f]          # volume/brightness key tap
+MinNotch --check-links "<url or text>" ...                        # link shelf: titles, icons, refusals
 ```
 
 `--capture-notch` grew three options for the animated effects. `--glow off` disables the
@@ -147,14 +161,17 @@ MinNotch/
     Bluetooth/    accessory charge from the IO registry
     Shelf/        the drag-and-drop file tray
     Clipboard/    copy history, polled
+    LinkShelf/    saved web links, page titles and icons
     Timer/        countdown and the Pomodoro cycle on top of it
     HUD/          volume, brightness and keyboard backlight monitors
     AmbientGlow/  glow styles, geometry, and the Core Audio tap
     Onboarding/   first-launch tutorial: feature catalogue, presets, coordinator
+    WhatsNew/     release notes shown once per release at launch
   UI/
     Notch/        the notch surface and its widgets
     Settings/     the Settings window, sidebar, search index, and one file per pane
     Onboarding/   the tutorial's pages
+    WhatsNew/     the release notes window
 Config/           Info.plist and entitlements, outside the synced folder so neither is
                   copied in as a resource
 Scripts/          build, run, preview
@@ -211,14 +228,19 @@ Scripts/          build, run, preview
   you most want to see how long is left. If two things are both worth knowing, the flank has
   room for both, and `leadingContentWidth` adds them up in the same order and with the same
   spacings the view uses.
-- **What the pill and the top strip show is arranged, not assigned.** `SlotLayoutEditor` is
+- **What the pill and the top bar show is arranged, not assigned.** `SlotLayoutEditor` is
   one drag-to-arrange component used three times: the media transport row, the two flanks of
-  the closed pill, and the open panel's trailing top strip. Two things are deliberately not
-  destinations, and both are load-bearing. The dead zone over the camera housing is a
-  `Spacer` with nothing in it, which is the only reason clicks there fall through to the
-  desktop. And the tab strip keeps the leading side of the top strip, because its position is
-  what aligns it to the left of the cutout. Adding either to a layout would break something
-  that currently works by construction.
+  the closed pill, and the open panel's top bar, both sides, tabs included. The dead zone over
+  the camera housing is deliberately not a destination: it is a `Spacer` with nothing in it,
+  which is the only reason clicks there fall through to the desktop.
+- **The top bar's arrangement is a preference; `TopStripLayout` decides placement.** Every
+  enabled feature adds a tab, and a fixed tab strip on the left pushed the seventh (Links)
+  behind the camera housing. Items that do not fit on their side cross to the other side next
+  to the cutout, keeping the order of both lists read end to end; then buttons tighten from 28
+  to 21 points; only then does `NotchGeometry.panelWidth` widen the panel. The view and the
+  geometry both read widths from `TopStripLayout`, so they cannot disagree. Tabs cannot be
+  removed from the bar (`canRemove`), because a feature that is on must stay reachable, and a
+  tab missing from both saved lists joins the left at display time.
 - **Nothing may hardcode which indicator is the wide one.** `flankWidth` sums whatever the
   user assigned to each side, in their order, with the same spacings the view lays out, and
   takes the larger of the two. It used to know that artwork was 18 points and battery was
@@ -266,16 +288,21 @@ Scripts/          build, run, preview
   deliberately larger than the outline it traces, down and right by the whole spill, so the
   light no longer sat on the panel it was tracing. If a layer is bigger than the thing it
   decorates, it has to be centred on it.
-- **`GeometryReader` reports where the layout is going, not where it is.** During an animated
-  frame change the view's frame interpolates and the reader's `proxy.size` does not: it hands
-  back the destination immediately. That is why the ambient glow snaps to the fully open
-  outline while the black fill is still growing. Measured off the real panel with
-  `--capture-notch --midway`: 140 ms into a 520 ms spring the fill was 670 points wide and the
-  glow was already drawing 1170. Moving the reader outside the `TimelineView`, removing
-  `drawingGroup()`, and pausing the timeline for the length of the transition all failed,
-  because none of them is the cause. Anything that must follow an animating size has to carry
-  that size in a `Shape`'s `animatableData`, which is the one mechanism here that does
-  interpolate, and is already how `NotchShape` animates its corners. **This is still open.**
+- **A view inserted during an animation takes its final layout on its first frame.** That, not
+  `GeometryReader`, is why the ambient glow jumped to the fully open outline while the fill was
+  still growing: with the glow on for the open panel and off for the closed notch, the glow was
+  *inserted* when the notch opened. Probes ruled the other suspects out one at a time: a stroked
+  shape in the overlay tracks the box inside a `TimelineView`, inside `drawingGroup()`, with a
+  blur, and with a width that changes every frame; the same view behind an `if` does not. So
+  anything that has to follow the surface through the spring stays in the hierarchy for both
+  states and is hidden with an animated opacity (`AmbientGlowView.isVisible`), which also pauses
+  its timeline so hidden costs nothing. Draw it with a `Shape` (`GlowStroke`), which is pathed at
+  the rect it is rendered in, rather than a `Path` built from a size handed down.
+- **A link someone gives the app may only ever be `http` or `https`.** The link shelf hands its
+  rows to `NSWorkspace.open`, which opens whatever a scheme is registered to: accept `file:` and a
+  click opens a local file, accept a custom scheme and a click launches an app with arguments
+  from the link. `LinkShelfService.normalised` refuses everything else at the door, and the
+  stored list is re-validated when it is read back.
 - **A URL that came from somewhere else is not a URL you may fetch.** The artwork URL arrives
   as a string from whatever media player is running, over Apple Events. It was read with
   `Data(contentsOf:)`, which accepts any scheme the string happens to parse as: a reply of
@@ -284,17 +311,16 @@ Scripts/          build, run, preview
   had no timeout and no size limit, on the serial queue every media read shares. Every
   outbound request now goes through `BoundedHTTPClient`, which requires HTTPS and a host,
   caps the body while it arrives rather than after, refuses redirects off the original host,
-  and times out. Do not add a bare `URLSession` or a `Data(contentsOf:)` beside it.
-- **Anything animating over the notch re-renders the whole surface, every display frame.**
-  That cost is about one core, and it is close to fixed: measured on the real panel it did
-  not move for a frame cap of 15, 30, or 60, for one glow segment against sixteen, for a
-  pill-sized layer against a panel-sized one, or with the blur and `drawingGroup()` switched
-  off entirely. The media card's own visualizer does the same thing with the glow disabled,
-  and a static tab with no animation costs zero. So do not reach for a frame cap or a cheaper
-  effect to fix it, because neither touches it. The fix, when someone takes it on, is to stop
-  an animating overlay invalidating the entire hosting view. Until then, assume the panel
-  costs a core whenever anything on it moves, which is also why the sampling services are
-  reference counted to the views that show them.
+  and times out. Two options relax it for the link shelf only: `truncatesAtLimit` keeps the
+  start of an oversized page, since a title sits at the top, and `followsCrossHostRedirects`
+  follows a short link to where it goes. Leave both off for anything that sends the user's data. Do not add a bare `URLSession` or a `Data(contentsOf:)` beside it.
+- **Only measure CPU inside a real `NSApplication` run loop.** The debug tools used to turn
+  `RunLoop.main` by hand, and under that any SwiftUI animation spins: a bare 200-point window with
+  one ticking label measured 112% of a core, and 10% under `NSApp.run()`. That artefact is where
+  this file's old claim that "anything animating costs a core" came from, and it was wrong.
+  `--capture-notch --hold <seconds>` above two seconds now runs the real loop. Measured that way on
+  a 60 Hz display: closed notch idle 0%, closed with the glow showing 16%, open media card 12%,
+  open card with the glow 21%. A hidden glow is 0%.
 - **A blurred layer needs room outside itself.** `drawingGroup()` rasterises into a layer
   the size of the view, so a blur cannot reach past its own bounds. Give a glow no room and
   its falloff is sliced off mid-gradient: it ends on a hard edge exactly where the view does,
@@ -319,6 +345,11 @@ Scripts/          build, run, preview
 - **Do not "hide" a stroke or shadow with a zero-alpha colour.** A `.shadow` still forces an
   offscreen compositing pass at zero alpha, and on a transparent window that shows as a faint
   light fringe along the pill. Apply the modifier conditionally instead.
+- **Anything drawn over album art must not take its colour from that album art.** The
+  visualizer bars used the cover's dominant colours, which are by construction the colours
+  least likely to stand out against the cover, and their black outline disappeared into dark
+  sleeves. Lift the colour (`ArtworkPalette.glowPrimary`) and give it a guaranteed dark ground
+  (the scrim under the bars) rather than trying to pick an outline that works on every cover.
 - **The notch panel is always black in both appearances.** Never use a semantic label colour
   (`Palette.primaryText`, `.labelColor`) for content drawn on it: it disappears in light
   mode. Use explicit `.white` with opacity. `Palette` is for the Settings window.
@@ -335,6 +366,19 @@ Scripts/          build, run, preview
   at different `--hold` values and compare the pixels: identical means frozen.
 - **`ScrollView` has no ideal height.** Inside the panel it lays out at zero unless given an
   explicit frame. See `CalendarWidgetView.eventListHeight`.
+- **Apple's volume overlay is hidden by taking the keys, not by touching the overlay.** On macOS
+  26 `OSDUIHelper` no longer draws it: suspended (state `T`) the overlay still appeared, and killing
+  it had always flickered. `SystemKeyInterceptor` is a session event tap on `NX_SYSDEFINED` aux
+  buttons that swallows volume and brightness presses, and `HUDCoordinator` sets the level itself
+  (`VolumeMonitor.apply`, `BrightnessMonitor.apply`, sixteenth steps, Shift+Option quarter steps)
+  and shows its own HUD. It needs Accessibility, which resets with every ad-hoc build like every
+  other grant. A key is only taken when it can be acted on; anything else returns the event so
+  macOS handles it. Keyboard backlight keys are never taken. `--check-keys --simulate --control`
+  proves it end to end: the same posted press moves the volume with no tap and does not with one.
+  Every launch still sends `SIGCONT` to `OSDUIHelper`, for Macs an older build left suspended.
+- **Read a `Process` pipe before `waitUntilExit()`, not after.** A child that writes more than a
+  pipe's buffer (`ps -ax` does) blocks on the full pipe while the parent blocks waiting for it to
+  exit. The old `--check-osd` hung on exactly that.
 - **Never let AppleScript launch a player.** Check `AppleScriptRunner.isRunning(bundleIdentifier:)`
   first, and use the `if application "X" is running` guard in the script. Otherwise reading
   the current track starts Music.
@@ -362,13 +406,11 @@ which is indistinguishable from the permission being refused. The project theref
 real `Config/Info.plist` rather than `GENERATE_INFOPLIST_FILE`; add new usage descriptions
 there and verify with `PlistBuddy` against the built app, not the build settings.
 
-**Every build voids every granted permission.** There is no signing identity on this machine,
-so the app is ad-hoc signed, and an ad-hoc signature is a hash of the binary. TCC keys its
-grants on that, so each rebuild is a different app as far as macOS is concerned and Calendar
-access resets to `notDetermined`. Use `Scripts/run.sh --no-build` to relaunch without
-rebuilding when you want to keep access. The permanent fix is a stable identity: signing in to
-Xcode with any Apple ID, including a free one, issues an Apple Development certificate, and
-setting `DEVELOPMENT_TEAM` and `CODE_SIGN_STYLE = Automatic` then makes grants persist.
+**Every build used to void every granted permission**, because an ad-hoc signature is a hash of
+the binary and TCC keys its grants on that, so each rebuild was a different app and Calendar
+access reset to `notDetermined`. The signing identity above is what fixes it, since the grant
+now follows the team and bundle id. Until that is actually watched surviving a rebuild, keep
+using `Scripts/run.sh --no-build` when a grant matters, and re-check rather than assume.
 
 **A prompt is only shown to a frontmost app.** MinNotch is an accessory app with no Dock icon,
 and the notch panel is non-activating precisely so it never steals focus, so it is never the
@@ -377,12 +419,24 @@ policy and activates before asking, restoring the policy when the user answers o
 timeout. Without that the request resolves with no dialog and the status stays
 `notDetermined`, which is indistinguishable from a user dismissing a dialog they never saw.
 
-**The system audio permission cannot be granted to this build at all.** macOS will not raise
-the system audio recording prompt for an ad-hoc signed app, so `AudioHardwareCreateProcessTap`
-simply never returns. `AudioAnalyzer.start()` therefore does its Core Audio work off the main
-thread with an eight second timeout: called inline it froze the entire interface. Everything
-the tap feeds has a working non-audio fallback, so the app is fully usable without it, and a
-real signing identity is what unblocks it.
+**The system audio permission was never grantable before signing.** macOS would not raise the
+system audio recording prompt for an ad-hoc signed app, so `AudioHardwareCreateProcessTap`
+simply never returned. `AudioAnalyzer.start()` therefore does its Core Audio work off the main
+thread with an eight second timeout: called inline it froze the entire interface. Keep that
+timeout whatever happens next. The signing and the audio-input entitlement are now in place, so
+the prompt should be reachable; nobody has run `--check-audio` against the signed build yet, and
+everything the tap feeds still has a working non-audio fallback.
+
+**The "Audio Input" checkbox is a build setting, and the tap will need it once signed.** In
+Xcode 26, Signing & Capabilities > Hardened Runtime > Resource Access > Audio Input writes
+`ENABLE_RESOURCE_ACCESS_AUDIO_INPUT = YES` into `project.pbxproj`, and the build turns it into
+`com.apple.security.device.audio-input`; it never touches `Config/MinNotch.entitlements`, so
+checking that file for it proves nothing. It needs no paid account (an ad-hoc build embeds it).
+An ad-hoc build is signed without the hardened runtime flag (`codesign -dv` shows only
+`flags=0x2(adhoc)`), so today nothing enforces it; a real Apple Development signature applies
+the hardened runtime, and a Core Audio tap app then carries this entitlement, as AudioCap does.
+Do not add App Sandbox to get it: Audio Input lives under Hardened Runtime too, and MinNotch
+assumes it is unsandboxed. An explicit build setting beats the file's `app-sandbox` `false`.
 
 **Never test permissions by running the binary directly.** A process started from a shell has
 the terminal as its responsible process, so TCC judges the request against the terminal and
@@ -400,6 +454,7 @@ open -n -a <path to MinNotch.app> --args --check-permissions --out /tmp/perm.log
 | Calendar | EventKit `requestFullAccessToEvents` | First time the Calendar widget or pane is used |
 | Network (lyrics) | `URLSession` to lrclib.net | Only when Settings > Media > Lyrics Source is set to Look Up Online |
 | Automation (Music, Spotify) | Apple Events | First media read |
+| Accessibility | `AXIsProcessTrustedWithOptions`, then a `CGEvent` tap | Switching on HUDs > Hide the System Overlay |
 | Notifications | `UNUserNotificationCenter` | First low-battery alert |
 
 None are requested at launch. The first-launch tutorial explains each one on its permissions
@@ -446,6 +501,19 @@ real power. Those are fine features, but each is a choice someone should make on
 
 A rerun from Settings starts the checklist from the current configuration, not the preset,
 because "show me the welcome again" does not mean "reset me to Recommended".
+
+## What's New
+
+`ReleaseNotes.latest` is the release notes window, shown once at launch when its `id` differs
+from the one last seen, and from the menu bar's What's New item any time. A first launch marks
+it seen, because a new user gets the tutorial and has nothing to compare against. **Before
+handing the user a build to share, update `ReleaseNotes.latest` and change its `id`**, and bump
+`MARKETING_VERSION` to match. Notes are for people using the app: what they will notice, and
+for anything new, where it is and how to switch it on. Nothing internal. In a Debug build the
+open panel's top bar has What's New and Tutorial buttons (`AdvancedSettings.showDebugButtons`,
+defaulting on only under `#if DEBUG`) for checking both at a glance. Review it with
+`--capture-whats-new`, which renders the notes on their own because a window capture does not
+draw `ScrollView` content.
 
 ## No setting may be inert
 
@@ -520,8 +588,10 @@ rides the level, capped so it can never exceed the spill the caller promised.
 **Glow styles return data, not drawing.** An `AmbientGlowStyle` turns `GlowInput` into
 `[GlowSegment]` and never touches a graphics context, so a style can be reasoned about
 without a renderer and a sixth one is a single function. Placement is a separate dimension
-from style: the same style draws against the notch outline, the album artwork's rounded
-square, or both, and only the placement currently on screen is rendered.
+from style: the closed pill, the open panel, or both. The glow view stays in the tree for
+both and fades with `isVisible` rather than being inserted, because an inserted view takes its
+final layout on its first frame and would jump ahead of the growing box. There is no album art
+placement: the artwork is drawn still, on purpose.
 
 **Lyric timing is only as good as its timestamp.** `NowPlayingController` stamps the
 capture time on the queue that read the player, not on main after the hop. An Apple Event
@@ -594,8 +664,10 @@ called out explicitly, because several things here can only be checked on a sign
 - Battery, Bluetooth accessory charge, CPU/GPU/memory/network stats
 - Shelf: drop, bookmark persistence, drag out with a real copy or move operation
 - HUDs for volume, brightness, keyboard backlight, with optional suppression of Apple's
-- Ambient glow: five styles, three placements, live preview, style cycling from the notch
-- Settings: ten panes, every persisted setting read by something
+- Ambient glow: five styles, closed and open placements, live preview, style cycling from the notch
+- Link shelf: saved web links with titles and icons, open, copy, capped and persisted
+- Settings: eleven panes, searchable, every persisted setting read by something
+- Floating Now Playing window, toggled from Settings or the pop-out button on the media card
 - Global shortcuts, launch at login, gestures, haptics
 
 **Built but never exercised against reality**

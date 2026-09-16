@@ -49,26 +49,65 @@ final class LRCLIBClient {
     /// Looks up `track`. The completion runs on the main queue, with nil for any failure,
     /// which is deliberately indistinguishable from "no lyrics exist": the caller shows the
     /// same thing either way and there is nothing useful a listener could do about a 503.
+    ///
+    /// Checks `LyricsCache` first, so a song played before costs no request at all, and a song
+    /// LRCLIB recently had nothing for is not searched for again.
     func lyrics(for track: NowPlayingTrack, completion: @escaping (Lyrics?) -> Void) {
         guard !track.title.isEmpty, !track.artist.isEmpty else {
-            completion(nil)
+            DispatchQueue.main.async { completion(nil) }
             return
         }
 
-        fetch(exactMatchURL(for: track)) { [weak self] lyrics in
-            if let lyrics {
-                completion(lyrics)
+        switch cache.lookup(track) {
+        case .hit(let text):
+            let parsed = LRCParser.parse(text)
+            // A cached sheet that no longer parses to anything falls through to a fresh lookup
+            // rather than being served as nothing.
+            if !parsed.isEmpty {
+                DispatchQueue.main.async { completion(parsed) }
+                return
+            }
+        case .knownMissing:
+            DispatchQueue.main.async { completion(nil) }
+            return
+        case .miss:
+            break
+        }
+
+        fetchText(exactMatchURL(for: track)) { [weak self] text in
+            guard let self else { completion(nil); return }
+            if let text {
+                self.cache.store(text, for: track)
+                completion(LRCParser.parse(text))
                 return
             }
             // The exact endpoint matches on duration within a couple of seconds, so a
             // remaster or a slightly different edit misses. Search is the wider net.
-            guard let self else { completion(nil); return }
-            self.fetchBestFromSearch(
-                self.searchURL(for: track),
-                targetDuration: track.duration,
-                completion: completion
-            )
+            self.fetchBestTextFromSearch(self.searchURL(for: track), targetDuration: track.duration) { outcome in
+                switch outcome {
+                case .found(let text):
+                    self.cache.store(text, for: track)
+                    completion(LRCParser.parse(text))
+                case .noneFound:
+                    self.cache.store(nil, for: track)
+                    completion(nil)
+                case .failed:
+                    // Never cached: a dropped connection is not evidence the song has no
+                    // lyrics, and remembering it as such would hide them for days.
+                    completion(nil)
+                }
+            }
         }
+    }
+
+    private let cache = LyricsCache.shared
+
+    /// How a search ended. Kept distinct from a plain optional because the cache has to tell
+    /// "LRCLIB answered and had nothing" apart from "LRCLIB could not be reached".
+    private enum SearchOutcome {
+        case found(String)
+        case noneFound
+        case failed
     }
 
     // MARK: Requests
@@ -105,12 +144,14 @@ final class LRCLIBClient {
         return ["User-Agent": "MinNotch/\(version) (macOS notch utility)"]
     }
 
-    private func fetch(_ url: URL?, completion: @escaping (Lyrics?) -> Void) {
-        guard let url else { completion(nil); return }
+    /// Fetches the exact-match endpoint and returns the lyric text worth using, if any. Calls
+    /// back on the main queue.
+    private func fetchText(_ url: URL?, completion: @escaping (String?) -> Void) {
+        guard let url else { DispatchQueue.main.async { completion(nil) }; return }
 
         http.fetch(url, headers: headers) { data in
-            let lyrics = Self.decode(data: data)
-            DispatchQueue.main.async { completion(lyrics) }
+            let text = Self.decode(data: data)
+            DispatchQueue.main.async { completion(text) }
         }
     }
 
@@ -120,18 +161,18 @@ final class LRCLIBClient {
     /// song returns the album cut, the radio edit, live versions, and remixes, all with the
     /// same title and artist and none of them sharing timings. Length is the only thing in
     /// the response that distinguishes them.
-    private func fetchBestFromSearch(
+    private func fetchBestTextFromSearch(
         _ url: URL?,
         targetDuration: TimeInterval,
-        completion: @escaping (Lyrics?) -> Void
+        completion: @escaping (SearchOutcome) -> Void
     ) {
-        guard let url else { completion(nil); return }
+        guard let url else { DispatchQueue.main.async { completion(.failed) }; return }
 
         http.fetch(url, headers: headers) { data in
             guard let data,
                   let results = try? JSONDecoder().decode([Response].self, from: data)
             else {
-                DispatchQueue.main.async { completion(nil) }
+                DispatchQueue.main.async { completion(.failed) }
                 return
             }
 
@@ -145,8 +186,8 @@ final class LRCLIBClient {
 
             // Better no lyrics than the wrong cut's. An unsynced sheet from a remix looks
             // fine and scrolls wrong, which is harder to notice than nothing at all.
-            let lyrics = ranked.lazy.compactMap { Self.lyrics(from: $0.0) }.first
-            DispatchQueue.main.async { completion(lyrics) }
+            let text = ranked.lazy.compactMap { Self.text(from: $0.0) }.first
+            DispatchQueue.main.async { completion(text.map(SearchOutcome.found) ?? .noneFound) }
         }
     }
 
@@ -154,24 +195,24 @@ final class LRCLIBClient {
 
     /// The status code is checked by `BoundedHTTPClient`, which hands back nil for anything
     /// that is not a 200 within the size limit.
-    private static func decode(data: Data?) -> Lyrics? {
+    private static func decode(data: Data?) -> String? {
         guard let data,
               let decoded = try? JSONDecoder().decode(Response.self, from: data)
         else { return nil }
-        return lyrics(from: decoded)
+        return text(from: decoded)
     }
 
-    private static func lyrics(from response: Response) -> Lyrics? {
+    /// The lyric text worth keeping from one response: synced when it parses to something,
+    /// otherwise plain, otherwise nothing.
+    private static func text(from response: Response) -> String? {
         if response.instrumental == true { return nil }
 
         // Synced first: the whole point is highlighting the line being sung.
-        if let synced = response.syncedLyrics, !synced.isEmpty {
-            let parsed = LRCParser.parse(synced)
-            if !parsed.isEmpty { return parsed }
+        if let synced = response.syncedLyrics, !synced.isEmpty, !LRCParser.parse(synced).isEmpty {
+            return synced
         }
-        if let plain = response.plainLyrics, !plain.isEmpty {
-            let parsed = LRCParser.parse(plain)
-            if !parsed.isEmpty { return parsed }
+        if let plain = response.plainLyrics, !plain.isEmpty, !LRCParser.parse(plain).isEmpty {
+            return plain
         }
         return nil
     }

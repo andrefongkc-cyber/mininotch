@@ -40,7 +40,7 @@ enum SettingsSearchIndex {
         .init(tab: .appearance, section: "Materials", title: "Panel Shadow", subtitle: "Useful on a display with no notch. On a notched Mac it shows as a halo around the panel as it opens.", symbolName: "shadow"),
         .init(tab: .appearance, section: "Panel Size", title: "Width", subtitle: "How wide the panel grows when it opens.", symbolName: "arrow.left.and.right"),
         .init(tab: .appearance, section: "Panel Size", title: "Corner Radius", subtitle: "Match this to your display's physical notch for the cleanest join.", symbolName: "rectangle.roundedbottom"),
-        .init(tab: .appearance, section: "Panel Size", title: "Top Strip", subtitle: "What sits right of the cutout when the panel is open. The tabs keep the left side, and the band between them stays empty so clicks fall through it.", symbolName: "rectangle.topthird.inset.filled"),
+        .init(tab: .appearance, section: "Panel Size", title: "Top Bar", subtitle: "Drag to arrange what the open panel shows either side of the notch. Anything that does not fit on its side moves to the other. Tabs can be moved but not removed; switch a feature off to hide its tab.", symbolName: "rectangle.topthird.inset.filled"),
         .init(tab: .appearance, section: "Media Card", title: "Card Style", subtitle: "Only Classic is available in this version.", symbolName: "rectangle.on.rectangle"),
         .init(tab: .appearance, section: "Media Card", title: "Custom Visualizer", subtitle: "", symbolName: "waveform.path.ecg"),
         .init(tab: .media, section: "Source", title: "Show Now Playing", subtitle: "", symbolName: "music.note"),
@@ -51,13 +51,14 @@ enum SettingsSearchIndex {
         .init(tab: .media, section: "Lyrics", title: "Timing Offset", subtitle: "Shift lyrics earlier or later. Lyric files are timed by hand and disagree between sources.", symbolName: "timer"),
         .init(tab: .media, section: "Lyrics", title: "Use Audio Clock", subtitle: "", symbolName: "waveform.badge.magnifyingglass"),
         .init(tab: .media, section: "Lyrics", title: "Lyrics Source", subtitle: "Where to look when your player has no lyrics stored.", symbolName: "magnifyingglass"),
-        .init(tab: .media, section: "Display", title: "Floating Window", subtitle: "Also show Now Playing in a small window above other apps. Drag it anywhere; it remembers where you put it.", symbolName: "macwindow.on.rectangle"),
+        .init(tab: .media, section: "Display", title: "Floating Window", subtitle: "Also show Now Playing in a small window above other apps. Drag it anywhere; it remembers where you put it. The pop-out button on the Now Playing card does the same.", symbolName: "macwindow.on.rectangle"),
+        .init(tab: .media, section: "Display", title: "Sneak Peek on Track Change", subtitle: "When a new song starts, the closed notch drops down for a moment to show what it is.", symbolName: "rectangle.expand.vertical"),
+        .init(tab: .media, section: "Display", title: "Show Up Next", subtitle: "The next songs under the one playing. Apple Music only, and only when playing from a playlist or album with shuffle off, because that is all Music tells other apps.", symbolName: "text.line.first.and.arrowtriangle.forward"),
         .init(tab: .media, section: "Display", title: "Show Elapsed and Remaining Time", subtitle: "", symbolName: "clock"),
         .init(tab: .media, section: "Display", title: "Tint From Artwork", subtitle: "Wash the panel with the album's dominant colour.", symbolName: "photo"),
         .init(tab: .media, section: "Display", title: "Refresh Interval", subtitle: "How often the position is re-read. Track changes update instantly regardless.", symbolName: "arrow.clockwise"),
-        .init(tab: .media, section: "Controls", title: "Not Yet Wired Up", subtitle: "Shuffle, repeat, and favourite are arranged here but have no command behind them yet, so they will not appear on the card.", symbolName: "exclamationmark.triangle"),
+        .init(tab: .media, section: "Controls", title: "Not Yet Wired Up", subtitle: "Repeat and favourite can be arranged here but have no command behind them yet, so they will not appear on the card. Shuffle works with Apple Music and Spotify.", symbolName: "exclamationmark.triangle"),
         .init(tab: .media, section: "Visualizer", title: "Show Visualizer", subtitle: "Animated bars over the artwork, coloured from the album.", symbolName: "waveform.path"),
-        .init(tab: .media, section: "Coming Soon", title: "Sneak Peek on Track Change", subtitle: "Briefly expand the notch when a new track starts.", symbolName: "rectangle.expand.vertical"),
         .init(tab: .calendar, section: "Access", title: "Calendar Access", subtitle: "", symbolName: "lock"),
         .init(tab: .calendar, section: "Widget", title: "Show Calendar", subtitle: "", symbolName: "calendar"),
         .init(tab: .calendar, section: "Widget", title: "Grid", subtitle: "Show the current week or the whole month.", symbolName: "square.grid.3x3"),
@@ -72,7 +73,8 @@ enum SettingsSearchIndex {
         .init(tab: .huds, section: "Show in the Notch", title: "Volume", subtitle: "Updates the moment the level changes, with no polling.", symbolName: "speaker.wave.2"),
         .init(tab: .huds, section: "Show in the Notch", title: "Brightness", subtitle: "", symbolName: "sun.max"),
         .init(tab: .huds, section: "Show in the Notch", title: "Keyboard Backlight", subtitle: "", symbolName: "keyboard"),
-        .init(tab: .huds, section: "System Overlay", title: "Hide the System Overlay", subtitle: "Show only MinNotch's indicator instead of both.", symbolName: "rectangle.slash"),
+        .init(tab: .huds, section: "System Overlay", title: "Hide the System Overlay", subtitle: "Show only MinNotch's volume and brightness indicator instead of both. Works for whichever of those two is switched on above.", symbolName: "rectangle.slash"),
+        .init(tab: .huds, section: "System Overlay", title: "Accessibility Access Needed", subtitle: "Turn on MinNotch in Privacy & Security > Accessibility. Until then Apple's overlay still appears. After installing a new copy of MinNotch, remove it from the list and add it again.", symbolName: "exclamationmark.triangle"),
         .init(tab: .huds, section: "Presentation", title: "Style", subtitle: "", symbolName: "rectangle.on.rectangle"),
         .init(tab: .huds, section: "Presentation", title: "Dismiss After", subtitle: "How long the indicator stays on screen after the last change.", symbolName: "timer"),
         .init(tab: .huds, section: "Presentation", title: "Show Numeric Value", subtitle: "", symbolName: "number"),
@@ -101,6 +103,8 @@ enum SettingsSearchIndex {
         .init(tab: .advanced, section: "Displays", title: "Show on Displays Without a Notch", subtitle: "", symbolName: "display.2"),
         .init(tab: .advanced, section: "Displays", title: "Show On", subtitle: "Which display carries the notch when several are connected.", symbolName: "rectangle.on.rectangle"),
         .init(tab: .advanced, section: "Displays", title: "Opens On Without a Notch", subtitle: "Which tab a virtual notch starts on. A real notch hides behind the camera housing; one on an external monitor does not, so it may as well be showing something.", symbolName: "rectangle.topthird.inset.filled"),
+        .init(tab: .advanced, section: "Link Shelf", title: "Link Shelf", subtitle: "Keep links on the notch in a Links tab. Opening one uses your default browser.", symbolName: "link"),
+        .init(tab: .advanced, section: "Link Shelf", title: "Links Kept", subtitle: "The oldest link is dropped once the shelf is full.", symbolName: "list.bullet"),
         .init(tab: .advanced, section: "Clipboard", title: "Clipboard History", subtitle: "Remember what you copy and offer it back from the Clipboard tab.", symbolName: "doc.on.clipboard"),
         .init(tab: .advanced, section: "Clipboard", title: "Items Kept", subtitle: "The oldest is dropped once the history is full. Pinned items do not count towards this.", symbolName: "list.bullet"),
         .init(tab: .advanced, section: "Size", title: "Height", subtitle: "Match the hardware cutout, or pin a fixed height everywhere.", symbolName: "arrow.up.and.down"),
@@ -116,8 +120,9 @@ enum SettingsSearchIndex {
         .init(tab: .advanced, section: "Settings File", title: "Import Settings", subtitle: "", symbolName: "square.and.arrow.down"),
         .init(tab: .advanced, section: "Settings File", title: "Reset All Settings", subtitle: "Return every preference to its default.", symbolName: "arrow.counterclockwise"),
         .init(tab: .advanced, section: "Diagnostics", title: "Show Layout Overlay", subtitle: "Outline the notch's interactive area to debug placement.", symbolName: "square.dashed"),
+        .init(tab: .advanced, section: "Diagnostics", title: "Debug Buttons in Top Bar", subtitle: "Add What's New and Tutorial buttons to the open notch's top bar, to check both quickly. On by default only in Debug builds.", symbolName: "ladybug"),
         .init(tab: .advanced, section: "Diagnostics", title: "Show Welcome Again", subtitle: "Open the first-launch tutorial again. Its checklist starts from what is switched on now, so nothing changes unless you change it.", symbolName: "sparkles"),
-        .init(tab: .about, section: "What's New", title: "Release Notes", subtitle: "An in-app changelog arrives with the first update.", symbolName: "sparkles"),
+        .init(tab: .about, section: "What's New", title: "Release Notes", subtitle: "What changed in this version, and where to find it. Also shown once after each update.", symbolName: "sparkles"),
         .init(tab: .about, section: "System", title: "macOS", subtitle: "", symbolName: "desktopcomputer"),
         .init(tab: .about, section: "System", title: "Displays", subtitle: "", symbolName: "display"),
         .init(tab: .about, section: "MinNotch", title: "Quit MinNotch", subtitle: "The notch and the menu bar icon both disappear until you launch it again.", symbolName: "power"),
@@ -184,7 +189,7 @@ extension SettingsTab {
     var searchKeywords: [String] {
         switch self {
         case .general: return ["startup", "login", "hover", "click", "pill", "menu bar"]
-        case .appearance: return ["theme", "look", "colour", "color", "glow", "lighting", "width", "corner"]
+        case .appearance: return ["theme", "look", "colour", "color", "glow", "lighting", "width", "corner", "tabs", "rearrange", "reorder", "toolbar"]
         case .media: return ["music", "spotify", "song", "track", "now playing", "lyrics", "controls"]
         case .calendar: return ["events", "reminders", "schedule", "agenda"]
         case .huds: return ["volume", "brightness", "keyboard backlight", "overlay"]
@@ -193,8 +198,8 @@ extension SettingsTab {
         case .timer: return ["pomodoro", "countdown", "focus", "break"]
         case .shortcuts: return ["hotkey", "keyboard", "keys"]
         case .advanced: return ["display", "monitor", "external", "clipboard", "debug", "export", "import", "reset",
-                                "welcome", "tutorial", "onboarding", "tour"]
-        case .about: return ["version", "quit"]
+                                "welcome", "tutorial", "onboarding", "tour", "links", "bookmarks", "url"]
+        case .about: return ["version", "quit", "changelog", "what's new", "release notes", "update"]
         }
     }
 
