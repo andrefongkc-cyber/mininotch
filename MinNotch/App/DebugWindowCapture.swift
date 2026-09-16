@@ -59,6 +59,10 @@ enum DebugWindowCapture {
         settings.advanced.linkShelfEnabled = true
         environment.linkShelf.applySample()
 
+        // The debug buttons default on in a Debug build, which is what this tool is, but a
+        // capture is a picture of the app people run. `--debug` puts them back.
+        settings.advanced.showDebugButtons = arguments.contains("--debug")
+
         // Playback paused, which is the state the glow must be completely still in.
         if arguments.contains("--paused") {
             environment.nowPlaying.applySample(settings: settings, isPlaying: false)

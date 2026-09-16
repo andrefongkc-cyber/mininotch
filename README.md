@@ -1,109 +1,143 @@
 # MinNotch
 
-A macOS utility that lives in the notch. Closed, it is a thin black pill showing battery and
-what is playing. Hover or click and it expands into a panel with Now Playing, a mini
-calendar, and system information.
+A macOS app that lives in the notch. Closed, it is a black pill the size of the camera housing.
+Hover or click it and it opens into a panel: what is playing, your calendar, system stats, a file
+shelf, saved links, a timer.
 
-Requires macOS 14 or later. Works on Macs without a physical notch, which get a virtual one
-in the same place.
+![The open panel showing Now Playing](Docs/images/open-media.png)
 
-## Building
+## Download
 
-Open `MinNotch.xcodeproj` in Xcode 16 or later and run, or from the terminal:
+[**MinNotch 0.2.0**](https://github.com/andrefongkc-cyber/mininotch/releases/latest) — open the
+DMG, drag MinNotch to Applications.
 
-```bash
-Scripts/run.sh
-```
+The first launch is blocked, because notarising an app needs a paid Apple membership this project
+does not have. Open **System Settings > Privacy & Security**, scroll down, and click **Open
+Anyway**. That is once per version.
 
-Signing needs your own Apple team, including a free one. Copy `Config/Local.xcconfig.example`
-to `Config/Local.xcconfig` and put your team in it; that file is gitignored, so no identifier
-of yours ends up in the repository. Without it the build stops and says a development team is
-required. To relaunch the existing build without rebuilding:
+Requires macOS 14 or later, Apple silicon or Intel. A Mac with no notch gets a virtual one in the
+same place.
 
-```bash
-Scripts/run.sh --no-build
-```
+## What it does
 
-The app has no Dock icon. It appears as a pill at the top of the screen and, unless you turn
-it off, as a menu bar icon. Press ⌃⌥N to open or close it.
+**Now Playing** for Apple Music, Spotify, and a system-wide fallback for other apps. Album art, a
+scrubber you can drag to seek, transport controls with a working shuffle button, Up Next for Apple
+Music, and synced lyrics that highlight the word being sung.
 
-The first launch opens a short welcome tour. It explains how to use the notch, lets you pick
-which features to switch on from a list with a recommended starting point, and says what each
-permission is for before anything asks. Skip it whenever you like; it is available again from
-Settings › Advanced › Show Welcome Again.
+![The closed pill](Docs/images/closed-pill.png)
 
-## What it does today
+Closed, the pill can show the artwork, the battery, and a running timer. It is off by default on a
+Mac with a notch, where the pill sits behind the camera housing; turn it on in Settings > General.
 
-- **Now Playing** for Apple Music, Spotify, and a system-wide fallback that covers other
-  apps. Album art, a scrubber you can drag to seek, transport controls with shuffle, optional
-  lyrics, Up Next for Apple Music, and a small sneak peek when the song changes.
-- **Calendar** showing the current week or month with your upcoming events, from the system
-  Calendar, with per-calendar visibility.
-- **Battery** in the pill and in more detail when expanded, with a low-battery alert.
-- **System stats** for CPU, GPU, memory, and network, sampled only while you are looking at
-  them, plus the charge of connected AirPods and other accessories.
-- **Reminders** mixed into the upcoming list, tickable from the notch, with a quick-add field
-  for new events and reminders.
+**Sneak peek.** When the song changes, the notch drops down for a couple of seconds with the cover
+and the title, instead of opening the whole panel.
+
+![The sneak peek](Docs/images/sneak-peek.png)
+
+**Ambient lighting** around the closed pill or the open panel, in five styles, coloured from the
+album art. With the system audio permission granted it follows what is actually playing; without
+it, it animates on its own. With nothing playing it stays still.
+
+**Link Shelf.** Drag a link onto the notch or press ⌘V, and it is kept with its page title and
+site icon. Click to open it, or copy it back.
+
+![The Links tab](Docs/images/links.png)
+
+**Calendar and Reminders** for the week or month, with per-calendar visibility, tick-off, and a
+quick-add field.
+
+![The calendar tab](Docs/images/calendar.png)
+
+**Timer and Pomodoro**, four rhythms, quick countdowns, and a custom length. A running timer shows
+in the closed pill.
+
+![The timer tab](Docs/images/timer.png)
+
+Also:
+
 - **Shelf** to park files on the notch and drag them out somewhere else.
-- **Link Shelf** to keep web links in the notch with their page titles, and open or copy them.
-- **HUDs** showing volume, brightness, and keyboard backlight at the notch, optionally
-  instead of Apple's own overlay (needs Accessibility access).
-- **Ambient lighting** around the closed notch or the open panel, in five styles, with
-  colours taken from the cover. It follows the beat when the system audio permission can be
-  granted, and animates on its own when it cannot.
-- **Clipboard history** for text, links, colours, and images, with pinning. Kept in memory
-  only, never written to disk, and it skips anything an app marks as private.
-- **Timer and Pomodoro** with four rhythms, quick countdowns, and a custom length. A running
-  timer shows in the closed pill.
-- **Floating Now Playing window**, for an external display with no notch to look at.
+- **System stats**: CPU, GPU, memory, network, and the charge of connected AirPods and accessories.
+- **Volume, brightness and keyboard backlight** shown at the notch, optionally instead of Apple's
+  own overlay, which MinNotch hides by taking those keys before macOS sees them (needs
+  Accessibility).
+- **Clipboard history** for text, links, colours, and images, held in memory only.
+- **Floating Now Playing window** for a display with no notch worth looking at.
 - **Two-finger swipes** to change tab or open and close, with optional haptics.
-- **Drag-to-arrange layouts** for the transport controls, the closed pill's two sides, and
-  the open panel's top bar, tabs included.
-- **Settings** in a separate window laid out like macOS System Settings, with search: press
-  ⌘F and type, and choosing a result takes you straight to the setting.
+- **Drag-to-arrange layouts** for the transport controls, the closed pill's two sides, and the open
+  panel's top bar, tabs included. Anything that will not fit beside the notch moves to the other
+  side of it rather than hiding behind the camera.
+- **Settings** in their own window with search: press ⌘F, type, and a result takes you to the row.
+- **What's New** after each update, and a welcome tour on first launch.
 
-Some panes contain controls marked "Coming soon". Those settings are saved and will apply
-once the feature ships. See `WORKPLAN.md`.
+![The release notes window](Docs/images/whats-new.png)
+
+## Performance
+
+Measured on an M4 MacBook Air, 2560x1664 display, with an optimised build. Each figure is the
+median of eight samples of `ps %cpu`, where 100% is one core, taken while that state was on screen
+for fourteen seconds.
+
+| What is on screen | CPU | Memory |
+|---|---|---|
+| Closed pill, nothing playing | 0.0% | 55 MB |
+| Closed pill, music playing | 0.0% | 54 MB |
+| Closed pill with ambient lighting | 26.4% | 52 MB |
+| Open panel, Now Playing | 6.9% | 66 MB |
+| Open panel, Now Playing with ambient lighting | 27.6% | 72 MB |
+| Open panel, calendar | 0.0% | 60 MB |
+| Open panel, system stats | 0.7% | 56 MB |
+
+What that means in practice: MinNotch costs nothing while it sits closed, which is almost all of
+the time. Animation is what costs, and the ambient glow costs about a quarter of one core for as
+long as it is visible — on a ten-core M4, roughly 3% of the machine. Everything that polls, system
+stats included, samples only while its widget is on screen, and the audio tap runs only if you
+switch on Follow the Beat or lyric matching.
 
 ## Permissions
 
-MinNotch asks for nothing at launch. It requests access the first time a feature needs it:
+Nothing is asked for at launch. Each is requested the first time a feature needs it:
 
-- **Calendar and Reminders** to show your events.
-- **Automation** to read and control Music and Spotify.
-- **Notifications** for the low-battery alert and timer completion.
-- **System audio recording** only if you switch the ambient lighting's audio-reactive option
-  on. The sound becomes a handful of numbers and is discarded; nothing is recorded or stored.
+| What | Used for |
+|---|---|
+| Automation | Reading and controlling Music and Spotify |
+| Calendar and Reminders | Showing your events |
+| Notifications | Low-battery and timer alerts |
+| System audio recording | Only for ambient lighting that follows the beat, and lyric matching |
+| Accessibility | Only to hide Apple's volume and brightness overlay |
 
-Everything stays on your Mac with one exception, and it is off by default. Setting
-**Media → Lyrics Source** to look up online sends the current track's title, artist, album,
-and length to `lrclib.net` to fetch synced lyrics. Nothing else leaves the machine, there are
-no accounts, no analytics, and no telemetry. Clipboard history is held in memory only.
+Everything stays on your Mac, with one exception that is off by default: setting **Media > Lyrics
+Source** to look up online sends the current title, artist, album and length to `lrclib.net`. No
+accounts, no analytics, no telemetry. Clipboard history is never written to disk, and it skips
+anything an app marks as private. Audio becomes a handful of numbers per buffer and is discarded;
+nothing is recorded.
 
-## Repository layout
-
-`CLAUDE.md` documents the architecture and the pitfalls worth knowing before changing
-anything. `WORKPLAN.md` tracks what is built and what comes next.
-
-There is no test target yet, and no licence has been chosen, so all rights are reserved by
-default until one is added.
-
-## Making a release
+## Building
 
 ```bash
-Scripts/release.sh              # builds Release, writes dist/MinNotch-<version>.dmg
-Scripts/release.sh --anonymous  # …re-signed ad-hoc, carrying no Apple team or ID
+Scripts/run.sh            # build and relaunch
+Scripts/run.sh --no-build # relaunch without rebuilding, keeping granted permissions
 ```
 
-The script prints the `gh release create` command that publishes the DMG, with
-`Scripts/release-notes.sh` as the description, so the GitHub page and the app's own What's New
-window say the same thing. Bump `MARKETING_VERSION` and update `ReleaseNotes.latest` first; the
-script warns when the two disagree.
+Signing needs your own Apple team, and a free Apple ID is enough. Copy
+`Config/Local.xcconfig.example` to `Config/Local.xcconfig` and put your team in it; that file is
+gitignored. Without it the build stops and says a development team is required.
 
-## A note on signing
+Xcode 16 or later. No dependencies, no package manager, no test target yet.
 
-The app is signed with a free personal Apple team, which is enough to keep the permissions you
-grant it across rebuilds, and enough for macOS to offer the system audio permission the
-ambient lighting wants. It is not enough to notarise the app: that needs a paid Apple Developer
-Program membership, so a downloaded build still has to be opened once through
-Privacy & Security > Open Anyway.
+## Releasing
+
+```bash
+Scripts/release.sh              # writes dist/MinNotch-<version>.dmg
+Scripts/release.sh --anonymous  # the same, re-signed to carry no Apple team or ID
+```
+
+It prints the `gh release create` line that publishes the DMG, using `Scripts/release-notes.sh` for
+the description so the GitHub page and the app's own What's New window say the same thing. Bump
+`MARKETING_VERSION` and update `ReleaseNotes.latest` first; the script warns if they disagree.
+
+## Repository
+
+`CLAUDE.md` is the architecture and the traps worth knowing before changing anything.
+`WORKPLAN.md` tracks what is built, what is not, and what was deliberately abandoned.
+
+No licence has been chosen, so all rights are reserved for now.
