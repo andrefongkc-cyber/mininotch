@@ -26,10 +26,10 @@ must show `flags=0x10000(runtime)` and a real `TeamIdentifier`; an ad-hoc build 
 
 1. The signature is stable across rebuilds, so TCC grants should now survive a build rather
    than resetting every time. Not yet confirmed by watching a grant survive one.
-2. `ENABLE_RESOURCE_ACCESS_AUDIO_INPUT = YES` is set, the hardened runtime is applied, and the
-   binary carries `com.apple.security.device.audio-input`, so the system audio permission is
-   no longer refused before it is asked for. Whether the tap now delivers real signal is
-   **still unverified**; `--check-audio` is how to find out.
+2. **The audio tap works.** Signing, `ENABLE_RESOURCE_ACCESS_AUDIO_INPUT = YES` and asking
+   from the foreground together fixed it: `--check-audio` received audio on 8 of 8 checks
+   against a real sound, with energy 0.59 and live band values. The FFT, banding and onset
+   chain have finally seen real signal.
 3. Notarisation still needs a paid Developer Program membership, which the user does not have,
    so shared builds are still an unsigned-looking DMG that needs Open Anyway.
 
@@ -366,6 +366,13 @@ Scripts/          build, run, preview
   at different `--hold` values and compare the pixels: identical means frozen.
 - **`ScrollView` has no ideal height.** Inside the panel it lays out at zero unless given an
   explicit frame. See `CalendarWidgetView.eventListHeight`.
+- **Every permission has to be asked for from the foreground.** macOS shows a permission dialog
+  only to the active app, and this one is an accessory app whose panel never activates, so a
+  request made as-is is answered by nobody. EventKit resolves as a refusal with no dialog; the
+  audio tap is worse, blocking forever instead of returning. `ForegroundPrompt.begin()` /
+  `end()` takes a Dock icon for the length of the request and restores it afterwards, on a timer
+  as well, so a request that never answers cannot strand the app with an icon. Wrap any new
+  permission request in it.
 - **Apple's volume overlay is hidden by taking the keys, not by touching the overlay.** On macOS
   26 `OSDUIHelper` no longer draws it: suspended (state `T`) the overlay still appeared, and killing
   it had always flickered. `SystemKeyInterceptor` is a session event tap on `NX_SYSDEFINED` aux
@@ -419,13 +426,12 @@ policy and activates before asking, restoring the policy when the user answers o
 timeout. Without that the request resolves with no dialog and the status stays
 `notDetermined`, which is indistinguishable from a user dismissing a dialog they never saw.
 
-**The system audio permission was never grantable before signing.** macOS would not raise the
-system audio recording prompt for an ad-hoc signed app, so `AudioHardwareCreateProcessTap`
-simply never returned. `AudioAnalyzer.start()` therefore does its Core Audio work off the main
-thread with an eight second timeout: called inline it froze the entire interface. Keep that
-timeout whatever happens next. The signing and the audio-input entitlement are now in place, so
-the prompt should be reachable; nobody has run `--check-audio` against the signed build yet, and
-everything the tap feeds still has a working non-audio fallback.
+**The system audio tap needed three things, and two of them were not signing.** It needs a real
+signature, the `com.apple.security.device.audio-input` entitlement, and to be asked for while the
+app is frontmost. `AudioHardwareCreateProcessTap` does not refuse and does not return when the
+prompt cannot be shown: it blocks forever, which is why `AudioAnalyzer.start()` does its Core
+Audio work off the main thread with an eight second timeout. Keep both the thread and the
+timeout. With `ForegroundPrompt` wrapped around the request the tap starts and delivers audio.
 
 **The "Audio Input" checkbox is a build setting, and the tap will need it once signed.** In
 Xcode 26, Signing & Capabilities > Hardened Runtime > Resource Access > Audio Input writes
@@ -561,10 +567,9 @@ The spring cannot be `.animation(.spring)`. A SwiftUI animation restarts every t
 changes, and this value changes every frame, so it never gets far enough into the curve to
 overshoot and comes out looking exactly like a linear ramp.
 
-**The fallback runs through the same chain as real audio, and that is not a nicety.** The
-system audio permission cannot be granted to an ad-hoc signed build at all, so on this
-machine the fallback is the only thing that ever drives the glow and the whole effect is
-judged on it. `GlowFallbackSource` therefore emits impulses rather than curves, because the
+**The fallback runs through the same chain as real audio, and that is not a nicety.** It was
+the only thing that ever drove the glow until the tap started working, and it stays the path
+for anyone who leaves audio-reactive off or refuses the permission. `GlowFallbackSource` therefore emits impulses rather than curves, because the
 envelope and spring downstream exist to shape a bare "now" into a hit; a source that
 pre-smooths its own oscillation gets shaped twice and arrives looking like breathing. Styles
 do not branch on whether audio is live, deliberately: what they receive is the same kind of
@@ -672,8 +677,9 @@ called out explicitly, because several things here can only be checked on a sign
 
 **Built but never exercised against reality**
 
-- The Core Audio tap's FFT, banding, and onset detection. The tap starts and buffers arrive,
-  but they are silent because the permission cannot be granted to an ad-hoc build.
+- How the glow looks driven by real audio. The tap now delivers signal (`--check-audio`), so
+  the FFT, banding and onset detection have run against it, but nobody has watched the effect
+  itself with audio-reactive on rather than the fallback.
 - Multi-display targeting beyond one screen. All three modes are written; only the built-in
   display has ever been used.
 - Sandboxed behaviour. Everything so far assumes unsandboxed.

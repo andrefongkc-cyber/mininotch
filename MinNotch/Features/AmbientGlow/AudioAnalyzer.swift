@@ -106,6 +106,11 @@ final class AudioAnalyzer {
         guard !isRunning, !isStarting, failure == nil else { return }
         isStarting = true
 
+        // The system audio prompt, like every other, is only shown to the active app, and this
+        // one is an accessory app that never activates. Asking from the background is why the
+        // request used to hang with nothing on screen.
+        DispatchQueue.main.async { ForegroundPrompt.begin() }
+
         // Off the main thread, and not optional. `AudioHardwareCreateProcessTap` does not
         // return until the system has decided whether this process may listen, and on a
         // build that cannot raise the permission prompt it does not return at all. Called
@@ -120,6 +125,7 @@ final class AudioAnalyzer {
                 let latency = OutputLatency.current()
 
                 DispatchQueue.main.async {
+                    ForegroundPrompt.end()
                     self.isStarting = false
                     self.isRunning = true
                     self.outputLatency = latency
@@ -127,6 +133,7 @@ final class AudioAnalyzer {
             } catch let error as Failure {
                 self.teardown()
                 DispatchQueue.main.async {
+                    ForegroundPrompt.end()
                     self.isStarting = false
                     self.failure = error
                     AppLog.media.error("Audio tap failed: \(error.message, privacy: .public)")
@@ -134,6 +141,7 @@ final class AudioAnalyzer {
             } catch {
                 self.teardown()
                 DispatchQueue.main.async {
+                    ForegroundPrompt.end()
                     self.isStarting = false
                     self.failure = .unsupported(error.localizedDescription)
                 }
@@ -143,9 +151,10 @@ final class AudioAnalyzer {
         // A tap that never comes back is reported rather than left spinning forever.
         DispatchQueue.main.asyncAfter(deadline: .now() + 8) { [weak self] in
             guard let self, self.isStarting else { return }
+            ForegroundPrompt.end()
             self.isStarting = false
             self.failure = .unsupported(
-                "The system did not answer the request to record audio. This build is signed ad-hoc, and macOS will not raise the system audio permission prompt for a build without a real signing identity."
+                "The system did not answer the request to record audio within eight seconds. If no permission dialog appeared, allow MinNotch under Privacy & Security > Screen & System Audio Recording, then try again."
             )
         }
     }

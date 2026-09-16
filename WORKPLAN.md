@@ -1,6 +1,6 @@
 # MinNotch workplan
 
-Status: doing nothing in flight, next: check whether the signed build can finally reach the system audio permission (`--check-audio`), and whether TCC grants now survive a rebuild.
+Status: doing nothing in flight, next: look at the glow driven by real audio (Settings > Appearance > Ambient Lighting > audio-reactive), and confirm a TCC grant survives a rebuild.
 
 Living document. Update the checkboxes as work lands. `CLAUDE.md` holds the architecture
 rules and the traps; this file holds the sequence.
@@ -42,8 +42,10 @@ at last. Notarisation still needs a paid membership nobody is buying.
       What that leaves open:
 
       - [ ] Confirm a TCC grant actually survives a rebuild now, instead of assuming it.
-      - [ ] Run `--check-audio` against the signed build: does the system audio prompt appear,
-            and does the tap deliver real signal rather than silence?
+      - [x] The audio tap works. Signing alone was not enough: the request also has to be made
+            from the foreground, since macOS shows the prompt only to the active app and
+            `AudioHardwareCreateProcessTap` blocks rather than refusing. `ForegroundPrompt` now
+            wraps it, and `--check-audio` received audio on 8 of 8 checks against a real sound.
       - [ ] Notarisation and a double-click install for others still need a paid Developer ID,
             which the user is not buying, so shared builds stay a DMG that needs
             Privacy & Security > Open Anyway. Anyone else building the repo must set their own
@@ -223,13 +225,15 @@ nothing.
       driver spin. Under a real `NSApp.run()`: closed notch idle 0%, closed with glow 16%, open
       media card 12%, open card with glow 21%, hidden glow 0%. The tool now holds inside the real
       run loop. Capping the glow at 30 fps would bring it to 10%; left at full rate on purpose.
-- [~] Audio-reactive layer via a Core Audio process tap and a vDSP FFT, with band energy and
+- [x] Audio-reactive layer via a Core Audio process tap and a vDSP FFT, with band energy and
       onset detection. Replaced an earlier ScreenCaptureKit implementation, which asked for
       screen recording in order to read sound. **Partly verified**: the tap is created, the
       aggregate device is built, the IO proc fires, and buffers arrive. They are silent,
       because macOS would not raise the system audio permission prompt for the ad-hoc signed
       build it was written against, so the FFT, banding, and onset threshold remain unexercised
-      against real signal. Signing landed on 2026-09-15, so this is now worth retrying.
+      against real signal until 2026-09-15, when signing plus `ForegroundPrompt` made the tap
+      run: `--check-audio` saw energy 0.59 and live bands on a real sound. What the effect
+      looks like driven by real audio, rather than by the fallback, is still unreviewed.
 - [x] Cross-fade the glow between the closed and open outlines. When it is on for only one of
       the two states it now fades in and out on the surface's own spring, instead of popping.
 - [x] **The glow outline grows with the box.** The cause was not `GeometryReader`, whatever
