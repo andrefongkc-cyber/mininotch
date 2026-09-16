@@ -13,7 +13,16 @@ final class NowPlayingController {
     private(set) var track: NowPlayingTrack?
     private(set) var artwork: NSImage?
     private(set) var palette: ArtworkPalette = .fallback
-    private(set) var lyrics: Lyrics?
+    private(set) var lyrics: Lyrics? {
+        didSet {
+            // The correction belongs to the file, so a new one starts the measurement again.
+            if let lyrics, lyrics.isSynced { lyricsSync.begin(lyrics: lyrics) } else { lyricsSync.reset() }
+        }
+    }
+
+    /// Measures how far this lyric file sits from the audio. Stored rather than ignored, so the
+    /// strip and the Settings row both redraw as it settles.
+    private(set) var lyricsSync = LyricsSyncCalibrator()
     /// Why the lyric strip looks the way it does. Without this the strip silently renders
     /// nothing when a lookup fails, which is indistinguishable from the feature being broken.
     private(set) var lyricsStatus: LyricsStatus = .idle
@@ -236,6 +245,7 @@ final class NowPlayingController {
         lyrics = nil
         lastTrackIdentity = nil
         loadedLyricsKey = nil
+        lyricsSync.reset()
     }
 
     // MARK: Artwork and lyrics
@@ -358,7 +368,7 @@ final class NowPlayingController {
     /// files are transcribed by hand and their timings vary by seconds between sources, so
     /// the correction is per-user rather than something that can be derived.
     func lyricsTime(at date: Date = Date()) -> TimeInterval {
-        var time = elapsed(at: date) + (settings?.media.lyricsOffset ?? 0)
+        var time = elapsed(at: date) + (settings?.media.lyricsOffset ?? 0) + lyricsAudioCorrection
 
         // What the player reports is what it has handed to the output device, not what is
         // audible. Bluetooth and AirPlay buffer for tens to hundreds of milliseconds, so the
@@ -367,6 +377,26 @@ final class NowPlayingController {
             time -= latency
         }
         return time
+    }
+
+    /// Correction measured from the audio itself, or zero while the feature is off or the
+    /// measurement has not settled. Added on top of the user's own offset rather than replacing
+    /// it: theirs is a preference, this is a property of the file.
+    var lyricsAudioCorrection: TimeInterval {
+        guard settings?.media.matchLyricsToAudio == true else { return 0 }
+        return lyricsSync.offset ?? 0
+    }
+
+    /// Records an onset the audio tap heard, for the lyric measurement.
+    ///
+    /// Only while a synced file is playing and nobody is dragging the scrubber, since a position
+    /// read during a drag is the drag's, not the track's.
+    func noteAudioOnset(at date: Date, strength: Double) {
+        guard settings?.media.matchLyricsToAudio == true,
+              let track, track.isPlaying, !isScrubbing,
+              lyrics?.isSynced == true
+        else { return }
+        lyricsSync.noteOnset(at: elapsed(at: date), strength: strength)
     }
 
     /// Buffering currently being compensated for, in seconds. Zero when the tap is not
@@ -457,7 +487,7 @@ extension NowPlayingController {
     /// `settings` is attached without starting anything, so a capture can see the settings-
     /// dependent parts of the card, such as whether Up Next shows, without the controller
     /// polling the real player and replacing the sample with whatever is actually playing.
-    func applySample(settings: SettingsStore? = nil) {
+    func applySample(settings: SettingsStore? = nil, isPlaying: Bool = true) {
         if let settings { self.settings = settings }
         track = NowPlayingTrack(
             title: "Weightless in the Blue Hour",
@@ -465,7 +495,7 @@ extension NowPlayingController {
             album: "Slow Cartography",
             duration: 254,
             elapsed: 97,
-            isPlaying: true,
+            isPlaying: isPlaying,
             sourceKind: .appleMusic,
             sourceAppName: "Music",
             trackIdentity: "sample",

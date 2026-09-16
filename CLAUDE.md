@@ -58,7 +58,9 @@ MinNotch --render-previews <dir>                                  # what preview
 MinNotch --capture-notch out.png [--collapsed] [--tab system] [--glow bars|off] [--debug]
                                  [--hold 12] [--midway 0.14] [--extended] [--virtual]
                                  [--timer 12] [--width 460] [--right timer,settings,battery]
+                                 [--paused] [--placements closed,open]
 MinNotch --check-lyrics "Khalid" "8TEEN" 229                      # LRCLIBClient + LRCParser
+MinNotch --check-lyric-sync [--out f]                             # matching lyrics to the audio
 MinNotch --check-stats 5                                          # CPU/GPU/memory/network
 MinNotch --check-audio 8 [--out f]                                # Core Audio tap
 MinNotch --check-glow 2 [--source step|fallback]                  # glow shaping chain
@@ -622,6 +624,26 @@ from style: the closed pill, the open panel, or both. The glow view stays in the
 both and fades with `isVisible` rather than being inserted, because an inserted view takes its
 final layout on its first frame and would jump ahead of the growing box. There is no album art
 placement: the artwork is drawn still, on purpose.
+
+**Lyrics are matched to the audio by listening for a voice, not by matching beats.**
+`LyricsSyncCalibrator` exists because the player's clock is right and the *file* is wrong: LRC
+timings differ between sources by a second or more. General onset matching cannot fix that, since
+a busy mix has an onset every beat and a two second search window then locks onto the drums. A
+line that starts after a five second gap in the lyrics is the exception: something enters there
+that was not there before, and it is a voice. So only those lines count, only the strongest
+mid-band onset near each one is kept (`AudioAnalyzer.onVocalOnset`, bands 2-5), and the answer is
+the median across at least three of them, refused outright when they disagree by more than 0.25 s
+and clamped to two seconds either way. `--check-lyric-sync` feeds it synthetic tracks with a known
+offset, drums throughout, and jitter on the entries; it recovers the offset to a hundredth of a
+second, and refuses an instrumental. That check caught a five-second threshold being a two-second
+one, which had made every ordinary line an "entry".
+
+**A glow that moves with nothing playing is worse than one that freezes.** `GlowFallbackSource`
+used to breathe while playback was paused, so that the light never looked dead. In use that reads
+as the effect following music badly, and it makes the audio-reactive version unprovable by eye:
+the first question anyone asks is whether it is listening at all. Paused is now completely still,
+verified by two captures 1.2 s apart being byte-identical, and Settings > Ambient Lighting has a
+live meter of what the tap is hearing so "is this real" has an answer that is not a guess.
 
 **Lyric timing is only as good as its timestamp.** `NowPlayingController` stamps the
 capture time on the queue that read the player, not on main after the hop. An Apple Event

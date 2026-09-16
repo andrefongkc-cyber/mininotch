@@ -133,6 +133,18 @@ struct AmbientLightingCard: View {
                 SettingsToggle(isOn: $settings.appearance.ambientGlow.isAudioReactive)
             }
 
+            if glow.isAudioReactive, glow.isEnabled {
+                SettingsDivider()
+
+                SettingsRow(
+                    title: "What It Is Hearing",
+                    subtitle: hearingSubtitle,
+                    systemImage: "waveform"
+                ) {
+                    AudioLevelMeter(analyzer: environment.audioAnalyzer)
+                }
+            }
+
             if environment.audioAnalyzer.failure != nil, glow.isAudioReactive {
                 SettingsDivider()
 
@@ -225,6 +237,18 @@ struct AmbientLightingCard: View {
         return preview
     }
 
+    /// Says plainly whether the light is following real sound or animating, because the two are
+    /// indistinguishable by eye and the first thing anyone asks is which one they are looking at.
+    private var hearingSubtitle: String {
+        if environment.audioAnalyzer.failure != nil {
+            return "Not listening, so the light is animating on its own."
+        }
+        guard environment.audioAnalyzer.isRunning else {
+            return "Starting up. Until it does, the light animates on its own while something plays."
+        }
+        return "Live, from the system audio. Play something and these move; in silence they stay down."
+    }
+
     private var audioFooter: String {
         if let failure = environment.audioAnalyzer.failure {
             return failure.message + " Switch Follow the Beat off and on to try again."
@@ -234,5 +258,32 @@ struct AmbientLightingCard: View {
             return "Listening. Your output device reports \(latency) ms of buffering, which is subtracted from lyric timing."
         }
         return "Following the beat reads system audio through a Core Audio tap, which asks for the system audio recording permission. That is a separate permission from the microphone and from screen recording. Nothing is recorded or written anywhere: the audio becomes a handful of numbers and is discarded."
+    }
+}
+
+/// Eight live bars of what the audio tap is hearing.
+///
+/// The point is proof, not decoration: the glow cannot be judged by eye for whether it is
+/// following sound, since a plausible animation and a real analysis look alike once blurred.
+/// These sit still in silence and move with whatever is playing. Drawn only while the Ambient
+/// Lighting card is on screen, and reading the analysis that is already being published.
+private struct AudioLevelMeter: View {
+    let analyzer: AudioAnalyzer
+
+    var body: some View {
+        TimelineView(.animation(minimumInterval: 1 / 20, paused: !analyzer.isRunning)) { _ in
+            let bands = analyzer.current?.bands ?? []
+
+            HStack(alignment: .bottom, spacing: 2) {
+                ForEach(0..<GlowInput.bandCount, id: \.self) { index in
+                    let level = index < bands.count ? bands[index] : 0
+                    Capsule()
+                        .fill(level > 0.02 ? Palette.controlAccent : Palette.separator)
+                        .frame(width: 3, height: max(2, 18 * level))
+                }
+            }
+            .frame(width: 44, height: 18, alignment: .bottom)
+            .accessibilityHidden(true)
+        }
     }
 }

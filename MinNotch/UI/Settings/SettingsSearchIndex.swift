@@ -50,6 +50,7 @@ enum SettingsSearchIndex {
         .init(tab: .media, section: "Lyrics", title: "Show Lyrics", subtitle: "Display the current line under the track info when lyrics are available.", symbolName: "quote.bubble"),
         .init(tab: .media, section: "Lyrics", title: "Timing Offset", subtitle: "Shift lyrics earlier or later. Lyric files are timed by hand and disagree between sources.", symbolName: "timer"),
         .init(tab: .media, section: "Lyrics", title: "Use Audio Clock", subtitle: "", symbolName: "waveform.badge.magnifyingglass"),
+        .init(tab: .media, section: "Lyrics", title: "Match to the Audio", subtitle: "Listen for the moment a voice comes in, and shift the lyrics to match. Uses the system audio permission.", symbolName: "waveform.and.person.filled"),
         .init(tab: .media, section: "Lyrics", title: "Lyrics Source", subtitle: "Where to look when your player has no lyrics stored.", symbolName: "magnifyingglass"),
         .init(tab: .media, section: "Display", title: "Floating Window", subtitle: "Also show Now Playing in a small window above other apps. Drag it anywhere; it remembers where you put it. The pop-out button on the Now Playing card does the same.", symbolName: "macwindow.on.rectangle"),
         .init(tab: .media, section: "Display", title: "Sneak Peek on Track Change", subtitle: "When a new song starts, the closed notch drops down for a moment to show what it is.", symbolName: "rectangle.expand.vertical"),
@@ -135,6 +136,7 @@ enum SettingsSearchIndex {
         .init(tab: .appearance, section: "Ambient Lighting", title: "Speed", subtitle: "", symbolName: "hare"),
         .init(tab: .appearance, section: "Ambient Lighting", title: "Glow Radius", subtitle: "Capped automatically on the closed pill, which is too thin to take a wide blur.", symbolName: "circle.dashed"),
         .init(tab: .appearance, section: "Ambient Lighting", title: "Follow the Beat", subtitle: "Analyse what is playing so the light tracks the music instead of animating on its own.", symbolName: "waveform.badge.magnifyingglass"),
+        .init(tab: .appearance, section: "Ambient Lighting", title: "What It Is Hearing", subtitle: "Live, from the system audio. Play something and these move; in silence they stay down.", symbolName: "waveform"),
         .init(tab: .appearance, section: "Ambient Lighting", title: "Try Again", subtitle: "Ask for the system audio permission once more.", symbolName: "arrow.clockwise"),
         .init(tab: .appearance, section: "Ambient Lighting", title: "Pause in Low Power Mode", subtitle: "", symbolName: "battery.25percent"),
     ]

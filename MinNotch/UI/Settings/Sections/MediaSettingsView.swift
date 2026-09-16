@@ -111,6 +111,17 @@ struct MediaSettingsView: View {
                 SettingsDivider()
 
                 SettingsRow(
+                    title: "Match to the Audio",
+                    subtitle: matchToAudioSubtitle,
+                    systemImage: "waveform.and.person.filled",
+                    isEnabled: settings.media.enabled && settings.media.showLyrics
+                ) {
+                    SettingsToggle(isOn: $settings.media.matchLyricsToAudio)
+                }
+
+                SettingsDivider()
+
+                SettingsRow(
                     title: "Lyrics Source",
                     subtitle: "Where to look when your player has no lyrics stored.",
                     systemImage: "magnifyingglass",
@@ -250,6 +261,25 @@ struct MediaSettingsView: View {
 
     /// Says whether the compensation is actually doing anything, since it depends on the
     /// ambient lighting's audio tap being switched on in Appearance.
+    /// Says what the measurement is doing right now, because a correction the user cannot see
+    /// is indistinguishable from a setting that does nothing.
+    private var matchToAudioSubtitle: String {
+        guard settings.media.matchLyricsToAudio else {
+            return "Listen for the moment a voice comes in, and shift the lyrics to match. Uses the system audio permission."
+        }
+        let sync = environment.nowPlaying.lyricsSync
+        if let failure = environment.audioAnalyzer.failure {
+            return "Waiting on the system audio: \(failure.message)"
+        }
+        if let offset = sync.offset {
+            return String(format: "Correcting by %+.2f s, from %d phrase entries.", offset, sync.matchCount)
+        }
+        if sync.matchCount > 0 {
+            return "Listening. \(sync.matchCount) of \(LyricsSyncCalibrator.minimumMatches) entries matched so far; nothing is corrected until they agree."
+        }
+        return "Listening for a voice to come in. Nothing is corrected until several entries agree."
+    }
+
     private var audioClockSubtitle: String {
         let latency = environment.nowPlaying.lyricsLatencyCompensation
         guard latency > 0 else {

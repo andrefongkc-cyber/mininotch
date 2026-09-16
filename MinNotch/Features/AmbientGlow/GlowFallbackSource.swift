@@ -14,17 +14,19 @@ enum GlowFallbackSource {
 
     /// A synthetic bar of levels at `time`.
     ///
-    /// Paused playback breathes instead of striking: a light that freezes reads as broken,
-    /// and a light still hammering out a beat with nothing playing reads as a bug.
+    /// **Nothing playing means nothing moving.** This used to breathe gently when playback was
+    /// paused, on the theory that a light which freezes reads as broken. It reads worse than
+    /// broken: light moving with no music playing is indistinguishable from light following
+    /// music badly, and the first thing anyone asks is whether the effect is listening at all.
+    /// Stillness is the honest answer, and it is also the answer that makes the moving version
+    /// mean something.
     static func levels(at time: TimeInterval, isPlaying: Bool, speed: Double) -> GlowDynamics.Levels {
         guard isPlaying else {
-            let breath: Double = (sin(time * 0.55) + 1) / 2 * 0.4
-            var resting = [Double](repeating: 0, count: GlowInput.bandCount)
-            for index in resting.indices {
-                let offset: Double = sin(time * 0.4 + Double(index) * 0.8)
-                resting[index] = breath * (0.5 + 0.25 * (offset + 1))
-            }
-            return GlowDynamics.Levels(energy: breath, bands: resting, beat: 0)
+            return GlowDynamics.Levels(
+                energy: 0,
+                bands: [Double](repeating: 0, count: GlowInput.bandCount),
+                beat: 0
+            )
         }
 
         // 92 to 140 bpm across the speed slider, which is the range most things sit in.

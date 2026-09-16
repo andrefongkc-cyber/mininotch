@@ -1,6 +1,6 @@
 # MinNotch workplan
 
-Status: doing nothing in flight, next: look at the glow driven by real audio (Settings > Appearance > Ambient Lighting > audio-reactive), and confirm a TCC grant survives a rebuild.
+Status: doing the README rewrite with screenshots and measured performance, next: answer whether macOS 13.7.8 support is feasible.
 
 Living document. Update the checkboxes as work lands. `CLAUDE.md` holds the architecture
 rules and the traps; this file holds the sequence.
@@ -270,6 +270,14 @@ nothing.
       artist for 2.6 s, not the full panel the first version opened. Only for a track that is
       playing, never over an open panel, and a HUD outranks it. Any source, not only Music.
       Review with `--capture-notch --collapsed --peek`.
+- [x] **Match lyrics to the audio.** `LyricsSyncCalibrator` measures how far a lyric file sits
+      from the music by watching for a voice entering after a five second gap in the lyrics,
+      takes the median across at least three of them, and refuses when they disagree. Settings >
+      Media > Match to the Audio, with the current correction shown in the row.
+      `--check-lyric-sync` recovers a known offset to 0.01 s and refuses an instrumental.
+- [x] **The glow stands still when nothing is playing.** The fallback used to breathe when
+      paused, which read as the effect following music badly and made the real thing unprovable.
+      Settings > Appearance > Ambient Lighting now also shows a live meter of what the tap hears.
 - [ ] **Feed the artwork visualizer from the audio analyser.** The bars over the album art
       still animate on the fallback pulse even when the glow's audio layer is running.
 - [ ] **Card styles.** `NowPlayingCardStyle` has `.compact` and `.fullArtwork` declared and

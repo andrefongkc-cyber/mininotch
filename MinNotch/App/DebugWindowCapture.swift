@@ -59,6 +59,11 @@ enum DebugWindowCapture {
         settings.advanced.linkShelfEnabled = true
         environment.linkShelf.applySample()
 
+        // Playback paused, which is the state the glow must be completely still in.
+        if arguments.contains("--paused") {
+            environment.nowPlaying.applySample(settings: settings, isPlaying: false)
+        }
+
         // Squeezes or widens the panel, which is how the top bar's overflow gets reviewed.
         if let index = arguments.firstIndex(of: "--width"),
            arguments.indices.contains(index + 1),

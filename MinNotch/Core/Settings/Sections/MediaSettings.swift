@@ -176,6 +176,12 @@ struct MediaSettings: Codable, Equatable {
     /// Where lyrics come from. Local only by default.
     var lyricsSource: LyricsSource = .playerOnly
 
+    /// Measure how far the lyric file sits from the audio, and correct for it.
+    ///
+    /// Off by default: it needs the system audio tap running, which is a permission, and a file
+    /// whose timings are already right gains nothing from it.
+    var matchLyricsToAudio: Bool = false
+
     /// Subtract the output device's buffering from lyric timing.
     ///
     /// On by default, but it only does anything while the audio tap is running, because the
@@ -230,6 +236,7 @@ struct MediaSettings: Codable, Equatable {
         lyricsSource = c.value(.lyricsSource, LyricsSource.playerOnly)
         lyricsOffset = c.value(.lyricsOffset, 0, in: -2...2)
         useAudioClockForLyrics = c.value(.useAudioClockForLyrics, true)
+        matchLyricsToAudio = c.value(.matchLyricsToAudio, false)
         showTimecodes = c.value(.showTimecodes, true)
         tintFromArtwork = c.value(.tintFromArtwork, true)
         cardStyle = c.value(.cardStyle, NowPlayingCardStyle.classic)

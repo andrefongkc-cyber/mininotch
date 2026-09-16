@@ -22,6 +22,7 @@ if MainActor.assumeIsolated({ DebugMediaCheck.runIfRequested() }) { exit(0) }
 if MainActor.assumeIsolated({ DebugKeysCheck.runIfRequested() }) { exit(0) }
 if MainActor.assumeIsolated({ DebugLinksCheck.runIfRequested() }) { exit(0) }
 if MainActor.assumeIsolated({ DebugWhatsNewCapture.runIfRequested() }) { exit(0) }
+if MainActor.assumeIsolated({ DebugLyricSyncCheck.runIfRequested() }) { exit(0) }
 #endif
 
 let application = NSApplication.shared

@@ -45,6 +45,11 @@ final class AudioAnalyzer {
         }
     }
 
+    /// Raised when the mid frequencies jump, which is what a voice or a lead entering sounds
+    /// like, with the moment it was heard and how sharply it rose. Used to match lyric files to
+    /// the audio; the glow reads `current` instead, because it wants every buffer.
+    @ObservationIgnored var onVocalOnset: ((Date, Double) -> Void)?
+
     private(set) var current: Analysis?
     private(set) var isRunning = false
     private(set) var failure: Failure?
@@ -72,6 +77,8 @@ final class AudioAnalyzer {
     @ObservationIgnored private var windowGain: Double = 1
 
     @ObservationIgnored private var previousEnergy: Double = 0
+    @ObservationIgnored private var previousMidLevel: Double = 0
+    @ObservationIgnored private var lastMidOnset = Date.distantPast
     @ObservationIgnored private var beatLevel: Double = 0
     @ObservationIgnored private var lastPublish = Date()
 
@@ -386,6 +393,23 @@ final class AudioAnalyzer {
         return bands
     }
 
+    /// Bands a voice occupies, of the eight the spectrum is split into. The lowest two are
+    /// bass and the top two are air and cymbals; what carries a vocal is in between.
+    private static let midBands = 2...5
+    /// How far the mid bands must jump over the previous buffer to count as something entering.
+    private static let midOnsetRise: Double = 0.045
+    /// Nothing counts as a second onset until this long after the last, so one entry is one
+    /// event rather than a burst of them.
+    private static let midOnsetGap: TimeInterval = 0.2
+
+    private func midBandRise(_ bands: [Double]) -> Double {
+        guard bands.count > Self.midBands.upperBound else { return 0 }
+        let level = bands[Self.midBands].reduce(0, +) / Double(Self.midBands.count)
+        let rise = level - previousMidLevel
+        previousMidLevel = level
+        return rise
+    }
+
     /// Publishes one buffer's numbers, unscaled.
     ///
     /// Deliberately no gain riding here. It used to divide each band by the loudest band in
@@ -406,9 +430,20 @@ final class AudioAnalyzer {
         previousEnergy = level
         beatLevel = rise > 0.06 ? 1 : max(0, beatLevel - elapsed * 6)
 
+        // Separately, a rise in the mid bands only. Voices and leads live there, while the kick
+        // and the hats that dominate a full-spectrum onset do not, so this fires far less often
+        // and means something more specific: something new has entered the middle of the mix.
+        let midRise = midBandRise(bands)
+        let onset: (Date, Double)? = {
+            guard midRise > Self.midOnsetRise, now.timeIntervalSince(lastMidOnset) > Self.midOnsetGap else { return nil }
+            lastMidOnset = now
+            return (now, midRise)
+        }()
+
         let analysis = Analysis(energy: level, bands: bands, beat: beatLevel)
         DispatchQueue.main.async { [weak self] in
             self?.current = analysis
+            if let onset { self?.onVocalOnset?(onset.0, onset.1) }
         }
     }
 }

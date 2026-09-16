@@ -53,6 +53,11 @@ final class AppEnvironment {
             guard let self, self.audioAnalyzer.isRunning else { return nil }
             return self.audioAnalyzer.outputLatency
         }
+        // The tap hears a voice come in; the controller knows where the track was at that
+        // moment. Neither knows about the other, so the wiring lives here.
+        audioAnalyzer.onVocalOnset = { [weak self] date, strength in
+            self?.nowPlaying.noteAudioOnset(at: date, strength: strength)
+        }
         nowPlaying.onTrackChange = { [weak self] track in
             self?.trackChanged(track)
         }
@@ -153,12 +158,17 @@ final class AppEnvironment {
 
     /// Starts or stops the audio tap to match the settings.
     ///
-    /// The tap is the one part of the glow that costs anything real and needs a permission,
-    /// so it runs only when the effect is on, audio-reactive is on, and the machine is not
-    /// conserving power.
+    /// The tap is the one part of the glow that costs anything real and needs a permission, so
+    /// it runs only when something actually wants it: the glow following the beat, or the lyric
+    /// strip matching itself to the audio.
     private func applyAudioAnalysisSetting() {
         let glow = settings.appearance.ambientGlow
-        let wanted = glow.isActive(isLowPower: battery.status.isLowPowerMode) && glow.isAudioReactive
+        let glowWantsAudio = glow.isActive(isLowPower: battery.status.isLowPowerMode) && glow.isAudioReactive
+        let lyricsWantAudio = settings.media.enabled
+            && settings.media.showLyrics
+            && settings.media.matchLyricsToAudio
+            && FeatureFlag.lyrics.isEnabled
+        let wanted = glowWantsAudio || lyricsWantAudio
 
         if wanted {
             // `start()` refuses to run again after a failure, so a refused permission cannot
