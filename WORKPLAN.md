@@ -1,6 +1,6 @@
 # MinNotch workplan
 
-Status: doing the README rewrite with screenshots and measured performance, next: answer whether macOS 13.7.8 support is feasible.
+Status: waiting on the user: macOS 13 support (one branch with availability checks, not per-version branches) and whether Windows is a separate project later.
 
 Living document. Update the checkboxes as work lands. `CLAUDE.md` holds the architecture
 rules and the traps; this file holds the sequence.
@@ -414,6 +414,20 @@ database, no accounts, no cookies, and no third-party dependencies. What did app
       third-party dependencies today, so there is nothing to scan.
 
 ---
+
+## Platforms
+
+- [ ] **macOS 13 (Ventura, 13.7.8).** Asked for, not started. The deployment target is 14.4.
+      Blockers found: the Observation framework (`@Observable` in 16 classes, `@Environment(Type.self)`
+      and `@Bindable` in 25 view files) is macOS 14 only and has to become `ObservableObject`;
+      three two-parameter `onChange` calls and one `symbolEffect` need the macOS 13 forms; the
+      Core Audio tap is macOS 14.2+, so Follow the Beat and lyric matching must be gated and
+      hidden there. Plan if approved: one codebase with `#available` checks and a 13.0 target,
+      done on a short-lived branch and merged, not a long-lived per-version branch.
+- [ ] **Windows.** An idea for after a proper Mac release. Nothing here ports: the app is Swift,
+      SwiftUI and AppKit over macOS-only frameworks. It would be a separate codebase (its own
+      repository or a `windows/` folder), sharing the design and the feature list, and could
+      ship on the same GitHub release as a second download.
 
 ## Distribution (not started)
 

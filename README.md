@@ -15,7 +15,7 @@ The first launch is blocked, because notarising an app needs a paid Apple member
 does not have. Open **System Settings > Privacy & Security**, scroll down, and click **Open
 Anyway**. That is once per version.
 
-Requires macOS 14 or later, Apple silicon or Intel. A Mac with no notch gets a virtual one in the
+Requires macOS 14.4 or later, Apple silicon or Intel. On anything older, macOS refuses to open it. A Mac with no notch gets a virtual one in the
 same place.
 
 ## What it does
