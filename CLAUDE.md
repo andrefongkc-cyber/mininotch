@@ -49,6 +49,7 @@ Scripts/audit-search.sh   # every Settings row is in the search index, and nothi
 Scripts/release.sh        # Release build wrapped in dist/MinNotch-<version>.dmg
 Scripts/release.sh --anonymous   # …re-signed ad-hoc, carrying no team or Apple ID
 Scripts/release-notes.sh  # the same release notes as Markdown, for the GitHub release
+swift Scripts/make-icon.swift art.png   # artwork into AppIcon.appiconset, in Apple's grid
 ```
 
 Debug-only command line flags on the binary itself, all `#if DEBUG`:
@@ -733,7 +734,7 @@ called out explicitly, because several things here can only be checked on a sign
 
 **Known to be missing**
 
-App icon and any test target. See `WORKPLAN.md`.
+A test target. See `WORKPLAN.md`.
 
 ## Working with this user
 

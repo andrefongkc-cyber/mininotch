@@ -1,3 +1,5 @@
+<img src="Docs/images/icon.png" width="128" alt="The MinNotch icon">
+
 # MinNotch
 
 A macOS app that lives in the notch. Closed, it is a black pill the size of the camera housing.

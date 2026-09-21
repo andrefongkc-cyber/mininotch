@@ -1,6 +1,6 @@
 # MinNotch workplan
 
-Status: waiting on the user: macOS 13 support (one branch with availability checks, not per-version branches) and whether Windows is a separate project later.
+Status: app icon done, next: waiting on the user for macOS 13 support (one branch with availability checks) and whether Windows is a separate project later.
 
 Living document. Update the checkboxes as work lands. `CLAUDE.md` holds the architecture
 rules and the traps; this file holds the sequence.
@@ -25,9 +25,7 @@ at last. Notarisation still needs a paid membership nobody is buying.
 
 1. Retry the audio tap on the signed build (`--check-audio`), and confirm a granted permission
    survives a rebuild. Both are listed under Blocking below.
-2. App icon. The asset catalog is empty and it shows every time the app launches, including
-   in the new welcome window, which is the first thing a new user sees.
-3. A test target. Nothing is verified automatically across more than a hundred files.
+2. A test target. Nothing is verified automatically across more than a hundred files.
 
 ---
 
@@ -139,9 +137,12 @@ at last. Notarisation still needs a paid membership nobody is buying.
 
 Known gaps in what is already built, after the signing blocker above.
 
-- [~] **App icon.** The user is generating the artwork with an AI tool. When it arrives: a
-      1024x1024 PNG, sliced into the sizes `Assets.xcassets/AppIcon.appiconset/Contents.json`
-      lists, or dropped into Xcode's single-size slot. The build warns until then.
+- [x] **App icon.** Done 2026-09-21 from the user's artwork (a dark tile with the notch pill).
+      `swift Scripts/make-icon.swift <artwork.png>` redraws it in Apple's grid (824 tile on a
+      1024 canvas, continuous corners, transparent surround, drop shadow) and writes every size
+      plus `Contents.json`, because the artwork itself filled the canvas edge to edge on opaque
+      black. macOS 26 shows it as a normal icon, not inside a grey tile. Mention it in the next
+      release's notes.
 - [x] **First-launch tutorial.** Five pages: welcome, a checklist of fourteen features
       starting from a Recommended preset (with Everything and Minimal), how to get around,
       what will be asked for with optional "Allow Now" buttons, and done. Skippable from any
