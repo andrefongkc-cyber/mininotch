@@ -22,6 +22,7 @@ import CoreGraphics
 /// **Needs Accessibility access.** An event tap that can swallow events is refused to an app the
 /// user has not listed under Privacy & Security > Accessibility. Without it `start()` returns
 /// false and nothing is taken.
+@MainActor
 final class SystemKeyInterceptor {
     enum Key: Equatable, CaseIterable {
         case volumeUp, volumeDown, mute, brightnessUp, brightnessDown
@@ -66,15 +67,25 @@ final class SystemKeyInterceptor {
     /// macOS after all.
     var perform: ((Press) -> Bool)?
 
-    private var tap: CFMachPort?
-    private var source: CFRunLoopSource?
+    // Unchecked because `deinit` is not on the main actor and has to release them. Everything
+    // else touches them on the main actor only.
+    nonisolated(unsafe) private var tap: CFMachPort?
+    nonisolated(unsafe) private var source: CFRunLoopSource?
     /// Keys whose press was taken, so their release is taken too. A release on its own would reach
     /// macOS without the press that belongs to it.
     private var heldKeys: [Key] = []
 
     var isRunning: Bool { tap != nil }
 
-    deinit { stop() }
+    /// Only Core Foundation calls on the two references, which are safe from any thread, and by
+    /// the time this runs nothing else can be holding them.
+    deinit {
+        if let tap {
+            CGEvent.tapEnable(tap: tap, enable: false)
+            CFMachPortInvalidate(tap)
+        }
+        if let source { CFRunLoopRemoveSource(CFRunLoopGetMain(), source, .commonModes) }
+    }
 
     // MARK: Permission
 
@@ -83,7 +94,9 @@ final class SystemKeyInterceptor {
     /// Shows macOS's own "would like to control this computer" dialog, which leads to the
     /// Accessibility list. Only call this in answer to the user asking for the feature.
     static func requestTrust() {
-        let key = kAXTrustedCheckOptionPrompt.takeUnretainedValue() as String
+        // The constant's value, spelled out: the imported global is a mutable C variable, which
+        // Swift 6 will not read from a non-isolated context.
+        let key = "AXTrustedCheckOptionPrompt"
         AXIsProcessTrustedWithOptions([key: true] as CFDictionary)
     }
 

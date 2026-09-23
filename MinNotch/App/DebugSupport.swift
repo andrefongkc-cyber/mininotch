@@ -9,6 +9,7 @@ import Foundation
 /// side effect of looking at it. A throwaway suite, seeded from the real one, means the tools
 /// see the user's actual settings and can change whatever they like without any of it
 /// surviving the process.
+@MainActor
 enum DebugSupport {
     private static let suiteName = "com.minnotch.debug-tools"
 

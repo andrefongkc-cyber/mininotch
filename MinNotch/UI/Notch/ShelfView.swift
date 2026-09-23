@@ -157,17 +157,21 @@ struct ShelfView: View {
 
     private func accept(_ providers: [NSItemProvider]) -> Bool {
         let group = DispatchGroup()
-        var urls: [URL] = []
+        // Each provider loads on a queue of its own, possibly at the same time as the others,
+        // so the list they add to is behind a lock. It was a plain array, which several
+        // loaders appending at once could corrupt.
+        let collected = CollectedURLs()
 
         for provider in providers {
             group.enter()
             _ = provider.loadObject(ofClass: URL.self) { url, _ in
-                if let url { urls.append(url) }
+                if let url { collected.append(url) }
                 group.leave()
             }
         }
 
         group.notify(queue: .main) {
+            let urls = collected.all
             guard !urls.isEmpty else { return }
             service.add(urls)
             Haptics.perform(enabled: settings.advanced.hapticFeedbackEnabled, strength: settings.advanced.hapticStrength)
@@ -277,4 +281,13 @@ struct ShelfDragSource: NSViewRepresentable {
             onRemove?()
         }
     }
+}
+
+/// URLs gathered from several item providers at once.
+private final class CollectedURLs: @unchecked Sendable {
+    private let lock = NSLock()
+    private var urls: [URL] = []
+
+    func append(_ url: URL) { lock.withLock { urls.append(url) } }
+    var all: [URL] { lock.withLock { urls } }
 }

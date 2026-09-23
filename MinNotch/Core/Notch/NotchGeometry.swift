@@ -27,7 +27,7 @@ struct NotchGeometry: Equatable {
         height: Metrics.notchGlowSpill * 2
     )
 
-    static func make(for screen: NSScreen, settings: SettingsStore) -> NotchGeometry {
+    @MainActor static func make(for screen: NSScreen, settings: SettingsStore) -> NotchGeometry {
         let frame = screen.frame
         let physical = physicalNotchSize(of: screen)
 
@@ -78,7 +78,7 @@ struct NotchGeometry: Equatable {
     ///
     /// The top bar puts controls either side of the cutout, so the panel also has to leave
     /// usable room on both flanks, which `make` adds on top.
-    static func panelWidth(settings: SettingsStore, cutoutWidth: CGFloat) -> CGFloat {
+    @MainActor static func panelWidth(settings: SettingsStore, cutoutWidth: CGFloat) -> CGFloat {
         let minimum = TopStripLayout.minimumPanelWidth(
             leading: settings.appearance.topStripLeading,
             trailing: settings.appearance.topStripTrailing,

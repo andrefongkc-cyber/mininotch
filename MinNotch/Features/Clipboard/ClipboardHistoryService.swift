@@ -59,6 +59,7 @@ struct ClipboardItem: Identifiable, Equatable {
 /// And it skips anything a source app marked concealed or transient, which is the convention
 /// password managers use to say "do not remember this".
 @Observable
+@MainActor
 final class ClipboardHistoryService {
     private(set) var items: [ClipboardItem] = []
 
@@ -177,10 +178,9 @@ final class ClipboardHistoryService {
         guard let settings, settings.advanced.clipboardHistoryEnabled, FeatureFlag.clipboardHistory.isEnabled else { return }
 
         let interval = observers > 0 ? Self.visibleInterval : Self.idleInterval
-        let timer = Timer(timeInterval: interval, repeats: true) { [weak self] _ in
+                let timer = Timer.onMain(every: interval) { [weak self] in
             self?.poll()
         }
-        RunLoop.main.add(timer, forMode: .common)
         self.timer = timer
     }
 
@@ -241,7 +241,7 @@ final class ClipboardHistoryService {
     }
 
     /// Recognises `#rgb`, `#rrggbb`, and `#rrggbbaa`, which is what a design tool copies.
-    static func parseColor(_ string: String) -> NSColor? {
+    nonisolated static func parseColor(_ string: String) -> NSColor? {
         var hex = string.trimmingCharacters(in: .whitespacesAndNewlines)
         guard hex.hasPrefix("#") else { return nil }
         hex.removeFirst()

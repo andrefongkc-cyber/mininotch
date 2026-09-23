@@ -16,7 +16,8 @@ import Foundation
 /// Files live in the Caches directory, which macOS may clear on its own, and each is named by
 /// a hash of the track rather than its title, so the folder listing does not read as a
 /// listening history. The whole cache is deleted when the online lookup is switched off.
-final class LyricsCache {
+/// Unchecked `Sendable`: every read and write of the folder goes through `queue`.
+final class LyricsCache: @unchecked Sendable {
     static let shared = LyricsCache()
 
     enum Lookup: Equatable {

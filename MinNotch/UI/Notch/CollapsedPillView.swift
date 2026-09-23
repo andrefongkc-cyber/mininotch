@@ -134,7 +134,7 @@ struct CollapsedPillContent: Equatable {
 ///
 /// At rest the pill is exactly the size of the hardware notch, so on a notched Mac it sits
 /// entirely behind the camera housing and the top of the screen looks untouched. Turning on
-/// the indicators in Settings > General widens it either side of the cutout, which is the
+/// the indicators in Settings > Layout widens it either side of the cutout, which is the
 /// only place content on that hardware is actually visible. A display with no physical notch
 /// is always extended, because it has nothing to hide behind.
 struct CollapsedPillView: View {

@@ -17,6 +17,9 @@ struct CalendarItem: Identifiable, Equatable {
     var location: String?
     /// Set for reminders once that source lands; nil for events.
     var isCompleted: Bool?
+    /// A reminder with no due date. It has no place on a timeline, so it sorts after
+    /// everything dated and the list says "No due date" instead of a time.
+    var isUndated = false
 
     init(event: EKEvent) {
         // `eventIdentifier` repeats across occurrences of a recurring event, so the start
@@ -35,19 +38,20 @@ struct CalendarItem: Identifiable, Equatable {
     }
 
     /// Builds a row from a reminder, so the event list can show both without knowing which
-    /// is which. A reminder with no due date is not representable here and is filtered out
-    /// before this point.
-    init?(reminder: EKReminder) {
-        guard let components = reminder.dueDateComponents,
-              let due = Calendar.current.date(from: components) else { return nil }
+    /// is which. A reminder with no due date gets `isUndated` and a date far in the future,
+    /// which keeps every date comparison elsewhere honest without special-casing it.
+    init(reminder: EKReminder) {
+        let components = reminder.dueDateComponents
+        let due = components.flatMap { Calendar.current.date(from: $0) }
 
         self.id = "reminder|" + (reminder.calendarItemIdentifier)
         self.title = reminder.title ?? "Untitled Reminder"
-        self.start = due
-        self.end = due
+        self.start = due ?? .distantFuture
+        self.end = due ?? .distantFuture
+        self.isUndated = due == nil
         // A reminder is a moment, not a span, so it is never all-day even when undated in
         // the time sense; the list renders it with its due time.
-        self.isAllDay = components.hour == nil && components.minute == nil
+        self.isAllDay = due != nil && components?.hour == nil && components?.minute == nil
         self.calendarIdentifier = reminder.calendar?.calendarIdentifier ?? ""
         self.calendarTitle = reminder.calendar?.title ?? ""
         self.color = reminder.calendar.map { Color(nsColor: NSColor(cgColor: $0.cgColor) ?? .systemBlue) } ?? .accentColor
@@ -87,11 +91,12 @@ struct CalendarItem: Identifiable, Equatable {
         return !isAllDay && start <= now && end > now
     }
 
-    var isPast: Bool { end < Date() }
+    var isPast: Bool { !isUndated && end < Date() }
 
-    /// "09:30", or "All day" for all-day items.
+    /// "09:30", "All day" for all-day items, or "No due date".
     func timeDescription(using formatter: DateFormatter) -> String {
-        isAllDay ? "All day" : formatter.string(from: start)
+        if isUndated { return "No due date" }
+        return isAllDay ? "All day" : formatter.string(from: start)
     }
 }
 
@@ -121,6 +126,8 @@ struct CalendarDay: Identifiable, Equatable {
     /// False for the leading and trailing days that pad a month grid.
     var isInDisplayedMonth: Bool
     var hasEvents: Bool
+    /// The day whose events the list below the grid is showing.
+    var isSelected = false
 
     var id: TimeInterval { date.timeIntervalSince1970 }
 }

@@ -16,7 +16,7 @@ the only ones, and they are updated in place.
 ## Start here
 
 The app builds clean, runs, and is feature-complete for everything in `WORKPLAN.md` marked
-`[x]`. Roughly 120 Swift files.
+`[x]`. 133 Swift files, in Swift 6 language mode.
 
 **It is signed, as of 2026-09-15, with the user's free personal team** (`CODE_SIGN_STYLE =
 Automatic`, an Apple Development certificate, no provisioning profile needed for a local Mac
@@ -60,19 +60,24 @@ MinNotch --capture-notch out.png [--collapsed] [--tab system] [--glow bars|off] 
                                  [--hold 12] [--midway 0.14] [--extended] [--virtual]
                                  [--timer 12] [--width 460] [--right timer,settings,battery]
                                  [--paused] [--placements closed,open]
+                                 [--sample-calendar] [--calendar-step 1] [--calendar-pick 2]
+                                 [--card compact|fullArtwork] [--controls shuffle,playPause,repeatMode]
+                                 [--lyrics-sheet] [--sample-stats]
 MinNotch --check-lyrics "Khalid" "8TEEN" 229                      # LRCLIBClient + LRCParser
 MinNotch --check-lyric-sync [--out f]                             # matching lyrics to the audio
 MinNotch --check-stats 5                                          # CPU/GPU/memory/network
 MinNotch --check-audio 8 [--out f]                                # Core Audio tap
-MinNotch --check-glow 2 [--source step|fallback]                  # glow shaping chain
+MinNotch --check-glow 2 [--source step|fallback|tempo]            # glow shaping chain, tempo grid
 MinNotch --check-settings file.minnotch                           # import bounds
 MinNotch --check-settings-search pomodoro glow                    # search ranking
 MinNotch --capture-onboarding <dir> [--rerun]                     # tutorial, every page
 MinNotch --capture-whats-new <dir>                                # release notes window and notes
+MinNotch --capture-layout <dir> [--width 460]                     # Settings > Layout editors
 MinNotch --check-permissions [--request] [--out f]                # TCC state
 MinNotch --check-media [--scripts <dir>] [--out f]                # snapshot, shuffle, Up Next
 MinNotch --check-keys [--simulate] [--control] [--out f]          # volume/brightness key tap
 MinNotch --check-links "<url or text>" ...                        # link shelf: titles, icons, refusals
+MinNotch --check-downloads [--out f]                              # download activities, in a scratch folder
 ```
 
 `--capture-notch` grew three options for the animated effects. `--glow off` disables the
@@ -171,6 +176,7 @@ MinNotch/
     Bluetooth/    accessory charge from the IO registry
     Shelf/        the drag-and-drop file tray
     Clipboard/    copy history, polled
+    Downloads/    the Downloads folder watch behind the download activity
     LinkShelf/    saved web links, page titles and icons
     Timer/        countdown and the Pomodoro cycle on top of it
     HUD/          volume, brightness and keyboard backlight monitors
@@ -238,11 +244,16 @@ Scripts/          build, run, preview
   you most want to see how long is left. If two things are both worth knowing, the flank has
   room for both, and `leadingContentWidth` adds them up in the same order and with the same
   spacings the view uses.
-- **What the pill and the top bar show is arranged, not assigned.** `SlotLayoutEditor` is
-  one drag-to-arrange component used three times: the media transport row, the two flanks of
-  the closed pill, and the open panel's top bar, both sides, tabs included. The dead zone over
-  the camera housing is deliberately not a destination: it is a `Spacer` with nothing in it,
-  which is the only reason clicks there fall through to the desktop.
+- **What the pill and the top bar show is arranged, not assigned.** `IconLayoutEditor` is
+  one drag-to-arrange component used three times, all in Settings > Layout: the closed pill's
+  two flanks, the open panel's top bar (tabs included), and the media transport row. Each is
+  drawn as a miniature of the real surface with the camera cutout in it and a tray of icons
+  underneath: drag or click to place, drag back or click × to remove. The cutout is drawn but
+  is not a destination, because on the notch it is a `Spacer` with nothing in it, which is the
+  only reason clicks there fall through to the desktop. The miniature shows the user's
+  arrangement, not what `TopStripLayout` resolves, or a drop would appear to land in the wrong
+  place. `ImageRenderer` cannot draw drag sources or drop targets, so `--capture-layout` sets
+  `LayoutEditorRendering.isStatic` and renders the editors without them.
 - **The top bar's arrangement is a preference; `TopStripLayout` decides placement.** Every
   enabled feature adds a tab, and a fixed tab strip on the left pushed the seventh (Links)
   behind the camera housing. Items that do not fit on their side cross to the other side next
@@ -360,6 +371,12 @@ Scripts/          build, run, preview
   least likely to stand out against the cover, and their black outline disappeared into dark
   sleeves. Lift the colour (`ArtworkPalette.glowPrimary`) and give it a guaranteed dark ground
   (the scrim under the bars) rather than trying to pick an outline that works on every cover.
+- **`repeat` ignores its colour when given an explicit font, in this app.** `Image(systemName:
+  "repeat")` with `.font(.system(size:))` drew plain white whatever `foregroundStyle` said,
+  while `shuffle`, `heart` and the arrows in the same row took theirs, and the identical code
+  in a standalone window drew correctly. Transport buttons therefore go through
+  `TransportSymbol.image`, an `NSImage` symbol at a point size drawn as a template, which takes
+  its colour every time. Found by forcing `.red` and reading pixels off `--capture-notch`.
 - **The notch panel is always black in both appearances.** Never use a semantic label colour
   (`Palette.primaryText`, `.labelColor`) for content drawn on it: it disappears in light
   mode. Use explicit `.white` with opacity. `Palette` is for the Settings window.
@@ -410,8 +427,31 @@ Scripts/          build, run, preview
   `AppleScriptRunner.shared.queue`, never the main thread.
 - **The window frame never animates.** The panel is created once at the maximum size and
   SwiftUI animates the content inside it. Do not resize the window per state.
-- **Swift 5 language mode**, `SWIFT_STRICT_CONCURRENCY = minimal`. Migrating to Swift 6 is a
-  planned task, not a drive-by change.
+- **Swift 6 language mode**, since 2026-09-22, with no warnings. The rules that got it there,
+  and that keep it there:
+  - **Services, controllers and windows are `@MainActor`.** They always ran on main; now the
+    compiler knows. A new one should be too, unless it genuinely lives on a queue.
+  - **A framework callback that can arrive off the main thread is written `@Sendable`**
+    (`{ @Sendable granted, error in ... }`) and hops back with `Task { @MainActor in }`. A
+    closure written inside a main-actor method otherwise inherits that isolation, and Swift 6
+    checks it on entry: EventKit, the notification centre, or `Progress.addSubscriber` calling
+    it from their own queue stops the app, and the compiler cannot see it coming. Callbacks
+    delivered on the main queue or run loop (notification observers with `queue: .main`,
+    `DispatchSource` on `.main`, Core Audio listeners on `DispatchQueue.main`, the event tap,
+    IOKit ports set to `.main`) are safe, and `MainActor.assumeIsolated` says so where needed.
+  - **Timers are `Timer.onMain(every:)`**, which adds to the main run loop and so can assume
+    the main actor honestly. `Timer`'s own block is `@Sendable` with no isolation.
+  - **Types confined to a queue say so.** `AppleScriptRunner`, `LyricsCache`,
+    `BoundedHTTPClient`, `MediaRemoteBridge` and `SystemNowPlayingSource` are `@unchecked
+    Sendable` with a comment naming the queue or lock; `AudioAnalyzer`'s Core Audio and DSP
+    state is `nonisolated(unsafe)`, confined to its audio queue, beside main-actor published
+    state. `MediaSource` is `Sendable` because every source is handed to the AppleScript queue.
+  - The migration found three real races, all fixed: `NowPlayingController.refresh()` read
+    the settings on the AppleScript queue, the system source's cache was written on main and
+    read on that queue unguarded, and a multi-file drop on the shelf appended to one array
+    from several loader threads.
+  - Checked after the switch by running every `--check-*` and `--capture-*` tool, and
+    `--check-audio` through LaunchServices with sound playing (6 of 6).
 
 ## Permissions and TCC
 
@@ -472,6 +512,7 @@ open -n -a <path to MinNotch.app> --args --check-permissions --out /tmp/perm.log
 | Automation (Music, Spotify) | Apple Events | First media read |
 | Accessibility | `AXIsProcessTrustedWithOptions`, then a `CGEvent` tap | Switching on HUDs > Hide the System Overlay |
 | Notifications | `UNUserNotificationCenter` | First low-battery alert |
+| Downloads folder | Reading `~/Downloads` | Switching on Layout > Downloads |
 
 None are requested at launch. The first-launch tutorial explains each one on its permissions
 page, only for features that were ticked, and offers an "Allow Now" button for Calendar and
@@ -530,6 +571,9 @@ open panel's top bar has What's New and Tutorial buttons (`AdvancedSettings.show
 defaulting on only under `#if DEBUG`) for checking both at a glance. Review it with
 `--capture-whats-new`, which renders the notes on their own because a window capture does not
 draw `ScrollView` content.
+
+`ReleaseNotes.latest` is 0.3.0 and `MARKETING_VERSION` matches, written on 2026-09-22 and not
+yet released: the DMG for it has not been built.
 
 ## Releases
 
@@ -653,6 +697,29 @@ extrapolation that much late, which shows up as the lyric highlight trailing the
 `lyricsTime(at:)` adds the user's offset on top and is separate from `elapsed(at:)` so the
 correction never moves the scrubber.
 
+**A download is a folder watch, not a browser integration.** Every browser writes a download to
+a temporary name and renames it when it finishes: Safari to a `.download` bundle, Chrome and its
+relatives to `.crdownload`, Firefox to `.part`. `DownloadsMonitor` watches `~/Downloads` for
+those and treats the rename as the finish, which works for browsers nobody has thought about and
+needs nothing from any of them. Progress comes from the `NSProgress` a browser publishes for the
+file, the same thing Finder's progress bars read, with Safari's `Info.plist` byte counts as a
+fallback; a download nobody publishes progress for still shows, without a percentage. Reading the
+folder is a permission, so the feature is off by default and asks from the foreground.
+`--check-downloads` plays a Chrome download, a Safari one and a cancelled one out in a scratch
+folder, which is the only way to check this without a network and a browser.
+
+**An accessory connecting is a registry notification, not IOBluetooth.** `IOBluetoothDevice`'s
+connection callbacks would mean the Bluetooth permission for something the user did not ask for.
+`IOServiceAddMatchingNotification` on the same charge-reporting classes the System tab reads says
+"a device appeared" for free, and the charge is read two seconds later because a service that has
+just matched has usually not published it yet. The iterator has to be drained once when it is
+armed, or everything already connected arrives as news at launch.
+
+**Clicking a lyric line seeks by lyric time, not by track time.** The strip's clock is
+`elapsed + offset + audio correction - latency`, so seeking to a line's timestamp directly would
+land that far from the line. `seek(toLyricsTime:)` takes the difference between the two clocks
+and undoes it.
+
 **The clipboard is the one sampler that does not stop when nobody is looking.** Every other
 polling service is reference counted to the view that displays it, because nothing is lost by
 not sampling while the panel is closed. A clipboard history is the opposite: copying happens
@@ -719,14 +786,35 @@ called out explicitly, because several things here can only be checked on a sign
 - HUDs for volume, brightness, keyboard backlight, with optional suppression of Apple's
 - Ambient glow: five styles, closed and open placements, live preview, style cycling from the notch
 - Link shelf: saved web links with titles and icons, open, copy, capped and persisted
-- Settings: eleven panes, searchable, every persisted setting read by something
+- Calendar navigation: arrows by week or month, a picked day listing that day, Quick Add onto it
+- Now Playing: three card styles, repeat and favourite with their state read back, the playing
+  app's icon on the artwork, and a full scrolling lyrics list that seeks when a line is clicked
+- Live activities beyond the timer: downloads (`--check-downloads`) and a device's charge when
+  it connects, with a swipe up to put either away
+- System stats with a minute of history behind each reading
+- Settings: twelve panes, searchable, every persisted setting read by something. Layout is
+  the newest: the closed pill, the widgets, the top bar and the transport row, each arranged on
+  a miniature of the surface it belongs to
 - Floating Now Playing window, toggled from Settings or the pop-out button on the media card
 - Global shortcuts, launch at login, gestures, haptics
 
 **Built but never exercised against reality**
 
-- How the glow looks driven by real audio. The tap now delivers signal (`--check-audio`), so
-  the FFT, banding and onset detection have run against it, but nobody has watched the effect
+Everything here builds and passes whatever tooling can reach it. None of it has been used by
+hand, and each one is a place to look first when something is reported.
+
+- The drag and drop in Settings > Layout. The editors were rendered with `--capture-layout`,
+  which deliberately draws them *without* their drag sources and drop targets.
+- The calendar against a real calendar. Only the sample events have been through it, because
+  the Debug build has no Calendar grant.
+- Repeat, favourite, the lyrics list and the artwork bars with a player actually running. The
+  scripts compile and the shaping is checked headlessly; nothing has been pressed.
+- A real download, and a device connecting. `--check-downloads` plays both halves of a download
+  out in a scratch folder, which is not the same as the folder macOS gates behind a permission.
+- VLC, which is not installed here, so its script has never been compiled against its own
+  dictionary.
+- How the glow looks driven by real audio. The tap delivers signal (`--check-audio`), so the
+  FFT, banding and onset detection have run against it, but nobody has watched the effect
   itself with audio-reactive on rather than the fallback.
 - Multi-display targeting beyond one screen. All three modes are written; only the built-in
   display has ever been used.

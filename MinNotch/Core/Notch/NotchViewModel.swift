@@ -18,6 +18,7 @@ enum NotchState: Equatable {
 /// independently. Shared data (now playing, calendar, battery) lives in services owned by
 /// `AppEnvironment` and is read by every instance.
 @Observable
+@MainActor
 final class NotchViewModel {
     private(set) var state: NotchState = .collapsed
     private(set) var geometry: NotchGeometry

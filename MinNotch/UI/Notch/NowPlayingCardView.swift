@@ -9,39 +9,55 @@ struct NowPlayingCardView: View {
 
     /// Height this card needs, excluding the panel's own padding and top strip.
     ///
-    /// The transport row now sits inside the text column beside the artwork rather than
-    /// under both, so the card is exactly as tall as the artwork unless lyrics are showing.
-    /// That is what makes the panel short and wide rather than tall and narrow.
-    static func preferredHeight(showingLyrics: Bool, showingUpNext: Bool = false) -> CGFloat {
-        var height = Metrics.artworkSize
+    /// In Classic the transport row sits inside the text column beside the artwork rather
+    /// than under both, so the card is exactly as tall as the artwork unless lyrics are
+    /// showing. That is what makes the panel short and wide rather than tall and narrow.
+    static func preferredHeight(
+        style: NowPlayingCardStyle = .classic,
+        showingLyrics: Bool,
+        showingUpNext: Bool = false,
+        showingLyricsSheet: Bool = false
+    ) -> CGFloat {
+        var height = headerHeight(style)
         if showingUpNext { height += spacing + upNextRowHeight }
-        if showingLyrics { height += spacing + lyricStripHeight }
+        if showingLyricsSheet {
+            height += spacing + LyricsSheetView.height
+        } else if showingLyrics {
+            height += spacing + lyricStripHeight
+        }
         return height
+    }
+
+    /// The part above Up Next and the lyrics, per style.
+    static func headerHeight(_ style: NowPlayingCardStyle) -> CGFloat {
+        switch style {
+        case .classic: return Metrics.artworkSize
+        case .compact: return compactArtworkSize + spacing + scrubberRowHeight
+        case .fullArtwork: return fullArtworkHeight
+        }
     }
 
     private static let spacing: CGFloat = 8
     private static let lyricStripHeight: CGFloat = 40
     static let upNextRowHeight: CGFloat = 18
+    private static let compactArtworkSize: CGFloat = 56
+    private static let scrubberRowHeight: CGFloat = 14
+    private static let fullArtworkHeight: CGFloat = 132
 
     var body: some View {
         if let track = controller.track {
-            VStack(alignment: .leading, spacing: 8) {
-                HStack(alignment: .top, spacing: 14) {
-                    artwork
-                    // Fixed to the artwork's height with the transport pinned to the bottom,
-                    // so the two columns end level and the card has one predictable height.
-                    VStack(alignment: .leading, spacing: 4) {
-                        metadata(track)
-                        scrubber(track)
-                        Spacer(minLength: 0)
-                        controls
-                    }
-                    .frame(height: Metrics.artworkSize)
+            VStack(alignment: .leading, spacing: Self.spacing) {
+                switch settings.media.cardStyle {
+                case .classic: classicHeader(track)
+                case .compact: compactHeader(track)
+                case .fullArtwork: fullArtworkHeader(track)
                 }
                 if controller.showsUpNext {
                     upNextRow
                 }
-                if settings.media.showLyrics {
+                if controller.showsLyricsSheet, let lyrics = controller.lyrics {
+                    LyricsSheetView(lyrics: lyrics)
+                } else if settings.media.showLyrics {
                     lyricStrip
                 }
             }
@@ -119,10 +135,87 @@ struct NowPlayingCardView: View {
         }
     }
 
+    // MARK: Styles
+
+    /// Artwork beside the title, scrubber and controls, all as tall as the artwork.
+    private func classicHeader(_ track: NowPlayingTrack) -> some View {
+        HStack(alignment: .top, spacing: 14) {
+            artwork(size: Metrics.artworkSize)
+            // Fixed to the artwork's height with the transport pinned to the bottom,
+            // so the two columns end level and the card has one predictable height.
+            VStack(alignment: .leading, spacing: 4) {
+                metadata(track)
+                scrubber(track)
+                Spacer(minLength: 0)
+                controls
+            }
+            .frame(height: Metrics.artworkSize)
+        }
+    }
+
+    /// One row, small cover, title and controls, with the scrubber under the whole row. Half
+    /// the height of Classic, for people who want the panel out of the way.
+    private func compactHeader(_ track: NowPlayingTrack) -> some View {
+        VStack(spacing: Self.spacing) {
+            HStack(spacing: 10) {
+                artwork(size: Self.compactArtworkSize)
+                metadata(track)
+                transportButtons(spacing: 8)
+                trailingCluster
+            }
+            .frame(height: Self.compactArtworkSize)
+
+            inlineScrubber(track)
+                .frame(height: Self.scrubberRowHeight)
+        }
+    }
+
+    /// The cover fills the card: a blurred, darkened copy behind everything, the cover itself
+    /// large on the left. The copy is only ever a background, so the text on it takes its
+    /// legibility from the dark wash, never from the cover's colours.
+    private func fullArtworkHeader(_ track: NowPlayingTrack) -> some View {
+        let height = Self.fullArtworkHeight
+        let inset: CGFloat = 10
+        let coverSize = height - inset * 2
+
+        return HStack(alignment: .top, spacing: 14) {
+            artwork(size: coverSize)
+            VStack(alignment: .leading, spacing: 4) {
+                metadata(track, titleSize: 17)
+                scrubber(track)
+                Spacer(minLength: 0)
+                controls
+            }
+            .frame(height: coverSize)
+        }
+        .padding(inset)
+        .frame(height: height)
+        .background {
+            // An overlay on a plain colour, not a ZStack: a filled image is larger than the
+            // space it is offered, and as a ZStack child it would size the background to
+            // itself and spread the blur over the rest of the panel.
+            Color.black
+                .overlay {
+                    if let image = controller.artwork {
+                        Image(nsImage: image)
+                            .resizable()
+                            .aspectRatio(contentMode: .fill)
+                            .blur(radius: 28, opaque: true)
+                            .scaleEffect(1.3)
+                    }
+                }
+                .overlay(Color.black.opacity(0.5))
+                .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                .allowsHitTesting(false)
+        }
+        .animation(Motion.content, value: controller.artwork)
+    }
+
     // MARK: Pieces
 
     @ViewBuilder
-    private var artwork: some View {
+    private func artwork(size: CGFloat) -> some View {
+        let corner: CGFloat = size < 70 ? 6 : 8
         Group {
             if let image = controller.artwork {
                 Image(nsImage: image)
@@ -137,10 +230,10 @@ struct NowPlayingCardView: View {
                 }
             }
         }
-        .frame(width: Metrics.artworkSize, height: Metrics.artworkSize)
-        .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+        .frame(width: size, height: size)
+        .clipShape(RoundedRectangle(cornerRadius: corner, style: .continuous))
         .overlay(
-            RoundedRectangle(cornerRadius: 8, style: .continuous)
+            RoundedRectangle(cornerRadius: corner, style: .continuous)
                 .strokeBorder(Color.white.opacity(0.12), lineWidth: 0.5)
         )
         .overlay(alignment: .bottomLeading) {
@@ -160,29 +253,47 @@ struct NowPlayingCardView: View {
                             startPoint: .top,
                             endPoint: .bottom
                         )
-                        .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+                        .clipShape(RoundedRectangle(cornerRadius: corner, style: .continuous))
                         .allowsHitTesting(false)
                     }
 
                     VisualizerView(
                         palette: controller.palette,
                         isPlaying: controller.track?.isPlaying ?? false,
-                        customImagePath: settings.media.customVisualizerPath
+                        customImagePath: settings.media.customVisualizerPath,
+                        audio: environment.audioAnalyzer.isRunning ? environment.audioAnalyzer : nil
                     )
-                    .frame(height: 22)
-                    .padding(.horizontal, 6)
-                    .padding(.bottom, 5)
+                    .frame(height: size * 0.21)
+                    .padding(.horizontal, size * 0.06)
+                    .padding(.bottom, size * 0.05)
                 }
+            }
+        }
+        .overlay(alignment: .bottomTrailing) {
+            if settings.media.showSourceBadge, let icon = sourceIcon {
+                Image(nsImage: icon)
+                    .resizable()
+                    .interpolation(.high)
+                    .frame(width: size * 0.2, height: size * 0.2)
+                    .shadow(color: .black.opacity(0.5), radius: 2, y: 1)
+                    .padding(size * 0.04)
+                    .help(controller.track?.sourceAppName ?? "")
+                    .accessibilityLabel("Playing in \(controller.track?.sourceAppName ?? "")")
             }
         }
         .shadow(color: .black.opacity(0.3), radius: 6, y: 3)
         .animation(Motion.content, value: controller.artwork)
     }
 
-    private func metadata(_ track: NowPlayingTrack) -> some View {
+    /// The playing app's icon, when the source knows which app that is.
+    private var sourceIcon: NSImage? {
+        controller.track?.sourceBundleIdentifier.flatMap(AppIconCache.icon(forBundleIdentifier:))
+    }
+
+    private func metadata(_ track: NowPlayingTrack, titleSize: CGFloat = 15) -> some View {
         VStack(alignment: .leading, spacing: 2) {
             Text(track.title)
-                .font(.system(size: 15, weight: .semibold))
+                .font(.system(size: titleSize, weight: .semibold))
                 .foregroundStyle(.white)
                 .lineLimit(1)
                 .truncationMode(.tail)
@@ -226,6 +337,36 @@ struct NowPlayingCardView: View {
         }
     }
 
+    /// The scrubber on one line with its timecodes either side, for Compact.
+    private func inlineScrubber(_ track: NowPlayingTrack) -> some View {
+        TimelineView(.periodic(from: .now, by: 0.5)) { context in
+            let elapsed = controller.elapsed(at: context.date)
+            let progress = track.hasDuration ? min(max(elapsed / track.duration, 0), 1) : 0
+
+            HStack(spacing: 8) {
+                if settings.media.showTimecodes {
+                    Text(TimeFormat.string(from: elapsed))
+                        .frame(minWidth: 30, alignment: .leading)
+                }
+                MediaScrubber(
+                    progress: progress,
+                    tint: scrubberTint,
+                    isSeekable: controller.canSeek && track.hasDuration,
+                    onScrubStateChange: { controller.isScrubbing = $0 },
+                    onCommit: { fraction in
+                        controller.seek(to: fraction * track.duration)
+                    }
+                )
+                if settings.media.showTimecodes {
+                    Text("-" + TimeFormat.string(from: max(track.duration - elapsed, 0)))
+                        .frame(minWidth: 34, alignment: .trailing)
+                }
+            }
+            .font(Typography.timecode)
+            .foregroundStyle(.white.opacity(0.5))
+        }
+    }
+
     private var scrubberTint: Color {
         switch settings.appearance.sliderColor {
         case .accent: return settings.appearance.resolvedAccent
@@ -234,14 +375,29 @@ struct NowPlayingCardView: View {
         }
     }
 
-    private var controls: some View {
-        HStack(spacing: 14) {
-            Spacer(minLength: 0)
+    /// The arranged transport buttons, leaving out any the source cannot carry out.
+    private func transportButtons(spacing: CGFloat) -> some View {
+        HStack(spacing: spacing) {
             ForEach(settings.media.controlOrder) { control in
                 if controller.supports(control) {
                     transportButton(control)
                 }
             }
+        }
+    }
+
+    /// Pop-out and effects.
+    private var trailingCluster: some View {
+        HStack(spacing: 6) {
+            popOutButton
+            effectsButton
+        }
+    }
+
+    private var controls: some View {
+        HStack(spacing: 14) {
+            Spacer(minLength: 0)
+            transportButtons(spacing: 14)
             Spacer(minLength: 0)
         }
         // Room on both sides for the pop-out and effects buttons, so the transport stays
@@ -250,12 +406,7 @@ struct NowPlayingCardView: View {
         .padding(.horizontal, Self.trailingClusterWidth)
         // Overlaid rather than placed in the row, so adding them does not shift the transport
         // buttons off centre.
-        .overlay(alignment: .trailing) {
-            HStack(spacing: 6) {
-                popOutButton
-                effectsButton
-            }
-        }
+        .overlay(alignment: .trailing) { trailingCluster }
     }
 
     /// Two 26-point buttons and the gap between them.
@@ -401,6 +552,11 @@ struct NowPlayingCardView: View {
         settings.appearance.ambientGlow.isEnabled = true
     }
 
+    /// The toggles are drawn a size down from the transport arrows, as Music draws them.
+    private static func isStateControl(_ control: MediaControl) -> Bool {
+        control == .shuffle || control == .repeatMode || control == .favorite
+    }
+
     private func transportButton(_ control: MediaControl) -> some View {
         let isPlayPause = control == .playPause
         let isPlaying = controller.track?.isPlaying ?? false
@@ -415,28 +571,47 @@ struct NowPlayingCardView: View {
             case .favorite: controller.send(.toggleFavorite)
             }
         } label: {
-            Image(systemName: symbolName(for: control, isPlaying: isPlaying))
-                .font(.system(size: isPlayPause ? 24 : (control == .shuffle ? 14 : 17), weight: .medium))
+            TransportSymbol.image(
+                symbolName(for: control, isPlaying: isPlaying),
+                pointSize: isPlayPause ? 24 : (Self.isStateControl(control) ? 14 : 17)
+            )
                 .foregroundStyle(foreground(for: control))
                 .frame(width: isPlayPause ? 30 : 26, height: 28)
                 .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
         .accessibilityLabel(control.title)
-        .accessibilityValue(control == .shuffle ? (controller.track?.isShuffling == true ? "On" : "Off") : "")
-        .help(control == .shuffle ? (controller.track?.isShuffling == true ? "Shuffle is on" : "Shuffle is off") : control.title)
+        .accessibilityValue(stateDescription(for: control) ?? "")
+        .help(stateDescription(for: control).map { "\(control.title): \($0)" } ?? control.title)
     }
 
-    /// Shuffle is a state, not an action, so it shows which state it is in: the accent when
-    /// on, dim when off. The other controls are plain actions and stay white.
+    /// Shuffle, repeat and favourite are states, not actions, so they show which state they
+    /// are in: the accent when on, dim when off. The others are plain actions and stay white.
     private func foreground(for control: MediaControl) -> Color {
+        let accent = settings.appearance.resolvedAccent
+        let track = controller.track
         switch control {
         case .playPause: return .white
-        case .shuffle:
-            return controller.track?.isShuffling == true
-                ? settings.appearance.resolvedAccent
-                : .white.opacity(0.45)
-        default: return .white.opacity(0.8)
+        case .shuffle: return track?.isShuffling == true ? accent : .white.opacity(0.45)
+        case .repeatMode: return (track?.repeatMode ?? .off) != .off ? accent : .white.opacity(0.45)
+        case .favorite: return track?.isFavorite == true ? accent : .white.opacity(0.45)
+        case .previous, .next: return .white.opacity(0.8)
+        }
+    }
+
+    /// "On", "Off", "One Song"; nil for a control that is an action.
+    private func stateDescription(for control: MediaControl) -> String? {
+        let track = controller.track
+        switch control {
+        case .shuffle: return track?.isShuffling == true ? "On" : "Off"
+        case .repeatMode:
+            switch track?.repeatMode ?? .off {
+            case .off: return "Off"
+            case .all: return "All"
+            case .one: return "One Song"
+            }
+        case .favorite: return track?.isFavorite == true ? "Favourite" : "Not a favourite"
+        case .playPause, .previous, .next: return nil
         }
     }
 
@@ -446,8 +621,8 @@ struct NowPlayingCardView: View {
         case .next: return "forward.fill"
         case .previous: return "backward.fill"
         case .shuffle: return "shuffle"
-        case .repeatMode: return "repeat"
-        case .favorite: return "heart"
+        case .repeatMode: return controller.track?.repeatMode == .one ? "repeat.1" : "repeat"
+        case .favorite: return controller.track?.isFavorite == true ? "heart.fill" : "heart"
         }
     }
 
@@ -496,20 +671,26 @@ struct LyricsStripView: View {
             let elapsed = environment.nowPlaying.lyricsTime(at: context.date)
             let index = lyrics.index(at: elapsed)
 
-            VStack(alignment: .leading, spacing: 3) {
-                currentLine(at: index, time: elapsed)
-                    .font(.system(size: 12, weight: .medium))
-                    .lineLimit(1)
-                    .truncationMode(.tail)
-                    .animation(Motion.hover, value: index)
+            HStack(alignment: .top, spacing: 8) {
+                VStack(alignment: .leading, spacing: 3) {
+                    LyricsText.line(lyrics, at: index, time: elapsed)
+                        .font(.system(size: 12, weight: .medium))
+                        .lineLimit(1)
+                        .truncationMode(.tail)
+                        .animation(Motion.hover, value: index)
 
-                Text(nextLineText(after: index))
-                    .font(.system(size: 11))
-                    .foregroundStyle(.white.opacity(0.4))
-                    .lineLimit(1)
-                    .truncationMode(.tail)
+                    Text(nextLineText(after: index))
+                        .font(.system(size: 11))
+                        .foregroundStyle(.white.opacity(0.4))
+                        .lineLimit(1)
+                        .truncationMode(.tail)
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+
+                LyricsSheetView.toggleButton(isOpen: false) {
+                    environment.nowPlaying.isShowingLyricsSheet = true
+                }
             }
-            .frame(maxWidth: .infinity, alignment: .leading)
         }
         .frame(height: 40)
         .accessibilityElement()
@@ -518,9 +699,18 @@ struct LyricsStripView: View {
 
     // MARK: Lines
 
+    private func nextLineText(after index: Int?) -> String {
+        let next = (index ?? 0) + 1
+        guard lyrics.lines.indices.contains(next) else { return "" }
+        return lyrics.lines[next].text
+    }
+}
+
+/// The karaoke highlight, shared by the strip and the full list.
+enum LyricsText {
     /// Builds the line as one concatenated `Text` rather than a stack of word views, so it
     /// wraps, truncates, and kerns exactly as ordinary text does.
-    private func currentLine(at index: Int?, time: TimeInterval) -> Text {
+    static func line(_ lyrics: Lyrics, at index: Int?, time: TimeInterval) -> Text {
         guard let index, lyrics.lines.indices.contains(index) else {
             return Text(lyrics.lines.first?.text ?? "").foregroundStyle(.white.opacity(0.85))
         }
@@ -538,7 +728,7 @@ struct LyricsStripView: View {
         return result
     }
 
-    private func styled(_ word: LyricWord, at time: TimeInterval) -> Text {
+    private static func styled(_ word: LyricWord, at time: TimeInterval) -> Text {
         if word.isCurrent(at: time) {
             return Text(word.text)
                 .foregroundStyle(.white)
@@ -549,10 +739,146 @@ struct LyricsStripView: View {
         let opacity = word.isSung(at: time) ? 0.85 : 0.38
         return Text(word.text).foregroundStyle(.white.opacity(opacity))
     }
+}
 
-    private func nextLineText(after index: Int?) -> String {
-        let next = (index ?? 0) + 1
-        guard lyrics.lines.indices.contains(next) else { return "" }
-        return lyrics.lines[next].text
+/// Every line of the lyrics, scrolling with the song.
+///
+/// Opened from the button on the two-line strip, closed from its own. The current line is kept
+/// in the middle and highlighted word by word, as in the strip; lines already sung stay
+/// readable and lines to come recede. Clicking a synced line seeks the song to it. Unsynced
+/// lyrics are simply listed, with nothing highlighted and nothing to click.
+struct LyricsSheetView: View {
+    let lyrics: Lyrics
+
+    @Environment(AppEnvironment.self) private var environment
+
+    /// Tall enough for about seven lines, short enough that with the artwork above it the
+    /// panel stays inside `Metrics.maxPanelHeight`.
+    static let height: CGFloat = 176
+
+    private static let tick: TimeInterval = 0.1
+
+    var body: some View {
+        let controller = environment.nowPlaying
+
+        TimelineView(.periodic(from: .now, by: Self.tick)) { context in
+            let time = controller.lyricsTime(at: context.date)
+            let current = lyrics.index(at: time)
+
+            ScrollViewReader { proxy in
+                ScrollView {
+                    VStack(alignment: .leading, spacing: 7) {
+                        ForEach(Array(lyrics.lines.enumerated()), id: \.offset) { index, line in
+                            row(line, index: index, current: current, time: time)
+                                .id(index)
+                        }
+                    }
+                    .padding(.vertical, Self.height / 2 - 12)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                }
+                .scrollIndicators(.never)
+                .onChange(of: current) { _, index in
+                    guard let index else { return }
+                    withAnimation(.easeInOut(duration: 0.35)) {
+                        proxy.scrollTo(index, anchor: .center)
+                    }
+                }
+                .onAppear {
+                    if let current { proxy.scrollTo(current, anchor: .center) }
+                }
+            }
+            // Lines fade out towards both edges, so the list reads as a window onto the song.
+            .mask(
+                LinearGradient(
+                    stops: [
+                        .init(color: .clear, location: 0),
+                        .init(color: .black, location: 0.18),
+                        .init(color: .black, location: 0.82),
+                        .init(color: .clear, location: 1)
+                    ],
+                    startPoint: .top,
+                    endPoint: .bottom
+                )
+            )
+        }
+        .frame(height: Self.height)
+        .overlay(alignment: .topTrailing) {
+            Self.toggleButton(isOpen: true) {
+                environment.nowPlaying.isShowingLyricsSheet = false
+            }
+        }
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("Lyrics")
+    }
+
+    @ViewBuilder
+    private func row(_ line: LyricLine, index: Int, current: Int?, time: TimeInterval) -> some View {
+        let isCurrent = index == current
+        let isSung = current.map { index < $0 } ?? false
+        let text: Text = isCurrent
+            ? LyricsText.line(lyrics, at: index, time: time)
+            : Text(line.text).foregroundStyle(.white.opacity(isSung ? 0.5 : 0.32))
+
+        let label = text
+            .font(.system(size: isCurrent ? 14 : 13, weight: isCurrent ? .semibold : .regular))
+            .multilineTextAlignment(.leading)
+            .fixedSize(horizontal: false, vertical: true)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.trailing, 30)
+            .animation(Motion.hover, value: isCurrent)
+
+        if let timestamp = line.timestamp, environment.nowPlaying.canSeek {
+            Button {
+                environment.nowPlaying.seek(toLyricsTime: timestamp)
+            } label: {
+                label.contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .help("Play from here")
+        } else {
+            label
+        }
+    }
+
+    /// The expand button on the strip and the collapse button on the list.
+    static func toggleButton(isOpen: Bool, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            Image(systemName: isOpen ? "arrow.down.right.and.arrow.up.left" : "arrow.up.left.and.arrow.down.right")
+                .font(.system(size: 10, weight: .semibold))
+                .foregroundStyle(.white.opacity(0.55))
+                .frame(width: 22, height: 20)
+                .background(RoundedRectangle(cornerRadius: 5, style: .continuous).fill(Color.white.opacity(0.08)))
+                .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .help(isOpen ? "Show two lines" : "Show all the lyrics")
+        .accessibilityLabel(isOpen ? "Show fewer lyrics" : "Show all lyrics")
+    }
+}
+
+/// Transport symbols, built through AppKit at an exact point size.
+///
+/// `Image(systemName:)` given an explicit font drew `repeat` and `repeat.1` in plain white in
+/// this app, whatever colour they were given, while `shuffle`, `heart` and the arrows took
+/// theirs; a symbol at the inherited font took its colour too, as did the same code in a
+/// standalone window. So the repeat button never showed that repeat was on. An `NSImage`
+/// symbol with a point size, drawn as a template, takes the colour every time, so every
+/// transport button is drawn this way rather than special-casing one symbol.
+@MainActor
+enum TransportSymbol {
+    private static var cache: [String: NSImage] = [:]
+
+    static func image(_ name: String, pointSize: CGFloat, weight: NSFont.Weight = .medium) -> Image {
+        let key = "\(name)|\(pointSize)|\(weight.rawValue)"
+        if let cached = cache[key] {
+            return Image(nsImage: cached).renderingMode(.template)
+        }
+        let configuration = NSImage.SymbolConfiguration(pointSize: pointSize, weight: weight)
+        let symbol = NSImage(systemSymbolName: name, accessibilityDescription: nil)?
+            .withSymbolConfiguration(configuration)
+        guard let symbol else { return Image(systemName: name) }
+        symbol.isTemplate = true
+        cache[key] = symbol
+        return Image(nsImage: symbol).renderingMode(.template)
     }
 }

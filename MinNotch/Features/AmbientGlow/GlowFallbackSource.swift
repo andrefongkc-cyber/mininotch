@@ -20,7 +20,9 @@ enum GlowFallbackSource {
     /// music badly, and the first thing anyone asks is whether the effect is listening at all.
     /// Stillness is the honest answer, and it is also the answer that makes the moving version
     /// mean something.
-    static func levels(at time: TimeInterval, isPlaying: Bool, speed: Double) -> GlowDynamics.Levels {
+    /// With a `tempo`, beats fall on its grid: a tapped tempo on the taps, a song's tempo on the
+    /// song's own position. Without one, the Speed slider sets it.
+    static func levels(at time: TimeInterval, isPlaying: Bool, speed: Double, tempo: GlowTempo? = nil) -> GlowDynamics.Levels {
         guard isPlaying else {
             return GlowDynamics.Levels(
                 energy: 0,
@@ -30,7 +32,13 @@ enum GlowFallbackSource {
         }
 
         // 92 to 140 bpm across the speed slider, which is the range most things sit in.
-        let secondsPerBeat = 60 / (92 + speed * 48)
+        let secondsPerBeat = tempo?.secondsPerBeat ?? 60 / (92 + speed * 48)
+        // Measured from the tempo's origin, so beats land where it says they do. A remainder of
+        // a negative time would be negative and never inside the window below.
+        let time = time - (tempo?.origin ?? 0)
+        guard time >= 0 else {
+            return GlowDynamics.Levels(energy: 0, bands: [Double](repeating: 0, count: GlowInput.bandCount), beat: 0)
+        }
         let beat = time / secondsPerBeat
         let bar = floor(beat / 4)
 

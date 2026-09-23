@@ -3,6 +3,7 @@ import SwiftUI
 
 /// State for one run of the first-launch tutorial.
 @Observable
+@MainActor
 final class OnboardingModel {
     enum Page: Int, CaseIterable, Identifiable {
         case welcome

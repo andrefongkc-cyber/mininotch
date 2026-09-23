@@ -39,6 +39,8 @@ struct CalendarSettings: Codable, Equatable {
 
     var showReminders: Bool = false
     var hideCompletedReminders: Bool = true
+    /// Reminders with no due date, listed after everything dated.
+    var showUndatedReminders: Bool = true
     var enableQuickAdd: Bool = false
 
     init() {}
@@ -54,6 +56,7 @@ struct CalendarSettings: Codable, Equatable {
         forceMondayFirst = c.value(.forceMondayFirst, false)
         showReminders = c.value(.showReminders, false)
         hideCompletedReminders = c.value(.hideCompletedReminders, true)
+        showUndatedReminders = c.value(.showUndatedReminders, true)
         enableQuickAdd = c.value(.enableQuickAdd, false)
     }
 }

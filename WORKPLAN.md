@@ -1,6 +1,6 @@
 # MinNotch workplan
 
-Status: app icon done, next: waiting on the user for macOS 13 support (one branch with availability checks) and whether Windows is a separate project later.
+Status: doing the 0.3.0 release (commit, push, DMG, GitHub release); next: the macOS 13 decision, then a test target.
 
 Living document. Update the checkboxes as work lands. `CLAUDE.md` holds the architecture
 rules and the traps; this file holds the sequence.
@@ -13,9 +13,10 @@ Status key: `[x]` done, `[~]` partially done, `[ ]` not started.
 
 The app is well past V1. Everything originally scoped as V1 is built, and most of what was
 scoped as V2 is too: HUDs, the shelf, reminders, gestures, haptics, system stats, Bluetooth
-accessory charge, ambient lighting, clipboard history, a timer, a first-launch tutorial, and
-Settings search, a link shelf, and release notes. Roughly 120 Swift files, building with no
-warnings. Published at github.com/andrefongkc-cyber/mininotch.
+accessory charge, ambient lighting, clipboard history, a timer, a first-launch tutorial,
+Settings search, a link shelf, release notes, and as of 2026-09-22 the whole "gaps in what is
+built" list below. 133 Swift files in Swift 6 language mode, building with no warnings.
+Published at github.com/andrefongkc-cyber/mininotch.
 
 **The blocker is gone.** The app is signed with a free personal team as of 2026-09-15, so
 permissions should stop resetting on every build and the system audio permission is reachable
@@ -23,9 +24,14 @@ at last. Notarisation still needs a paid membership nobody is buying.
 
 **Do these next, in this order:**
 
-1. Retry the audio tap on the signed build (`--check-audio`), and confirm a granted permission
-   survives a rebuild. Both are listed under Blocking below.
-2. A test target. Nothing is verified automatically across more than a hundred files.
+1. Use the 0.3 work in anger, then commit and cut the DMG. Everything below is written and
+   checked with the tools, but the drag-and-drop in Settings > Layout, the calendar against a
+   real calendar, repeat and favourite against a playing track, downloads, a device
+   connecting, and the album-art bars with real music have not been tried by hand.
+2. Answer the user on macOS 13 (Platforms below). They were asked and have not decided.
+3. A test target. Nothing is verified automatically across more than a hundred files, and the
+   Swift 6 migration is exactly the kind of change one would have caught.
+4. Confirm a granted permission survives a rebuild (listed under Blocking below).
 
 ---
 
@@ -111,7 +117,7 @@ at last. Notarisation still needs a paid membership nobody is buying.
 ### Settings
 - [x] Panel top strip: tabs, settings button, and battery arranged either side of the
       cutout, with all readable content below it
-- [x] `NavigationSplitView` window with all eleven panes and System Settings styling
+- [x] `NavigationSplitView` window with all twelve panes and System Settings styling
 - [x] General, Appearance, Media, Calendar, Battery fully wired
 - [x] HUDs, Shelf: real persisted controls, disabled and badged
 - [x] Shortcuts: click-to-record with conflict detection
@@ -137,6 +143,21 @@ at last. Notarisation still needs a paid membership nobody is buying.
 
 Known gaps in what is already built, after the signing blocker above.
 
+- [x] **Calendar: pick a day, move between weeks and months.** A tester reported they could not
+      change days: the grid's cells were not clickable and there was no way off the current
+      week or month. Now arrows step a week or a month, clicking a day lists that day (again,
+      or Today, goes back), another week lists all of that week, dots cover every day a
+      multi-day event spans, and Quick Add puts a new item on the picked day at 9 AM. Checked
+      with `--capture-notch --tab calendar --sample-calendar --calendar-pick 1` and
+      `--calendar-step 1`; not yet against a real calendar, since the Debug build has no
+      Calendar grant.
+- [x] **One Layout pane, drawn as the notch.** The three arrangement editors (closed pill, top
+      bar, media controls) were text chips in dashed lanes, spread over three panes. The user
+      asked for icons, like TheBoringNotch's slot editor. Settings > Layout now has one
+      `IconLayoutEditor` per surface, a miniature with the camera cutout in it and a tray of
+      icons (drag or click to place, drag back or × to remove), plus widget tiles that switch
+      each tab's feature on and off. Rendered with `--capture-layout` in both appearances; the
+      drag and drop itself has not been tried by hand yet.
 - [x] **App icon.** Done 2026-09-21 from the user's artwork (a dark tile with the notch pill).
       `swift Scripts/make-icon.swift <artwork.png>` redraws it in Apple's grid (824 tile on a
       1024 canvas, continuous corners, transparent surround, drop shadow) and writes every size
@@ -158,17 +179,33 @@ Known gaps in what is already built, after the signing blocker above.
       `LRCParser`, `SettingsSnapshot` lenient decoding and migration, `NotchGeometry` for
       notched and non-notched displays, `CalendarService.days(for:)` across month boundaries
       and week-start settings.
-- [ ] **Swift 6 language mode.** Currently Swift 5 with minimal concurrency checking. The
-      services are all main-actor in practice; annotate them and turn checking up.
-- [ ] **Source app badge on the artwork.** The reference layouts show a small badge for the
-      app that owns playback. `NowPlayingTrack.sourceAppName` is there; it needs the icon,
-      which `NSWorkspace` can supply from the bundle identifier.
-- [ ] **Panel height on tab change.** Heights are declared per widget as constants. If they
-      drift from the real layout, consider measuring content with a preference key instead.
-- [ ] **Lyrics scrolling view.** The strip shows two lines. A full sheet belongs in the
-      expanded media view.
-- [ ] **Stats history.** The readout shows an instant only. A short rolling window behind
-      each bar would make a spike legible instead of something you have to catch.
+- [x] **Swift 6 language mode.** Done 2026-09-22: 278 complete-checking warnings to zero, then
+      `SWIFT_VERSION = 6.0`, no warnings, Debug and Release. Services and windows are
+      `@MainActor`; off-main framework callbacks are explicitly `@Sendable` (see CLAUDE.md for
+      why that is a crash, not a style point); timers go through `Timer.onMain`. Three real
+      races fixed on the way. Every check and capture tool runs clean, and the audio tap
+      received sound on 6 of 6 checks. Not yet run as the user's everyday copy.
+- [x] **Source app badge on the artwork.** The playing app's icon sits on the artwork's corner
+      (Settings > Media > Show Which App Is Playing, on by default). The scriptable players
+      know their bundle identifier; the system source now asks MediaRemote for the owning
+      process (`MRMediaRemoteGetNowPlayingApplicationPID`) instead of guessing from the
+      frontmost app, and shows no badge rather than a wrong one when it cannot tell.
+- [x] **Panel height on tab change.** Checked every tab with `--capture-notch` on 2026-09-21,
+      including the new card styles and the lyrics list: nothing clipped and nothing drifting.
+      Clipboard and Links keep room under a short list because the list area is a fixed
+      scrolling height, not because the constant is wrong. No measuring needed; revisit only
+      if a capture shows a mismatch.
+- [x] **Lyrics scrolling view.** The strip has an expand button that swaps it for every line
+      (`LyricsSheetView`, 176 pt): the current line stays centred and highlighted word by word,
+      sung lines stay readable, and clicking a synced line seeks there through
+      `seek(toLyricsTime:)`, which undoes the offset and audio correction so the click lands
+      on the line. The choice is on `NowPlayingController` so the floating window sizes for it
+      too. Captured with `--capture-notch --tab media --lyrics-sheet`.
+- [x] **Stats history.** The last 30 readings of CPU, GPU, memory and network sit behind each
+      cell as a faint sparkline (`SparklineShape`, a `Shape` so a capture can see it), newest
+      on the right. Kept only while the tab is on screen, since sampling stops when it is not;
+      the baseline read of each delta stays out. Network is scaled to its own peak with a
+      64 KB/s floor. Captured with `--capture-notch --tab system --sample-stats`.
 - [x] **Lyrics caching.** `LyricsCache`: raw LRC text on disk in Caches, keyed by a hash of
       artist, title, album, and rounded length, kept 180 days. A successful search that finds
       nothing is remembered for 3 days; a network failure is never cached. Deleted when the
@@ -203,8 +240,12 @@ nothing.
 - [x] Colour modes, intensity, speed, and glow radius shared across every style
 - [x] Live preview in Settings > Appearance, with every control in one card
 - [x] Output latency compensation for lyric timing, read from the active output device
-- [ ] Beat sources beyond live audio: tap tempo, manual BPM, and library tempo tags. Only
-      live audio and the synthetic fallback exist.
+- [x] Beat sources beyond live audio. Settings > Appearance > Ambient Lighting > Tempo: the Speed
+      slider (as before), Set by Hand (a BPM slider and a Tap button; the median of recent taps
+      sets the tempo and the last tap sets where beats fall), or From the Song (Music's `bpm`
+      tag, laid on the song's own position so a seek moves the beats with it; Spotify shares
+      none, so it falls back to Speed). Used only while the glow is not following live audio.
+      `--check-glow --source tempo` confirms hits land on the grid from its origin.
 - [x] Style switching from the notch itself: option-click or right-click the effects button
 - [x] Placement switching from the notch itself, in the same menu, so "no light on the closed
       pill but light on the open panel" does not mean opening the Settings window
@@ -255,8 +296,12 @@ nothing.
 - **VLC does ship a dictionary** and is a genuine candidate. It was not installed on the
   development machine, so nothing has been written against it yet.
 
-- [ ] VLC as a named `AppleScriptMediaSource`, wired into the existing automatic selection
-      and stickiness. Needs VLC installed to verify.
+- [x] VLC as a named `AppleScriptMediaSource`, in the automatic order after Music and Spotify
+      and before the system source, because it can seek and the system source cannot. VLC
+      knows only the file, so "Artist - Title.mp3" is split into the two (checked by
+      `--check-media`); it has no shuffle, repeat, favourite or artwork, and those controls
+      are left off the card for it. Its `play` toggles, so play and pause check `playing`
+      first. Not compiled against VLC's dictionary, since VLC is not installed here.
 - [x] Up Next, Apple Music only. Read once per track (and again after shuffle flips) from
       `current playlist` and the current track's index, since Music exposes no real queue.
       With shuffle on, or when playing from somewhere with no playlist, the row says why
@@ -279,11 +324,17 @@ nothing.
 - [x] **The glow stands still when nothing is playing.** The fallback used to breathe when
       paused, which read as the effect following music badly and made the real thing unprovable.
       Settings > Appearance > Ambient Lighting now also shows a live meter of what the tap hears.
-- [ ] **Feed the artwork visualizer from the audio analyser.** The bars over the album art
-      still animate on the fallback pulse even when the glow's audio layer is running.
-- [ ] **Card styles.** `NowPlayingCardStyle` has `.compact` and `.fullArtwork` declared and
-      pickable; both currently render as `.classic`. Add the two views.
-- [x] **Draggable control layout.** One `SlotLayoutEditor` component, used three times: the
+- [x] **Feed the artwork visualizer from the audio analyser.** While the tap runs, the analyser's
+      bands are averaged into the five bars and shaped by their own `GlowDynamics`, so they
+      strike like the glow does; otherwise they run on the pulse as before. Builds; not yet
+      watched against real music.
+- [x] **Card styles.** Compact is one row (56 pt cover, title, controls) over a full-width
+      scrubber with the timecodes either side; Full Artwork puts the cover large on the left
+      over a blurred, darkened copy of itself that fills the card. The blur is an overlay on a
+      plain colour, because a filled image as a ZStack child sized the background to itself
+      and spread over the whole panel. Captured with `--capture-notch --tab media --card
+      compact` and `--card fullArtwork`.
+- [x] **Draggable control layout.** (Superseded by Settings > Layout, see above.) One `SlotLayoutEditor` component, used three times: the
       media transport row (Settings > Media), the closed pill's two flanks (General), and the
       open panel's trailing top strip (Appearance). Drag to reorder, drag between sides, drag
       out to remove.
@@ -294,19 +345,33 @@ nothing.
 - [x] Shuffle on Apple Music and Spotify: state read into every snapshot, the button shows it,
       flips instantly and is confirmed by the read-back. Added to existing arrangements once by
       the version 2 settings migration, since it could not be chosen before.
-- [ ] Real commands for repeat and favourite on each source. They can be arranged
-      today but have nothing behind them, and the Media pane says so.
+- [x] Real commands for repeat and favourite. The scripts existed; what was missing was reading
+      the state back. The snapshot now reads `song repeat` / `repeating` and `favorited` (with
+      `loved` as a fallback for older Music), the buttons show the accent when on and
+      `repeat.1` for one song, and change at once before the read-back confirms. Spotify has
+      no like or save in its dictionary, so favourite is Music only and left off the card for
+      Spotify rather than drawn dead. All scripts compile (`--check-media --scripts`); not yet
+      read live, since neither player was running.
 - [x] **Custom visualizer image.** Shipped as an animated image rather than Lottie, since
       `NSImageView` plays GIF and APNG with no third-party renderer.
 
 ## V2 — Live Activities
 
-- [ ] **AirPods and Bluetooth battery.** `LiveActivityCenter` and the `.bluetoothDevice` kind
-      exist. Needs an IOBluetooth source and the pill presentation.
-- [~] **General-purpose activities.** The timer is the first real client: `TimerService`
-      raises `onChange`, `AppEnvironment` turns it into a `LiveActivity`, and the service
-      knows nothing about the pill. Downloads still to come, as is swipe-to-cycle and
-      swipe-to-dismiss wired to `LiveActivityCenter.cycle(by:)`.
+- [x] **AirPods and Bluetooth battery.** Not IOBluetooth, which would need the Bluetooth
+      permission: a registry first-match notification on the same charge-reporting classes the
+      System tab reads (`startWatchingConnections`), read two seconds later once the charge is
+      published, shown for six seconds as a live activity. Earbuds collapse into one device at
+      the lower bud. Settings > Layout > Devices Connecting, on by default. Builds; not yet
+      seen with a real device connecting.
+- [x] **General-purpose activities.** The timer was the first client. Downloads are the second:
+      `DownloadsMonitor` watches the Downloads folder for browsers' temporary files
+      (`.download`, `.crdownload`, `.part`, `.partial`, `.opdownload`), reads progress from the
+      `NSProgress` a browser publishes for the file (as Finder does) or Safari's `Info.plist`,
+      and shows a tick for five seconds when the file lands. Off by default, since it needs the
+      Downloads folder permission (`NSDownloadsFolderUsageDescription`, asked from the
+      foreground). `--check-downloads` plays out Chrome, Safari and a cancelled download in a
+      scratch folder and passes. Two-finger swipes on the closed pill cycle activities (already
+      wired) and a swipe up now puts away a download or device notice, never a running timer.
 
 ## V2 — calendar and productivity
 
@@ -441,7 +506,10 @@ Decisions still open, but nothing in the code should make these harder.
 - [ ] **App Store build.** Cannot include the MediaRemote bridge. Plan is a compile-time flag
       that removes `MediaRemoteBridge` and makes `SystemNowPlayingSource` report unavailable,
       leaving Apple Music and Spotify working.
-- [~] **Direct build.** `Scripts/release.sh` builds Release and wraps it in
+- [~] **Direct build.** 0.3.0 is written and waiting: `ReleaseNotes.latest` and
+      `MARKETING_VERSION` are both 0.3.0, so the next `Scripts/release.sh` run produces the DMG
+      and `Scripts/release-notes.sh` the GitHub description. Nothing is committed or published
+      yet. `Scripts/release.sh` builds Release and wraps it in
       `dist/MinNotch-<version>.dmg`, with `--anonymous` to re-sign ad-hoc so the download does
       not carry the signer's Apple ID, and `Scripts/release-notes.sh` for the GitHub release
       description. Hardened runtime is on. Notarisation needs a paid membership; Sparkle for

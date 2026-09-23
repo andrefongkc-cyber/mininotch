@@ -32,8 +32,38 @@ enum DebugGlowCheck {
             source = arguments[sourceIndex + 1]
         }
 
+        if source == "tempo" {
+            checkTempo()
+            return true
+        }
+
         run(seconds: seconds, source: source)
         return true
+    }
+
+    /// `--source tempo`: checks that a set tempo puts the low-band hits exactly on its grid,
+    /// measured from its origin, for a tapped tempo and a song's.
+    private static func checkTempo() {
+        var failures = 0
+        for (bpm, origin) in [(100.0, 0.25), (128.0, 3.7), (60.0, 0.0)] {
+            let tempo = GlowTempo(beatsPerMinute: bpm, origin: origin)
+            var hits: [TimeInterval] = []
+            var wasHit = false
+            var time = origin - 0.5
+            while time < origin + 6 {
+                let isHit = (GlowFallbackSource.levels(at: time, isPlaying: true, speed: 0.5, tempo: tempo).bands.first ?? 0) > 0
+                if isHit, !wasHit { hits.append(time) }
+                wasHit = isHit
+                time += 0.001
+            }
+            let expected = (0..<hits.count).map { origin + Double($0) * tempo.secondsPerBeat }
+            let worst = zip(hits, expected).map { abs($0 - $1) }.max() ?? .infinity
+            let passed = !hits.isEmpty && worst < 0.002 && hits.first! >= origin - 0.001
+            if !passed { failures += 1 }
+            report(String(format: "%@ %.0f bpm from %.2f s: %d hits, first at %.3f, worst %.4f s off the grid",
+                          passed ? "ok  " : "FAIL", bpm, origin, hits.count, hits.first ?? -1, worst))
+        }
+        report(failures == 0 ? "all checks passed" : "\(failures) check(s) failed")
     }
 
     /// 120 Hz, which is what the effect gets on a ProMotion display and the hardest case for

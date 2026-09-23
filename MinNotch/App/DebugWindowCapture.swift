@@ -47,7 +47,18 @@ enum DebugWindowCapture {
         // The calendar reads real data rather than a sample, so its service has to be
         // started or it reports its default not-determined state and the capture shows the
         // permission prompt no matter what access the app actually has.
-        environment.calendarService.start(settings: settings)
+        // `--sample-calendar` uses fixed sample events instead, which needs no permission.
+        if arguments.contains("--sample-calendar") {
+            environment.calendarService.applySampleItems(settings: settings)
+        } else {
+            environment.calendarService.start(settings: settings)
+        }
+        if let index = arguments.firstIndex(of: "--calendar-step"), arguments.indices.contains(index + 1) {
+            CalendarWidgetView.debugStep = Int(arguments[index + 1]) ?? 0
+        }
+        if let index = arguments.firstIndex(of: "--calendar-pick"), arguments.indices.contains(index + 1) {
+            CalendarWidgetView.debugPick = Int(arguments[index + 1])
+        }
 
         // Effects are off by default, so a capture would not show them otherwise.
         settings.media.showVisualizer = true
@@ -62,6 +73,28 @@ enum DebugWindowCapture {
         // The debug buttons default on in a Debug build, which is what this tool is, but a
         // capture is a picture of the app people run. `--debug` puts them back.
         settings.advanced.showDebugButtons = arguments.contains("--debug")
+
+        // `--controls shuffle,previous,playPause,next,repeatMode,favorite` sets the transport row.
+        if let index = arguments.firstIndex(of: "--controls"), arguments.indices.contains(index + 1) {
+            settings.media.controlOrder = arguments[index + 1].split(separator: ",").compactMap { MediaControl(rawValue: String($0)) }
+        }
+
+        // `--sample-stats` fills the System tab with fixed readings and a history with a spike.
+        if arguments.contains("--sample-stats") {
+            environment.systemStats.start(settings: settings)
+            environment.systemStats.applySampleHistory()
+        }
+
+        // `--lyrics-sheet` opens the full lyrics list instead of the two-line strip.
+        if arguments.contains("--lyrics-sheet") {
+            environment.nowPlaying.isShowingLyricsSheet = true
+        }
+
+        // `--card compact|fullArtwork` picks the Now Playing card style.
+        if let index = arguments.firstIndex(of: "--card"), arguments.indices.contains(index + 1),
+           let style = NowPlayingCardStyle(rawValue: arguments[index + 1]) {
+            settings.media.cardStyle = style
+        }
 
         // Playback paused, which is the state the glow must be completely still in.
         if arguments.contains("--paused") {

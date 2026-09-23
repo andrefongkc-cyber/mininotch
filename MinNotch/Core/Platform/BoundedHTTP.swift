@@ -24,7 +24,10 @@ import Foundation
 ///
 /// Cookies and credentials are refused outright. Nothing here is ever authenticated, so
 /// there is no reason to keep state that could be replayed or leaked between requests.
-final class BoundedHTTPClient: NSObject {
+///
+/// Unchecked `Sendable`: the only mutable state, `pending`, is behind `lock`, and the session
+/// is set once in `init`.
+final class BoundedHTTPClient: NSObject, @unchecked Sendable {
     private let maxBytes: Int
     private let allowedHosts: Set<String>?
     /// Deliver the first `maxBytes` instead of nothing when a body is larger. For reading a
@@ -42,7 +45,7 @@ final class BoundedHTTPClient: NSObject {
     private struct Pending {
         var buffer = Data()
         var host: String
-        var completion: (Data?) -> Void
+        var completion: @Sendable (Data?) -> Void
         var wasTruncated = false
     }
     private var pending: [Int: Pending] = [:]
@@ -94,7 +97,7 @@ final class BoundedHTTPClient: NSObject {
     ///
     /// The callers cannot act on the difference between a refusal, a 503, and an empty
     /// result, so the distinction is deliberately not offered.
-    func fetch(_ url: URL, headers: [String: String] = [:], completion: @escaping (Data?) -> Void) {
+    func fetch(_ url: URL, headers: [String: String] = [:], completion: @escaping @Sendable (Data?) -> Void) {
         guard accepts(url), let host = url.host?.lowercased() else {
             completion(nil)
             return
@@ -117,16 +120,19 @@ final class BoundedHTTPClient: NSObject {
     /// is strictly better than that, and cannot deadlock: the delegate callbacks run on this
     /// client's own queue, never on the caller's.
     func fetchSynchronously(_ url: URL, headers: [String: String] = [:]) -> Data? {
+        /// Written once by the callback before it signals, read once after the wait, so the
+        /// semaphore is the synchronisation.
+        final class Result: @unchecked Sendable { var data: Data? }
         let semaphore = DispatchSemaphore(value: 0)
-        var result: Data?
+        let result = Result()
         fetch(url, headers: headers) { data in
-            result = data
+            result.data = data
             semaphore.signal()
         }
         // Bounded even if the session never calls back, so a wedged fetch cannot strand the
         // queue that every media read shares.
         _ = semaphore.wait(timeout: .now() + 20)
-        return result
+        return result.data
     }
 
     private func finish(_ identifier: Int, with data: Data?) {

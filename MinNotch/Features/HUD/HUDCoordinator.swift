@@ -10,6 +10,7 @@ import SwiftUI
 /// A reading is only shown when the value actually changes. Without that, the first poll
 /// after enabling the feature would put a HUD on screen that the user did not ask for.
 @Observable
+@MainActor
 final class HUDCoordinator {
     /// The reading currently on screen, or nil when nothing is showing.
     private(set) var current: HUDReading?
@@ -124,12 +125,11 @@ final class HUDCoordinator {
     /// wanted and missing, check every couple of seconds and start as soon as it arrives.
     private func waitForTrust() {
         guard trustTimer == nil else { return }
-        let timer = Timer(timeInterval: 2, repeats: true) { [weak self] _ in
+                let timer = Timer.onMain(every: 2) { [weak self] in
             guard SystemKeyInterceptor.isTrusted else { return }
             self?.stopWaitingForTrust()
             self?.applyKeyInterception()
         }
-        RunLoop.main.add(timer, forMode: .common)
         trustTimer = timer
     }
 
@@ -193,10 +193,9 @@ final class HUDCoordinator {
 
         // Fast enough that holding a brightness key looks continuous, slow enough that it is
         // two float reads a second rather than a spin.
-        let timer = Timer(timeInterval: 0.2, repeats: true) { [weak self] _ in
+                let timer = Timer.onMain(every: 0.2) { [weak self] in
             self?.poll()
         }
-        RunLoop.main.add(timer, forMode: .common)
         pollTimer = timer
     }
 

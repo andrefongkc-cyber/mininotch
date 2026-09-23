@@ -47,24 +47,23 @@ enum DebugAudioCheck {
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { waitForStart(remaining - 1) }
         }
 
-        var samples = 0
+        final class Count { var samples = 0 }
+        let count = Count()
+        var samples: Int { count.samples }
 
-        func tick() {
+        let tick: @MainActor @Sendable () -> Void = {
             guard let analysis = analyzer.current else {
                 report("  no buffers yet")
                 return
             }
-            samples += 1
+            count.samples += 1
             let bars = analysis.bands.map { String(format: "%.2f", $0) }.joined(separator: " ")
             report(String(format: "  energy %.2f  beat %.2f  bands %@", analysis.energy, analysis.beat, bars))
         }
 
         func sample() {
 
-            let timer = Timer(timeInterval: 1, repeats: true) { _ in
-                MainActor.assumeIsolated { tick() }
-            }
-            RunLoop.main.add(timer, forMode: .common)
+            let timer = Timer.onMain(every: 1, tick)
 
             DispatchQueue.main.asyncAfter(deadline: .now() + seconds) {
                 timer.invalidate()

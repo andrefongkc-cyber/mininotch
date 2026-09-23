@@ -7,6 +7,7 @@ import SwiftUI
 /// no menu bar of its own, so the scene's ⌘, plumbing does not apply, and the window has to
 /// be brought forward explicitly because an accessory app is never the active app until it
 /// asks to be.
+@MainActor
 final class SettingsWindowController: NSObject, NSWindowDelegate {
     private unowned let environment: AppEnvironment
     private var window: NSWindow?

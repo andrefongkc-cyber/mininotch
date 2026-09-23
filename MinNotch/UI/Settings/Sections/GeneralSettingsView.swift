@@ -79,46 +79,6 @@ struct GeneralSettingsView: View {
                 }
             }
 
-            SettingsCard(
-                header: "Closed Pill",
-                footer: "With this off, the closed pill matches your Mac's notch exactly, so the top of the screen looks untouched. On a Mac with a notch that also means the closed pill is invisible, since the cutout sits behind the camera."
-            ) {
-                SettingsRow(
-                    title: "Show Indicators When Closed",
-                    subtitle: "Widen the pill either side of the notch to show battery and what is playing.",
-                    systemImage: "rectangle.expand.vertical"
-                ) {
-                    SettingsToggle(isOn: $settings.general.extendPillForIndicators)
-                }
-
-                SettingsDivider()
-
-                SettingsRow(
-                    title: "Arrangement",
-                    subtitle: "Which side of the notch each indicator sits on. The middle stays empty: that band is behind the camera housing, and clicks fall through it.",
-                    systemImage: "rectangle.split.3x1"
-                ) { EmptyView() }
-
-                SlotLayoutEditor(
-                    zones: [
-                        .init(
-                            id: "leading",
-                            title: "Left of the notch",
-                            items: $settings.general.pillLeading,
-                            emptyHint: "Nothing on the left"
-                        ),
-                        .init(
-                            id: "trailing",
-                            title: "Right of the notch",
-                            items: $settings.general.pillTrailing,
-                            emptyHint: "Nothing on the right"
-                        )
-                    ]
-                )
-                .padding(.horizontal, Metrics.cardHorizontalPadding)
-                .padding(.bottom, 10)
-            }
-
             SettingsCard(header: "Tabs") {
                 SettingsRow(
                     title: "Remember Last Tab",

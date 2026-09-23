@@ -154,6 +154,17 @@ struct CalendarSettingsView: View {
                     ))
                 }
 
+                SettingsDivider()
+
+                SettingsRow(
+                    title: "Show Reminders Without a Date",
+                    subtitle: "List them after everything that is due.",
+                    systemImage: "tray",
+                    isEnabled: settings.calendar.showReminders
+                ) {
+                    SettingsToggle(isOn: $settings.calendar.showUndatedReminders)
+                }
+
                 if settings.calendar.showReminders, !service.hasRemindersAccess {
                     SettingsDivider()
 
@@ -170,7 +181,7 @@ struct CalendarSettingsView: View {
 
             SettingsCard(
                 header: "Quick Add",
-                footer: "Events are created in your default calendar starting at the next half hour. Reminders are due at the same time."
+                footer: "Events are created in your default calendar starting at the next half hour, or at 9 AM on the day picked in the grid. Reminders are due at the same time."
             ) {
                 SettingsRow(
                     title: "Quick Add Field",

@@ -15,6 +15,7 @@ struct NotchWidgetDescriptor: Identifiable {
     var id: String { tab.rawValue }
 }
 
+@MainActor
 enum NotchWidgetRegistry {
     static let all: [NotchWidgetDescriptor] = [
         NotchWidgetDescriptor(tab: .media, flag: .nowPlaying) { $0.media.enabled },

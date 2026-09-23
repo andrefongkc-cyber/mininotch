@@ -146,6 +146,36 @@ struct GlowInput {
     }
 }
 
+/// Where the glow takes its tempo from when it is not following the audio.
+enum GlowTempoSource: String, Codable, CaseIterable, Identifiable {
+    /// 92 to 140 bpm across the Speed slider, as it always was.
+    case speed
+    /// A tempo set by hand or tapped out.
+    case manual
+    /// The song's own BPM tag, where the player has one. Music does; Spotify shares none.
+    case song
+
+    var id: String { rawValue }
+
+    var title: String {
+        switch self {
+        case .speed: return "From the Speed Slider"
+        case .manual: return "Set by Hand"
+        case .song: return "From the Song"
+        }
+    }
+}
+
+/// A tempo the glow strikes to, and where its beats fall.
+struct GlowTempo: Equatable {
+    var beatsPerMinute: Double
+    /// A moment, in reference-date seconds, that a beat fell on. Every beat is a whole number
+    /// of beat lengths from it.
+    var origin: TimeInterval
+
+    var secondsPerBeat: Double { 60 / max(beatsPerMinute, 1) }
+}
+
 /// Settings > Appearance > Ambient Lighting.
 struct AmbientGlowSettings: Codable, Equatable {
     var isEnabled: Bool = false
@@ -165,6 +195,13 @@ struct AmbientGlowSettings: Codable, Equatable {
 
     /// Stop animating and drop the audio tap while the Mac is conserving power.
     var pauseInLowPowerMode: Bool = true
+
+    /// Where the tempo comes from while the glow is not following the audio.
+    var tempoSource: GlowTempoSource = .speed
+    /// The tempo for `.manual`, typed or tapped.
+    var manualBPM: Double = 120
+
+    static let bpmRange: ClosedRange<Double> = 40...220
 
     init() {}
 
@@ -187,6 +224,8 @@ struct AmbientGlowSettings: Codable, Equatable {
         speed = c.value(.speed, 0.5, in: 0...1)
         glowRadius = c.value(.glowRadius, 12, in: 2...28)
         pauseInLowPowerMode = c.value(.pauseInLowPowerMode, true)
+        tempoSource = c.value(.tempoSource, GlowTempoSource.speed)
+        manualBPM = c.value(.manualBPM, 120, in: Self.bpmRange)
     }
 
     /// True when the effect should draw at all right now.

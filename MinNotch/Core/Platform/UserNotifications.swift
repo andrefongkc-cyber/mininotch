@@ -1,3 +1,4 @@
+import os
 import UserNotifications
 
 /// Local notifications, currently only for battery events.
@@ -6,24 +7,35 @@ import UserNotifications
 /// rather than at launch: a permission prompt before the user has enabled anything that
 /// notifies is the kind of thing that gets an app deleted.
 enum NotificationCenterBridge {
-    private static var hasRequestedAuthorization = false
+    /// Behind a lock, because it is read and set in the notification centre's callback, which
+    /// runs on a queue of its own.
+    private static let hasRequestedAuthorization = OSAllocatedUnfairLock(initialState: false)
 
-    static func requestAuthorizationIfNeeded(completion: ((Bool) -> Void)? = nil) {
-        let center = UNUserNotificationCenter.current()
-        center.getNotificationSettings { settings in
+    /// The completion runs on the main actor. The notification centre answers on a queue of its
+    /// own, so both of its callbacks are `@Sendable` and hop back rather than inheriting the
+    /// caller's isolation, which in Swift 6 would stop the app when they were called.
+    static func requestAuthorizationIfNeeded(completion: (@MainActor @Sendable (Bool) -> Void)? = nil) {
+        @Sendable func finish(_ granted: Bool) {
+            Task { @MainActor in completion?(granted) }
+        }
+
+        UNUserNotificationCenter.current().getNotificationSettings { @Sendable settings in
             switch settings.authorizationStatus {
             case .authorized, .provisional:
-                completion?(true)
+                finish(true)
             case .denied:
-                completion?(false)
+                finish(false)
             default:
-                guard !hasRequestedAuthorization else { completion?(false); return }
-                hasRequestedAuthorization = true
-                center.requestAuthorization(options: [.alert, .sound]) { granted, error in
+                let alreadyAsked = hasRequestedAuthorization.withLock { asked in
+                    defer { asked = true }
+                    return asked
+                }
+                guard !alreadyAsked else { finish(false); return }
+                UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound]) { @Sendable granted, error in
                     if let error {
                         AppLog.app.error("Notification authorisation failed: \(error.localizedDescription, privacy: .public)")
                     }
-                    completion?(granted)
+                    finish(granted)
                 }
             }
         }

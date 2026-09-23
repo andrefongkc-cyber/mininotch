@@ -34,6 +34,13 @@ struct GeneralSettings: Codable, Equatable {
     var pillLeading: [PillIndicator] = PillIndicator.defaultLeading
     var pillTrailing: [PillIndicator] = PillIndicator.defaultTrailing
 
+    /// A live activity for each file arriving in Downloads. Off by default: it reads the
+    /// Downloads folder, which is a permission of its own.
+    var showDownloadActivity: Bool = false
+
+    /// A live activity with an accessory's charge when it connects.
+    var announceConnectedDevices: Bool = true
+
     /// Reopen on whichever tab was showing last, instead of the default tab.
     var rememberLastTab: Bool = true
 
@@ -56,6 +63,8 @@ struct GeneralSettings: Codable, Equatable {
         extendPillForIndicators = c.value(.extendPillForIndicators, false)
         pillLeading = c.value(.pillLeading, PillIndicator.defaultLeading)
         pillTrailing = c.value(.pillTrailing, PillIndicator.defaultTrailing)
+        showDownloadActivity = c.value(.showDownloadActivity, false)
+        announceConnectedDevices = c.value(.announceConnectedDevices, true)
         rememberLastTab = c.value(.rememberLastTab, true)
         lastTab = c.value(.lastTab, NotchTab.media)
         defaultTab = c.value(.defaultTab, NotchTab.media)

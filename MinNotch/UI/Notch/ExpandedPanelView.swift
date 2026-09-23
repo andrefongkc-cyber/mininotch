@@ -71,7 +71,7 @@ struct ExpandedPanelView: View {
         )
     }
 
-    /// Items either side of the cutout, as arranged in Settings > Appearance > Top Bar.
+    /// Items either side of the cutout, as arranged in Settings > Layout > Top Bar.
     ///
     /// The middle is a fixed-width spacer the exact width of the notch. Because the panel is
     /// centred on the cutout, that spacer lands precisely over it, and a `Spacer` does not

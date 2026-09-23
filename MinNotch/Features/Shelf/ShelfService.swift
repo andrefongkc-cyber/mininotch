@@ -36,6 +36,7 @@ struct ShelfItem: Identifiable, Equatable {
 /// a file that is renamed or moved and because bookmarks are what a sandboxed build will
 /// need in order to keep access across launches.
 @Observable
+@MainActor
 final class ShelfService {
     private(set) var items: [ShelfItem] = []
     /// True while a drag is over the notch, so the surface can show it will accept the drop.

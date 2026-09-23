@@ -5,6 +5,7 @@ import AppKit
 /// The item can be hidden entirely, which is why the global shortcut is registered
 /// unconditionally: hiding the icon must never leave the user without a way back into
 /// Settings.
+@MainActor
 final class MenuBarController {
     private unowned let environment: AppEnvironment
     private var statusItem: NSStatusItem?

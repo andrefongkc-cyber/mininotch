@@ -11,6 +11,7 @@ import SwiftUI
 /// Closing the window counts as skipping. A tutorial that reappears on every launch because
 /// someone closed it with the red button instead of pressing Skip is the thing people most
 /// dislike about tutorials.
+@MainActor
 final class OnboardingCoordinator: NSObject, NSWindowDelegate {
     private static let completedKey = "onboarding.completedVersion"
     /// Bumped when the tutorial gains something existing users also need to see.

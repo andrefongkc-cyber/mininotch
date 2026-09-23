@@ -16,6 +16,7 @@ import SwiftUI
 /// Unannotated, like `NotchWindowController` beside it. `AppEnvironment` is not main-actor
 /// isolated, and the project is still on Swift 5 with minimal concurrency checking; adding
 /// isolation to one leaf here would only fail to compile against the composition root.
+@MainActor
 final class FloatingNowPlayingController {
     private var panel: NSPanel?
     private let environment: AppEnvironment
@@ -32,8 +33,10 @@ final class FloatingNowPlayingController {
     /// leave the strip clipped against the bottom of the window.
     private var size: CGSize {
         let card = NowPlayingCardView.preferredHeight(
+            style: environment.settings.media.cardStyle,
             showingLyrics: environment.settings.media.showLyrics,
-            showingUpNext: environment.nowPlaying.showsUpNext
+            showingUpNext: environment.nowPlaying.showsUpNext,
+            showingLyricsSheet: environment.nowPlaying.showsLyricsSheet
         )
         return CGSize(width: Self.width, height: card + Self.topChrome + Self.bottomChrome)
     }

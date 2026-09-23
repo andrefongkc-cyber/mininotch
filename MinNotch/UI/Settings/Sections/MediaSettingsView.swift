@@ -186,6 +186,17 @@ struct MediaSettingsView: View {
                 SettingsDivider()
 
                 SettingsRow(
+                    title: "Show Which App Is Playing",
+                    subtitle: "A small icon of the app on the corner of the artwork.",
+                    systemImage: "app.badge",
+                    isEnabled: settings.media.enabled
+                ) {
+                    SettingsToggle(isOn: $settings.media.showSourceBadge)
+                }
+
+                SettingsDivider()
+
+                SettingsRow(
                     title: "Tint From Artwork",
                     subtitle: "Wash the panel with the album's dominant colour.",
                     systemImage: "photo",
@@ -207,37 +218,6 @@ struct MediaSettingsView: View {
                         range: 0.5...5,
                         step: 0.5
                     ) { String(format: "%.1f s", $0) }
-                }
-            }
-
-            SettingsCard(
-                header: "Controls",
-                footer: "Drag to reorder, or drag out to remove. The order here is the order on the Now Playing card."
-            ) {
-                SlotLayoutEditor(
-                    zones: [
-                        .init(
-                            id: "controls",
-                            title: "Shown, left to right",
-                            items: $settings.media.controlOrder,
-                            emptyHint: "No transport controls"
-                        )
-                    ],
-                    paletteTitle: "Not Shown",
-                    paletteHint: "Drag here to remove"
-                )
-                .padding(.horizontal, Metrics.cardHorizontalPadding)
-                .padding(.vertical, 6)
-
-                if settings.media.controlOrder.contains(where: { !$0.isImplemented }) {
-                    SettingsDivider()
-
-                    SettingsRow(
-                        title: "Not Yet Wired Up",
-                        subtitle: "Repeat and favourite can be arranged here but have no command behind them yet, so they will not appear on the card. Shuffle works with Apple Music and Spotify.",
-                        systemImage: "exclamationmark.triangle",
-                        badge: .comingSoon
-                    ) { EmptyView() }
                 }
             }
 

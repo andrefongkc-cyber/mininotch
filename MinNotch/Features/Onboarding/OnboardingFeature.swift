@@ -190,7 +190,7 @@ enum OnboardingFeature: String, CaseIterable, Identifiable {
     // MARK: Settings
 
     /// Whether the feature is on in `settings` right now.
-    func isOn(in settings: SettingsStore) -> Bool {
+    @MainActor func isOn(in settings: SettingsStore) -> Bool {
         switch self {
         case .nowPlaying: return settings.media.enabled
         case .onlineLyrics: return settings.media.showLyrics && settings.media.lyricsSource.usesNetwork
@@ -214,7 +214,7 @@ enum OnboardingFeature: String, CaseIterable, Identifiable {
     }
 
     /// Switches the feature on or off by writing the settings it stands for.
-    func apply(_ isOn: Bool, to settings: SettingsStore) {
+    @MainActor func apply(_ isOn: Bool, to settings: SettingsStore) {
         switch self {
         case .nowPlaying:
             settings.media.enabled = isOn

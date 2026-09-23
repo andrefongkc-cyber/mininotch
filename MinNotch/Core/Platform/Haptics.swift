@@ -48,8 +48,9 @@ enum Haptics {
 
         guard strength.repeatCount > 1 else { return }
         // Far enough apart to be felt as two taps, close enough to read as one event.
+        let pattern = strength.pattern
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.06) {
-            performer.perform(strength.pattern, performanceTime: .now)
+            NSHapticFeedbackManager.defaultPerformer.perform(pattern, performanceTime: .now)
         }
     }
 }

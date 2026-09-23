@@ -56,6 +56,7 @@ enum TimerPhase: String, Equatable {
 /// about presenting a Live Activity and posting a notification, the same way the battery
 /// service raises `onLowBattery` and does not know notifications exist.
 @Observable
+@MainActor
 final class TimerService {
     enum State: Equatable {
         case idle
@@ -257,10 +258,9 @@ final class TimerService {
     private func startTicking() {
         stopTicking()
         // Twice a second, so the displayed second never lags the real one by a whole tick.
-        let ticker = Timer(timeInterval: 0.5, repeats: true) { [weak self] _ in
+                let ticker = Timer.onMain(every: 0.5) { [weak self] in
             self?.tick()
         }
-        RunLoop.main.add(ticker, forMode: .common)
         self.ticker = ticker
     }
 

@@ -9,7 +9,10 @@ import Carbon.HIToolbox
 ///
 /// Nothing here ever launches an application: callers check `isRunning(bundleIdentifier:)`
 /// first, otherwise merely reading the now playing track would start Music.
-final class AppleScriptRunner {
+///
+/// Unchecked `Sendable` because the confinement is enforced at run time instead: `run` checks
+/// it is on `queue`, and the cache is only touched from there.
+final class AppleScriptRunner: @unchecked Sendable {
     static let shared = AppleScriptRunner()
 
     /// Serial so two snapshots can never interleave inside `NSAppleScript`.

@@ -53,6 +53,11 @@
 	<key>NSAppleEventsUsageDescription</key>
 	<string>MinNotch controls Music and Spotify so it can show and control what you are listening to.</string>
 
+	<!-- Downloads folder, read only while Layout > Downloads is on, to show a file's progress
+	     in the closed pill. -->
+	<key>NSDownloadsFolderUsageDescription</key>
+	<string>MinNotch watches your Downloads folder, while Downloads is on in Settings > Layout, to show how far along a download is. Nothing is opened, moved or sent anywhere.</string>
+
 	<!-- Core Audio process tap. A separate permission from the microphone and from screen
 	     recording, and the reason the ambient lighting no longer asks for screen access. -->
 	<key>NSAudioCaptureUsageDescription</key>

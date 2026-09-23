@@ -21,10 +21,14 @@ enum DebugMediaCheck {
         if let index = arguments.firstIndex(of: "--scripts"), arguments.indices.contains(index + 1) {
             let directory = arguments[index + 1]
             try? FileManager.default.createDirectory(atPath: directory, withIntermediateDirectories: true)
-            for descriptor in [PlayerDescriptor.appleMusic, .spotify] {
+            for descriptor in [PlayerDescriptor.appleMusic, .spotify, .vlc] {
                 let source = AppleScriptMediaSource(descriptor: descriptor)
                 write(source.debugSnapshotScript, to: directory, name: "\(descriptor.scriptName)-snapshot")
                 write(descriptor.shuffleScript, to: directory, name: "\(descriptor.scriptName)-shuffle")
+                write(descriptor.repeatScript, to: directory, name: "\(descriptor.scriptName)-repeat")
+                if !descriptor.favoriteScript.isEmpty {
+                    write(descriptor.favoriteScript, to: directory, name: "\(descriptor.scriptName)-favorite")
+                }
                 if let upNext = descriptor.upNextScript {
                     write(upNext.replacingOccurrences(of: "LIMIT", with: "3"), to: directory, name: "\(descriptor.scriptName)-upnext")
                 }
@@ -33,7 +37,13 @@ enum DebugMediaCheck {
             exit(0)
         }
 
-        for descriptor in [PlayerDescriptor.appleMusic, .spotify] {
+        for (name, expected) in [("Radiohead - Reckoner.mp3", ("Reckoner", "Radiohead")), ("holiday video.mov", ("holiday video", "")),
+                                 ("A - B - C.flac", ("B - C", "A"))] {
+            let got = AppleScriptMediaSource.titles(fromFileName: name)
+            report("\(got == expected ? "ok  " : "FAIL") file name \"\(name)\" -> title \"\(got.title)\", artist \"\(got.artist)\"")
+        }
+
+        for descriptor in [PlayerDescriptor.appleMusic, .spotify, .vlc] {
             let source = AppleScriptMediaSource(descriptor: descriptor)
             guard source.isAvailable else {
                 report("\(descriptor.displayName): not running")
@@ -41,7 +51,7 @@ enum DebugMediaCheck {
             }
             AppleScriptRunner.shared.queue.sync {
                 if let track = source.snapshot() {
-                    report("\(descriptor.displayName): \(track.title) by \(track.artist), playing \(track.isPlaying), shuffling \(track.isShuffling.map(String.init) ?? "unknown")")
+                    report("\(descriptor.displayName): \(track.title) by \(track.artist), playing \(track.isPlaying), shuffling \(track.isShuffling.map(String.init) ?? "unknown"), repeat \(track.repeatMode?.rawValue ?? "unknown"), favourite \(track.isFavorite.map(String.init) ?? "unknown")")
                 } else {
                     report("\(descriptor.displayName): nothing playing")
                 }

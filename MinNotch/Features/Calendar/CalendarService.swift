@@ -9,6 +9,7 @@ import SwiftUI
 /// The store posts `EKEventStoreChanged` on any edit anywhere, so the widget stays current
 /// without polling.
 @Observable
+@MainActor
 final class CalendarService {
     private(set) var authorizationStatus: EKAuthorizationStatus = .notDetermined
     private(set) var calendars: [CalendarInfo] = []
@@ -21,12 +22,22 @@ final class CalendarService {
     /// Reminders are a separate permission from events, and a separate store query, so they
     /// get their own status rather than being folded into the calendar one.
     private(set) var remindersAuthorizationStatus: EKAuthorizationStatus = .notDetermined
+    /// Every dated reminder, soonest first. Not limited to the upcoming window, because the
+    /// grid can be moved to any week and a picked day shows what is due on it.
     private(set) var reminders: [CalendarItem] = []
+    /// Reminders with no due date, alphabetical. They have no day to sit on, so they appear
+    /// only at the end of the upcoming list.
+    private(set) var undatedReminders: [CalendarItem] = []
 
     @ObservationIgnored private let store = EKEventStore()
     @ObservationIgnored private var settings: SettingsStore?
     @ObservationIgnored private var changeObserver: NSObjectProtocol?
     @ObservationIgnored private var refreshTimer: Timer?
+    /// Days with something on them, per grid range, so moving between weeks does not query
+    /// EventKit on every redraw. Emptied whenever the store or the reminders change.
+    @ObservationIgnored private var eventDayCache: [DateInterval: Set<Date>] = [:]
+    /// Debug previews fill `items` by hand; the day queries then read those instead of EventKit.
+    @ObservationIgnored private var usesSampleData = false
 
     init() {}
 
@@ -44,16 +55,18 @@ final class CalendarService {
             object: store,
             queue: .main
         ) { [weak self] _ in
-            self?.refresh()
-            self?.refreshReminders()
+            // Delivered on the main queue, as asked for above.
+            MainActor.assumeIsolated {
+                self?.refresh()
+                self?.refreshReminders()
+            }
         }
 
         // Events do not change on a timer, but "today", "in progress", and the upcoming
         // window all move, so a slow refresh keeps the list honest.
-        let timer = Timer(timeInterval: 60, repeats: true) { [weak self] _ in
+                let timer = Timer.onMain(every: 60) { [weak self] in
             self?.refresh()
         }
-        RunLoop.main.add(timer, forMode: .common)
         refreshTimer = timer
 
         if hasAccess { refresh() }
@@ -76,31 +89,23 @@ final class CalendarService {
     /// resolves with `granted == false` and the status stays `notDetermined`, which looks
     /// exactly like a user who dismissed a dialog they never actually saw.
     ///
-    /// Switching to a regular activation policy for the duration is what actually makes the
-    /// dialog appear. It is restored as soon as the user answers, so the Dock icon appears
-    /// only while the prompt is up.
-    func requestAccess(completion: ((Bool) -> Void)? = nil) {
-        let wasAccessory = NSApp.activationPolicy() == .accessory
-        if wasAccessory { NSApp.setActivationPolicy(.regular) }
-        NSApp.activate(ignoringOtherApps: true)
-
-        // If the callback never arrives the app would keep a Dock icon it should not have,
-        // so the policy is restored on a timer regardless of what the request does.
-        var didRestore = false
-        func restorePolicy() {
-            guard wasAccessory, !didRestore else { return }
-            didRestore = true
-            NSApp.setActivationPolicy(.accessory)
-        }
-        DispatchQueue.main.asyncAfter(deadline: .now() + 60) { restorePolicy() }
-
-        store.requestFullAccessToEvents { [weak self] granted, error in
-            DispatchQueue.main.async {
-                restorePolicy()
+    /// `ForegroundPrompt` is what makes the dialog appear: a Dock icon and the frontmost spot
+    /// for as long as the request is open, restored when the user answers or on a timer.
+    ///
+    /// The completion is `@Sendable` on purpose. EventKit calls it on a queue of its own, and a
+    /// closure written in a main-actor method would otherwise inherit that isolation, which in
+    /// Swift 6 is a runtime check that stops the app the moment EventKit calls back. It hops to
+    /// the main actor itself instead.
+    func requestAccess(completion: (@MainActor @Sendable (Bool) -> Void)? = nil) {
+        ForegroundPrompt.begin(timeout: 60)
+        store.requestFullAccessToEvents { @Sendable [weak self] granted, error in
+            let message = error?.localizedDescription
+            Task { @MainActor [weak self] in
+                ForegroundPrompt.end()
                 guard let self else { return }
 
-                if let error {
-                    AppLog.calendar.error("Calendar access request failed: \(error.localizedDescription, privacy: .public)")
+                if let message {
+                    AppLog.calendar.error("Calendar access request failed: \(message, privacy: .public)")
                 }
                 self.authorizationStatus = EKEventStore.authorizationStatus(for: .event)
 
@@ -112,7 +117,6 @@ final class CalendarService {
                     AppLog.calendar.error("Calendar prompt did not appear; directing to System Settings")
                     self.promptDidNotAppear = true
                 }
-
                 completion?(granted)
             }
         }
@@ -131,58 +135,52 @@ final class CalendarService {
 
     var hasRemindersAccess: Bool { remindersAuthorizationStatus == .fullAccess }
 
-    /// Prompts for Reminders access, with the same activation dance events need.
-    func requestRemindersAccess(completion: ((Bool) -> Void)? = nil) {
-        let wasAccessory = NSApp.activationPolicy() == .accessory
-        if wasAccessory { NSApp.setActivationPolicy(.regular) }
-        NSApp.activate(ignoringOtherApps: true)
-
-        var didRestore = false
-        func restorePolicy() {
-            guard wasAccessory, !didRestore else { return }
-            didRestore = true
-            NSApp.setActivationPolicy(.accessory)
-        }
-        DispatchQueue.main.asyncAfter(deadline: .now() + 60) { restorePolicy() }
-
-        store.requestFullAccessToReminders { [weak self] granted, error in
-            DispatchQueue.main.async {
-                restorePolicy()
+    /// Prompts for Reminders access, from the foreground, with the same `@Sendable` completion
+    /// events need.
+    func requestRemindersAccess() {
+        ForegroundPrompt.begin(timeout: 60)
+        store.requestFullAccessToReminders { @Sendable [weak self] granted, error in
+            let message = error?.localizedDescription
+            Task { @MainActor [weak self] in
+                ForegroundPrompt.end()
                 guard let self else { return }
-                if let error {
-                    AppLog.calendar.error("Reminders access request failed: \(error.localizedDescription, privacy: .public)")
+                if let message {
+                    AppLog.calendar.error("Reminders access request failed: \(message, privacy: .public)")
                 }
                 self.remindersAuthorizationStatus = EKEventStore.authorizationStatus(for: .reminder)
                 if granted { self.refreshReminders() }
-                completion?(granted)
             }
         }
     }
 
-    /// Loads reminders due inside the same window the events use.
+    /// Loads reminders, dated and undated.
     ///
     /// `fetchReminders` is asynchronous even though the event query is not, so this
     /// republishes on its own rather than being folded into `refresh()`.
     func refreshReminders() {
         guard let settings, settings.calendar.showReminders, hasRemindersAccess else {
             if !reminders.isEmpty { reminders = [] }
+            if !undatedReminders.isEmpty { undatedReminders = [] }
             return
         }
 
-        let calendar = Calendar.current
-        let start = calendar.startOfDay(for: Date())
-        let end = calendar.date(byAdding: .day, value: 45, to: start) ?? start
         let hideCompleted = settings.calendar.hideCompletedReminders
 
         let predicate = store.predicateForReminders(in: nil)
-        store.fetchReminders(matching: predicate) { [weak self] found in
-            let items = (found ?? [])
+        // `@Sendable`: EventKit delivers this on its own queue. See `requestAccess()`.
+        store.fetchReminders(matching: predicate) { @Sendable [weak self] found in
+            let all = (found ?? [])
                 .filter { !hideCompleted || !$0.isCompleted }
-                .compactMap(CalendarItem.init(reminder:))
-                .filter { $0.start >= start && $0.start < end }
+                .map(CalendarItem.init(reminder:))
+            let dated = all.filter { !$0.isUndated }.sorted { $0.start < $1.start }
+            let undated = all.filter(\.isUndated)
+                .sorted { $0.title.localizedCaseInsensitiveCompare($1.title) == .orderedAscending }
 
-            DispatchQueue.main.async {
-                self?.reminders = items.sorted { $0.start < $1.start }
+            Task { @MainActor [weak self] in
+                guard let self else { return }
+                self.eventDayCache.removeAll()
+                self.reminders = dated
+                self.undatedReminders = undated
             }
         }
     }
@@ -202,17 +200,23 @@ final class CalendarService {
     ///
     /// Events land in the default calendar starting at the next half hour and lasting an
     /// hour, which is the least surprising thing to do with a bare title. Reminders are due
-    /// at the same moment.
+    /// at the same moment. With another day picked in the grid, both go on that day at nine
+    /// in the morning instead, since "the next half hour" means nothing on a different day.
     @discardableResult
-    func quickAdd(_ title: String, kind: QuickAddKind) -> Bool {
+    func quickAdd(_ title: String, kind: QuickAddKind, on day: Date? = nil) -> Bool {
         let trimmed = title.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { return false }
 
         let calendar = Calendar.current
         let now = Date()
-        let minute = calendar.component(.minute, from: now)
-        let bump = minute < 30 ? 30 - minute : 60 - minute
-        let start = calendar.date(byAdding: .minute, value: bump, to: now) ?? now
+        let start: Date
+        if let day, !calendar.isDateInToday(day) {
+            start = calendar.date(bySettingHour: 9, minute: 0, second: 0, of: day) ?? day
+        } else {
+            let minute = calendar.component(.minute, from: now)
+            let bump = minute < 30 ? 30 - minute : 60 - minute
+            start = calendar.date(byAdding: .minute, value: bump, to: now) ?? now
+        }
 
         do {
             switch kind {
@@ -262,8 +266,8 @@ final class CalendarService {
         // the upcoming list come from one query.
         let windowEnd = calendar.date(byAdding: .day, value: 45, to: start) ?? start
 
-        let hidden = settings.calendar.hiddenCalendarIdentifiers
-        let visible = store.calendars(for: .event).filter { !hidden.contains($0.calendarIdentifier) }
+        eventDayCache.removeAll()
+        let visible = visibleCalendars()
 
         guard !visible.isEmpty else {
             items = []
@@ -289,7 +293,79 @@ final class CalendarService {
         lastRefresh = now
     }
 
+    /// Event calendars the user has not hidden in Settings.
+    private func visibleCalendars() -> [EKCalendar] {
+        let hidden = settings?.calendar.hiddenCalendarIdentifiers ?? []
+        return store.calendars(for: .event).filter { !hidden.contains($0.calendarIdentifier) }
+    }
+
+    /// Events overlapping `interval`, from EventKit, or from the sample items in a preview.
+    private func events(in interval: DateInterval) -> [CalendarItem] {
+        if usesSampleData {
+            return items.filter { $0.start < interval.end && $0.end > interval.start }
+        }
+        guard hasAccess else { return [] }
+        let visible = visibleCalendars()
+        guard !visible.isEmpty else { return [] }
+        let predicate = store.predicateForEvents(withStart: interval.start, end: interval.end, calendars: visible)
+        var found = store.events(matching: predicate).map(CalendarItem.init)
+        if settings?.calendar.showAllDayEvents == false { found.removeAll { $0.isAllDay } }
+        return found
+    }
+
     // MARK: Queries used by the widget
+
+    /// Everything on one day: events that overlap it, all-day ones first, then reminders due.
+    func items(on day: Date) -> [CalendarItem] {
+        let calendar = Calendar.current
+        let start = calendar.startOfDay(for: day)
+        guard let end = calendar.date(byAdding: .day, value: 1, to: start) else { return [] }
+        return items(in: DateInterval(start: start, end: end))
+    }
+
+    /// Everything inside `interval`, in date order, with all-day items first within a day.
+    func items(in interval: DateInterval) -> [CalendarItem] {
+        _ = lastRefresh
+        let calendar = Calendar.current
+        var found = events(in: interval)
+        if settings?.calendar.showReminders == true {
+            found += reminders.filter { interval.contains($0.start) && $0.start < interval.end }
+        }
+        return found.sorted { lhs, rhs in
+            let leftDay = calendar.startOfDay(for: lhs.start), rightDay = calendar.startOfDay(for: rhs.start)
+            if leftDay != rightDay { return leftDay < rightDay }
+            if lhs.isAllDay != rhs.isAllDay { return lhs.isAllDay && !rhs.isAllDay }
+            return lhs.start < rhs.start
+        }
+    }
+
+    /// Start-of-day dates inside `interval` with at least one event or reminder, for the dots
+    /// under the grid. An event that runs over several days marks every one of them, the same
+    /// days `items(on:)` would list it under.
+    func eventDays(in interval: DateInterval) -> Set<Date> {
+        // Read so a refresh redraws the grid; the cache itself is not observed.
+        _ = lastRefresh
+        let showsReminders = settings?.calendar.showReminders == true
+        let dated = showsReminders ? reminders : []
+        if let cached = eventDayCache[interval] { return cached }
+
+        let calendar = Calendar.current
+        var days = Set<Date>()
+        for item in events(in: interval) {
+            var day = max(calendar.startOfDay(for: item.start), interval.start)
+            let last = max(item.end, item.start.addingTimeInterval(1))
+            while day < last, day < interval.end {
+                days.insert(day)
+                guard let next = calendar.date(byAdding: .day, value: 1, to: day) else { break }
+                day = next
+            }
+        }
+        for reminder in dated where interval.contains(reminder.start) {
+            days.insert(calendar.startOfDay(for: reminder.start))
+        }
+        eventDayCache[interval] = days
+        return days
+    }
 
     /// Events starting today, including any already in progress.
     func todayItems() -> [CalendarItem] {
@@ -310,12 +386,17 @@ final class CalendarService {
         ) ?? now
 
         let merged = items + (settings.calendar.showReminders ? reminders : [])
+        let undated = settings.calendar.showReminders && settings.calendar.showUndatedReminders
+            ? undatedReminders
+            : []
 
+        // Undated reminders go last: they are not late and not soon, just not done.
         return merged
             .filter { $0.end >= now && $0.start < horizon }
             .sorted { $0.start < $1.start }
             .prefix(max(1, settings.calendar.maxVisibleEvents) * 3)
             .map { $0 }
+            + undated
     }
 
     /// Marks a reminder done, or undoes that, straight from the notch list.
@@ -341,8 +422,8 @@ final class CalendarService {
 
     // MARK: Grid
 
-    /// Builds the day cells for the current week or month.
-    func days(for mode: CalendarViewMode, reference: Date = Date()) -> [CalendarDay] {
+    /// Builds the day cells for the week or month containing `reference`.
+    func days(for mode: CalendarViewMode, reference: Date = Date(), selected: Date? = nil) -> [CalendarDay] {
         var calendar = Calendar.current
         if settings?.calendar.forceMondayFirst == true { calendar.firstWeekday = 2 }
 
@@ -374,6 +455,10 @@ final class CalendarService {
         }
         _ = component
 
+        let gridEnd = calendar.date(byAdding: .day, value: count, to: cursor) ?? cursor
+        let marked = eventDays(in: DateInterval(start: cursor, end: gridEnd))
+        let selectedDay = selected.map { calendar.startOfDay(for: $0) }
+
         return (0..<count).compactMap { index in
             guard let date = calendar.date(byAdding: .day, value: index, to: cursor) else { return nil }
             let startOfDay = calendar.startOfDay(for: date)
@@ -383,9 +468,34 @@ final class CalendarService {
                 isToday: calendar.isDate(startOfDay, inSameDayAs: today),
                 isInDisplayedMonth: mode == .week
                     || calendar.component(.month, from: date) == referenceMonth,
-                hasEvents: daysWithEvents.contains(startOfDay)
+                hasEvents: marked.contains(startOfDay),
+                isSelected: startOfDay == selectedDay
             )
         }
+    }
+
+    /// The same week or month as `reference`, `steps` of them later (or earlier, if negative).
+    func shifted(_ reference: Date, by steps: Int, mode: CalendarViewMode) -> Date {
+        Calendar.current.date(
+            byAdding: mode == .week ? .weekOfYear : .month,
+            value: steps,
+            to: reference
+        ) ?? reference
+    }
+
+    /// The whole week or month containing `reference`, in the user's week order.
+    func period(containing reference: Date, mode: CalendarViewMode) -> DateInterval {
+        var calendar = Calendar.current
+        if settings?.calendar.forceMondayFirst == true { calendar.firstWeekday = 2 }
+        return calendar.dateInterval(of: mode == .week ? .weekOfYear : .month, for: reference)
+            ?? DateInterval(start: reference, duration: 86_400)
+    }
+
+    /// True when `reference` falls in the week or month that contains today.
+    func isCurrentPeriod(_ reference: Date, mode: CalendarViewMode) -> Bool {
+        var calendar = Calendar.current
+        if settings?.calendar.forceMondayFirst == true { calendar.firstWeekday = 2 }
+        return calendar.isDate(reference, equalTo: Date(), toGranularity: mode == .week ? .weekOfYear : .month)
     }
 
     /// Localised one-letter weekday headers in the user's week order.
@@ -406,6 +516,7 @@ extension CalendarService {
     func applySampleItems(settings: SettingsStore) {
         self.settings = settings
         authorizationStatus = .fullAccess
+        usesSampleData = true
 
         let calendar = Calendar.current
         let now = Date()

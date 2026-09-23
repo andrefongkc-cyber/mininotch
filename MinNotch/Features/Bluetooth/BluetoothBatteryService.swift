@@ -24,6 +24,14 @@ struct BluetoothDevice: Identifiable, Equatable {
     }
 
     var isLow: Bool { percentage <= 20 && !isCharging }
+
+    /// The device's own name, without the side or case suffix earbuds are split into.
+    var baseName: String {
+        for suffix in [" (Left)", " (Right)", " (Case)"] where name.hasSuffix(suffix) {
+            return String(name.dropLast(suffix.count))
+        }
+        return name
+    }
 }
 
 /// Reads the battery level of connected Bluetooth accessories from the IO registry.
@@ -36,12 +44,18 @@ struct BluetoothDevice: Identifiable, Equatable {
 /// Devices that are asleep or do not report charge simply do not appear, which is why the
 /// list is rebuilt on each poll rather than accumulated.
 @Observable
+@MainActor
 final class BluetoothBatteryService {
     private(set) var devices: [BluetoothDevice] = []
 
     @ObservationIgnored private var settings: SettingsStore?
     @ObservationIgnored private var timer: Timer?
     @ObservationIgnored private var observers = 0
+
+    /// Raised when an accessory that reports its charge connects, with what it reported.
+    @ObservationIgnored var onDeviceConnected: (([BluetoothDevice]) -> Void)?
+    @ObservationIgnored private var notifyPort: IONotificationPortRef?
+    @ObservationIgnored private var connectIterators: [io_iterator_t] = []
 
     /// Registry classes that publish accessory charge. Apple has used more than one over the
     /// years and a Mac can have several attached at once.
@@ -65,10 +79,9 @@ final class BluetoothBatteryService {
         guard observers == 1 else { return }
         refresh()
 
-        let timer = Timer(timeInterval: 30, repeats: true) { [weak self] _ in
+                let timer = Timer.onMain(every: 30) { [weak self] in
             self?.refresh()
         }
-        RunLoop.main.add(timer, forMode: .common)
         self.timer = timer
     }
 
@@ -89,6 +102,70 @@ final class BluetoothBatteryService {
             return
         }
         devices = Self.scan()
+    }
+
+    // MARK: Connections
+
+    /// Starts announcing accessories as they connect.
+    ///
+    /// A registry notification rather than polling or IOBluetooth: the registry says when a
+    /// service of one of the charge-reporting classes appears, which is exactly "an accessory
+    /// connected", costs nothing between events, and needs no Bluetooth permission, which the
+    /// IOBluetooth connection callbacks would.
+    func startWatchingConnections() {
+        guard notifyPort == nil, let port = IONotificationPortCreate(kIOMainPortDefault) else { return }
+        notifyPort = port
+        IONotificationPortSetDispatchQueue(port, .main)
+
+        let context = Unmanaged.passUnretained(self).toOpaque()
+        for className in Self.serviceClasses {
+            var iterator: io_iterator_t = 0
+            let result = IOServiceAddMatchingNotification(
+                port,
+                kIOFirstMatchNotification,
+                IOServiceMatching(className),
+                { refcon, iterator in
+                    guard let refcon else { return }
+                    Unmanaged<BluetoothBatteryService>.fromOpaque(refcon)
+                        .takeUnretainedValue()
+                        .handleMatches(iterator, announce: true)
+                },
+                context,
+                &iterator
+            )
+            guard result == KERN_SUCCESS else { continue }
+            connectIterators.append(iterator)
+            // The iterator has to be drained once to arm the notification. What is in it now is
+            // everything already connected, which is not news.
+            handleMatches(iterator, announce: false)
+        }
+    }
+
+    func stopWatchingConnections() {
+        connectIterators.forEach { IOObjectRelease($0) }
+        connectIterators.removeAll()
+        if let notifyPort { IONotificationPortDestroy(notifyPort) }
+        notifyPort = nil
+    }
+
+    private func handleMatches(_ iterator: io_iterator_t, announce: Bool) {
+        var matched: [io_service_t] = []
+        var service = IOIteratorNext(iterator)
+        while service != 0 {
+            if announce { matched.append(service) } else { IOObjectRelease(service) }
+            service = IOIteratorNext(iterator)
+        }
+        guard !matched.isEmpty else { return }
+
+        // A service that has just appeared usually has not published its charge yet, so it is
+        // read a moment later rather than reported as a device with no battery.
+        DispatchQueue.main.asyncAfter(deadline: .now() + 2) { [weak self] in
+            let devices = matched.flatMap { Self.devices(in: $0) }
+            matched.forEach { IOObjectRelease($0) }
+            guard let self, !devices.isEmpty else { return }
+            self.onDeviceConnected?(devices)
+            if self.observers > 0 { self.refresh() }
+        }
     }
 
     // MARK: Registry

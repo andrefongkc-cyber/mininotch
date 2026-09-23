@@ -8,6 +8,7 @@ import SwiftUI
 /// and schedules a debounced write. That keeps every section free of persistence code and
 /// makes export/import a straight encode of `snapshot`.
 @Observable
+@MainActor
 final class SettingsStore {
     static let defaultsKey = "settings.snapshot"
 

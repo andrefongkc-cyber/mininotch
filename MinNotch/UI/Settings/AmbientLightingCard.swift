@@ -8,6 +8,9 @@ struct AmbientLightingCard: View {
     @Environment(SettingsStore.self) private var settings
     @Environment(AppEnvironment.self) private var environment
 
+    /// Recent taps of the Tap button, for tap tempo.
+    @State private var taps: [Date] = []
+
     var body: some View {
         @Bindable var settings = settings
         let glow = settings.appearance.ambientGlow
@@ -104,6 +107,45 @@ struct AmbientLightingCard: View {
                     range: 0...1,
                     step: 0.05
                 ) { String(format: "%.0f%%", $0 * 100) }
+            }
+
+            SettingsDivider()
+
+            SettingsRow(
+                title: "Tempo",
+                subtitle: tempoSubtitle(glow),
+                systemImage: "metronome",
+                isEnabled: glow.isEnabled
+            ) {
+                InlinePicker(selection: $settings.appearance.ambientGlow.tempoSource) {
+                    ForEach(GlowTempoSource.allCases) { source in
+                        Text(source.title).tag(source)
+                    }
+                }
+            }
+
+            if glow.tempoSource == .manual {
+                SettingsDivider()
+
+                SettingsRow(
+                    title: "Beats per Minute",
+                    subtitle: "Or tap along to the music; the beats then land on your taps.",
+                    systemImage: "hand.tap",
+                    isEnabled: glow.isEnabled
+                ) {
+                    HStack(spacing: 8) {
+                        ValueSlider(
+                            value: $settings.appearance.ambientGlow.manualBPM,
+                            range: AmbientGlowSettings.bpmRange,
+                            step: 1,
+                            format: { "\(Int($0)) bpm" },
+                            width: 110
+                        )
+                        Button("Tap", action: tapTempo)
+                            .controlSize(.small)
+                            .help("Tap along with the music, at least twice")
+                    }
+                }
             }
 
             SettingsDivider()
@@ -210,6 +252,7 @@ struct AmbientLightingCard: View {
                 // playing. The real surfaces settle when playback stops.
                 isPlaying: true,
                 audio: environment.audioAnalyzer.current == nil ? nil : environment.audioAnalyzer,
+                tempo: environment.glowTempo(),
                 // Roughly the preview box; only used to cap the blur.
                 sizeHint: CGSize(width: 300, height: 50)
             )
@@ -239,6 +282,42 @@ struct AmbientLightingCard: View {
 
     /// Says plainly whether the light is following real sound or animating, because the two are
     /// indistinguishable by eye and the first thing anyone asks is which one they are looking at.
+    private func tempoSubtitle(_ glow: AmbientGlowSettings) -> String {
+        let base = "Used while the glow is not following the beat."
+        switch glow.tempoSource {
+        case .speed:
+            return base
+        case .manual:
+            return base
+        case .song:
+            if let bpm = environment.nowPlaying.track?.beatsPerMinute {
+                return "\(base) This song is tagged \(Int(bpm)) bpm."
+            }
+            return "\(base) Uses the BPM Music keeps for a track, and the Speed slider for a song without one. Spotify shares none."
+        }
+    }
+
+    /// Tap tempo: the median gap between recent taps, and the last tap as where a beat falls.
+    ///
+    /// A pause of more than two seconds starts again, so a new tempo is never averaged with the
+    /// last one. The median rather than the mean, because one late tap would otherwise pull
+    /// the whole tempo with it.
+    private func tapTempo() {
+        let now = Date()
+        if let last = taps.last, now.timeIntervalSince(last) > 2 { taps.removeAll() }
+        taps.append(now)
+        taps = Array(taps.suffix(8))
+        guard taps.count >= 2 else { return }
+
+        let gaps = zip(taps, taps.dropFirst()).map { $1.timeIntervalSince($0) }.sorted()
+        let median = gaps[gaps.count / 2]
+        guard median > 0 else { return }
+        let bpm = min(max((60 / median).rounded(), AmbientGlowSettings.bpmRange.lowerBound), AmbientGlowSettings.bpmRange.upperBound)
+        settings.appearance.ambientGlow.manualBPM = bpm
+        settings.appearance.ambientGlow.tempoSource = .manual
+        environment.tappedBeatOrigin = now.timeIntervalSinceReferenceDate
+    }
+
     private var hearingSubtitle: String {
         if environment.audioAnalyzer.failure != nil {
             return "Not listening, so the light is animating on its own."

@@ -1,4 +1,5 @@
 import AppKit
+import SwiftUI
 import Observation
 
 /// Composition root. Owns every long-lived service and wires the side effects between them.
@@ -8,6 +9,7 @@ import Observation
 /// notification should be posted, and settings changes fan out from one place. That keeps
 /// each feature testable on its own and gives V2 features an obvious place to plug in.
 @Observable
+@MainActor
 final class AppEnvironment {
     let settings: SettingsStore
     let nowPlaying = NowPlayingController()
@@ -21,6 +23,11 @@ final class AppEnvironment {
 
     @ObservationIgnored private let gestures = NotchGestureMonitor()
     let liveActivities = LiveActivityCenter()
+    let downloads = DownloadsMonitor()
+
+    /// When the last tap of a tapped tempo landed, in reference-date seconds, so the glow's beats
+    /// fall on the taps. Not saved: a phase from an earlier session lines up with nothing.
+    var tappedBeatOrigin: TimeInterval?
     let clipboard = ClipboardHistoryService()
     let linkShelf = LinkShelfService()
     let timer = TimerService()
@@ -81,6 +88,10 @@ final class AppEnvironment {
         shelf.start(settings: settings)
         hud.start(settings: settings)
         applyAudioAnalysisSetting()
+
+        downloads.onChange = { [weak self] items in self?.syncDownloadActivities(items) }
+        bluetooth.onDeviceConnected = { [weak self] devices in self?.announceConnected(devices) }
+        applyActivitySources()
 
         gestures.onSwipe = { [weak self] direction in
             guard let self else { return }
@@ -154,6 +165,109 @@ final class AppEnvironment {
         gestures.applySettings()
         calendarService.refresh()
         battery.refresh()
+        applyActivitySources()
+    }
+
+    /// The tempo the glow's own pulse should keep, or nil for the Speed slider's.
+    ///
+    /// Only used while the glow is not following the audio: live analysis has the real beat. A
+    /// song's tempo is laid on the song's own position, so its beats move with a seek and stay
+    /// put across a pause, rather than drifting against the music.
+    func glowTempo(at date: Date = Date()) -> GlowTempo? {
+        let glow = settings.appearance.ambientGlow
+        switch glow.tempoSource {
+        case .speed:
+            return nil
+        case .manual:
+            return GlowTempo(beatsPerMinute: glow.manualBPM, origin: tappedBeatOrigin ?? 0)
+        case .song:
+            guard let bpm = nowPlaying.track?.beatsPerMinute else { return nil }
+            return GlowTempo(
+                beatsPerMinute: bpm,
+                origin: date.timeIntervalSinceReferenceDate - nowPlaying.elapsed(at: date)
+            )
+        }
+    }
+
+    /// Starts or stops the two notice sources to match the settings. Neither runs unless it is
+    /// wanted: the folder watch holds a descriptor open, the registry watch a notification port.
+    private func applyActivitySources() {
+        let activitiesOn = FeatureFlag.liveActivities.isEnabled
+        if activitiesOn, settings.general.showDownloadActivity {
+            downloads.start()
+        } else {
+            downloads.stop()
+        }
+        if activitiesOn, settings.general.announceConnectedDevices {
+            bluetooth.startWatchingConnections()
+        } else {
+            bluetooth.stopWatchingConnections()
+        }
+    }
+
+    /// One activity per download, showing its progress, then a tick for a few seconds.
+    private func syncDownloadActivities(_ items: [DownloadItem]) {
+        let current = Set(items.map { "download|" + $0.id })
+        for activity in liveActivities.activities where activity.kind == .download && !current.contains(activity.id) {
+            liveActivities.dismiss(id: activity.id)
+        }
+
+        for item in items {
+            let id = "download|" + item.id
+            if item.isFinished {
+                // Present the tick once, and let it expire on its own; re-presenting it on every
+                // change would keep pushing its expiry back.
+                guard liveActivities.activities.first(where: { $0.id == id })?.progress != 1 else { continue }
+                liveActivities.present(LiveActivity(
+                    id: id,
+                    kind: .download,
+                    symbolName: "checkmark.circle.fill",
+                    title: item.name,
+                    detail: "Done",
+                    progress: 1,
+                    tint: Color(nsColor: .systemGreen),
+                    expiresAt: Date().addingTimeInterval(5),
+                    priority: 40
+                ))
+                DispatchQueue.main.asyncAfter(deadline: .now() + 5.5) { [weak self] in
+                    self?.downloads.forget(item.id)
+                }
+            } else {
+                liveActivities.present(LiveActivity(
+                    id: id,
+                    kind: .download,
+                    symbolName: "arrow.down.circle",
+                    title: item.name,
+                    detail: item.fraction.map { "\(Int(($0 * 100).rounded()))%" } ?? "…",
+                    progress: item.fraction,
+                    tint: settings.appearance.resolvedAccent,
+                    priority: 40
+                ))
+            }
+        }
+    }
+
+    /// A few seconds of an accessory's charge when it connects. Earbuds arrive as a left, a
+    /// right and a case, and are shown as one device at the lower of the two buds, since that
+    /// is the one that runs out.
+    private func announceConnected(_ devices: [BluetoothDevice]) {
+        let grouped = Dictionary(grouping: devices, by: \.baseName)
+        for (name, parts) in grouped {
+            let buds = parts.filter { !$0.name.hasSuffix(" (Case)") }
+            let level = (buds.isEmpty ? parts : buds).map(\.percentage).min() ?? 0
+            let symbol = parts.first?.symbolName ?? "wave.3.right.circle"
+            liveActivities.present(LiveActivity(
+                id: "device|" + name,
+                kind: .bluetoothDevice,
+                symbolName: symbol,
+                title: name,
+                detail: "\(level)%",
+                progress: Double(level) / 100,
+                tint: level <= 20 ? Color(nsColor: .systemRed) : .white,
+                expiresAt: Date().addingTimeInterval(6),
+                priority: 50
+            ))
+        }
     }
 
     /// Starts or stops the audio tap to match the settings.

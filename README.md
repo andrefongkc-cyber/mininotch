@@ -29,7 +29,7 @@ Music, and synced lyrics that highlight the word being sung.
 ![The closed pill](Docs/images/closed-pill.png)
 
 Closed, the pill can show the artwork, the battery, and a running timer. It is off by default on a
-Mac with a notch, where the pill sits behind the camera housing; turn it on in Settings > General.
+Mac with a notch, where the pill sits behind the camera housing; turn it on in Settings > Layout.
 
 **Sneak peek.** When the song changes, the notch drops down for a couple of seconds with the cover
 and the title, instead of opening the whole panel.

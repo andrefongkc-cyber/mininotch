@@ -18,6 +18,7 @@ import Observation
 /// Everything heavy happens on the IO queue. Only the computed numbers cross to the main
 /// thread, and only as often as buffers arrive.
 @Observable
+@MainActor
 final class AudioAnalyzer {
     struct Analysis: Equatable {
         /// 0...1 overall loudness, on a decibel scale and before any gain riding.
@@ -59,28 +60,37 @@ final class AudioAnalyzer {
     /// speakers.
     private(set) var outputLatency: TimeInterval = 0
 
-    @ObservationIgnored private var tapID = AudioObjectID(kAudioObjectUnknown)
-    @ObservationIgnored private var tapUUID = UUID()
-    @ObservationIgnored private var aggregateID = AudioObjectID(kAudioObjectUnknown)
-    @ObservationIgnored private var ioProcID: AudioDeviceIOProcID?
+    // MARK: Audio-queue state
+    //
+    // Everything below is set up and read on `queue`, where Core Audio also delivers the IO
+    // block, not on the main actor the published state above lives on. `nonisolated(unsafe)`
+    // says exactly that: the compiler is told the confinement rather than asked to prove it.
+    // The one crossing is `teardown()` from `stop()` on main, which only makes Core Audio
+    // calls (thread-safe) and resets the identifiers; a buffer already in flight at that
+    // moment is analysed once more and published into a stopped analyser, which is harmless.
+
+    @ObservationIgnored nonisolated(unsafe) private var tapID = AudioObjectID(kAudioObjectUnknown)
+    @ObservationIgnored nonisolated(unsafe) private var tapUUID = UUID()
+    @ObservationIgnored nonisolated(unsafe) private var aggregateID = AudioObjectID(kAudioObjectUnknown)
+    @ObservationIgnored nonisolated(unsafe) private var ioProcID: AudioDeviceIOProcID?
     @ObservationIgnored private let queue = DispatchQueue(label: "com.minnotch.audio-tap", qos: .userInitiated)
 
     /// 1024 frames is about 21 ms at 48 kHz: short enough to catch a transient, long enough
     /// for the low bands to have something to say.
     @ObservationIgnored private let fftSize = 1024
-    @ObservationIgnored private var dft: vDSP.DiscreteFourierTransform<Float>?
-    @ObservationIgnored private var window: [Float] = []
-    @ObservationIgnored private var sampleBuffer: [Float] = []
+    @ObservationIgnored nonisolated(unsafe) private var dft: vDSP.DiscreteFourierTransform<Float>?
+    @ObservationIgnored nonisolated(unsafe) private var window: [Float] = []
+    @ObservationIgnored nonisolated(unsafe) private var sampleBuffer: [Float] = []
     /// Scales a raw bin magnitude back to the amplitude of the sinusoid that produced it, so
     /// a full-scale tone reads as 1 rather than as some multiple of the window length.
     /// Without it every decibel figure below is offset by about +48 dB and pinned at the top.
-    @ObservationIgnored private var windowGain: Double = 1
+    @ObservationIgnored nonisolated(unsafe) private var windowGain: Double = 1
 
-    @ObservationIgnored private var previousEnergy: Double = 0
-    @ObservationIgnored private var previousMidLevel: Double = 0
-    @ObservationIgnored private var lastMidOnset = Date.distantPast
-    @ObservationIgnored private var beatLevel: Double = 0
-    @ObservationIgnored private var lastPublish = Date()
+    @ObservationIgnored nonisolated(unsafe) private var previousEnergy: Double = 0
+    @ObservationIgnored nonisolated(unsafe) private var previousMidLevel: Double = 0
+    @ObservationIgnored nonisolated(unsafe) private var lastMidOnset = Date.distantPast
+    @ObservationIgnored nonisolated(unsafe) private var beatLevel: Double = 0
+    @ObservationIgnored nonisolated(unsafe) private var lastPublish = Date()
 
     init() {
         dft = try? vDSP.DiscreteFourierTransform(
@@ -195,7 +205,7 @@ final class AudioAnalyzer {
 
     // MARK: Core Audio setup
 
-    private func createTap() throws {
+    nonisolated private func createTap() throws {
         // Everything the machine is playing. Our own process is excluded so the effect
         // cannot feed back into the analysis.
         let description = CATapDescription(stereoGlobalTapButExcludeProcesses: [])
@@ -215,7 +225,7 @@ final class AudioAnalyzer {
         tapUUID = description.uuid
     }
 
-    private func createAggregateDevice() throws {
+    nonisolated private func createAggregateDevice() throws {
         guard let outputUID = OutputLatency.defaultOutputDeviceUID() else {
             throw Failure.unsupported("There is no default output device to attach the tap to.")
         }
@@ -247,7 +257,7 @@ final class AudioAnalyzer {
         aggregateID = aggregate
     }
 
-    private func startIO() throws {
+    nonisolated private func startIO() throws {
         var format = AudioStreamBasicDescription()
         var size = UInt32(MemoryLayout<AudioStreamBasicDescription>.size)
         var address = AudioObjectPropertyAddress(
@@ -276,7 +286,7 @@ final class AudioAnalyzer {
         }
     }
 
-    private func teardown() {
+    nonisolated private func teardown() {
         if let ioProcID, aggregateID != kAudioObjectUnknown {
             AudioDeviceStop(aggregateID, ioProcID)
             AudioDeviceDestroyIOProcID(aggregateID, ioProcID)
@@ -295,7 +305,7 @@ final class AudioAnalyzer {
 
     // MARK: Analysis
 
-    private func handle(_ bufferList: UnsafePointer<AudioBufferList>) {
+    nonisolated private func handle(_ bufferList: UnsafePointer<AudioBufferList>) {
         let buffers = UnsafeMutableAudioBufferListPointer(
             UnsafeMutablePointer(mutating: bufferList)
         )
@@ -325,7 +335,7 @@ final class AudioAnalyzer {
         analyse(Array(sampleBuffer.suffix(fftSize)))
     }
 
-    private func analyse(_ frame: [Float]) {
+    nonisolated private func analyse(_ frame: [Float]) {
         guard let dft else { return }
 
         let windowed = vDSP.multiply(frame, window)
@@ -374,7 +384,7 @@ final class AudioAnalyzer {
     /// logarithmic for the same reason loudness is, and tilted upward with frequency because
     /// music has less energy per octave as it rises. Skip either and the bass bands are the
     /// only ones that ever visibly move.
-    private func bucket(_ magnitudes: [Float]) -> [Double] {
+    nonisolated private func bucket(_ magnitudes: [Float]) -> [Double] {
         let count = GlowInput.bandCount
         var bands = [Double](repeating: 0, count: count)
         let usable = magnitudes.count
@@ -395,14 +405,14 @@ final class AudioAnalyzer {
 
     /// Bands a voice occupies, of the eight the spectrum is split into. The lowest two are
     /// bass and the top two are air and cymbals; what carries a vocal is in between.
-    private static let midBands = 2...5
+    nonisolated private static let midBands = 2...5
     /// How far the mid bands must jump over the previous buffer to count as something entering.
-    private static let midOnsetRise: Double = 0.045
+    nonisolated private static let midOnsetRise: Double = 0.045
     /// Nothing counts as a second onset until this long after the last, so one entry is one
     /// event rather than a burst of them.
-    private static let midOnsetGap: TimeInterval = 0.2
+    nonisolated private static let midOnsetGap: TimeInterval = 0.2
 
-    private func midBandRise(_ bands: [Double]) -> Double {
+    nonisolated private func midBandRise(_ bands: [Double]) -> Double {
         guard bands.count > Self.midBands.upperBound else { return 0 }
         let level = bands[Self.midBands].reduce(0, +) / Double(Self.midBands.count)
         let rise = level - previousMidLevel
@@ -417,7 +427,7 @@ final class AudioAnalyzer {
     /// how quiet the music was, so the bars could never all drop together and the effect had
     /// no dynamics at all. Levelling now happens once, in `GlowDynamics`, which runs per
     /// displayed frame and therefore knows how much time has passed.
-    private func publish(energy: Double, bands: [Double]) {
+    nonisolated private func publish(energy: Double, bands: [Double]) {
         let level = Loudness.normalised(amplitude: energy)
 
         let now = Date()

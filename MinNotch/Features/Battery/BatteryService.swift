@@ -56,6 +56,7 @@ struct BatteryStatus: Equatable {
 /// polling: the readout updates the moment the charger is plugged in or the percentage
 /// ticks over.
 @Observable
+@MainActor
 final class BatteryService {
     private(set) var status = BatteryStatus()
 

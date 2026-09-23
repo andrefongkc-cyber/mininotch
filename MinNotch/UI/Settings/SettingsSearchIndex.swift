@@ -28,8 +28,6 @@ enum SettingsSearchIndex {
         .init(tab: .general, section: "Opening the Notch", title: "Hover Delay", subtitle: "How long the pointer has to rest before the panel opens.", symbolName: "clock"),
         .init(tab: .general, section: "Opening the Notch", title: "Open on Click", subtitle: "Click the pill to expand it.", symbolName: "hand.tap"),
         .init(tab: .general, section: "Opening the Notch", title: "Close When the Pointer Leaves", subtitle: "", symbolName: "arrow.up.left.and.arrow.down.right"),
-        .init(tab: .general, section: "Closed Pill", title: "Show Indicators When Closed", subtitle: "Widen the pill either side of the notch to show battery and what is playing.", symbolName: "rectangle.expand.vertical"),
-        .init(tab: .general, section: "Closed Pill", title: "Arrangement", subtitle: "Which side of the notch each indicator sits on. The middle stays empty: that band is behind the camera housing, and clicks fall through it.", symbolName: "rectangle.split.3x1"),
         .init(tab: .general, section: "Tabs", title: "Remember Last Tab", subtitle: "Reopen on whichever widget you used last.", symbolName: "arrow.uturn.backward"),
         .init(tab: .general, section: "Tabs", title: "Default Tab", subtitle: "", symbolName: "square.grid.2x2"),
         .init(tab: .general, section: "Permissions", title: "Login Items", subtitle: "Review which apps macOS allows to start at login.", symbolName: "list.bullet.rectangle"),
@@ -40,9 +38,15 @@ enum SettingsSearchIndex {
         .init(tab: .appearance, section: "Materials", title: "Panel Shadow", subtitle: "Useful on a display with no notch. On a notched Mac it shows as a halo around the panel as it opens.", symbolName: "shadow"),
         .init(tab: .appearance, section: "Panel Size", title: "Width", subtitle: "How wide the panel grows when it opens.", symbolName: "arrow.left.and.right"),
         .init(tab: .appearance, section: "Panel Size", title: "Corner Radius", subtitle: "Match this to your display's physical notch for the cleanest join.", symbolName: "rectangle.roundedbottom"),
-        .init(tab: .appearance, section: "Panel Size", title: "Top Bar", subtitle: "Drag to arrange what the open panel shows either side of the notch. Anything that does not fit on its side moves to the other. Tabs can be moved but not removed; switch a feature off to hide its tab.", symbolName: "rectangle.topthird.inset.filled"),
-        .init(tab: .appearance, section: "Media Card", title: "Card Style", subtitle: "Only Classic is available in this version.", symbolName: "rectangle.on.rectangle"),
+        .init(tab: .appearance, section: "Media Card", title: "Card Style", subtitle: "Classic, Compact, or Full Artwork.", symbolName: "rectangle.on.rectangle"),
         .init(tab: .appearance, section: "Media Card", title: "Custom Visualizer", subtitle: "", symbolName: "waveform.path.ecg"),
+        .init(tab: .layout, section: "Closed Pill", title: "Show Indicators When Closed", subtitle: "Widen the pill either side of the notch to show battery and what is playing.", symbolName: "rectangle.expand.vertical"),
+        .init(tab: .layout, section: "Closed Pill", title: "Arrangement", subtitle: "What the closed pill shows either side of the notch. Album art and the playing indicator appear only while something plays; a live activity is a running timer.", symbolName: "rectangle.split.3x1"),
+        .init(tab: .layout, section: "Live Activities", title: "Downloads", subtitle: "Show how far along a download is, from Safari, Chrome, Firefox and most other browsers. Reads your Downloads folder.", symbolName: "arrow.down.circle"),
+        .init(tab: .layout, section: "Live Activities", title: "Devices Connecting", subtitle: "Show the charge of AirPods and other accessories for a few seconds when they connect.", symbolName: "airpodspro"),
+        .init(tab: .layout, section: "Open Panel", title: "Widgets", subtitle: "Click to switch a widget on or off. Each one that is on gets a tab in the top bar.", symbolName: "square.grid.2x2"),
+        .init(tab: .layout, section: "Open Panel", title: "Top Bar", subtitle: "What the open panel shows either side of the notch.", symbolName: "rectangle.topthird.inset.filled"),
+        .init(tab: .layout, section: "Now Playing Controls", title: "Controls", subtitle: "The buttons under the scrubber, left to right.", symbolName: "playpause"),
         .init(tab: .media, section: "Source", title: "Show Now Playing", subtitle: "", symbolName: "music.note"),
         .init(tab: .media, section: "Source", title: "Player", subtitle: "Automatic follows whichever supported player is active.", symbolName: "app.badge"),
         .init(tab: .media, section: "Source", title: "System Now Playing", subtitle: "", symbolName: "waveform"),
@@ -56,9 +60,9 @@ enum SettingsSearchIndex {
         .init(tab: .media, section: "Display", title: "Sneak Peek on Track Change", subtitle: "When a new song starts, the closed notch drops down for a moment to show what it is.", symbolName: "rectangle.expand.vertical"),
         .init(tab: .media, section: "Display", title: "Show Up Next", subtitle: "The next songs under the one playing. Apple Music only, and only when playing from a playlist or album with shuffle off, because that is all Music tells other apps.", symbolName: "text.line.first.and.arrowtriangle.forward"),
         .init(tab: .media, section: "Display", title: "Show Elapsed and Remaining Time", subtitle: "", symbolName: "clock"),
+        .init(tab: .media, section: "Display", title: "Show Which App Is Playing", subtitle: "A small icon of the app on the corner of the artwork.", symbolName: "app.badge"),
         .init(tab: .media, section: "Display", title: "Tint From Artwork", subtitle: "Wash the panel with the album's dominant colour.", symbolName: "photo"),
         .init(tab: .media, section: "Display", title: "Refresh Interval", subtitle: "How often the position is re-read. Track changes update instantly regardless.", symbolName: "arrow.clockwise"),
-        .init(tab: .media, section: "Controls", title: "Not Yet Wired Up", subtitle: "Repeat and favourite can be arranged here but have no command behind them yet, so they will not appear on the card. Shuffle works with Apple Music and Spotify.", symbolName: "exclamationmark.triangle"),
         .init(tab: .media, section: "Visualizer", title: "Show Visualizer", subtitle: "Animated bars over the artwork, coloured from the album.", symbolName: "waveform.path"),
         .init(tab: .calendar, section: "Access", title: "Calendar Access", subtitle: "", symbolName: "lock"),
         .init(tab: .calendar, section: "Widget", title: "Show Calendar", subtitle: "", symbolName: "calendar"),
@@ -69,6 +73,7 @@ enum SettingsSearchIndex {
         .init(tab: .calendar, section: "Events", title: "Rows Shown", subtitle: "Anything beyond this scrolls inside the panel.", symbolName: "list.bullet"),
         .init(tab: .calendar, section: "Reminders", title: "Show Reminders", subtitle: "Mix reminders that are due into the upcoming list.", symbolName: "checklist"),
         .init(tab: .calendar, section: "Reminders", title: "Hide Completed Reminders", subtitle: "", symbolName: "checkmark.circle"),
+        .init(tab: .calendar, section: "Reminders", title: "Show Reminders Without a Date", subtitle: "List them after everything that is due.", symbolName: "tray"),
         .init(tab: .calendar, section: "Reminders", title: "Reminders Access", subtitle: "MinNotch needs permission before it can show your reminders.", symbolName: "lock"),
         .init(tab: .calendar, section: "Quick Add", title: "Quick Add Field", subtitle: "Create an event or reminder straight from the notch.", symbolName: "plus.circle"),
         .init(tab: .huds, section: "Show in the Notch", title: "Volume", subtitle: "Updates the moment the level changes, with no polling.", symbolName: "speaker.wave.2"),
@@ -134,6 +139,8 @@ enum SettingsSearchIndex {
         .init(tab: .appearance, section: "Ambient Lighting", title: "Where It Shows", subtitle: "Any combination. Only the one currently on screen is drawn.", symbolName: "square.on.square"),
         .init(tab: .appearance, section: "Ambient Lighting", title: "Intensity", subtitle: "", symbolName: "sun.max"),
         .init(tab: .appearance, section: "Ambient Lighting", title: "Speed", subtitle: "", symbolName: "hare"),
+        .init(tab: .appearance, section: "Ambient Lighting", title: "Tempo", subtitle: "Used while the glow is not following the beat: the Speed slider, a tempo set by hand or tapped, or the song's own BPM.", symbolName: "metronome"),
+        .init(tab: .appearance, section: "Ambient Lighting", title: "Beats per Minute", subtitle: "Or tap along to the music; the beats then land on your taps.", symbolName: "hand.tap"),
         .init(tab: .appearance, section: "Ambient Lighting", title: "Glow Radius", subtitle: "Capped automatically on the closed pill, which is too thin to take a wide blur.", symbolName: "circle.dashed"),
         .init(tab: .appearance, section: "Ambient Lighting", title: "Follow the Beat", subtitle: "Analyse what is playing so the light tracks the music instead of animating on its own.", symbolName: "waveform.badge.magnifyingglass"),
         .init(tab: .appearance, section: "Ambient Lighting", title: "What It Is Hearing", subtitle: "Live, from the system audio. Play something and these move; in silence they stay down.", symbolName: "waveform"),
@@ -190,8 +197,10 @@ extension SettingsTab {
     /// Words someone might type for this pane that are not its name.
     var searchKeywords: [String] {
         switch self {
-        case .general: return ["startup", "login", "hover", "click", "pill", "menu bar"]
-        case .appearance: return ["theme", "look", "colour", "color", "glow", "lighting", "width", "corner", "tabs", "rearrange", "reorder", "toolbar"]
+        case .general: return ["startup", "login", "hover", "click", "menu bar"]
+        case .appearance: return ["theme", "look", "colour", "color", "glow", "lighting", "width", "corner"]
+        case .layout: return ["arrange", "rearrange", "reorder", "customise", "customize", "icons", "tabs", "toolbar",
+                              "top bar", "pill", "indicators", "widgets", "buttons", "controls", "order"]
         case .media: return ["music", "spotify", "song", "track", "now playing", "lyrics", "controls"]
         case .calendar: return ["events", "reminders", "schedule", "agenda"]
         case .huds: return ["volume", "brightness", "keyboard backlight", "overlay"]

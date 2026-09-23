@@ -7,6 +7,7 @@ import SwiftUI
 enum SettingsTab: String, CaseIterable, Identifiable {
     case general
     case appearance
+    case layout
     case media
     case calendar
     case huds
@@ -23,6 +24,7 @@ enum SettingsTab: String, CaseIterable, Identifiable {
         switch self {
         case .general: return "General"
         case .appearance: return "Appearance"
+        case .layout: return "Layout"
         case .media: return "Media"
         case .calendar: return "Calendar"
         case .huds: return "HUDs"
@@ -39,6 +41,7 @@ enum SettingsTab: String, CaseIterable, Identifiable {
         switch self {
         case .general: return "gearshape"
         case .appearance: return "paintbrush"
+        case .layout: return "rectangle.3.group"
         case .media: return "music.note"
         case .calendar: return "calendar"
         case .huds: return "speaker.wave.2"
@@ -57,6 +60,7 @@ enum SettingsTab: String, CaseIterable, Identifiable {
         switch self {
         case .general: return Color(nsColor: .systemGray)
         case .appearance: return Color(nsColor: .systemPink)
+        case .layout: return Color(nsColor: .systemCyan)
         case .media: return Color(nsColor: .systemRed)
         case .calendar: return Color(nsColor: .systemOrange)
         case .huds: return Color(nsColor: .systemPurple)
@@ -80,7 +84,7 @@ enum SettingsTab: String, CaseIterable, Identifiable {
     }
 
     static let groups: [[SettingsTab]] = [
-        [.general, .appearance],
+        [.general, .appearance, .layout],
         [.media, .calendar, .huds, .battery, .shelf, .timer],
         [.shortcuts, .advanced, .about]
     ]

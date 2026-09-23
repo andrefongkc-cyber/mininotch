@@ -7,8 +7,13 @@ import AppKit
 /// one and answers `snapshot()` from that cache. Elapsed time is extrapolated from the
 /// payload's timestamp and playback rate, which is what makes a scrubber move smoothly
 /// between payloads instead of stepping once a second.
-final class SystemNowPlayingSource: MediaSource {
+///
+/// Unchecked `Sendable`, with the cache behind `lock`: payloads arrive on the main queue while
+/// `snapshot()` and `artwork()` are read on the AppleScript queue with every other source.
+final class SystemNowPlayingSource: MediaSource, @unchecked Sendable {
     let kind: MediaSourceKind = .system
+
+    private let lock = NSLock()
 
     private var cached: NowPlayingTrack?
     private var cachedArtwork: NSImage?
@@ -16,6 +21,8 @@ final class SystemNowPlayingSource: MediaSource {
     private var elapsedAtTimestamp: TimeInterval = 0
     private var payloadTimestamp: Date?
     private var playbackRate: Double = 0
+    /// The app MediaRemote says owns playback, asked for alongside each payload.
+    private var owner: NSRunningApplication?
 
     private let bridge = MediaRemoteBridge.shared
 
@@ -33,12 +40,17 @@ final class SystemNowPlayingSource: MediaSource {
 
     /// Kicks off an asynchronous refresh. Called from the controller's poll.
     func refresh(completion: (() -> Void)? = nil) {
-        bridge.requestNowPlayingInfo { [weak self] information in
-            self?.apply(information)
-            completion?()
+        bridge.requestNowPlayingApplicationPID { [weak self] pid in
+            let owner = pid.flatMap(NSRunningApplication.init(processIdentifier:))
+            self?.lock.withLock { self?.owner = owner }
+            self?.bridge.requestNowPlayingInfo { [weak self] information in
+                self?.lock.withLock { self?.apply(information) }
+                completion?()
+            }
         }
     }
 
+    /// Called with `lock` held.
     private func apply(_ information: [String: Any]?) {
         guard let information, !information.isEmpty else {
             cached = nil
@@ -67,7 +79,8 @@ final class SystemNowPlayingSource: MediaSource {
             elapsed: elapsed,
             isPlaying: rate > 0,
             sourceKind: .system,
-            sourceAppName: Self.nowPlayingApplicationName(),
+            sourceAppName: owner?.localizedName ?? Self.nowPlayingApplicationName(),
+            sourceBundleIdentifier: owner?.bundleIdentifier,
             trackIdentity: identity
         )
 
@@ -81,6 +94,8 @@ final class SystemNowPlayingSource: MediaSource {
     }
 
     func snapshot() -> NowPlayingTrack? {
+        lock.lock()
+        defer { lock.unlock() }
         guard var track = cached else { return nil }
         // Advance the position between payloads so the scrubber is continuous.
         if playbackRate > 0, let payloadTimestamp {
@@ -90,7 +105,7 @@ final class SystemNowPlayingSource: MediaSource {
         return track
     }
 
-    func artwork() -> NSImage? { cachedArtwork }
+    func artwork() -> NSImage? { lock.withLock { cachedArtwork } }
 
     func send(_ command: MediaCommand) {
         switch command {

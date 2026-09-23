@@ -182,6 +182,14 @@ struct SystemWidgetView: View {
     // MARK: Stats
 
     private var stats: SystemStats { environment.systemStats.stats }
+    private var history: SystemStatsHistory { environment.systemStats.history }
+
+    /// A rate history as fractions of its own peak, since a network rate has no fixed ceiling.
+    /// A floor keeps an idle connection's few bytes from being drawn as a full-height line.
+    private static func scaledToPeak(_ values: [Double]) -> [Double] {
+        let peak = max(values.max() ?? 0, 64 * 1024)
+        return values.map { $0 / peak }
+    }
 
     private var statsRow: some View {
         HStack(spacing: 0) {
@@ -189,11 +197,12 @@ struct SystemWidgetView: View {
                 label: "CPU",
                 symbol: "cpu",
                 value: percentage(stats.cpuUsage),
-                fraction: stats.cpuUsage
+                fraction: stats.cpuUsage,
+                history: history.cpu
             )
 
             if let gpu = stats.gpuUsage {
-                statCell(label: "GPU", symbol: "cpu.fill", value: percentage(gpu), fraction: gpu)
+                statCell(label: "GPU", symbol: "cpu.fill", value: percentage(gpu), fraction: gpu, history: history.gpu)
             } else {
                 // Some Macs publish no GPU utilisation counter. Showing a permanent zero
                 // would read as an idle GPU rather than as a missing measurement.
@@ -204,7 +213,8 @@ struct SystemWidgetView: View {
                 label: "Memory",
                 symbol: "memorychip",
                 value: ByteFormat.size(stats.memoryUsed),
-                fraction: stats.memoryFraction
+                fraction: stats.memoryFraction,
+                history: history.memory
             )
 
             statCell(
@@ -212,7 +222,8 @@ struct SystemWidgetView: View {
                 symbol: "network",
                 value: "↓ " + ByteFormat.rate(stats.networkIn),
                 fraction: nil,
-                secondaryText: "↑ " + ByteFormat.rate(stats.networkOut)
+                secondaryText: "↑ " + ByteFormat.rate(stats.networkOut),
+                history: Self.scaledToPeak(history.network)
             )
         }
     }
@@ -224,7 +235,8 @@ struct SystemWidgetView: View {
         symbol: String,
         value: String,
         fraction: Double?,
-        secondaryText: String? = nil
+        secondaryText: String? = nil,
+        history: [Double] = []
     ) -> some View {
         VStack(spacing: 2) {
             Image(systemName: symbol)
@@ -268,6 +280,20 @@ struct SystemWidgetView: View {
                 .foregroundStyle(.white.opacity(0.4))
         }
         .frame(maxWidth: .infinity)
+        // The last minute or so behind the numbers, faint enough to read over, so a spike that
+        // came and went between glances is still there to see.
+        .background {
+            if history.count > 1 {
+                ZStack {
+                    SparklineShape(values: history, closed: true)
+                        .fill(Color.white.opacity(0.06))
+                    SparklineShape(values: history, closed: false)
+                        .stroke(Color.white.opacity(0.2), style: StrokeStyle(lineWidth: 1, lineJoin: .round))
+                }
+                .padding(.horizontal, 6)
+                .allowsHitTesting(false)
+            }
+        }
         .animation(Motion.content, value: value)
     }
 
@@ -282,5 +308,37 @@ struct SystemWidgetView: View {
 
     private func percentage(_ fraction: Double) -> String {
         "\(Int((fraction * 100).rounded()))%"
+    }
+}
+
+/// A line through `values`, each 0...1, spread evenly across the rect, newest on the right.
+///
+/// A `Shape` rather than a `Canvas`, because `Canvas` output does not appear in a layer
+/// capture and this has to be checkable with `--capture-notch`. `closed` draws it down to the
+/// bottom edge and back, for the fill under the line.
+struct SparklineShape: Shape {
+    var values: [Double]
+    var closed: Bool
+
+    func path(in rect: CGRect) -> Path {
+        var path = Path()
+        guard values.count > 1 else { return path }
+        // Always spaced for a full history, so the line grows in from the right as samples
+        // arrive rather than stretching across the cell from the first two.
+        let step = rect.width / CGFloat(SystemStatsHistory.capacity - 1)
+        let startX = rect.maxX - step * CGFloat(values.count - 1)
+
+        func point(_ index: Int) -> CGPoint {
+            let value = min(max(values[index], 0), 1)
+            return CGPoint(x: startX + step * CGFloat(index), y: rect.maxY - rect.height * CGFloat(value))
+        }
+
+        if closed { path.move(to: CGPoint(x: startX, y: rect.maxY)); path.addLine(to: point(0)) } else { path.move(to: point(0)) }
+        for index in values.indices.dropFirst() { path.addLine(to: point(index)) }
+        if closed {
+            path.addLine(to: CGPoint(x: rect.maxX, y: rect.maxY))
+            path.closeSubpath()
+        }
+        return path
     }
 }

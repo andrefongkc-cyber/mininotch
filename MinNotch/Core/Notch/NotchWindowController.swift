@@ -7,6 +7,7 @@ import SwiftUI
 /// resized. Animating an `NSWindow` frame at sixty frames a second is visibly worse than
 /// animating SwiftUI content inside a fixed window, and a stable frame keeps the hover
 /// tracking area from being torn down mid-gesture.
+@MainActor
 final class NotchWindowController {
     let viewModel: NotchViewModel
     private let panel: NotchPanel

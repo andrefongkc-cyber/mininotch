@@ -6,6 +6,7 @@ import ServiceManagement
 /// is the only approach allowed in the App Store. Registration can fail, most often because
 /// the user has disabled the item in System Settings > General > Login Items, so the stored
 /// preference is reconciled against reality at launch rather than trusted.
+@MainActor
 enum LaunchAtLogin {
     static var isRegistered: Bool {
         SMAppService.mainApp.status == .enabled

@@ -6,7 +6,7 @@ import AppKit
 /// a lyrics API means an account, a rate limit, and a privacy story, all of which belong in
 /// their own release. A network provider slots in behind this protocol later without the
 /// view or the controller changing.
-protocol LyricsProviding {
+protocol LyricsProviding: Sendable {
     func lyrics(for track: NowPlayingTrack) -> Lyrics?
 }
 

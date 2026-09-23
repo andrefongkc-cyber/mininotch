@@ -34,11 +34,19 @@ enum VisualizerPulse {
 
 /// Animated bars keyed to the album artwork's colours.
 ///
-/// A custom animated image replaces the bars entirely when one is chosen.
+/// While the system audio tap is running (for the glow or for lyric matching) the bars follow
+/// what is actually playing, through the same auto-gain, envelope and spring as the glow, so
+/// they strike on the beat rather than sliding. Without it they run on the shared pulse. A
+/// custom animated image replaces the bars entirely when one is chosen.
 struct VisualizerView: View {
     var palette: ArtworkPalette
     var isPlaying: Bool
     var customImagePath: String?
+    /// The running audio analyser, or nil to use the pulse.
+    var audio: AudioAnalyzer?
+
+    /// The bars' own shaping state, so they do not share a spring with the glow.
+    @State private var dynamics = GlowDynamics()
 
     /// True when this view will draw the bars rather than a custom image. The card uses it to
     /// decide whether to lay a scrim under them: the bars need one, and someone's own animated
@@ -61,10 +69,11 @@ struct VisualizerView: View {
     private var bars: some View {
         TimelineView(.animation(minimumInterval: 1 / 20, paused: !isPlaying)) { context in
             let time = context.date.timeIntervalSinceReferenceDate
+            let levels = heardLevels(at: time)
 
             HStack(alignment: .bottom, spacing: 2.5) {
                 ForEach(Array(VisualizerPulse.periods.enumerated()), id: \.offset) { index, _ in
-                    bar(height: height(index: index, at: time))
+                    bar(height: height(index: index, at: time, heard: levels))
                 }
             }
             .frame(maxHeight: .infinity, alignment: .bottom)
@@ -98,12 +107,36 @@ struct VisualizerView: View {
             .shadow(color: palette.glowPrimary.opacity(0.55), radius: 2)
     }
 
-    private func height(index: Int, at time: TimeInterval) -> CGFloat {
+    /// One level per bar from the analyser, low frequencies on the left, or nil without it.
+    ///
+    /// The analyser has more bands than there are bars, so neighbouring bands are averaged into
+    /// each bar. Shaped here rather than read raw: a band's raw level wanders around the middle
+    /// of its range and never leaps, which is the same flat motion the glow had before it went
+    /// through `GlowDynamics`.
+    private func heardLevels(at time: TimeInterval) -> [Double]? {
+        guard isPlaying, let analysis = audio?.current, !analysis.bands.isEmpty else { return nil }
+        let barCount = VisualizerPulse.periods.count
+        let bands = analysis.bands
+        let grouped: [Double] = (0..<barCount).map { bar in
+            let start = bar * bands.count / barCount
+            let end = max(start + 1, (bar + 1) * bands.count / barCount)
+            let slice = bands[start..<min(end, bands.count)]
+            return slice.reduce(0, +) / Double(slice.count)
+        }
+        let shaped = dynamics.shape(
+            GlowDynamics.Levels(energy: analysis.energy, bands: grouped, beat: analysis.beat),
+            at: time
+        )
+        return shaped.bands
+    }
+
+    private func height(index: Int, at time: TimeInterval, heard: [Double]?) -> CGFloat {
         let minimum: CGFloat = 3
         let maximum: CGFloat = 18
-        let level = VisualizerPulse.level(index: index, at: time, isPlaying: isPlaying)
         guard isPlaying else { return minimum + 1 }
-        return minimum + (maximum - minimum) * CGFloat(level)
+        let level = heard.flatMap { $0.indices.contains(index) ? $0[index] : nil }
+            ?? VisualizerPulse.level(index: index, at: time, isPlaying: isPlaying)
+        return minimum + (maximum - minimum) * CGFloat(min(max(level, 0), 1))
     }
 }
 

@@ -104,35 +104,6 @@ struct AppearanceSettingsView: View {
                     ) { "\(Int($0)) pt" }
                 }
 
-                SettingsDivider()
-
-                SettingsRow(
-                    title: "Top Bar",
-                    subtitle: "Drag to arrange what the open panel shows either side of the notch. Anything that does not fit on its side moves to the other. Tabs can be moved but not removed; switch a feature off to hide its tab.",
-                    systemImage: "rectangle.topthird.inset.filled"
-                ) { EmptyView() }
-
-                SlotLayoutEditor(
-                    zones: [
-                        .init(
-                            id: "leading",
-                            title: "Left of the notch",
-                            items: shownItems($settings.appearance.topStripLeading),
-                            emptyHint: "Nothing on the left"
-                        ),
-                        .init(
-                            id: "trailing",
-                            title: "Right of the notch",
-                            items: shownItems($settings.appearance.topStripTrailing),
-                            emptyHint: "Nothing on the right"
-                        )
-                    ],
-                    catalogue: topBarCatalogue,
-                    // Tabs and debug buttons go with their feature or setting, not with a drag.
-                    canRemove: { $0.tab == nil && !$0.isDebug }
-                )
-                .padding(.horizontal, Metrics.cardHorizontalPadding)
-                .padding(.bottom, 10)
             }
 
             AmbientLightingCard()
@@ -140,16 +111,14 @@ struct AppearanceSettingsView: View {
             SettingsCard(header: "Media Card") {
                 SettingsRow(
                     title: "Card Style",
-                    subtitle: "Only Classic is available in this version.",
-                    systemImage: "rectangle.on.rectangle",
-                    badge: .comingSoon
+                    subtitle: settings.media.cardStyle.summary,
+                    systemImage: "rectangle.on.rectangle"
                 ) {
                     InlinePicker(selection: $settings.media.cardStyle) {
                         ForEach(NowPlayingCardStyle.allCases) { style in
                             Text(style.title).tag(style)
                         }
                     }
-                    .comingSoon()
                 }
 
                 SettingsDivider()
@@ -171,29 +140,6 @@ struct AppearanceSettingsView: View {
                 }
             }
         }
-    }
-
-    /// Tabs for features that are switched on, plus settings and battery, and the debug buttons
-    /// while their setting is on.
-    private var topBarCatalogue: [TopStripItem] {
-        NotchWidgetRegistry.shownTabs(settings).map(TopStripItem.init)
-            + [.settings, .battery]
-            + (settings.advanced.showDebugButtons ? [.whatsNew, .tutorial] : [])
-    }
-
-    /// One side of the top bar with the tabs of switched-off features left out of the editor.
-    ///
-    /// They stay in the saved list, at the end, so switching the feature back on returns its tab
-    /// to the side it was on rather than to the default.
-    private func shownItems(_ items: Binding<[TopStripItem]>) -> Binding<[TopStripItem]> {
-        let catalogue = topBarCatalogue
-        return Binding(
-            get: { items.wrappedValue.filter(catalogue.contains) },
-            set: { shown in
-                let hidden = items.wrappedValue.filter { !catalogue.contains($0) }
-                items.wrappedValue = shown + hidden
-            }
-        )
     }
 
     private var customVisualizerSubtitle: String {

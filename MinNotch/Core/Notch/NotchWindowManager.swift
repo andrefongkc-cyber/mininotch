@@ -6,6 +6,7 @@ import AppKit
 /// behaviours are supported: follow the pointer with a single surface, pin to the built-in
 /// display, or put one surface on every display. Displays without a physical notch are
 /// eligible in all three, gated only by the Advanced setting.
+@MainActor
 final class NotchWindowManager {
     private unowned let environment: AppEnvironment
     private var controllers: [CGDirectDisplayID: NotchWindowController] = [:]
@@ -29,7 +30,7 @@ final class NotchWindowManager {
             object: nil,
             queue: .main
         ) { [weak self] _ in
-            self?.rebuild()
+            MainActor.assumeIsolated { self?.rebuild() }
         }
 
         startPointerTrackingIfNeeded()
@@ -169,7 +170,12 @@ final class NotchWindowManager {
         case .down:
             viewModel.expand()
         case .up:
-            viewModel.collapse()
+            // Closed already: a swipe up puts away a download or connection notice.
+            if viewModel.state == .expanded {
+                viewModel.collapse()
+            } else {
+                environment.liveActivities.dismissCurrentNotice()
+            }
         case .left, .right:
             let natural = direction == .right ? 1 : -1
             let offset = environment.settings.advanced.invertGestureDirection ? -natural : natural

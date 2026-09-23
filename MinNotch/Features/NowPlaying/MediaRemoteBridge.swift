@@ -13,7 +13,10 @@ import AppKit
 /// those cases so the UI can say so honestly. And private API cannot ship to the Mac App
 /// Store, so this whole source is behind a capability check that the App Store build
 /// simply reports as unavailable.
-final class MediaRemoteBridge {
+///
+/// Unchecked `Sendable`: the symbols are resolved once in `init` and never change, and
+/// `hasEverReceivedPayload` only ever goes from false to true, set on the main queue.
+final class MediaRemoteBridge: @unchecked Sendable {
     static let shared = MediaRemoteBridge()
 
     private typealias GetNowPlayingInfoFunction = @convention(c) (
@@ -21,6 +24,9 @@ final class MediaRemoteBridge {
     ) -> Void
     private typealias SendCommandFunction = @convention(c) (Int, CFDictionary?) -> Bool
     private typealias RegisterNotificationsFunction = @convention(c) (DispatchQueue) -> Void
+    private typealias GetApplicationPIDFunction = @convention(c) (
+        DispatchQueue, @escaping @convention(block) (Int32) -> Void
+    ) -> Void
 
     /// MediaRemote command codes.
     enum Command: Int {
@@ -35,6 +41,7 @@ final class MediaRemoteBridge {
     private var getNowPlayingInfo: GetNowPlayingInfoFunction?
     private var sendCommandFunction: SendCommandFunction?
     private var registerForNotifications: RegisterNotificationsFunction?
+    private var getApplicationPID: GetApplicationPIDFunction?
 
     /// True when the framework loaded and both symbols resolved.
     private(set) var isFrameworkLoaded = false
@@ -62,6 +69,10 @@ final class MediaRemoteBridge {
         getNowPlayingInfo = unsafeBitCast(infoSymbol, to: GetNowPlayingInfoFunction.self)
         sendCommandFunction = unsafeBitCast(commandSymbol, to: SendCommandFunction.self)
 
+        if let pidSymbol = dlsym(handle, "MRMediaRemoteGetNowPlayingApplicationPID") {
+            getApplicationPID = unsafeBitCast(pidSymbol, to: GetApplicationPIDFunction.self)
+        }
+
         if let registerSymbol = dlsym(handle, "MRMediaRemoteRegisterForNowPlayingNotifications") {
             registerForNotifications = unsafeBitCast(registerSymbol, to: RegisterNotificationsFunction.self)
             registerForNotifications?(DispatchQueue.main)
@@ -77,6 +88,15 @@ final class MediaRemoteBridge {
             let dictionary = information as? [String: Any]
             if let dictionary, !dictionary.isEmpty { self?.hasEverReceivedPayload = true }
             completion(dictionary)
+        }
+    }
+
+    /// Asks which process owns playback. Nil when the symbol is missing or nothing does. The
+    /// completion runs on the main queue.
+    func requestNowPlayingApplicationPID(_ completion: @escaping (pid_t?) -> Void) {
+        guard let getApplicationPID else { completion(nil); return }
+        getApplicationPID(DispatchQueue.main) { pid in
+            completion(pid > 0 ? pid : nil)
         }
     }
 

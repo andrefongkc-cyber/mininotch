@@ -10,6 +10,7 @@ import Carbon.HIToolbox
 ///
 /// The C event handler cannot capture Swift context, so registrations are held in a
 /// static table keyed by the hotkey id we hand to Carbon.
+@MainActor
 final class HotkeyManager {
     static let shared = HotkeyManager()
 

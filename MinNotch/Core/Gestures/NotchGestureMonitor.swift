@@ -9,6 +9,7 @@ import AppKit
 ///
 /// Only events destined for a `NotchPanel` are considered, so scrolling the Settings window
 /// or any other window never moves the notch.
+@MainActor
 final class NotchGestureMonitor {
     enum Direction {
         case left, right, up, down

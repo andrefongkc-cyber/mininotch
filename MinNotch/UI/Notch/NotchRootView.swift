@@ -252,6 +252,7 @@ struct NotchRootView: View {
                 palette: environment.nowPlaying.palette,
                 isPlaying: environment.nowPlaying.track?.isPlaying ?? false,
                 audio: environment.audioAnalyzer.current == nil ? nil : environment.audioAnalyzer,
+                tempo: environment.glowTempo(),
                 showsLevelReadout: settings.advanced.showDebugOverlay,
                 sizeHint: CGSize(width: surfaceWidth, height: surfaceHeight),
 
@@ -391,8 +392,10 @@ struct NotchRootView: View {
         switch viewModel.selectedTab {
         case .media:
             height = NowPlayingCardView.preferredHeight(
+                style: settings.media.cardStyle,
                 showingLyrics: settings.media.showLyrics,
-                showingUpNext: environment.nowPlaying.showsUpNext
+                showingUpNext: environment.nowPlaying.showsUpNext,
+                showingLyricsSheet: environment.nowPlaying.showsLyricsSheet
             )
         case .calendar:
             height = CalendarWidgetView.preferredHeight(

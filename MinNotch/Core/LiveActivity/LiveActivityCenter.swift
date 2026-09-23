@@ -6,17 +6,18 @@ import SwiftUI
 /// Cycling between several with a two-finger swipe is a V2 feature; `selectedIndex` and
 /// `cycle(by:)` exist now so that gesture only has to call a method that already works.
 @Observable
+@MainActor
 final class LiveActivityCenter {
     private(set) var activities: [LiveActivity] = []
     private(set) var selectedIndex: Int = 0
 
-    @ObservationIgnored private var expiryTimer: Timer?
+    // Unchecked so `deinit`, which is not on the main actor, can invalidate it.
+    @ObservationIgnored nonisolated(unsafe) private var expiryTimer: Timer?
 
     init() {
-        let timer = Timer(timeInterval: 1, repeats: true) { [weak self] _ in
+                let timer = Timer.onMain(every: 1) { [weak self] in
             self?.pruneExpired()
         }
-        RunLoop.main.add(timer, forMode: .common)
         expiryTimer = timer
     }
 
@@ -49,7 +50,17 @@ final class LiveActivityCenter {
         return activities[selectedIndex]
     }
 
-    /// Moves through the stack. Wired to the V2 swipe gesture.
+    /// Takes the current activity out of the pill, if it is one that can be put away: a notice
+    /// such as a finished download or a device connecting. A running timer cannot, because the
+    /// pill is where it is being watched. Returns whether anything was dismissed.
+    @discardableResult
+    func dismissCurrentNotice() -> Bool {
+        guard let current, current.kind == .download || current.kind == .bluetoothDevice else { return false }
+        dismiss(id: current.id)
+        return true
+    }
+
+    /// Moves through the stack. Wired to the two-finger swipe on the closed pill.
     func cycle(by offset: Int) {
         guard !activities.isEmpty else { return }
         selectedIndex = (selectedIndex + offset + activities.count) % activities.count

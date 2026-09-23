@@ -18,6 +18,8 @@ struct AmbientGlowView: View {
     var isPlaying: Bool
     /// Live analysis, or nil when audio-reactive is off or not yet delivering.
     var audio: AudioAnalyzer?
+    /// The tempo the pulse keeps without audio, or nil for the Speed slider's.
+    var tempo: GlowTempo? = nil
     /// Prints the raw and shaped levels over the glow, for tuning the envelope and spring by
     /// eye instead of guessing at the constants. Follows Settings > Advanced > debug overlay.
     var showsLevelReadout: Bool = false
@@ -207,7 +209,7 @@ struct AmbientGlowView: View {
                 beat: analysis.beat
             )
         } else {
-            raw = GlowFallbackSource.levels(at: time, isPlaying: isPlaying, speed: settings.speed)
+            raw = GlowFallbackSource.levels(at: time, isPlaying: isPlaying, speed: settings.speed, tempo: tempo)
         }
 
         let shaped = dynamics.shape(raw, at: time)

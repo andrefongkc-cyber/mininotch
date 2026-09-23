@@ -1,6 +1,9 @@
 import SwiftUI
 
 /// The Calendar widget: a mini week or month grid above a list of what is coming up.
+///
+/// The arrows move the grid a week or a month at a time, and clicking a day lists what is on
+/// it instead of what is coming up. Clicking the same day again, or Today, goes back.
 struct CalendarWidgetView: View {
     @Bindable var viewModel: NotchViewModel
 
@@ -10,6 +13,18 @@ struct CalendarWidgetView: View {
     @State private var quickAddText = ""
     @State private var quickAddKind: CalendarService.QuickAddKind = .event
     @FocusState private var isQuickAddFocused: Bool
+
+    /// Any date inside the week or month the grid is showing.
+    @State private var reference = Date()
+    /// The day the list is showing, or nil for the upcoming list.
+    @State private var selectedDay: Date?
+
+    #if DEBUG
+    /// Set by `--capture-notch --calendar-step n --calendar-pick n`, since a capture cannot click:
+    /// how many weeks or months to move the grid, and which day, counted from today, to pick.
+    static var debugStep = 0
+    static var debugPick: Int?
+    #endif
 
     private var service: CalendarService { environment.calendarService }
 
@@ -51,7 +66,15 @@ struct CalendarWidgetView: View {
                 eventList
                 if showsQuickAdd { quickAddRow }
             }
-            .onAppear { service.refreshReminders() }
+            .onAppear {
+                service.refreshReminders()
+                #if DEBUG
+                reference = service.shifted(Date(), by: Self.debugStep, mode: mode)
+                if let pick = Self.debugPick {
+                    selectedDay = Calendar.current.date(byAdding: .day, value: pick, to: Calendar.current.startOfDay(for: Date()))
+                }
+                #endif
+            }
         } else {
             permissionPrompt
         }
@@ -59,17 +82,54 @@ struct CalendarWidgetView: View {
 
     // MARK: Grid
 
+    private var mode: CalendarViewMode { settings.calendar.viewMode }
+
+    /// Off today's week or month, or on a picked day: something to come back from.
+    private var isAwayFromToday: Bool {
+        selectedDay != nil || !service.isCurrentPeriod(reference, mode: mode)
+    }
+
     private var grid: some View {
         VStack(spacing: 5) {
-            HStack {
+            HStack(spacing: 4) {
                 Text(monthTitle)
                     .font(Typography.bodyEmphasised)
                     .foregroundStyle(.white)
+
+                stepButton("chevron.left", help: mode == .week ? "Previous week" : "Previous month") {
+                    step(by: -1)
+                }
+                stepButton("chevron.right", help: mode == .week ? "Next week" : "Next month") {
+                    step(by: 1)
+                }
+
                 Spacer()
-                Text(todayTitle)
-                    .font(Typography.helper)
-                    .foregroundStyle(.white.opacity(0.55))
+
+                if isAwayFromToday {
+                    Button {
+                        returnToToday()
+                    } label: {
+                        HStack(spacing: 4) {
+                            if let selectedDay {
+                                Text(Self.selectedFormatter.string(from: selectedDay))
+                                    .foregroundStyle(.white.opacity(0.55))
+                            }
+                            Text("Today")
+                                .fontWeight(.semibold)
+                                .foregroundStyle(settings.appearance.resolvedAccent)
+                        }
+                        .font(Typography.helper)
+                        .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
+                    .help("Back to today")
+                } else {
+                    Text(todayTitle)
+                        .font(Typography.helper)
+                        .foregroundStyle(.white.opacity(0.55))
+                }
             }
+            .frame(height: 17)
 
             HStack(spacing: 0) {
                 ForEach(Array(service.weekdaySymbols().enumerated()), id: \.offset) { _, symbol in
@@ -80,7 +140,7 @@ struct CalendarWidgetView: View {
                 }
             }
 
-            let days = service.days(for: settings.calendar.viewMode)
+            let days = service.days(for: mode, reference: reference, selected: selectedDay)
             let columns = Array(repeating: GridItem(.flexible(), spacing: 0), count: 7)
 
             LazyVGrid(columns: columns, spacing: 3) {
@@ -91,35 +151,92 @@ struct CalendarWidgetView: View {
         }
     }
 
-    private func dayCell(_ day: CalendarDay) -> some View {
-        VStack(spacing: 1) {
-            Text("\(day.dayNumber)")
-                .font(.system(size: 11, weight: day.isToday ? .bold : .regular))
-                .foregroundStyle(dayColor(day))
-                .frame(width: 20, height: 18)
-                .background(
-                    Circle()
-                        .fill(day.isToday ? settings.appearance.resolvedAccent : .clear)
-                        .frame(width: 20, height: 20)
-                )
-
-            Circle()
-                .fill(day.hasEvents ? Color.white.opacity(0.55) : .clear)
-                .frame(width: 3, height: 3)
+    private func stepButton(_ symbol: String, help: String, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            Image(systemName: symbol)
+                .font(.system(size: 10, weight: .semibold))
+                .foregroundStyle(.white.opacity(0.6))
+                .frame(width: 18, height: 17)
+                .contentShape(Rectangle())
         }
-        .frame(maxWidth: .infinity)
+        .buttonStyle(.plain)
+        .help(help)
+    }
+
+    private func dayCell(_ day: CalendarDay) -> some View {
+        let accent = settings.appearance.resolvedAccent
+        return Button {
+            select(day)
+        } label: {
+            VStack(spacing: 1) {
+                Text("\(day.dayNumber)")
+                    .font(.system(size: 11, weight: day.isToday || day.isSelected ? .bold : .regular))
+                    .foregroundStyle(dayColor(day))
+                    .frame(width: 20, height: 18)
+                    .background(
+                        Circle()
+                            .fill(day.isToday ? accent : (day.isSelected ? Color.white.opacity(0.16) : .clear))
+                            .frame(width: 20, height: 20)
+                    )
+                    .overlay(
+                        Circle()
+                            .strokeBorder(day.isSelected && day.isToday ? Color.white.opacity(0.9) : .clear, lineWidth: 1.5)
+                            .frame(width: 22, height: 22)
+                    )
+
+                Circle()
+                    .fill(day.hasEvents ? Color.white.opacity(0.55) : .clear)
+                    .frame(width: 3, height: 3)
+            }
+            .frame(maxWidth: .infinity)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .help(Self.selectedFormatter.string(from: day.date))
     }
 
     private func dayColor(_ day: CalendarDay) -> Color {
-        if day.isToday { return .white }
+        if day.isToday || day.isSelected { return .white }
         return .white.opacity(day.isInDisplayedMonth ? 0.8 : 0.3)
     }
 
+    /// The month on show. A week that crosses into the next month is named by the month most
+    /// of it is in, which is the one its middle day falls in.
     private var monthTitle: String {
         let formatter = DateFormatter()
         formatter.setLocalizedDateFormatFromTemplate("MMMMy")
-        return formatter.string(from: Date())
+        guard mode == .week, let first = service.days(for: .week, reference: reference).first?.date else {
+            return formatter.string(from: reference)
+        }
+        return formatter.string(from: Calendar.current.date(byAdding: .day, value: 3, to: first) ?? reference)
     }
+
+    private func step(by steps: Int) {
+        reference = service.shifted(reference, by: steps, mode: mode)
+        selectedDay = nil
+    }
+
+    /// Picks a day, or goes back to the upcoming list when it is already picked. A padding day
+    /// from the next or previous month also moves the grid there.
+    private func select(_ day: CalendarDay) {
+        if day.isSelected {
+            selectedDay = nil
+            return
+        }
+        selectedDay = day.date
+        if !day.isInDisplayedMonth { reference = day.date }
+    }
+
+    private func returnToToday() {
+        reference = Date()
+        selectedDay = nil
+    }
+
+    private static let selectedFormatter: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.setLocalizedDateFormatFromTemplate("EEEdMMM")
+        return formatter
+    }()
 
     private var todayTitle: String {
         let formatter = DateFormatter()
@@ -130,11 +247,20 @@ struct CalendarWidgetView: View {
     // MARK: Events
 
     private var eventList: some View {
-        let items = Array(service.upcomingItems().prefix(settings.calendar.maxVisibleEvents))
+        // A picked day lists that day; another week or month lists all of it; otherwise what
+        // is coming up from now.
+        let items: [CalendarItem]
+        if let selectedDay {
+            items = service.items(on: selectedDay)
+        } else if !service.isCurrentPeriod(reference, mode: mode) {
+            items = service.items(in: service.period(containing: reference, mode: mode))
+        } else {
+            items = Array(service.upcomingItems().prefix(settings.calendar.maxVisibleEvents))
+        }
 
         return Group {
             if items.isEmpty {
-                Text("No upcoming events")
+                Text(emptyMessage)
                     .font(Typography.helper)
                     .foregroundStyle(.white.opacity(0.45))
                     .frame(maxWidth: .infinity, alignment: .leading)
@@ -199,9 +325,16 @@ struct CalendarWidgetView: View {
         }
     }
 
+    private var emptyMessage: String {
+        if let selectedDay { return "Nothing on " + Self.selectedFormatter.string(from: selectedDay) }
+        guard !service.isCurrentPeriod(reference, mode: mode) else { return "No upcoming events" }
+        return mode == .week ? "Nothing that week" : "Nothing in \(monthTitle)"
+    }
+
     private func subtitle(for item: CalendarItem) -> String {
         let time = item.timeDescription(using: Self.timeFormatter)
-        let day = Calendar.current.isDateInToday(item.start)
+        // On a picked day every row is that day, so naming it again is noise.
+        let day = item.isUndated || selectedDay != nil || Calendar.current.isDateInToday(item.start)
             ? ""
             : Self.dayFormatter.string(from: item.start) + " · "
         let location = item.location.map { " · \($0)" } ?? ""
@@ -237,7 +370,7 @@ struct CalendarWidgetView: View {
                 .font(.system(size: 12))
                 .foregroundStyle(.white.opacity(0.45))
 
-            TextField("Add \(quickAddKind.title.lowercased())…", text: $quickAddText)
+            TextField(quickAddPlaceholder, text: $quickAddText)
                 .textFieldStyle(.plain)
                 .font(.system(size: 12))
                 .foregroundStyle(.white)
@@ -273,8 +406,14 @@ struct CalendarWidgetView: View {
         .animation(Motion.hover, value: isQuickAddFocused)
     }
 
+    private var quickAddPlaceholder: String {
+        let kind = quickAddKind.title.lowercased()
+        guard let selectedDay, !Calendar.current.isDateInToday(selectedDay) else { return "Add \(kind)…" }
+        return "Add \(kind) on \(Self.selectedFormatter.string(from: selectedDay))…"
+    }
+
     private func submitQuickAdd() {
-        guard service.quickAdd(quickAddText, kind: quickAddKind) else { return }
+        guard service.quickAdd(quickAddText, kind: quickAddKind, on: selectedDay) else { return }
         quickAddText = ""
     }
 

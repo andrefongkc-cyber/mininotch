@@ -54,6 +54,7 @@ struct HUDReading: Equatable {
 /// CoreAudio posts a change notification, so this is event driven rather than polled, and it
 /// needs no permission. The device itself can change underneath us when headphones are
 /// plugged in, so the listener is re-registered when the default output changes.
+@MainActor
 final class VolumeMonitor {
     var onChange: ((Double, Bool) -> Void)?
 
@@ -236,6 +237,7 @@ final class VolumeMonitor {
 ///
 /// Neither posts a change notification, so the coordinator polls these while the feature is
 /// switched on, and only while it is switched on.
+@MainActor
 final class BrightnessMonitor {
     private typealias GetBrightnessFunction = @convention(c) (CGDirectDisplayID, UnsafeMutablePointer<Float>) -> Int32
     private typealias SetBrightnessFunction = @convention(c) (CGDirectDisplayID, Float) -> Int32

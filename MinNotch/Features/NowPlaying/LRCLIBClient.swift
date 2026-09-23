@@ -10,7 +10,7 @@ import Foundation
 /// LRCLIB was chosen because it needs no account, no API key, and no payload beyond the
 /// track's title, artist, album, and length. It is still off by default: sending what
 /// someone is listening to to a third party should be their decision, not a default.
-final class LRCLIBClient {
+final class LRCLIBClient: Sendable {
     static let shared = LRCLIBClient()
 
     private static let host = "lrclib.net"
@@ -52,7 +52,7 @@ final class LRCLIBClient {
     ///
     /// Checks `LyricsCache` first, so a song played before costs no request at all, and a song
     /// LRCLIB recently had nothing for is not searched for again.
-    func lyrics(for track: NowPlayingTrack, completion: @escaping (Lyrics?) -> Void) {
+    func lyrics(for track: NowPlayingTrack, completion: @escaping @MainActor @Sendable (Lyrics?) -> Void) {
         guard !track.title.isEmpty, !track.artist.isEmpty else {
             DispatchQueue.main.async { completion(nil) }
             return
@@ -146,7 +146,7 @@ final class LRCLIBClient {
 
     /// Fetches the exact-match endpoint and returns the lyric text worth using, if any. Calls
     /// back on the main queue.
-    private func fetchText(_ url: URL?, completion: @escaping (String?) -> Void) {
+    private func fetchText(_ url: URL?, completion: @escaping @MainActor @Sendable (String?) -> Void) {
         guard let url else { DispatchQueue.main.async { completion(nil) }; return }
 
         http.fetch(url, headers: headers) { data in
@@ -164,7 +164,7 @@ final class LRCLIBClient {
     private func fetchBestTextFromSearch(
         _ url: URL?,
         targetDuration: TimeInterval,
-        completion: @escaping (SearchOutcome) -> Void
+        completion: @escaping @MainActor @Sendable (SearchOutcome) -> Void
     ) {
         guard let url else { DispatchQueue.main.async { completion(.failed) }; return }
 

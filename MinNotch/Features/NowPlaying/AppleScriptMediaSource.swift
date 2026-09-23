@@ -23,6 +23,27 @@ struct PlayerDescriptor {
     var favoriteScript: String
     /// The property holding shuffle state, as the player's dictionary names it.
     var shuffleStateProperty: String?
+    /// Expression giving repeat state as "off", "all" or "one", or nil when it cannot be read.
+    var repeatStateExpression: String?
+    /// Whether repeat has a "one track" setting, which decides what the button cycles through.
+    var repeatSupportsOne: Bool
+    /// Expression giving whether the current track is a favourite, with `currentItem` in scope,
+    /// or nil for a player with no favourites to read.
+    var favoriteStateExpression: String?
+    /// Expression giving the current track's BPM tag, or nil for a player without one.
+    var bpmExpression: String? = nil
+    /// A snapshot script of the player's own, returning the same list the generic one does,
+    /// for a player whose dictionary has no `player state` or `current track`.
+    var snapshotScriptOverride: String? = nil
+    /// Commands for a player that does not use the Music and Spotify verbs. `POSITION` in the
+    /// seek script is replaced by whole seconds.
+    var playPauseScript: String? = nil
+    var playScript: String? = nil
+    var pauseScript: String? = nil
+    var seekScript: String? = nil
+    /// Splits a file name such as "Artist - Title.mp3" into artist and title, for a player that
+    /// knows only the file it is playing.
+    var titlesFromFileName = false
     /// Script listing upcoming tracks, with `LIMIT` replaced by a count, or nil when the
     /// player exposes no queue.
     var upNextScript: String?
@@ -58,6 +79,12 @@ struct PlayerDescriptor {
         end tell
         """,
         shuffleStateProperty: "shuffle enabled",
+        repeatStateExpression: "(song repeat as text)",
+        repeatSupportsOne: true,
+        // Favourite replaced love in Music on macOS 14; `loved` is kept as a fallback read for
+        // a build that still has only that, the same way the toggle script falls back.
+        favoriteStateExpression: "(favorited of currentItem)",
+        bpmExpression: "(bpm of currentItem)",
         // Music does not expose its real Up Next queue to AppleScript. What it does expose is
         // the playlist or album the current track is playing from, and the current track's
         // position in it, which gives the next tracks in order. With shuffle on that order is
@@ -111,11 +138,64 @@ struct PlayerDescriptor {
         artworkURLScript: "tell application \"Spotify\" to get artwork url of current track",
         shuffleScript: "tell application \"Spotify\" to set shuffling to not shuffling",
         repeatScript: "tell application \"Spotify\" to set repeating to not repeating",
+        // Spotify's dictionary has no like or save command, so favourite is Music only.
         favoriteScript: "",
         shuffleStateProperty: "shuffling",
+        repeatStateExpression: "(repeating)",
+        repeatSupportsOne: false,
+        favoriteStateExpression: nil,
         // Spotify's dictionary has no queue at all: current track, position, state, nothing
         // after. Up Next is Apple Music only for that reason, not by choice.
         upNextScript: nil
+    )
+}
+
+extension PlayerDescriptor {
+    /// VLC knows the file it is playing and nothing else: no artist, no album, no artwork, no
+    /// shuffle or repeat in its dictionary. What it does have is a position that can be set,
+    /// which the system Now Playing source cannot do, so it gets a descriptor of its own.
+    static let vlc = PlayerDescriptor(
+        kind: .vlc,
+        bundleIdentifier: "org.videolan.vlc",
+        displayName: "VLC",
+        scriptName: "VLC",
+        durationScale: 1,
+        changeNotification: nil,
+        artworkScript: nil,
+        artworkURLScript: nil,
+        shuffleScript: "",
+        repeatScript: "",
+        favoriteScript: "",
+        shuffleStateProperty: nil,
+        repeatStateExpression: nil,
+        repeatSupportsOne: false,
+        favoriteStateExpression: nil,
+        snapshotScriptOverride: """
+        if application "VLC" is running then
+            tell application "VLC"
+                try
+                    set itemName to (name of current item) as text
+                    if itemName is "" then return {"stopped"}
+                    if playing then
+                        set stateText to "playing"
+                    else
+                        set stateText to "paused"
+                    end if
+                    return {stateText, itemName, "", "", (duration of current item), (current time), itemName, missing value, missing value, missing value, missing value}
+                on error
+                    return {"stopped"}
+                end try
+            end tell
+        else
+            return {"stopped"}
+        end if
+        """,
+        // VLC's `play` pauses when already playing, so play and pause check first.
+        playPauseScript: "tell application \"VLC\" to play",
+        playScript: "tell application \"VLC\" to if not playing then play",
+        pauseScript: "tell application \"VLC\" to if playing then play",
+        seekScript: "tell application \"VLC\" to set current time to POSITION",
+        titlesFromFileName: true
     )
 }
 
@@ -149,7 +229,8 @@ final class AppleScriptMediaSource: MediaSource {
     /// Returns a typed AppleScript list rather than a delimited string on purpose: parsing
     /// numbers out of `as text` breaks under locales that use a comma decimal separator.
     private var snapshotScript: String {
-        """
+        if let override = descriptor.snapshotScriptOverride { return override }
+        return """
         if application "\(descriptor.scriptName)" is running then
             tell application "\(descriptor.scriptName)"
                 try
@@ -157,8 +238,14 @@ final class AppleScriptMediaSource: MediaSource {
                     if playerStateText is "stopped" then return {"stopped"}
                     set currentItem to current track
                     set shuffleState to missing value
-                    \(shuffleRead)
-                    return {playerStateText, (name of currentItem) as text, (artist of currentItem) as text, (album of currentItem) as text, (duration of currentItem), (player position), (id of currentItem) as text, shuffleState}
+                    set repeatState to missing value
+                    set favoriteState to missing value
+                    set bpmValue to missing value
+                    \(optionalRead("shuffleState", descriptor.shuffleStateProperty.map { "(\($0))" }))
+                    \(optionalRead("repeatState", descriptor.repeatStateExpression))
+                    \(optionalRead("favoriteState", descriptor.favoriteStateExpression))
+                    \(optionalRead("bpmValue", descriptor.bpmExpression))
+                    return {playerStateText, (name of currentItem) as text, (artist of currentItem) as text, (album of currentItem) as text, (duration of currentItem), (player position), (id of currentItem) as text, shuffleState, repeatState, favoriteState, bpmValue}
                 on error
                     return {"stopped"}
                 end try
@@ -169,11 +256,16 @@ final class AppleScriptMediaSource: MediaSource {
         """
     }
 
-    /// Reads shuffle state inside its own `try`, so a player build that lacks the property
-    /// still reports the track rather than failing the whole snapshot.
-    private var shuffleRead: String {
-        guard let property = descriptor.shuffleStateProperty else { return "" }
-        return "try\n                        set shuffleState to (\(property))\n                    end try"
+    /// Reads one optional value inside its own `try`, so a player build that lacks the
+    /// property still reports the track rather than failing the whole snapshot.
+    private func optionalRead(_ variable: String, _ expression: String?) -> String {
+        guard let expression else { return "" }
+        var read = "try\n                        set \(variable) to \(expression)\n                    end try"
+        // Music builds from before favourites called it love.
+        if variable == "favoriteState", descriptor.kind == .appleMusic {
+            read += "\n                    if favoriteState is missing value then\n                        try\n                            set favoriteState to (loved of currentItem)\n                        end try\n                    end if"
+        }
+        return read
     }
 
     #if DEBUG
@@ -192,18 +284,51 @@ final class AppleScriptMediaSource: MediaSource {
         let duration = (result.atIndex(5)?.doubleValue ?? 0) / descriptor.durationScale
         let elapsed = result.atIndex(6)?.doubleValue ?? 0
 
+        var title = result.atIndex(2)?.stringValue ?? ""
+        var artist = result.atIndex(3)?.stringValue ?? ""
+        if descriptor.titlesFromFileName {
+            (title, artist) = Self.titles(fromFileName: title)
+        }
+
         return NowPlayingTrack(
-            title: result.atIndex(2)?.stringValue ?? "",
-            artist: result.atIndex(3)?.stringValue ?? "",
+            title: title,
+            artist: artist,
             album: result.atIndex(4)?.stringValue ?? "",
             duration: duration,
             elapsed: elapsed,
             isPlaying: state == "playing",
             sourceKind: descriptor.kind,
             sourceAppName: descriptor.displayName,
+            sourceBundleIdentifier: descriptor.bundleIdentifier,
             trackIdentity: result.atIndex(7)?.stringValue ?? "",
-            isShuffling: Self.bool(from: result.atIndex(8))
+            isShuffling: Self.bool(from: result.atIndex(8)),
+            repeatMode: Self.repeatMode(from: result.numberOfItems >= 9 ? result.atIndex(9) : nil),
+            isFavorite: result.numberOfItems >= 10 ? Self.bool(from: result.atIndex(10)) : nil,
+            // Zero is Music's "no tag", not a tempo.
+            beatsPerMinute: result.numberOfItems >= 11
+                ? result.atIndex(11).map { Double($0.int32Value) }.flatMap { $0 > 0 ? $0 : nil }
+                : nil
         )
+    }
+
+    /// "Artist - Title.mp3" as a title and an artist, or the name without its extension as the
+    /// title when it has no separator. Only ever a guess, which is why only VLC gets it.
+    static func titles(fromFileName name: String) -> (title: String, artist: String) {
+        let known: Set<String> = ["mp3", "m4a", "aac", "flac", "wav", "ogg", "opus", "aiff", "mp4", "mkv", "mov", "avi", "webm"]
+        let ext = (name as NSString).pathExtension.lowercased()
+        let stem = known.contains(ext) ? (name as NSString).deletingPathExtension : name
+        let parts = stem.components(separatedBy: " - ")
+        guard parts.count >= 2 else { return (stem, "") }
+        let artist = parts[0].trimmingCharacters(in: .whitespaces)
+        let title = parts.dropFirst().joined(separator: " - ").trimmingCharacters(in: .whitespaces)
+        return title.isEmpty || artist.isEmpty ? (stem, "") : (title, artist)
+    }
+
+    /// Music answers with its constant's name, Spotify with a boolean.
+    private static func repeatMode(from descriptor: NSAppleEventDescriptor?) -> RepeatMode? {
+        guard let descriptor else { return nil }
+        if let flag = bool(from: descriptor) { return flag ? .all : .off }
+        return descriptor.stringValue.flatMap { RepeatMode(rawValue: $0.lowercased()) }
     }
 
     /// A boolean from an Apple Event descriptor, or nil for `missing value` or anything else.
@@ -300,16 +425,21 @@ final class AppleScriptMediaSource: MediaSource {
         let script: String
         switch command {
         case .playPause:
-            script = "tell application \"\(name)\" to playpause"
+            script = descriptor.playPauseScript ?? "tell application \"\(name)\" to playpause"
         case .play:
-            script = "tell application \"\(name)\" to play"
+            script = descriptor.playScript ?? "tell application \"\(name)\" to play"
         case .pause:
-            script = "tell application \"\(name)\" to pause"
+            script = descriptor.pauseScript ?? "tell application \"\(name)\" to pause"
         case .nextTrack:
-            script = "tell application \"\(name)\" to next track"
+            script = descriptor.kind == .vlc ? "tell application \"VLC\" to next" : "tell application \"\(name)\" to next track"
         case .previousTrack:
-            script = "tell application \"\(name)\" to previous track"
+            script = descriptor.kind == .vlc ? "tell application \"VLC\" to previous" : "tell application \"\(name)\" to previous track"
         case .seek(let position):
+            if let template = descriptor.seekScript {
+                // VLC takes whole seconds.
+                script = template.replacingOccurrences(of: "POSITION", with: String(Int(position.rounded())))
+                break
+            }
             // Formatted with an explicit POSIX locale so a comma decimal separator from the
             // user's locale never reaches AppleScript.
             let value = String(format: "%.3f", position)

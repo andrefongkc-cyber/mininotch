@@ -6,6 +6,7 @@ enum MediaSourceKind: String, Codable, CaseIterable, Identifiable {
     case auto
     case appleMusic
     case spotify
+    case vlc
     /// The system-wide Now Playing information, which covers browsers and any other app.
     case system
 
@@ -16,6 +17,7 @@ enum MediaSourceKind: String, Codable, CaseIterable, Identifiable {
         case .auto: return "Automatic"
         case .appleMusic: return "Apple Music"
         case .spotify: return "Spotify"
+        case .vlc: return "VLC"
         case .system: return "System Now Playing"
         }
     }
@@ -25,6 +27,7 @@ enum MediaSourceKind: String, Codable, CaseIterable, Identifiable {
         case .auto: return "wand.and.stars"
         case .appleMusic: return "music.note"
         case .spotify: return "music.note.list"
+        case .vlc: return "play.rectangle"
         case .system: return "waveform"
         }
     }
@@ -48,13 +51,20 @@ enum NowPlayingCardStyle: String, Codable, CaseIterable, Identifiable {
         }
     }
 
-    /// V1 ships `.classic` only; the rest render as `.classic` and are badged "Coming soon".
-    var isImplemented: Bool { self == .classic }
+    /// One line of what the style looks like, for the picker's row.
+    var summary: String {
+        switch self {
+        case .classic: return "Artwork beside the title, scrubber and controls."
+        case .compact: return "One short row, half the height of Classic."
+        case .fullArtwork: return "The cover fills the card, blurred behind a large copy of it."
+        }
+    }
 }
 
 /// A control that can appear in the Now Playing transport row. The order of
-/// `MediaSettings.controlOrder` is the render order, which is what the V2 drag-to-reorder
-/// editor will mutate.
+/// `MediaSettings.controlOrder` is the render order, arranged in Settings > Layout. A control
+/// the playing source cannot carry out is left off the card rather than drawn dead; see
+/// `NowPlayingController.supports(_:)`.
 enum MediaControl: String, Codable, CaseIterable, Identifiable {
     case shuffle
     case previous
@@ -84,14 +94,6 @@ enum MediaControl: String, Codable, CaseIterable, Identifiable {
         case .next: return "forward.fill"
         case .repeatMode: return "repeat"
         case .favorite: return "heart"
-        }
-    }
-
-    /// Controls wired to a real command in V1.
-    var isImplemented: Bool {
-        switch self {
-        case .previous, .playPause, .next, .shuffle: return true
-        case .repeatMode, .favorite: return false
         }
     }
 
@@ -198,6 +200,9 @@ struct MediaSettings: Codable, Equatable {
     /// Show elapsed and remaining time either side of the scrubber.
     var showTimecodes: Bool = true
 
+    /// A small icon of the playing app on the corner of the artwork.
+    var showSourceBadge: Bool = true
+
     /// Tint the card with colours sampled from the artwork.
     var tintFromArtwork: Bool = true
 
@@ -238,6 +243,7 @@ struct MediaSettings: Codable, Equatable {
         useAudioClockForLyrics = c.value(.useAudioClockForLyrics, true)
         matchLyricsToAudio = c.value(.matchLyricsToAudio, false)
         showTimecodes = c.value(.showTimecodes, true)
+        showSourceBadge = c.value(.showSourceBadge, true)
         tintFromArtwork = c.value(.tintFromArtwork, true)
         cardStyle = c.value(.cardStyle, NowPlayingCardStyle.classic)
         floatingWindow = c.value(.floatingWindow, false)

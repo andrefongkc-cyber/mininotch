@@ -27,74 +27,97 @@ struct ReleaseNotes {
     var removed: [ReleaseNote]
 
     static let latest = ReleaseNotes(
-        id: "0.2.0",
-        version: "0.2",
+        id: "0.3.0",
+        version: "0.3",
         added: [
             ReleaseNote(
-                symbol: "link",
-                title: "Link Shelf",
-                detail: "Keep web links in the notch. Click one to open it in your browser, or copy it back.",
-                howTo: "Turn it on in Settings > Advanced > Link Shelf. Then drag a link onto the notch, or open the Links tab and press ⌘V."
+                symbol: "rectangle.3.group",
+                title: "Layout",
+                detail: "Arrange the closed notch, the top bar and the music controls on a picture of the notch. Drag icons in, or click them; drag them out, or click ×, to remove them.",
+                howTo: "Settings > Layout."
             ),
             ReleaseNote(
-                symbol: "list.bullet",
-                title: "Up Next",
-                detail: "The next song shows under the music controls. Apple Music only, when shuffle is off.",
-                howTo: "Settings > Media > Show Up Next."
+                symbol: "calendar",
+                title: "Pick a Day",
+                detail: "Click any day in the calendar to see what's on it, and use the arrows to go to other weeks or months.",
+                howTo: "In the Calendar tab. Click Today to come back."
             ),
             ReleaseNote(
-                symbol: "shuffle",
-                title: "Shuffle Button",
-                detail: "Turn shuffle on or off from the notch. It lights up while shuffle is on.",
-                howTo: "In the Now Playing controls. Rearrange them in Settings > Media."
+                symbol: "quote.bubble",
+                title: "All the Lyrics",
+                detail: "Open every line of the song, scrolling along as it plays. Click a line to jump to it.",
+                howTo: "Click the expand button beside the lyrics."
             ),
             ReleaseNote(
-                symbol: "music.note",
-                title: "Sneak Peek",
-                detail: "When the song changes, the notch drops down for a moment to show what's playing.",
-                howTo: "On by default. Settings > Media > Sneak Peek on Track Change."
+                symbol: "waveform",
+                title: "Lyrics That Match the Song",
+                detail: "MinNotch can listen for where the singing starts and line the lyrics up with it.",
+                howTo: "Settings > Media > Match to the Audio. Uses the system audio permission."
             ),
             ReleaseNote(
-                symbol: "rectangle.topthird.inset.filled",
-                title: "Arrange the Top Bar",
-                detail: "Put any tab on either side of the notch. Tabs that don't fit move to the other side instead of hiding behind it.",
-                howTo: "Settings > Appearance > Top Bar."
+                symbol: "repeat",
+                title: "Repeat and Favourite",
+                detail: "Repeat works with Apple Music and Spotify, favourite with Apple Music. Both light up when on.",
+                howTo: "Add them in Settings > Layout > Now Playing Controls."
             ),
             ReleaseNote(
-                symbol: "pip.enter",
-                title: "Pop-Out Player",
-                detail: "Open Now Playing in a small floating window.",
-                howTo: "Click the pop-out button on the Now Playing card."
+                symbol: "arrow.down.circle",
+                title: "Downloads and AirPods in the Notch",
+                detail: "See how far along a download is, and your AirPods' charge when they connect. Swipe up on the notch to put one away.",
+                howTo: "Settings > Layout > Live Activities. Show Indicators When Closed must be on."
+            ),
+            ReleaseNote(
+                symbol: "metronome",
+                title: "Glow Tempo",
+                detail: "Set the glow's beat yourself, tap it out, or use the song's BPM from Music.",
+                howTo: "Settings > Appearance > Tempo."
+            ),
+            ReleaseNote(
+                symbol: "play.rectangle",
+                title: "VLC",
+                detail: "What's playing in VLC shows in the notch, and you can drag to seek.",
+                howTo: nil
             )
         ],
         improved: [
             ReleaseNote(
-                symbol: "speaker.wave.2",
-                title: "Hiding Apple's Volume Overlay Now Works",
-                detail: "On macOS 26 you now see only MinNotch's volume and brightness indicator.",
-                howTo: "Settings > HUDs > Hide the System Overlay. MinNotch asks for Accessibility access the first time."
+                symbol: "rectangle.on.rectangle",
+                title: "Two New Card Styles",
+                detail: "Compact, half the height, and Full Artwork, with the cover filling the card.",
+                howTo: "Settings > Appearance > Card Style."
             ),
             ReleaseNote(
-                symbol: "quote.bubble",
-                title: "Faster Lyrics",
-                detail: "Lyrics for songs you've played before load straight away.",
+                symbol: "app.badge",
+                title: "Which App Is Playing",
+                detail: "A small icon of the playing app sits on the album art.",
+                howTo: "Settings > Media > Show Which App Is Playing."
+            ),
+            ReleaseNote(
+                symbol: "gauge.with.dots.needle.33percent",
+                title: "System History",
+                detail: "The last minute of CPU, GPU, memory and network sits behind each reading, so a spike doesn't flash past.",
                 howTo: nil
             ),
             ReleaseNote(
                 symbol: "sparkles",
-                title: "Smoother Glow and Clearer Bars",
-                detail: "The glow fades smoothly as the notch opens and closes, and the bars over the album art stand out more.",
+                title: "A Glow You Can Trust",
+                detail: "The glow and the bars over the album art stay still when nothing is playing and follow the music when Follow the Beat is on.",
+                howTo: "Settings > Appearance > What It Is Hearing shows what the glow hears."
+            ),
+            ReleaseNote(
+                symbol: "checklist",
+                title: "Reminders Without a Date",
+                detail: "They now show at the end of the calendar list.",
+                howTo: "Settings > Calendar > Show Reminders Without a Date."
+            ),
+            ReleaseNote(
+                symbol: "app",
+                title: "A New Icon",
+                detail: "MinNotch has an icon of its own.",
                 howTo: nil
             )
         ],
-        removed: [
-            ReleaseNote(
-                symbol: "photo",
-                title: "Glow Around Album Art",
-                detail: "The album art now stays still. The glow around the notch is unchanged.",
-                howTo: nil
-            )
-        ]
+        removed: []
     )
 }
 
@@ -103,6 +126,7 @@ struct ReleaseNotes {
 /// Not on a first launch: someone who has just installed the app has nothing to compare it to,
 /// and gets the tutorial instead, so the release they installed is marked as seen. Closing the
 /// window any way counts as having seen it.
+@MainActor
 final class WhatsNewCoordinator: NSObject, NSWindowDelegate {
     private static let seenKey = "whatsNew.seenRelease"
 

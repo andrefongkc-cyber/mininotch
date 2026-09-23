@@ -4,6 +4,7 @@ import AppKit
 ///
 /// Kept deliberately thin: it owns `AppEnvironment` and forwards launch and terminate, and
 /// nothing else. Everything that could need testing lives in the environment or a service.
+@MainActor
 final class AppDelegate: NSObject, NSApplicationDelegate {
     let environment = AppEnvironment()
 

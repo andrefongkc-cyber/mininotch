@@ -9,6 +9,7 @@ import Observation
 /// A slow timer covers the position, which nothing broadcasts. Between polls the view
 /// extrapolates from `elapsed(at:)`, so the scrubber is smooth without a fast timer.
 @Observable
+@MainActor
 final class NowPlayingController {
     private(set) var track: NowPlayingTrack?
     private(set) var artwork: NSImage?
@@ -29,6 +30,10 @@ final class NowPlayingController {
     /// The next few tracks, or why they cannot be listed. Apple Music only.
     private(set) var upNext: UpNextState = .idle
 
+    /// The user's choice of the full lyrics list over the two-line strip. Shared by the notch
+    /// and the floating window, since both size themselves from it.
+    var isShowingLyricsSheet = false
+
     /// True while the user is dragging the scrubber, so incoming positions are ignored
     /// until they let go and the seek lands.
     var isScrubbing = false {
@@ -48,6 +53,7 @@ final class NowPlayingController {
 
     @ObservationIgnored private let appleMusic = AppleScriptMediaSource(descriptor: .appleMusic)
     @ObservationIgnored private let spotify = AppleScriptMediaSource(descriptor: .spotify)
+    @ObservationIgnored private let vlc = AppleScriptMediaSource(descriptor: .vlc)
     @ObservationIgnored private let system = SystemNowPlayingSource()
     @ObservationIgnored private let lyricsProviders: [LyricsProviding] = [AppleMusicLyricsProvider()]
 
@@ -100,11 +106,9 @@ final class NowPlayingController {
         guard let settings, settings.media.enabled else { return }
 
         let interval = max(0.5, settings.media.pollInterval)
-        let timer = Timer(timeInterval: interval, repeats: true) { [weak self] _ in
+        let timer = Timer.onMain(every: interval) { [weak self] in
             self?.refresh()
         }
-        // Common mode so the position keeps updating while a menu is open.
-        RunLoop.main.add(timer, forMode: .common)
         self.timer = timer
     }
 
@@ -120,7 +124,8 @@ final class NowPlayingController {
                 object: nil,
                 queue: .main
             ) { [weak self] _ in
-                self?.refresh()
+                // Delivered on the main queue, as asked for above.
+                MainActor.assumeIsolated { self?.refresh() }
             }
             observerTokens.append(token)
         }
@@ -137,11 +142,11 @@ final class NowPlayingController {
         // MediaRemote answers asynchronously, so kick it off before the synchronous work.
         system.refresh()
 
-        AppleScriptRunner.shared.queue.async { [weak self] in
-            guard let self else { return }
-            let preferred = settings.media.preferredSource
-            let candidates = self.orderedSources(for: preferred)
+        // Chosen here, on main, where the settings and the sticky source live. They used to be
+        // read on the AppleScript queue, which was a data race with every settings change.
+        let candidates = orderedSources(for: settings.media.preferredSource)
 
+        AppleScriptRunner.shared.queue.async {
             var chosen: (MediaSource, NowPlayingTrack)?
             for source in candidates {
                 guard source.isAvailable, let snapshot = source.snapshot() else { continue }
@@ -155,7 +160,7 @@ final class NowPlayingController {
             // extrapolation that much late. It is why the lyric highlight trailed the vocal.
             let capturedAt = Date()
             let result = chosen
-            DispatchQueue.main.async { self.publish(result, capturedAt: capturedAt) }
+            DispatchQueue.main.async { [weak self] in self?.publish(result, capturedAt: capturedAt) }
         }
     }
 
@@ -167,9 +172,10 @@ final class NowPlayingController {
         switch preferred {
         case .appleMusic: return [appleMusic]
         case .spotify: return [spotify]
+        case .vlc: return [vlc]
         case .system: return [system]
         case .auto:
-            var sources: [MediaSource] = [appleMusic, spotify, system]
+            var sources: [MediaSource] = [appleMusic, spotify, vlc, system]
             if let stickySource, let index = sources.firstIndex(where: { $0.kind == stickySource }) {
                 let sticky = sources.remove(at: index)
                 sources.insert(sticky, at: 0)
@@ -208,6 +214,13 @@ final class NowPlayingController {
     /// How many upcoming tracks the row reads. Three is what fits on one line after the first.
     static let upNextLimit = 3
 
+    /// Whether the card should draw the full lyrics list right now: chosen, switched on, and
+    /// with lines to show. Read by the card and by both surfaces that size it.
+    var showsLyricsSheet: Bool {
+        guard isShowingLyricsSheet, settings?.media.showLyrics == true else { return false }
+        return lyrics?.isEmpty == false
+    }
+
     /// Whether the card should reserve and draw its Up Next row right now.
     ///
     /// Read by the card and by both surfaces that size it, so the row's height is only ever
@@ -228,9 +241,10 @@ final class NowPlayingController {
             return
         }
         let key = snapshot.artworkKey
-        AppleScriptRunner.shared.queue.async { [weak self] in
-            let state = source.upNext(limit: Self.upNextLimit)
-            DispatchQueue.main.async {
+        let limit = Self.upNextLimit
+        AppleScriptRunner.shared.queue.async {
+            let state = source.upNext(limit: limit)
+            DispatchQueue.main.async { [weak self] in
                 guard let self, self.track?.artworkKey == key else { return }
                 self.upNext = state
             }
@@ -260,11 +274,11 @@ final class NowPlayingController {
     private func loadArtwork(from source: MediaSource, for snapshot: NowPlayingTrack, attempt: Int = 0) {
         let key = snapshot.artworkKey
 
-        AppleScriptRunner.shared.queue.async { [weak self] in
+        AppleScriptRunner.shared.queue.async {
             let image = source.artwork()
             let palette = image.map(ArtworkPalette.extract(from:)) ?? .fallback
 
-            DispatchQueue.main.async {
+            DispatchQueue.main.async { [weak self] in
                 guard let self, self.track?.artworkKey == key else { return }
 
                 if let image {
@@ -282,8 +296,8 @@ final class NowPlayingController {
 
                 guard attempt < Self.artworkRetryLimit else { return }
                 let delay = 0.5 * Double(attempt + 1)
-                DispatchQueue.main.asyncAfter(deadline: .now() + delay) {
-                    guard self.track?.artworkKey == key else { return }
+                DispatchQueue.main.asyncAfter(deadline: .now() + delay) { [weak self] in
+                    guard let self, self.track?.artworkKey == key else { return }
                     self.loadArtwork(from: source, for: snapshot, attempt: attempt + 1)
                 }
             }
@@ -311,12 +325,12 @@ final class NowPlayingController {
 
         // The player is asked first either way: a locally tagged sheet is instant, exact,
         // and costs no network request.
-        AppleScriptRunner.shared.queue.async { [weak self] in
-            guard let self else { return }
-            let local = self.lyricsProviders.lazy.compactMap { $0.lyrics(for: snapshot) }.first
+        let providers = lyricsProviders
+        AppleScriptRunner.shared.queue.async {
+            let local = providers.lazy.compactMap { $0.lyrics(for: snapshot) }.first
 
-            DispatchQueue.main.async {
-                guard self.track?.artworkKey == key else { return }
+            DispatchQueue.main.async { [weak self] in
+                guard let self, self.track?.artworkKey == key else { return }
 
                 if let local, !local.isEmpty {
                     self.lyrics = local
@@ -379,6 +393,14 @@ final class NowPlayingController {
         return time
     }
 
+    /// Moves playback so that `lyricsTime` lands on `time`, which is what clicking a line means:
+    /// the offset and the audio correction are undone rather than ignored, or a click on a line
+    /// would start the song that far away from it.
+    func seek(toLyricsTime time: TimeInterval, at date: Date = Date()) {
+        let delta = lyricsTime(at: date) - elapsed(at: date)
+        seek(to: time - delta)
+    }
+
     /// Correction measured from the audio itself, or zero while the feature is off or the
     /// measurement has not settled. Added on top of the user's own offset rather than replacing
     /// it: theirs is a preference, this is a property of the file.
@@ -417,16 +439,26 @@ final class NowPlayingController {
         guard let kind = track?.sourceKind ?? stickySource else { return }
         let source = sourceFor(kind)
 
-        // Shuffle is shown flipped at once and confirmed by the read-back below. Waiting for
-        // the round trip left the button looking unresponsive for a noticeable beat.
-        if command == .toggleShuffle, let current = track?.isShuffling {
-            track?.isShuffling = !current
+        // Shuffle, repeat and favourite are shown changed at once and confirmed by the
+        // read-back below. Waiting for the round trip left the button looking unresponsive for
+        // a noticeable beat.
+        switch command {
+        case .toggleShuffle:
+            if let current = track?.isShuffling { track?.isShuffling = !current }
+        case .cycleRepeat:
+            if let current = track?.repeatMode {
+                track?.repeatMode = current.next(supportsOne: kind == .appleMusic)
+            }
+        case .toggleFavorite:
+            if let current = track?.isFavorite { track?.isFavorite = !current }
+        default:
+            break
         }
 
-        AppleScriptRunner.shared.queue.async { [weak self] in
+        AppleScriptRunner.shared.queue.async {
             source.send(command)
             // Read back promptly so the button state reflects reality rather than a guess.
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) { [weak self] in
                 guard let self else { return }
                 self.refresh()
                 // Shuffle changes what plays next, so the queue has to be read again.
@@ -448,19 +480,23 @@ final class NowPlayingController {
     /// renders as a read-only progress bar for them rather than pretending to work.
     var canSeek: Bool {
         switch track?.sourceKind {
-        case .appleMusic, .spotify: return true
+        case .appleMusic, .spotify, .vlc: return true
         default: return false
         }
     }
 
-    /// Whether a control is backed by a real command for the active source.
+    /// Whether a control is backed by a real command for the active source. The card leaves
+    /// out anything that is not, rather than drawing a button that does nothing.
     func supports(_ control: MediaControl) -> Bool {
-        guard control.isImplemented else { return false }
+        let scriptable = track?.sourceKind == .appleMusic || track?.sourceKind == .spotify
         switch control {
-        case .shuffle:
-            // Only the scriptable players have a shuffle to flip; MediaRemote clients do not.
-            return track?.sourceKind == .appleMusic || track?.sourceKind == .spotify
-        default:
+        case .shuffle, .repeatMode:
+            // Only the scriptable players have these to change; MediaRemote clients do not.
+            return scriptable
+        case .favorite:
+            // Spotify's scripting has no like or save, so there is nothing to send it.
+            return track?.sourceKind == .appleMusic
+        case .playPause, .previous, .next:
             return true
         }
     }
@@ -469,6 +505,7 @@ final class NowPlayingController {
         switch kind {
         case .appleMusic: return appleMusic
         case .spotify: return spotify
+        case .vlc: return vlc
         case .system, .auto: return system
         }
     }
@@ -498,8 +535,11 @@ extension NowPlayingController {
             isPlaying: isPlaying,
             sourceKind: .appleMusic,
             sourceAppName: "Music",
+            sourceBundleIdentifier: "com.apple.Music",
             trackIdentity: "sample",
-            isShuffling: false
+            isShuffling: false,
+            repeatMode: .all,
+            isFavorite: true
         )
         upNext = .loaded([
             UpNextItem(title: "Paper Lanterns", artist: "Aoife Lennox"),

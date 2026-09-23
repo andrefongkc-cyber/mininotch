@@ -21,6 +21,33 @@ struct SystemStats: Equatable {
     }
 }
 
+/// The last few readings of each stat, oldest first, for the sparkline behind each cell.
+///
+/// Only as long as the widget has been on screen: sampling stops when it is not, so a history
+/// kept across that gap would join two unrelated stretches of time into one line.
+struct SystemStatsHistory: Equatable {
+    static let capacity = 30
+
+    var cpu: [Double] = []
+    var gpu: [Double] = []
+    var memory: [Double] = []
+    /// Bytes per second in and out together. The view scales it to its own maximum, since
+    /// there is no fixed ceiling for a network rate.
+    var network: [Double] = []
+
+    mutating func append(_ stats: SystemStats) {
+        push(&cpu, stats.cpuUsage)
+        if let gpu = stats.gpuUsage { push(&self.gpu, gpu) }
+        push(&memory, stats.memoryFraction)
+        push(&network, stats.networkIn + stats.networkOut)
+    }
+
+    private func push(_ values: inout [Double], _ value: Double) {
+        values.append(value)
+        if values.count > Self.capacity { values.removeFirst(values.count - Self.capacity) }
+    }
+}
+
 /// Samples CPU, GPU, memory, and network load.
 ///
 /// Sampling is reference counted through `beginSampling()` and `endSampling()` so the timer
@@ -28,11 +55,14 @@ struct SystemStats: Equatable {
 /// up every couple of seconds forever is a battery complaint waiting to happen, and nothing
 /// here is worth measuring when nobody is looking at it.
 @Observable
+@MainActor
 final class SystemStatsService {
     private(set) var stats = SystemStats()
+    // Settable from the debug sample below; nothing else writes them.
+    fileprivate(set) var history = SystemStatsHistory()
     /// False when the GPU exposes no utilisation counter, so the view can omit the cell
     /// rather than showing a permanent zero.
-    private(set) var isGPUAvailable = true
+    fileprivate(set) var isGPUAvailable = true
 
     @ObservationIgnored private var settings: SettingsStore?
     @ObservationIgnored private var timer: Timer?
@@ -72,6 +102,7 @@ final class SystemStatsService {
         timer = nil
         previousCPUTicks = nil
         previousNetwork = nil
+        history = SystemStatsHistory()
     }
 
     /// Reapplies the refresh interval after a settings change.
@@ -83,25 +114,32 @@ final class SystemStatsService {
     private func restartTimer() {
         timer?.invalidate()
         let interval = max(0.5, settings?.advanced.statsRefreshInterval ?? 2)
-        let timer = Timer(timeInterval: interval, repeats: true) { [weak self] _ in
+                let timer = Timer.onMain(every: interval) { [weak self] in
             self?.sample()
         }
-        RunLoop.main.add(timer, forMode: .common)
         self.timer = timer
     }
 
     private func sample() {
         var next = stats
         next.memoryTotal = ProcessInfo.processInfo.physicalMemory
-        if let cpu = sampleCPU() { next.cpuUsage = cpu }
+        let cpu = sampleCPU()
+        if let cpu { next.cpuUsage = cpu }
         next.gpuUsage = Self.sampleGPU()
         isGPUAvailable = next.gpuUsage != nil
         if let memory = Self.sampleMemory() { next.memoryUsed = memory }
-        if let network = sampleNetwork() {
+        let network = sampleNetwork()
+        if let network {
             next.networkIn = network.input
             next.networkOut = network.output
         }
         stats = next
+        // The first reading of a delta is only a baseline (both samplers return nil for it),
+        // not a measurement, so it stays out of the history rather than starting every line on
+        // the floor.
+        if cpu != nil, network != nil {
+            history.append(next)
+        }
     }
 
     // MARK: CPU
@@ -197,7 +235,9 @@ final class SystemStatsService {
         }
         guard result == KERN_SUCCESS else { return nil }
 
-        let pageSize = UInt64(vm_kernel_page_size)
+        // The page size the VM counts are in. `vm_kernel_page_size` is a mutable C global,
+        // which Swift 6 will not read here; on macOS the user page size is the same value.
+        let pageSize = UInt64(getpagesize())
         let app = UInt64(max(Int64(info.internal_page_count) - Int64(info.purgeable_count), 0))
         let wired = UInt64(info.wire_count)
         let compressed = UInt64(info.compressor_page_count)
@@ -248,7 +288,9 @@ final class SystemStatsService {
 
 /// Formats byte counts and rates the way the system does, with the unit next to the number.
 enum ByteFormat {
-    private static let formatter: ByteCountFormatter = {
+    // A formatter is safe to use from any thread once configured, and this one is never
+    // reconfigured after it is built.
+    nonisolated(unsafe) private static let formatter: ByteCountFormatter = {
         let formatter = ByteCountFormatter()
         formatter.countStyle = .memory
         formatter.allowedUnits = [.useGB, .useMB, .useKB]
@@ -264,3 +306,28 @@ enum ByteFormat {
         return formatter.string(fromByteCount: Int64(bytesPerSecond)) + "/s"
     }
 }
+
+#if DEBUG
+extension SystemStatsService {
+    /// Fixed readings and a history with a spike in it, for `--capture-notch --sample-stats`.
+    /// A live capture cannot be relied on for this: the real pointer and run loop close or
+    /// switch the panel while it waits for samples to accumulate.
+    func applySampleHistory() {
+        var stats = SystemStats()
+        stats.memoryTotal = 16 << 30
+        var history = SystemStatsHistory()
+        for index in 0..<SystemStatsHistory.capacity {
+            let spike = (14...17).contains(index)
+            stats.cpuUsage = spike ? 0.92 : 0.12 + 0.05 * sin(Double(index) / 2)
+            stats.gpuUsage = spike ? 0.55 : 0.08
+            stats.memoryUsed = UInt64(Double(stats.memoryTotal) * (0.52 + Double(index) * 0.004))
+            stats.networkIn = index > 22 ? 2_400_000 : 40_000
+            stats.networkOut = 12_000
+            history.append(stats)
+        }
+        self.stats = stats
+        self.history = history
+        isGPUAvailable = true
+    }
+}
+#endif

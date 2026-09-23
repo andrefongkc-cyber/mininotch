@@ -33,6 +33,7 @@ struct LinkItem: Codable, Identifiable, Equatable {
 /// HTTPS only, the first 256 KB of the page at most, and a timeout. That is a request to the
 /// linked site, which is said plainly in Settings, since the user did not click the link yet.
 @Observable
+@MainActor
 final class LinkShelfService {
     private(set) var items: [LinkItem] = []
     /// Site icons by host. Filled as they load; a host with no usable icon never appears.
@@ -194,11 +195,11 @@ final class LinkShelfService {
         if needsTitle { fetchingTitles.insert(item.id) }
         if needsIcon { fetchingIcons.insert(host) }
 
-        pageClient.fetch(pageURL, headers: Self.headers) { [weak self] data in
+        pageClient.fetch(pageURL, headers: Self.headers) { data in
             let title = data.flatMap(PageMetadata.title(fromHTML:))
             let declaredIcon = data.flatMap { PageMetadata.iconURL(fromHTML: $0, page: pageURL) }
 
-            DispatchQueue.main.async {
+            DispatchQueue.main.async { [weak self] in
                 guard let self else { return }
                 if needsTitle {
                     self.fetchingTitles.remove(item.id)
@@ -220,15 +221,15 @@ final class LinkShelfService {
             fetchingIcons.remove(host)
             return
         }
-        iconClient.fetch(url, headers: Self.headers) { [weak self] data in
+        iconClient.fetch(url, headers: Self.headers) { data in
             if let data, let image = NSImage(data: data), image.isValid {
                 IconCache.store(data, forHost: host)
-                DispatchQueue.main.async {
+                DispatchQueue.main.async { [weak self] in
                     self?.icons[host] = image
                     self?.fetchingIcons.remove(host)
                 }
             } else {
-                DispatchQueue.main.async { self?.fetchFirstIcon(Array(candidates.dropFirst()), host: host) }
+                DispatchQueue.main.async { [weak self] in self?.fetchFirstIcon(Array(candidates.dropFirst()), host: host) }
             }
         }
     }

@@ -15,10 +15,20 @@ struct NowPlayingTrack: Equatable {
     var isPlaying: Bool
     var sourceKind: MediaSourceKind
     var sourceAppName: String
+    /// The app that owns playback, for the badge on the artwork. Nil when it is not known,
+    /// which is better than a guess: a wrong app's icon on the cover is a lie in plain sight.
+    var sourceBundleIdentifier: String? = nil
     /// Player-specific identity, used to tell a genuine track change from a metadata refresh.
     var trackIdentity: String
     /// Whether the player is shuffling, or nil when the source cannot say.
     var isShuffling: Bool? = nil
+    /// The player's repeat setting, or nil when the source cannot say.
+    var repeatMode: RepeatMode? = nil
+    /// Whether the current track is a favourite, or nil when the source has no favourites.
+    var isFavorite: Bool? = nil
+    /// The track's BPM tag, or nil when it has none. Music only, and only for tracks that
+    /// were tagged, which is mostly purchased and imported music rather than streams.
+    var beatsPerMinute: Double? = nil
 
     /// Identity of the artwork, so it is only re-fetched when the album actually changes.
     var artworkKey: String { "\(sourceKind.rawValue)|\(album)|\(artist)|\(title)" }
@@ -44,6 +54,22 @@ struct NowPlayingTrack: Equatable {
             sourceAppName: "",
             trackIdentity: ""
         )
+    }
+}
+
+/// Repeat as the players have it. Spotify has only off and all; Music has all three.
+enum RepeatMode: String, Equatable {
+    case off
+    case all
+    case one
+
+    /// What one press of the button moves to, in the order Music's own button cycles.
+    func next(supportsOne: Bool) -> RepeatMode {
+        switch self {
+        case .off: return .all
+        case .all: return supportsOne ? .one : .off
+        case .one: return .off
+        }
     }
 }
 
@@ -86,7 +112,10 @@ enum MediaCommand: Equatable {
 ///
 /// Sources are polled and are expected to be cheap when their app is not running, because
 /// `NowPlayingController` asks every source whether it is live before choosing one.
-protocol MediaSource: AnyObject {
+///
+/// `Sendable` because they are handed to the AppleScript queue, which is where every read
+/// and command runs.
+protocol MediaSource: AnyObject, Sendable {
     var kind: MediaSourceKind { get }
     /// False when the backing app is not running, or the API is unavailable on this system.
     var isAvailable: Bool { get }
@@ -171,5 +200,23 @@ enum LyricsStatus: Equatable {
         case .noneStoredLocally: return "No lyrics stored for this track. Turn on Look Up Online in Settings > Media."
         case .notFound: return "No lyrics found for this track."
         }
+    }
+}
+
+/// Application icons by bundle identifier, looked up once each.
+///
+/// `NSWorkspace` reads the icon off disk every time it is asked, and the card asks on every
+/// redraw, so the answer is kept. A miss is kept too: an app that is not installed where
+/// LaunchServices can find it will not be found on the next redraw either.
+@MainActor
+enum AppIconCache {
+    private static var icons: [String: NSImage?] = [:]
+
+    static func icon(forBundleIdentifier identifier: String) -> NSImage? {
+        if let cached = icons[identifier] { return cached }
+        let icon = NSWorkspace.shared.urlForApplication(withBundleIdentifier: identifier)
+            .map { NSWorkspace.shared.icon(forFile: $0.path) }
+        icons[identifier] = icon
+        return icon
     }
 }

@@ -241,6 +241,7 @@ struct SettingsRootView: View {
         switch selection {
         case .general: GeneralSettingsView()
         case .appearance: AppearanceSettingsView()
+        case .layout: LayoutSettingsView()
         case .media: MediaSettingsView()
         case .calendar: CalendarSettingsView()
         case .huds: HUDSettingsView()
