@@ -1,6 +1,6 @@
 # MinNotch workplan
 
-Status: doing the 0.3.0 release (commit, push, DMG, GitHub release); next: the macOS 13 decision, then a test target.
+Status: 0.3.0 released 2026-09-23 (GitHub v0.3.0); next: the macOS 13 decision, then a test target.
 
 Living document. Update the checkboxes as work lands. `CLAUDE.md` holds the architecture
 rules and the traps; this file holds the sequence.
@@ -24,14 +24,14 @@ at last. Notarisation still needs a paid membership nobody is buying.
 
 **Do these next, in this order:**
 
-1. Use the 0.3 work in anger, then commit and cut the DMG. Everything below is written and
-   checked with the tools, but the drag-and-drop in Settings > Layout, the calendar against a
-   real calendar, repeat and favourite against a playing track, downloads, a device
-   connecting, and the album-art bars with real music have not been tried by hand.
-2. Answer the user on macOS 13 (Platforms below). They were asked and have not decided.
-3. A test target. Nothing is verified automatically across more than a hundred files, and the
+1. Answer the user on macOS 13 (Platforms below). They were asked and have not decided.
+2. A test target. Nothing is verified automatically across more than a hundred files, and the
    Swift 6 migration is exactly the kind of change one would have caught.
-4. Confirm a granted permission survives a rebuild (listed under Blocking below).
+3. Confirm a granted permission survives a rebuild (listed under Blocking below).
+4. Watch for reports against 0.3.0, released 2026-09-23. It shipped at the user's request
+   without these being tried by hand, so they are the first place to look: the drag-and-drop
+   in Settings > Layout, the calendar against a real calendar, repeat and favourite against a
+   playing track, downloads, a device connecting, and the album-art bars with real music.
 
 ---
 
@@ -438,10 +438,10 @@ nothing.
       to 21 points, and only then does `NotchGeometry` widen the panel. Fixes the seventh tab
       (Links) hiding the timer behind the camera housing. Review with
       `--capture-notch --tab links --width 460` and `--right timer,settings,battery`.
-- [x] **What's New window.** `ReleaseNotes.latest` (0.2.0): New, Improved, Removed, each with
+- [x] **What's New window.** `ReleaseNotes.latest` (0.3.0): New, Improved, Removed, each with
       where to find it. Shown once at launch when its id is unseen, skipped on a first launch
-      (the tutorial runs instead), reopenable from the menu bar. `MARKETING_VERSION` bumped to
-      0.2.0. Review with `--capture-whats-new`. Update the notes before each shared build.
+      (the tutorial runs instead), reopenable from the menu bar. `MARKETING_VERSION` matches
+      it. Review with `--capture-whats-new`. Update the notes before each shared build.
 - [x] **Debug buttons in the top bar.** What's New (sparkles) and Tutorial (graduation cap) open
       from the open panel, right of the notch. Settings > Advanced > Debug Buttons in Top Bar,
       on by default in Debug builds only. Movable in Top Bar, not removable there.
@@ -506,10 +506,10 @@ Decisions still open, but nothing in the code should make these harder.
 - [ ] **App Store build.** Cannot include the MediaRemote bridge. Plan is a compile-time flag
       that removes `MediaRemoteBridge` and makes `SystemNowPlayingSource` report unavailable,
       leaving Apple Music and Spotify working.
-- [~] **Direct build.** 0.3.0 is written and waiting: `ReleaseNotes.latest` and
-      `MARKETING_VERSION` are both 0.3.0, so the next `Scripts/release.sh` run produces the DMG
-      and `Scripts/release-notes.sh` the GitHub description. Nothing is committed or published
-      yet. `Scripts/release.sh` builds Release and wraps it in
+- [~] **Direct build.** 0.3.0 is released (2026-09-23, GitHub release `v0.3.0`, tag on
+      4178bf6), signed with the personal team as 0.2.0 was, which the user chose over
+      `--anonymous` again. The next shared build needs new `ReleaseNotes.latest` notes and `id`
+      and a `MARKETING_VERSION` bump first. `Scripts/release.sh` builds Release and wraps it in
       `dist/MinNotch-<version>.dmg`, with `--anonymous` to re-sign ad-hoc so the download does
       not carry the signer's Apple ID, and `Scripts/release-notes.sh` for the GitHub release
       description. Hardened runtime is on. Notarisation needs a paid membership; Sparkle for

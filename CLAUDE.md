@@ -572,8 +572,9 @@ defaulting on only under `#if DEBUG`) for checking both at a glance. Review it w
 `--capture-whats-new`, which renders the notes on their own because a window capture does not
 draw `ScrollView` content.
 
-`ReleaseNotes.latest` is 0.3.0 and `MARKETING_VERSION` matches, written on 2026-09-22 and not
-yet released: the DMG for it has not been built.
+`ReleaseNotes.latest` is 0.3.0 and `MARKETING_VERSION` matches. 0.3.0 was released on
+2026-09-23 as the GitHub release `v0.3.0`, signed with the personal team like 0.2.0, so the next
+shared build needs new notes, a new `id`, and a version bump.
 
 ## Releases
 
