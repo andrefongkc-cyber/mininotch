@@ -213,6 +213,19 @@ struct MediaSettingsView: View {
                 SettingsDivider()
 
                 SettingsRow(
+                    title: "Controls on the Lock Screen",
+                    subtitle: LockScreenSpace.shared.isAvailable
+                        ? "The song, with previous, play and next, at the top of the lock screen. Uses a private part of macOS, so a future version may stop it working."
+                        : "Not available on this version of macOS.",
+                    systemImage: "lock.display",
+                    isEnabled: settings.media.enabled && LockScreenSpace.shared.isAvailable
+                ) {
+                    SettingsToggle(isOn: $settings.media.showOnLockScreen)
+                }
+
+                SettingsDivider()
+
+                SettingsRow(
                     title: "Show Output Button",
                     subtitle: "A button beside the song's title that lists your speakers, headphones and displays, and sets the volume. AirPlay shows as one entry; pick its receivers in Control Center.",
                     systemImage: "airplayaudio",

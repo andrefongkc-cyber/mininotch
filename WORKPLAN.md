@@ -46,7 +46,7 @@ Sparkle was asked about and deferred ("not now"); it is free (MIT) and needs no 
 - [x] Next meeting countdown in the pill, with Join for Zoom, Meet, Teams, Webex, FaceTime links.
 - [x] Shelf: select and drag several files at once; AirDrop from the shelf. Dragging and the AirDrop picker need trying by hand.
 - [x] Audio output switcher and volume on the Now Playing card. Switching needs trying with a second output connected.
-- [ ] Media controls on the lock screen, beside the HUD that is already there.
+- [x] Media controls on the lock screen, beside the HUD that is already there. Needs a locked Mac to see: check it clears the lock screen clock.
 - [ ] Weather: location or a typed city, Open-Meteo, a tab and a pill indicator.
 
 ## 0.3 feedback (2026-09-23)

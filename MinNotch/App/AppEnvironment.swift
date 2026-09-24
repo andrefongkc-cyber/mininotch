@@ -39,7 +39,7 @@ final class AppEnvironment {
     @ObservationIgnored private(set) lazy var settingsWindow = SettingsWindowController(environment: self)
     @ObservationIgnored private(set) lazy var onboarding = OnboardingCoordinator(environment: self)
     @ObservationIgnored private(set) lazy var whatsNew = WhatsNewCoordinator()
-    @ObservationIgnored private(set) lazy var lockScreenHUD = LockScreenHUDController(environment: self)
+    @ObservationIgnored private(set) lazy var lockScreen = LockScreenController(environment: self)
 
     init(settings: SettingsStore = SettingsStore()) {
         self.settings = settings
@@ -90,7 +90,7 @@ final class AppEnvironment {
         shelf.start(settings: settings)
         hud.start(settings: settings)
         // Only listens for the screen locking; the window exists between lock and unlock.
-        lockScreenHUD.start()
+        lockScreen.start()
         applyAudioAnalysisSetting()
 
         downloads.onChange = { [weak self] items in self?.syncDownloadActivities(items) }
@@ -139,7 +139,7 @@ final class AppEnvironment {
         shelf.stop()
         // Also removes the key tap, so the volume and brightness keys go straight back to macOS.
         hud.stop()
-        lockScreenHUD.stop()
+        lockScreen.stop()
         meetingTimer?.invalidate()
         meetingTimer = nil
         audioAnalyzer.stop()

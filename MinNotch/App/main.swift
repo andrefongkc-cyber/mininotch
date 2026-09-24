@@ -28,6 +28,7 @@ if MainActor.assumeIsolated({ DebugDownloadsCheck.runIfRequested() }) { exit(0) 
 if MainActor.assumeIsolated({ DebugLockScreenCheck.runIfRequested() }) { exit(0) }
 if MainActor.assumeIsolated({ DebugMeetingLinkCheck.runIfRequested() }) { exit(0) }
 if MainActor.assumeIsolated({ DebugAudioOutputsCheck.runIfRequested() }) { exit(0) }
+if MainActor.assumeIsolated({ DebugLockScreenCapture.runIfRequested() }) { exit(0) }
 #endif
 
 let application = NSApplication.shared

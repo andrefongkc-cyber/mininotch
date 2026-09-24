@@ -36,6 +36,7 @@ enum SettingsNewRows {
         "Upcoming Meetings": "0.4",
         "Minutes Before": "0.4",
         "Show Output Button": "0.4",
+        "Controls on the Lock Screen": "0.4",
     ]
 
     static func isNew(_ title: String) -> Bool {

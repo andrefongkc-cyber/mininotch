@@ -80,6 +80,7 @@ MinNotch --check-keys [--simulate] [--control] [--out f]          # volume/brigh
 MinNotch --check-links "<url or text>" ...                        # link shelf: titles, icons, refusals
 MinNotch --check-downloads [--out f]                              # download activities, in a scratch folder
 MinNotch --check-lock-screen                                      # the SkyLight calls behind the lock screen HUD
+MinNotch --capture-lock-screen out.png [--hud]                    # what the lock screen window draws
 MinNotch --check-meeting-links                                    # which invitation links count as a meeting
 MinNotch --check-audio-outputs                                    # the outputs the card would offer
 ```
@@ -645,9 +646,13 @@ drawn over all the ordinary ones. Spaces can have an absolute level, though, whi
 Notification Center shows on a locked Mac: 300 is the lock screen, 400 is Notification Center at
 the lock screen. `LockScreenSpace` loads `SLSSpaceCreate`, `SLSSpaceSetAbsoluteLevel`,
 `SLSShowSpaces` and `SLSSpaceAddWindowsAndRemoveFromSpaces` from SkyLight at run time, creates a
-space at 400, and moves one window into it. `LockScreenHUDController` makes that window on
-`com.apple.screenIsLocked` and throws it away on `com.apple.screenIsUnlocked`: it ignores the
-mouse, can never become key, and draws the HUD and nothing between readings. It is a window of
+space at 400, and moves one window into it. `LockScreenController`
+(`Features/LockScreen/`) makes that window on `com.apple.screenIsLocked` and throws it away on
+`com.apple.screenIsUnlocked`. It can never become key, and draws the HUD while there is a
+reading, else the song with previous, play and next in the sneak peek's layout, else nothing.
+It takes clicks only while the song's controls are showing (`onInteractiveChange` flips
+`ignoresMouseEvents`): a window at the top of the lock screen that swallowed clicks for nothing
+would be a trap. HUDs and media each have their own switch. It is a window of
 its own, not the notch's, so the private calls can never leave the real notch in a space it
 should not be in. `--check-lock-screen` proves the calls resolve and a moved window stays on
 screen, and the user confirmed on 2026-09-24 that the HUD really does draw over a locked Mac.
