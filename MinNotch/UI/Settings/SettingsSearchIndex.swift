@@ -45,6 +45,8 @@ enum SettingsSearchIndex {
         .init(tab: .layout, section: "Closed Pill", title: "Song Shows", subtitle: "What the Song in the closed pill says. Long names are cut short.", symbolName: "textformat"),
         .init(tab: .layout, section: "Live Activities", title: "Downloads", subtitle: "Show how far along a download is, from Safari, Chrome, Firefox and most other browsers. Reads your Downloads folder.", symbolName: "arrow.down.circle"),
         .init(tab: .layout, section: "Live Activities", title: "Devices Connecting", subtitle: "Show the charge of AirPods and other accessories for a few seconds when they connect.", symbolName: "airpodspro"),
+        .init(tab: .layout, section: "Live Activities", title: "Upcoming Meetings", subtitle: "Count down to your next calendar event. Zoom, Meet, Teams, Webex and FaceTime links get a Join button in the Calendar tab.", symbolName: "video"),
+        .init(tab: .layout, section: "Live Activities", title: "Minutes Before", subtitle: "How long before a meeting the countdown appears.", symbolName: "clock.badge"),
         .init(tab: .layout, section: "Open Panel", title: "Widgets", subtitle: "Click to switch a widget on or off. Each one that is on gets a tab in the top bar.", symbolName: "square.grid.2x2"),
         .init(tab: .layout, section: "Open Panel", title: "Top Bar", subtitle: "What the open panel shows either side of the notch.", symbolName: "rectangle.topthird.inset.filled"),
         .init(tab: .layout, section: "Now Playing Controls", title: "Controls", subtitle: "The buttons under the scrubber, left to right.", symbolName: "playpause"),

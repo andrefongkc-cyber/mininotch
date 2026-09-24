@@ -33,6 +33,8 @@ enum SettingsNewRows {
         "Sneak Peek Length": "0.4",
         "Show Lyrics When Closed": "0.4",
         "Show on the Lock Screen": "0.4",
+        "Upcoming Meetings": "0.4",
+        "Minutes Before": "0.4",
     ]
 
     static func isNew(_ title: String) -> Bool {

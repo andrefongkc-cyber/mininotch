@@ -43,7 +43,7 @@ Picked by the user from a list of ideas. Focus was dropped: macOS has no API to 
 its state file needs Full Disk Access, so the only way was Shortcuts the user builds by hand.
 Sparkle was asked about and deferred ("not now"); it is free (MIT) and needs no paid account.
 
-- [ ] Next meeting countdown in the pill, with Join for Zoom, Meet, Teams, Webex, FaceTime links.
+- [x] Next meeting countdown in the pill, with Join for Zoom, Meet, Teams, Webex, FaceTime links.
 - [ ] Shelf: select and drag several files at once; AirDrop from the shelf.
 - [ ] Audio output switcher and volume on the Now Playing card.
 - [ ] Media controls on the lock screen, beside the HUD that is already there.

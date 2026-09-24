@@ -92,6 +92,32 @@ struct LayoutSettingsView: View {
                 ) {
                     SettingsToggle(isOn: $settings.general.announceConnectedDevices)
                 }
+
+                SettingsDivider()
+
+                SettingsRow(
+                    title: "Upcoming Meetings",
+                    subtitle: "Count down to your next calendar event. Zoom, Meet, Teams, Webex and FaceTime links get a Join button in the Calendar tab.",
+                    systemImage: "video",
+                    isEnabled: settings.calendar.enabled
+                ) {
+                    SettingsToggle(isOn: $settings.calendar.showMeetingCountdown)
+                }
+
+                SettingsDivider()
+
+                SettingsRow(
+                    title: "Minutes Before",
+                    subtitle: "How long before a meeting the countdown appears.",
+                    systemImage: "clock.badge",
+                    isEnabled: settings.calendar.enabled && settings.calendar.showMeetingCountdown
+                ) {
+                    ValueSlider(
+                        value: $settings.calendar.meetingLeadMinutes,
+                        range: CalendarSettings.meetingLeadRange,
+                        step: 1
+                    ) { "\(Int($0)) min" }
+                }
             }
 
             SettingsCard(

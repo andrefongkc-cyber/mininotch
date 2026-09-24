@@ -540,12 +540,28 @@ extension CalendarService {
         }
 
         let hour = calendar.component(.hour, from: now)
+        // Four minutes away with a Zoom link, so the meeting countdown and Join have something to
+        // show. The link is found the way a real event's is, by `MeetingLink`.
+        let standupStart = now.addingTimeInterval(4 * 60 - 1)
+        let standup = CalendarItem(
+            id: "Standup",
+            title: "Standup",
+            start: standupStart,
+            end: standupStart.addingTimeInterval(15 * 60),
+            isAllDay: false,
+            calendarIdentifier: "sample",
+            calendarTitle: "Work",
+            color: Color(nsColor: .systemTeal),
+            location: "https://example.zoom.us/j/123456789",
+            joinURL: MeetingLink.find(in: ["Dial in: +1 555 0100, or join https://example.zoom.us/j/123456789"])
+        )
         items = [
+            standup,
             item("Design review", hour: hour, minutes: 45, dayOffset: 0, color: .systemBlue, location: "Studio"),
             item("Lunch with Priya", hour: hour + 2, minutes: 60, dayOffset: 0, color: .systemOrange),
             item("Sprint planning", hour: 10, minutes: 30, dayOffset: 1, color: .systemPurple),
             item("Dentist", hour: 15, minutes: 45, dayOffset: 2, color: .systemGreen, location: "Elmwood Clinic")
-        ]
+        ].sorted { $0.start < $1.start }
         daysWithEvents = Set(items.map { calendar.startOfDay(for: $0.start) })
         lastRefresh = now
     }

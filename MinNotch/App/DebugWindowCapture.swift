@@ -50,6 +50,9 @@ enum DebugWindowCapture {
         // `--sample-calendar` uses fixed sample events instead, which needs no permission.
         if arguments.contains("--sample-calendar") {
             environment.calendarService.applySampleItems(settings: settings)
+            // The sample standup is four minutes away, so this puts its countdown in the pill
+            // through the same path the real clock does.
+            environment.syncMeetingActivity()
         } else {
             environment.calendarService.start(settings: settings)
         }

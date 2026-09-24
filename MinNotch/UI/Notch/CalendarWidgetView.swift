@@ -1,3 +1,4 @@
+import AppKit
 import SwiftUI
 
 /// The Calendar widget: a mini week or month grid above a list of what is coming up.
@@ -314,6 +315,8 @@ struct CalendarWidgetView: View {
                 }
                 .buttonStyle(.plain)
                 .help((item.isCompleted ?? false) ? "Mark as not done" : "Mark as done")
+            } else if let joinURL = item.joinURL, Self.isJoinable(item) {
+                joinButton(joinURL)
             } else if item.isInProgress {
                 Text("Now")
                     .font(.system(size: 9, weight: .bold))
@@ -323,6 +326,29 @@ struct CalendarWidgetView: View {
                     .background(Capsule().fill(settings.appearance.resolvedAccent.opacity(0.18)))
             }
         }
+    }
+
+    /// From fifteen minutes before a meeting until it ends, which is when anyone reaches for it.
+    private static func isJoinable(_ item: CalendarItem, now: Date = Date()) -> Bool {
+        item.start.timeIntervalSince(now) <= 15 * 60 && item.end > now
+    }
+
+    /// Opens the meeting. The link is https to a known meeting host, checked by `MeetingLink`
+    /// when it was read, so it cannot be a local file or an app's custom scheme.
+    private func joinButton(_ url: URL) -> some View {
+        Button {
+            NSWorkspace.shared.open(url)
+        } label: {
+            Label("Join", systemImage: "video.fill")
+                .font(.system(size: 10, weight: .semibold))
+                .foregroundStyle(.white)
+                .padding(.horizontal, 7)
+                .padding(.vertical, 3)
+                .background(Capsule().fill(settings.appearance.resolvedAccent))
+                .contentShape(Capsule())
+        }
+        .buttonStyle(.plain)
+        .help("Join the meeting at \(url.host ?? "its link")")
     }
 
     private var emptyMessage: String {
@@ -337,7 +363,9 @@ struct CalendarWidgetView: View {
         let day = item.isUndated || selectedDay != nil || Calendar.current.isDateInToday(item.start)
             ? ""
             : Self.dayFormatter.string(from: item.start) + " · "
-        let location = item.location.map { " · \($0)" } ?? ""
+        // A meeting's link often is its location, and a URL is no use as a subtitle when the
+        // row already has a Join button.
+        let location = item.location.flatMap { $0.contains("://") ? nil : " · \($0)" } ?? ""
         return day + time + location
     }
 

@@ -139,6 +139,8 @@ final class AppEnvironment {
         // Also removes the key tap, so the volume and brightness keys go straight back to macOS.
         hud.stop()
         lockScreenHUD.stop()
+        meetingTimer?.invalidate()
+        meetingTimer = nil
         audioAnalyzer.stop()
         notchWindows.stop()
         floatingNowPlaying.hide()
@@ -207,6 +209,67 @@ final class AppEnvironment {
         } else {
             bluetooth.stopWatchingConnections()
         }
+        applyMeetingCountdown()
+    }
+
+    // MARK: Meeting countdown
+
+    @ObservationIgnored private var meetingTimer: Timer?
+
+    private var wantsMeetingCountdown: Bool {
+        FeatureFlag.liveActivities.isEnabled
+            && settings.calendar.enabled
+            && settings.calendar.showMeetingCountdown
+    }
+
+    /// Starts or stops the countdown's clock. A quarter-minute tick keeps "5m" honest, and costs
+    /// a scan of a few dozen events. It runs whenever the countdown is switched on, not only once
+    /// the calendar can be read: access is granted from a dialog, with no settings change to
+    /// start a clock that was gated on it, so each tick checks for itself.
+    private func applyMeetingCountdown() {
+        if wantsMeetingCountdown {
+            if meetingTimer == nil {
+                meetingTimer = Timer.onMain(every: 15) { [weak self] in self?.syncMeetingActivity() }
+            }
+        } else {
+            meetingTimer?.invalidate()
+            meetingTimer = nil
+        }
+        syncMeetingActivity()
+    }
+
+    /// Shows the next meeting in the pill from `meetingLeadMinutes` before it until five
+    /// minutes after it starts, which is how late people join.
+    ///
+    /// Internal rather than private so `--capture-notch --sample-calendar` can drive it with the
+    /// sample events, the way `--timer` drives the timer's activity.
+    func syncMeetingActivity(now: Date = Date()) {
+        let lead = settings.calendar.meetingLeadMinutes * 60
+        let meeting = wantsMeetingCountdown && calendarService.hasAccess
+            ? calendarService.items.first { item in
+                !item.isAllDay && !item.isReminder
+                    && item.start > now.addingTimeInterval(-300)
+                    && item.start <= now.addingTimeInterval(lead)
+            }
+            : nil
+        let id = meeting.map { "meeting|" + $0.id }
+
+        for activity in liveActivities.activities where activity.kind == .meeting && activity.id != id {
+            liveActivities.dismiss(id: activity.id)
+        }
+        guard let meeting, let id, !liveActivities.putAway.contains(id) else { return }
+
+        let minutes = Int((meeting.start.timeIntervalSince(now) / 60).rounded(.up))
+        liveActivities.present(LiveActivity(
+            id: id,
+            kind: .meeting,
+            symbolName: meeting.joinURL == nil ? "calendar" : "video.fill",
+            title: meeting.title,
+            detail: minutes <= 0 ? "Now" : "\(minutes)m",
+            tint: meeting.color,
+            expiresAt: meeting.start.addingTimeInterval(300),
+            priority: 55
+        ))
     }
 
     /// One activity per download, showing its progress, then a tick for a few seconds.

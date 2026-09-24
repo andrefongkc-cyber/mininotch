@@ -43,6 +43,11 @@ struct CalendarSettings: Codable, Equatable {
     var showUndatedReminders: Bool = true
     var enableQuickAdd: Bool = false
 
+    /// A live activity counting down to the next meeting, from `meetingLeadMinutes` before it.
+    var showMeetingCountdown: Bool = true
+    var meetingLeadMinutes: Double = 10
+    static let meetingLeadRange: ClosedRange<Double> = 1...60
+
     init() {}
 
     init(from decoder: Decoder) throws {
@@ -58,5 +63,7 @@ struct CalendarSettings: Codable, Equatable {
         hideCompletedReminders = c.value(.hideCompletedReminders, true)
         showUndatedReminders = c.value(.showUndatedReminders, true)
         enableQuickAdd = c.value(.enableQuickAdd, false)
+        showMeetingCountdown = c.value(.showMeetingCountdown, true)
+        meetingLeadMinutes = c.value(.meetingLeadMinutes, 10, in: Self.meetingLeadRange)
     }
 }

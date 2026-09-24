@@ -79,6 +79,7 @@ MinNotch --check-keys [--simulate] [--control] [--out f]          # volume/brigh
 MinNotch --check-links "<url or text>" ...                        # link shelf: titles, icons, refusals
 MinNotch --check-downloads [--out f]                              # download activities, in a scratch folder
 MinNotch --check-lock-screen                                      # the SkyLight calls behind the lock screen HUD
+MinNotch --check-meeting-links                                    # which invitation links count as a meeting
 ```
 
 `--capture-notch` grew three options for the animated effects. `--glow off` disables the
@@ -675,6 +676,16 @@ across the menu bar. A settings file without `pillSongText` predates it and gets
 beside its Live Activity, once. The cover and the song show while a song is loaded, paused or
 not; the playing indicator shows whenever something plays, beside the cover rather than instead
 of it.
+
+**A meeting link is found, never trusted.** `MeetingLink` runs a link detector over an event's
+URL, location and notes, because Zoom, Meet and Teams each put the link somewhere different, and
+takes the first https link to Zoom, Meet, Teams, Webex or FaceTime. A calendar invitation is text
+anyone can send and Join opens the link with `NSWorkspace.open`, so a `file:` link, a custom
+scheme like `zoommtg:`, plain http, and a lookalike host must all be refused;
+`--check-meeting-links` has one of each. The countdown itself (`syncMeetingActivity`) runs on a
+15 second tick whenever it is switched on, not only once the calendar can be read, because access
+arrives from a dialog with no settings change to start a clock. A countdown swiped away stays
+away: `LiveActivityCenter.putAway` remembers the id, which is per occurrence.
 
 **Lyrics with the notch closed use the sneak peek's shape and size**, so a track change swaps what
 the strip says rather than resizing the notch. The lyric strip on the card has a button for it,

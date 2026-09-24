@@ -55,10 +55,16 @@ final class LiveActivityCenter {
     /// pill is where it is being watched. Returns whether anything was dismissed.
     @discardableResult
     func dismissCurrentNotice() -> Bool {
-        guard let current, current.kind == .download || current.kind == .bluetoothDevice else { return false }
+        guard let current, [.download, .bluetoothDevice, .meeting].contains(current.kind) else { return false }
+        putAway.insert(current.id)
         dismiss(id: current.id)
         return true
     }
+
+    /// Notices swiped away, so a source that re-presents on a timer, such as the meeting
+    /// countdown, does not put one straight back. Ids are unique per occurrence, so the next
+    /// meeting is not affected.
+    @ObservationIgnored private(set) var putAway: Set<String> = []
 
     /// Moves through the stack. Wired to the two-finger swipe on the closed pill.
     func cycle(by offset: Int) {

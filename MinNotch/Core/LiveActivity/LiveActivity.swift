@@ -13,6 +13,8 @@ struct LiveActivity: Identifiable, Equatable {
         case bluetoothDevice
         case download
         case timer
+        /// A calendar event about to start.
+        case meeting
         case focus
         case custom
     }

@@ -15,6 +15,8 @@ struct CalendarItem: Identifiable, Equatable {
     var calendarTitle: String
     var color: Color
     var location: String?
+    /// The link that joins this event's online meeting, if it has one. See `MeetingLink`.
+    var joinURL: URL?
     /// Set for reminders once that source lands; nil for events.
     var isCompleted: Bool?
     /// A reminder with no due date. It has no place on a timeline, so it sorts after
@@ -34,6 +36,7 @@ struct CalendarItem: Identifiable, Equatable {
         self.calendarTitle = event.calendar?.title ?? ""
         self.color = event.calendar.map { Color(nsColor: NSColor(cgColor: $0.cgColor) ?? .systemBlue) } ?? .accentColor
         self.location = event.location?.isEmpty == false ? event.location : nil
+        self.joinURL = MeetingLink.find(in: [event.url?.absoluteString, event.location, event.notes])
         self.isCompleted = nil
     }
 
@@ -69,6 +72,7 @@ struct CalendarItem: Identifiable, Equatable {
         calendarTitle: String,
         color: Color,
         location: String? = nil,
+        joinURL: URL? = nil,
         isCompleted: Bool? = nil
     ) {
         self.id = id
@@ -80,6 +84,7 @@ struct CalendarItem: Identifiable, Equatable {
         self.calendarTitle = calendarTitle
         self.color = color
         self.location = location
+        self.joinURL = joinURL
         self.isCompleted = isCompleted
     }
 
