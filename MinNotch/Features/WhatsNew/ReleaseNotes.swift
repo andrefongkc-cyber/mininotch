@@ -43,10 +43,28 @@ struct ReleaseNotes {
                 howTo: "Settings > Layout > Song Shows. Drag Song in the Arrangement to move it."
             ),
             ReleaseNote(
+                symbol: "cloud.sun",
+                title: "Weather",
+                detail: "The forecast in its own tab, and the temperature in the closed notch if you put it there.",
+                howTo: "Settings > Weather. Uses your location, or a city you choose."
+            ),
+            ReleaseNote(
+                symbol: "video",
+                title: "Your Next Meeting",
+                detail: "A countdown to your next event in the closed notch. Zoom, Meet, Teams, Webex and FaceTime meetings get a Join button in the Calendar tab.",
+                howTo: "On by default. Settings > Layout > Upcoming Meetings."
+            ),
+            ReleaseNote(
+                symbol: "airplayaudio",
+                title: "Choose Where Sound Plays",
+                detail: "Switch between speakers, AirPods and displays, and set the volume, from the Now Playing card.",
+                howTo: "Click the button beside the song's title."
+            ),
+            ReleaseNote(
                 symbol: "lock.display",
-                title: "Volume on the Lock Screen",
-                detail: "Volume and brightness show at the notch while your Mac is locked, too.",
-                howTo: "On by default. Settings > HUDs > Show on the Lock Screen."
+                title: "Music and Volume on the Lock Screen",
+                detail: "The song, with play, pause and skip, and the volume and brightness indicator show at the notch while your Mac is locked.",
+                howTo: "On by default. Settings > Media > Controls on the Lock Screen, and Settings > HUDs > Show on the Lock Screen."
             ),
             ReleaseNote(
                 symbol: "timer",
@@ -62,6 +80,12 @@ struct ReleaseNotes {
             )
         ],
         improved: [
+            ReleaseNote(
+                symbol: "tray.full",
+                title: "A Better Shelf",
+                detail: "Select several files and drag them out together, or send them with AirDrop.",
+                howTo: "Click to select, with ⌘ or ⇧ for more. AirDrop is at the end of the shelf."
+            ),
             ReleaseNote(
                 symbol: "hand.draw",
                 title: "Easier Rearranging",

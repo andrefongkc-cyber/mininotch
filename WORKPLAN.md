@@ -1,6 +1,6 @@
 # MinNotch workplan
 
-Status: doing the 0.4 additions (see below), starting with the meeting countdown; next: the user tries 0.4, then a 0.4.0 DMG.
+Status: 0.4 additions all built and pushed (2026-09-24), no DMG; next: the user tries 0.4 by hand (see "Do these next" 0), then a 0.4.0 DMG.
 
 Living document. Update the checkboxes as work lands. `CLAUDE.md` holds the architecture
 rules and the traps; this file holds the sequence.
@@ -24,8 +24,10 @@ at last. Notarisation still needs a paid membership nobody is buying.
 
 **Do these next, in this order:**
 
-0. Build the "0.4 additions" below, then the user tries them with the rest of 0.4 (dragging in
-   Settings > Layout, closed lyrics with a real song), then a 0.4.0 DMG.
+0. The user tries 0.4 by hand: dragging in Settings > Layout, closed lyrics with a real song,
+   the shelf's multi-file drag and AirDrop, switching outputs with a second one connected, the
+   lock screen media controls (do they clear the lock screen clock?), the weather location
+   prompt, and a real meeting's countdown and Join. Then a 0.4.0 DMG.
 1. Answer the user on macOS 13 (Platforms below). They were asked and have not decided.
 2. A test target. Nothing is verified automatically across more than a hundred files, and the
    Swift 6 migration is exactly the kind of change one would have caught.
