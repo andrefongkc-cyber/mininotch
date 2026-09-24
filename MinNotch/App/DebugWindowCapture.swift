@@ -146,6 +146,10 @@ enum DebugWindowCapture {
         // The closed pill shows nothing at all unless the indicators are switched on, so a
         // capture of it is blank without this.
         if arguments.contains("--extended") { settings.general.extendPillForIndicators = true }
+        if arguments.contains("--sample-shelf") {
+            settings.shelf.enabled = true
+            environment.shelf.applySample()
+        }
         // Media > Lyrics > Show Lyrics When Closed, with the sample song's synced lyrics. Set
         // either way, like the shadow, so a capture does not inherit it from the real settings.
         settings.media.showLyricsWhenClosed = arguments.contains("--closed-lyrics")

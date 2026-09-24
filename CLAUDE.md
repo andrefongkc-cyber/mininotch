@@ -63,6 +63,7 @@ MinNotch --capture-notch out.png [--collapsed] [--tab system] [--glow bars|off] 
                                  [--sample-calendar] [--calendar-step 1] [--calendar-pick 2]
                                  [--card compact|fullArtwork] [--controls shuffle,playPause,repeatMode]
                                  [--lyrics-sheet] [--sample-stats] [--shadow] [--closed-lyrics]
+                                 [--sample-shelf]
 MinNotch --check-lyrics "Khalid" "8TEEN" 229                      # LRCLIBClient + LRCParser
 MinNotch --check-lyric-sync [--out f]                             # matching lyrics to the audio
 MinNotch --check-stats 5                                          # CPU/GPU/memory/network
@@ -676,6 +677,16 @@ across the menu bar. A settings file without `pillSongText` predates it and gets
 beside its Live Activity, once. The cover and the song show while a song is loaded, paused or
 not; the playing indicator shows whenever something plays, beside the cover rather than instead
 of it.
+
+**Shelf clicks and drags both arrive through `ShelfDragSource`.** The AppKit drag view covers
+each chip so it can offer move or copy and hear how the drag ended, so it is also what receives
+the click: a mouse-up with no drag in between is a click, and selects (⌘ toggles, ⇧ extends). A
+drag from a chip inside the selection carries the whole selection, one `NSDraggingItem` per file,
+and the URLs are fixed when the drag starts because the selection can change mid-drag. AirDrop is
+`NSSharingService`'s picker, a window of this app's, so the app is activated first (no Dock icon
+needed) and the service is held while the picker is open. The AirDrop tile is a drop target inside
+the shelf's own: the innermost target under the pointer wins, so files dropped on it are sent
+without being kept.
 
 **A meeting link is found, never trusted.** `MeetingLink` runs a link detector over an event's
 URL, location and notes, because Zoom, Meet and Teams each put the link somewhere different, and

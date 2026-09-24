@@ -44,7 +44,7 @@ its state file needs Full Disk Access, so the only way was Shortcuts the user bu
 Sparkle was asked about and deferred ("not now"); it is free (MIT) and needs no paid account.
 
 - [x] Next meeting countdown in the pill, with Join for Zoom, Meet, Teams, Webex, FaceTime links.
-- [ ] Shelf: select and drag several files at once; AirDrop from the shelf.
+- [x] Shelf: select and drag several files at once; AirDrop from the shelf. Dragging and the AirDrop picker need trying by hand.
 - [ ] Audio output switcher and volume on the Now Playing card.
 - [ ] Media controls on the lock screen, beside the HUD that is already there.
 - [ ] Weather: location or a typed city, Open-Meteo, a tab and a pill indicator.

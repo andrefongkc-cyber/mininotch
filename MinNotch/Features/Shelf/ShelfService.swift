@@ -41,6 +41,9 @@ final class ShelfService {
     private(set) var items: [ShelfItem] = []
     /// True while a drag is over the notch, so the surface can show it will accept the drop.
     var isDropTargeted = false
+    /// Chips picked with a click, to drag or send several at once. Not saved: a selection is
+    /// something you are in the middle of, not something to come back to.
+    private(set) var selection: Set<ShelfItem.ID> = []
 
     private static let defaultsKey = "shelf.bookmarks"
 
@@ -89,13 +92,63 @@ final class ShelfService {
     }
 
     func remove(_ item: ShelfItem) {
-        items.removeAll { $0.id == item.id }
+        remove([item])
+    }
+
+    func remove(_ removed: [ShelfItem]) {
+        let ids = Set(removed.map(\.id))
+        items.removeAll { ids.contains($0.id) }
+        selection.subtract(ids)
         save()
     }
 
     func clear() {
         items.removeAll()
+        selection.removeAll()
         save()
+    }
+
+    // MARK: Selection
+
+    enum SelectionGesture {
+        /// A plain click: this chip alone, or nothing if it was already the only one.
+        case only
+        /// Command-click: in or out, leaving the rest.
+        case toggle
+        /// Shift-click: everything from the last chip picked to this one.
+        case range
+    }
+
+    @ObservationIgnored private var anchor: ShelfItem.ID?
+
+    func select(_ item: ShelfItem, _ gesture: SelectionGesture) {
+        switch gesture {
+        case .only:
+            selection = selection == [item.id] ? [] : [item.id]
+        case .toggle:
+            if selection.contains(item.id) { selection.remove(item.id) } else { selection.insert(item.id) }
+        case .range:
+            guard let anchor, let from = items.firstIndex(where: { $0.id == anchor }),
+                  let to = items.firstIndex(where: { $0.id == item.id }) else {
+                selection = [item.id]
+                break
+            }
+            selection.formUnion(items[min(from, to)...max(from, to)].map(\.id))
+        }
+        anchor = item.id
+    }
+
+    /// What a drag or a send that starts on `item` should carry: the whole selection when
+    /// `item` is part of it, otherwise `item` alone. Starting on a chip outside the selection
+    /// means that chip, which is what Finder does.
+    func items(startingFrom item: ShelfItem) -> [ShelfItem] {
+        guard selection.contains(item.id), selection.count > 1 else { return [item] }
+        return items.filter { selection.contains($0.id) }
+    }
+
+    /// The selection, or everything when nothing is selected.
+    var itemsToSend: [ShelfItem] {
+        selection.isEmpty ? items : items.filter { selection.contains($0.id) }
     }
 
     /// Called after an item has been dragged out.
@@ -103,29 +156,32 @@ final class ShelfService {
     /// The setting decides whether the shelf keeps holding it. The file itself is never
     /// touched here: whether the destination copied or moved it is the destination's
     /// decision, and second-guessing that by deleting the original would lose data.
-    func handleDragCompleted(_ item: ShelfItem) {
-        guard let settings else { return }
+    func handleDragCompleted(_ dragged: [ShelfItem]) {
+        guard let settings, !dragged.isEmpty else { return }
         switch settings.shelf.dropBehavior {
         case .copy:
             break
         case .move:
-            remove(item)
+            remove(dragged)
         case .ask:
-            askWhetherToKeep(item)
+            askWhetherToKeep(dragged)
         }
     }
 
-    private func askWhetherToKeep(_ item: ShelfItem) {
+    /// One question for everything that was dragged together, not one per file.
+    private func askWhetherToKeep(_ dragged: [ShelfItem]) {
         let alert = NSAlert()
-        alert.messageText = "Keep \(item.name) on the shelf?"
-        alert.informativeText = "The file itself has not been changed."
+        alert.messageText = dragged.count == 1
+            ? "Keep \(dragged[0].name) on the shelf?"
+            : "Keep these \(dragged.count) files on the shelf?"
+        alert.informativeText = "Nothing on disk has been changed."
         alert.addButton(withTitle: "Keep")
         alert.addButton(withTitle: "Remove")
         alert.alertStyle = .informational
 
         NSApp.activate(ignoringOtherApps: true)
         if alert.runModal() == .alertSecondButtonReturn {
-            remove(item)
+            remove(dragged)
         }
     }
 
@@ -180,4 +236,14 @@ final class ShelfService {
             return ShelfItem(url: url)
         }
     }
+
+    #if DEBUG
+    /// Three real files, the second selected, for `--capture-notch --tab shelf --sample-shelf`.
+    /// Apps that ship with macOS, so they exist on every Mac and the stale-file pruning keeps them.
+    func applySample() {
+        let paths = ["/System/Applications/Notes.app", "/System/Applications/Calendar.app", "/System/Applications/Preview.app"]
+        items = paths.map { ShelfItem(url: URL(fileURLWithPath: $0)) }
+        selection = [items[1].id]
+    }
+    #endif
 }

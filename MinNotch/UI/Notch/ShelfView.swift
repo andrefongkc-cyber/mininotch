@@ -9,12 +9,17 @@ struct ShelfView: View {
 
     private var service: ShelfService { environment.shelf }
 
+    @State private var isAirDropTargeted = false
+
     static let preferredHeight: CGFloat = 150
 
     var body: some View {
         VStack(spacing: 8) {
             if service.items.isEmpty {
-                emptyState
+                HStack(spacing: 10) {
+                    emptyState
+                    airDropTile
+                }
             } else {
                 itemRow
                 footer
@@ -74,6 +79,7 @@ struct ShelfView: View {
                 ForEach(service.items) { item in
                     chip(item)
                 }
+                airDropTile
             }
             .padding(.horizontal, 2)
         }
@@ -90,7 +96,10 @@ struct ShelfView: View {
     }
 
     private func chip(_ item: ShelfItem) -> some View {
-        VStack(spacing: 4) {
+        let isSelected = service.selection.contains(item.id)
+        let accent = settings.appearance.resolvedAccent
+
+        return VStack(spacing: 4) {
             Image(nsImage: item.icon)
                 .resizable()
                 .frame(width: 40, height: 40)
@@ -106,29 +115,97 @@ struct ShelfView: View {
         .padding(.horizontal, 4)
         .background(
             RoundedRectangle(cornerRadius: 8, style: .continuous)
-                .fill(Color.white.opacity(0.07))
+                .fill(isSelected ? accent.opacity(0.22) : Color.white.opacity(0.07))
         )
-        // The drag source sits on top and takes the mouse, which is why removal lives in its
-        // context menu rather than in a button that would be underneath it.
+        .overlay(
+            RoundedRectangle(cornerRadius: 8, style: .continuous)
+                .strokeBorder(accent, lineWidth: 1.5)
+                .opacity(isSelected ? 1 : 0)
+        )
+        // The drag source sits on top and takes the mouse, which is why clicks, removal and
+        // AirDrop all come through it rather than through views underneath it.
         .overlay(
             ShelfDragSource(
                 item: item,
                 operationMask: operationMask,
-                onFinished: { operation in
+                urlsToDrag: { service.items(startingFrom: item).map(\.url) },
+                onClick: { modifiers in
+                    let gesture: ShelfService.SelectionGesture = modifiers.contains(.command)
+                        ? .toggle
+                        : modifiers.contains(.shift) ? .range : .only
+                    service.select(item, gesture)
+                },
+                onFinished: { operation, urls in
+                    let dragged = service.items.filter { urls.contains($0.url) }
                     if operation.contains(.move) {
-                        service.remove(item)
+                        service.remove(dragged)
                     } else {
-                        service.handleDragCompleted(item)
+                        service.handleDragCompleted(dragged)
                     }
                 },
-                onRemove: { service.remove(item) }
+                onAirDrop: { AirDropSender.shared.send(service.items(startingFrom: item).map(\.url)) },
+                onRemove: { service.remove(service.items(startingFrom: item)) }
             )
         )
+        .animation(Motion.hover, value: isSelected)
+    }
+
+    /// Sends the selection, or everything, with AirDrop when clicked, and sends whatever is
+    /// dropped on it straight away, without keeping it on the shelf.
+    ///
+    /// Its own drop target, inside the shelf's. SwiftUI hands a drop to the innermost target
+    /// under the pointer, so files dropped here go to AirDrop and files dropped anywhere else
+    /// on the shelf are held.
+    @ViewBuilder
+    private var airDropTile: some View {
+        if AirDropSender.shared.isAvailable {
+            let accent = settings.appearance.resolvedAccent
+            let targeted = isAirDropTargeted
+            let toSend = service.itemsToSend.map(\.url)
+
+            VStack(spacing: 4) {
+                Image(systemName: "dot.radiowaves.up.forward")
+                    .font(.system(size: 20, weight: .medium))
+                    .foregroundStyle(targeted ? accent : .white.opacity(toSend.isEmpty ? 0.35 : 0.8))
+                    .frame(width: 40, height: 40)
+
+                Text(service.selection.isEmpty ? "AirDrop" : "AirDrop \(service.selection.count)")
+                    .font(.system(size: 10))
+                    .foregroundStyle(.white.opacity(0.75))
+                    .lineLimit(1)
+                    .frame(width: 64)
+            }
+            .padding(.vertical, 6)
+            .padding(.horizontal, 4)
+            .background(
+                RoundedRectangle(cornerRadius: 8, style: .continuous)
+                    .fill(targeted ? accent.opacity(0.22) : Color.white.opacity(0.04))
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: 8, style: .continuous)
+                    .strokeBorder(targeted ? accent : Color.white.opacity(0.18), style: StrokeStyle(lineWidth: 1, dash: [3, 3]))
+            )
+            .contentShape(Rectangle())
+            .onTapGesture {
+                guard !toSend.isEmpty else { return }
+                AirDropSender.shared.send(toSend)
+            }
+            .onDrop(of: [.fileURL], isTargeted: $isAirDropTargeted) { providers in
+                loadURLs(from: providers) { AirDropSender.shared.send($0) }
+                return true
+            }
+            .help(toSend.isEmpty
+                  ? "Drop files here to send them with AirDrop"
+                  : service.selection.isEmpty
+                      ? "Send everything on the shelf with AirDrop, or drop files here to send them"
+                      : "Send the selected files with AirDrop, or drop files here to send them")
+            .animation(Motion.hover, value: targeted)
+        }
     }
 
     private var footer: some View {
         HStack {
-            Text("\(service.items.count) of \(settings.shelf.maxItems)")
+            Text(footerText)
                 .font(.system(size: 10))
                 .foregroundStyle(.white.opacity(0.4))
 
@@ -140,6 +217,12 @@ struct ShelfView: View {
                 .foregroundStyle(.white.opacity(0.6))
         }
         .frame(height: 14)
+    }
+
+    private var footerText: String {
+        let count = "\(service.items.count) of \(settings.shelf.maxItems)"
+        guard !service.selection.isEmpty else { return count + " · Click to select, ⌘ or ⇧ for more" }
+        return count + " · \(service.selection.count) selected"
     }
 
     /// What the drag advertises to the destination.
@@ -156,6 +239,15 @@ struct ShelfView: View {
     }
 
     private func accept(_ providers: [NSItemProvider]) -> Bool {
+        loadURLs(from: providers) { urls in
+            service.add(urls)
+            Haptics.perform(enabled: settings.advanced.hapticFeedbackEnabled, strength: settings.advanced.hapticStrength)
+        }
+        return true
+    }
+
+    /// Loads every file URL a drop carries, then hands them over together, on main.
+    private func loadURLs(from providers: [NSItemProvider], then deliver: @escaping @MainActor ([URL]) -> Void) {
         let group = DispatchGroup()
         // Each provider loads on a queue of its own, possibly at the same time as the others,
         // so the list they add to is behind a lock. It was a plain array, which several
@@ -171,12 +263,12 @@ struct ShelfView: View {
         }
 
         group.notify(queue: .main) {
-            let urls = collected.all
-            guard !urls.isEmpty else { return }
-            service.add(urls)
-            Haptics.perform(enabled: settings.advanced.hapticFeedbackEnabled, strength: settings.advanced.hapticStrength)
+            MainActor.assumeIsolated {
+                let urls = collected.all
+                guard !urls.isEmpty else { return }
+                deliver(urls)
+            }
         }
-        return true
     }
 }
 
@@ -188,55 +280,86 @@ struct ShelfView: View {
 struct ShelfDragSource: NSViewRepresentable {
     var item: ShelfItem
     var operationMask: NSDragOperation
-    var onFinished: (NSDragOperation) -> Void
+    /// What a drag from this chip carries: the selection when this chip is in it.
+    var urlsToDrag: () -> [URL]
+    var onClick: (NSEvent.ModifierFlags) -> Void
+    var onFinished: (NSDragOperation, [URL]) -> Void
+    var onAirDrop: () -> Void
     var onRemove: () -> Void
 
     func makeNSView(context: Context) -> DragView {
         let view = DragView()
-        view.configure(item: item, mask: operationMask, onFinished: onFinished, onRemove: onRemove)
+        configure(view)
         return view
     }
 
     func updateNSView(_ view: DragView, context: Context) {
-        view.configure(item: item, mask: operationMask, onFinished: onFinished, onRemove: onRemove)
+        configure(view)
+    }
+
+    private func configure(_ view: DragView) {
+        view.urlsToDrag = urlsToDrag
+        view.mask = operationMask
+        view.onClick = onClick
+        view.onFinished = onFinished
+        view.onAirDrop = onAirDrop
+        view.onRemove = onRemove
+        view.toolTip = item.url.path
     }
 
     final class DragView: NSView, NSDraggingSource {
-        private var url: URL?
-        private var mask: NSDragOperation = .copy
-        private var onFinished: ((NSDragOperation) -> Void)?
-        private var onRemove: (() -> Void)?
+        var urlsToDrag: (() -> [URL])?
+        var mask: NSDragOperation = .copy
+        var onClick: ((NSEvent.ModifierFlags) -> Void)?
+        var onFinished: ((NSDragOperation, [URL]) -> Void)?
+        var onAirDrop: (() -> Void)?
+        var onRemove: (() -> Void)?
 
-        func configure(
-            item: ShelfItem,
-            mask: NSDragOperation,
-            onFinished: @escaping (NSDragOperation) -> Void,
-            onRemove: @escaping () -> Void
-        ) {
-            self.url = item.url
-            self.mask = mask
-            self.onFinished = onFinished
-            self.onRemove = onRemove
-            toolTip = item.url.path
+        /// Set once a drag has begun, so the mouse coming up afterwards is not also a click.
+        private var didDrag = false
+        /// What the current drag carries, fixed when it starts: the selection could change
+        /// while the drag is in flight, and the end of the drag must act on what was dragged.
+        private var draggedURLs: [URL] = []
+
+        /// The notch panel never becomes key, so without this the first click on a chip would
+        /// only be spent making the window respond.
+        override func acceptsFirstMouse(for event: NSEvent?) -> Bool { true }
+
+        override func mouseDown(with event: NSEvent) {
+            didDrag = false
+        }
+
+        override func mouseUp(with event: NSEvent) {
+            if !didDrag { onClick?(event.modifierFlags) }
+            didDrag = false
         }
 
         override func mouseDragged(with event: NSEvent) {
-            guard let url else { return }
+            guard !didDrag, let urls = urlsToDrag?(), !urls.isEmpty else { return }
+            didDrag = true
+            draggedURLs = urls
 
-            let pasteboardItem = NSPasteboardItem()
-            pasteboardItem.setString(url.absoluteString, forType: .fileURL)
-
-            let draggingItem = NSDraggingItem(pasteboardWriter: pasteboardItem)
-            // Drag the file's own icon, so what the pointer carries looks like the file.
-            let icon = NSWorkspace.shared.icon(forFile: url.path)
+            // One dragging item per file, which is what makes Finder and Mail take them all.
+            // Their icons are fanned a few points apart, so the pointer visibly carries several.
             let size = NSSize(width: 48, height: 48)
-            icon.size = size
-            draggingItem.setDraggingFrame(
-                NSRect(origin: NSPoint(x: bounds.midX - size.width / 2, y: bounds.midY - size.height / 2), size: size),
-                contents: icon
-            )
+            let items = urls.enumerated().map { index, url -> NSDraggingItem in
+                let pasteboardItem = NSPasteboardItem()
+                pasteboardItem.setString(url.absoluteString, forType: .fileURL)
+                let draggingItem = NSDraggingItem(pasteboardWriter: pasteboardItem)
+                let icon = NSWorkspace.shared.icon(forFile: url.path)
+                icon.size = size
+                let offset = CGFloat(min(index, 4)) * 6
+                draggingItem.setDraggingFrame(
+                    NSRect(
+                        origin: NSPoint(x: bounds.midX - size.width / 2 + offset, y: bounds.midY - size.height / 2 - offset),
+                        size: size
+                    ),
+                    contents: icon
+                )
+                return draggingItem
+            }
 
-            beginDraggingSession(with: [draggingItem], event: event, source: self)
+            beginDraggingSession(with: items, event: event, source: self)
         }
 
         func draggingSession(
@@ -251,9 +374,10 @@ struct ShelfDragSource: NSViewRepresentable {
             endedAt screenPoint: NSPoint,
             operation: NSDragOperation
         ) {
+            didDrag = false
             // A drag that landed nowhere should not change anything.
             guard operation != [] else { return }
-            onFinished?(operation)
+            onFinished?(operation, draggedURLs)
         }
 
         override func menu(for event: NSEvent) -> NSMenu? {
@@ -262,6 +386,12 @@ struct ShelfDragSource: NSViewRepresentable {
             let reveal = NSMenuItem(title: "Reveal in Finder", action: #selector(reveal), keyEquivalent: "")
             reveal.target = self
             menu.addItem(reveal)
+
+            if AirDropSender.shared.isAvailable {
+                let airDrop = NSMenuItem(title: "AirDrop…", action: #selector(airDrop), keyEquivalent: "")
+                airDrop.target = self
+                menu.addItem(airDrop)
+            }
 
             menu.addItem(.separator())
 
@@ -273,8 +403,12 @@ struct ShelfDragSource: NSViewRepresentable {
         }
 
         @objc private func reveal() {
-            guard let url else { return }
-            NSWorkspace.shared.activateFileViewerSelecting([url])
+            guard let urls = urlsToDrag?(), !urls.isEmpty else { return }
+            NSWorkspace.shared.activateFileViewerSelecting(urls)
+        }
+
+        @objc private func airDrop() {
+            onAirDrop?()
         }
 
         @objc private func removeItem() {
