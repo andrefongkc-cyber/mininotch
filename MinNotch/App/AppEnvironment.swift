@@ -20,6 +20,7 @@ final class AppEnvironment {
     let shelf = ShelfService()
     let hud = HUDCoordinator()
     let audioAnalyzer = AudioAnalyzer()
+    let audioOutputs = AudioOutputService()
 
     @ObservationIgnored private let gestures = NotchGestureMonitor()
     let liveActivities = LiveActivityCenter()

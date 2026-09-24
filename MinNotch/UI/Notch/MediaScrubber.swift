@@ -14,6 +14,9 @@ struct MediaScrubber: View {
     var isSeekable: Bool
     var onScrubStateChange: (Bool) -> Void
     var onCommit: (Double) -> Void
+    /// Called on every step of a drag, for a value that should follow the pointer rather than
+    /// land when it is let go, such as a volume.
+    var onChange: ((Double) -> Void)? = nil
 
     @State private var isHovering = false
     @State private var dragFraction: Double?
@@ -51,7 +54,9 @@ struct MediaScrubber: View {
                     .onChanged { value in
                         guard isSeekable, width > 0 else { return }
                         if dragFraction == nil { onScrubStateChange(true) }
-                        dragFraction = min(max(value.location.x / width, 0), 1)
+                        let fraction = min(max(value.location.x / width, 0), 1)
+                        dragFraction = fraction
+                        onChange?(fraction)
                     }
                     .onEnded { value in
                         guard isSeekable, width > 0 else { return }

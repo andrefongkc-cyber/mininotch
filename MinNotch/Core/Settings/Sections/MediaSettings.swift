@@ -219,6 +219,9 @@ struct MediaSettings: Codable, Equatable {
 
     /// Brief Dynamic-Island-style expand-and-collapse when the track changes.
     var sneakPeekOnTrackChange: Bool = true
+    /// A button on the Now Playing card that lists the Mac's sound outputs and sets the volume.
+    var showOutputButton: Bool = true
+
     /// How long the sneak peek stays down, in seconds.
     var sneakPeekDuration: Double = 2.6
     static let sneakPeekDurationRange: ClosedRange<Double> = 1...8
@@ -258,6 +261,7 @@ struct MediaSettings: Codable, Equatable {
         sneakPeekOnTrackChange = c.value(.sneakPeekOnTrackChange, true)
         sneakPeekDuration = c.value(.sneakPeekDuration, 2.6, in: Self.sneakPeekDurationRange)
         showLyricsWhenClosed = c.value(.showLyricsWhenClosed, false)
+        showOutputButton = c.value(.showOutputButton, true)
         showUpNext = c.value(.showUpNext, true)
         showVisualizer = c.value(.showVisualizer, false)
         customVisualizerPath = c.value(.customVisualizerPath, nil as String?)

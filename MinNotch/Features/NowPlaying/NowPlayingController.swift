@@ -32,7 +32,15 @@ final class NowPlayingController {
 
     /// The user's choice of the full lyrics list over the two-line strip. Shared by the notch
     /// and the floating window, since both size themselves from it.
-    var isShowingLyricsSheet = false
+    var isShowingLyricsSheet = false {
+        didSet { if isShowingLyricsSheet { isShowingOutputSheet = false } }
+    }
+
+    /// The sound output list in place of the lyrics. One sheet at a time: both take the same
+    /// space under the card, and each opening closes the other.
+    var isShowingOutputSheet = false {
+        didSet { if isShowingOutputSheet { isShowingLyricsSheet = false } }
+    }
 
     /// True while the user is dragging the scrubber, so incoming positions are ignored
     /// until they let go and the seek lands.
@@ -216,6 +224,11 @@ final class NowPlayingController {
 
     /// Whether the card should draw the full lyrics list right now: chosen, switched on, and
     /// with lines to show. Read by the card and by both surfaces that size it.
+    var showsOutputSheet: Bool {
+        guard isShowingOutputSheet, let settings else { return false }
+        return settings.media.enabled && settings.media.showOutputButton
+    }
+
     var showsLyricsSheet: Bool {
         guard isShowingLyricsSheet, settings?.media.showLyrics == true else { return false }
         return lyrics?.isEmpty == false

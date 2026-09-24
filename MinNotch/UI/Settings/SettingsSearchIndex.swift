@@ -65,6 +65,7 @@ enum SettingsSearchIndex {
         .init(tab: .media, section: "Display", title: "Sneak Peek Length", subtitle: "How long the song stays on screen after it changes.", symbolName: "timer"),
         .init(tab: .media, section: "Display", title: "Show Up Next", subtitle: "Off for now. Music tells other apps a playlist is shuffling when it is playing in order, so the list was wrong too often to be worth showing.", symbolName: "text.line.first.and.arrowtriangle.forward"),
         .init(tab: .media, section: "Display", title: "Show Elapsed and Remaining Time", subtitle: "", symbolName: "clock"),
+        .init(tab: .media, section: "Display", title: "Show Output Button", subtitle: "A button beside the song's title that lists your speakers, headphones and displays, and sets the volume. AirPlay shows as one entry; pick its receivers in Control Center.", symbolName: "airplayaudio"),
         .init(tab: .media, section: "Display", title: "Show Which App Is Playing", subtitle: "A small icon of the app on the corner of the artwork.", symbolName: "app.badge"),
         .init(tab: .media, section: "Display", title: "Tint From Artwork", subtitle: "Wash the panel with the album's dominant colour.", symbolName: "photo"),
         .init(tab: .media, section: "Display", title: "Refresh Interval", subtitle: "How often the position is re-read. Track changes update instantly regardless.", symbolName: "arrow.clockwise"),

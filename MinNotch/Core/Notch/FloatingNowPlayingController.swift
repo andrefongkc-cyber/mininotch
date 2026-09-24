@@ -36,7 +36,9 @@ final class FloatingNowPlayingController {
             style: environment.settings.media.cardStyle,
             showingLyrics: environment.settings.media.showLyrics,
             showingUpNext: environment.nowPlaying.showsUpNext,
-            showingLyricsSheet: environment.nowPlaying.showsLyricsSheet
+            showingLyricsSheet: environment.nowPlaying.showsLyricsSheet,
+            showingOutputSheet: environment.nowPlaying.showsOutputSheet,
+            outputDeviceCount: environment.audioOutputs.devices.count
         )
         return CGSize(width: Self.width, height: card + Self.topChrome + Self.bottomChrome)
     }
@@ -157,6 +159,8 @@ private struct FloatingNowPlayingView: View {
             .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
             .onHover { isHovering = $0 }
             .onChange(of: environment.nowPlaying.showsUpNext) { onLayoutChange() }
+            .onChange(of: environment.nowPlaying.showsOutputSheet) { onLayoutChange() }
+            .onChange(of: environment.audioOutputs.devices.count) { onLayoutChange() }
     }
 
     /// Appears on hover, the way a media window's chrome usually does, so the card is not

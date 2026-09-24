@@ -436,7 +436,9 @@ struct NotchRootView: View {
                 style: settings.media.cardStyle,
                 showingLyrics: settings.media.showLyrics,
                 showingUpNext: environment.nowPlaying.showsUpNext,
-                showingLyricsSheet: environment.nowPlaying.showsLyricsSheet
+                showingLyricsSheet: environment.nowPlaying.showsLyricsSheet,
+                showingOutputSheet: environment.nowPlaying.showsOutputSheet,
+                outputDeviceCount: environment.audioOutputs.devices.count
             )
         case .calendar:
             height = CalendarWidgetView.preferredHeight(

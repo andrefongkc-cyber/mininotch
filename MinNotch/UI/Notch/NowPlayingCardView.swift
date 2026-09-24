@@ -16,11 +16,15 @@ struct NowPlayingCardView: View {
         style: NowPlayingCardStyle = .classic,
         showingLyrics: Bool,
         showingUpNext: Bool = false,
-        showingLyricsSheet: Bool = false
+        showingLyricsSheet: Bool = false,
+        showingOutputSheet: Bool = false,
+        outputDeviceCount: Int = 1
     ) -> CGFloat {
         var height = headerHeight(style)
         if showingUpNext { height += spacing + upNextRowHeight }
-        if showingLyricsSheet {
+        if showingOutputSheet {
+            height += spacing + OutputSheetView.height(deviceCount: outputDeviceCount)
+        } else if showingLyricsSheet {
             height += spacing + LyricsSheetView.height
         } else if showingLyrics {
             height += spacing + lyricStripHeight
@@ -55,7 +59,9 @@ struct NowPlayingCardView: View {
                 if controller.showsUpNext {
                     upNextRow
                 }
-                if controller.showsLyricsSheet, let lyrics = controller.lyrics {
+                if controller.showsOutputSheet {
+                    OutputSheetView()
+                } else if controller.showsLyricsSheet, let lyrics = controller.lyrics {
                     LyricsSheetView(lyrics: lyrics)
                 } else if settings.media.showLyrics {
                     lyricStrip
@@ -291,19 +297,53 @@ struct NowPlayingCardView: View {
     }
 
     private func metadata(_ track: NowPlayingTrack, titleSize: CGFloat = 15) -> some View {
-        VStack(alignment: .leading, spacing: 2) {
-            Text(track.title)
-                .font(.system(size: titleSize, weight: .semibold))
-                .foregroundStyle(.white)
-                .lineLimit(1)
-                .truncationMode(.tail)
+        HStack(alignment: .top, spacing: 6) {
+            VStack(alignment: .leading, spacing: 2) {
+                Text(track.title)
+                    .font(.system(size: titleSize, weight: .semibold))
+                    .foregroundStyle(.white)
+                    .lineLimit(1)
+                    .truncationMode(.tail)
 
-            Text(track.artist.isEmpty ? track.sourceAppName : track.artist)
-                .font(.system(size: 12))
-                .foregroundStyle(.white.opacity(0.6))
-                .lineLimit(1)
+                Text(track.artist.isEmpty ? track.sourceAppName : track.artist)
+                    .font(.system(size: 12))
+                    .foregroundStyle(.white.opacity(0.6))
+                    .lineLimit(1)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+
+            if settings.media.showOutputButton {
+                outputButton
+            }
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    /// Opens the list of sound outputs, or closes it.
+    ///
+    /// Beside the title rather than with pop-out and effects: a third button there left the
+    /// transport controls too little room in the 420 point floating window, while the title
+    /// already truncates and gives up the space without complaint.
+    private var outputButton: some View {
+        let isOpen = controller.isShowingOutputSheet
+
+        return Button {
+            // Read first, so the sheet opens at the height its list needs.
+            if !isOpen { environment.audioOutputs.refresh() }
+            controller.isShowingOutputSheet.toggle()
+        } label: {
+            TransportSymbol.image("airplayaudio", pointSize: 12, weight: .medium)
+                .foregroundStyle(isOpen ? settings.appearance.resolvedAccent : Color.white.opacity(0.45))
+                .frame(width: 24, height: 22)
+                .background(
+                    RoundedRectangle(cornerRadius: 6, style: .continuous)
+                        .fill(Color.white.opacity(isOpen ? 0.12 : 0))
+                )
+                .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .help(isOpen ? "Close the sound outputs" : "Choose where sound plays, and the volume")
+        .accessibilityLabel(isOpen ? "Close sound outputs" : "Sound outputs")
+        .animation(Motion.hover, value: isOpen)
     }
 
     /// Redraws twice a second inside a `TimelineView` so only the position updates, rather

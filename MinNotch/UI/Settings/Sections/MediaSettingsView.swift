@@ -213,6 +213,17 @@ struct MediaSettingsView: View {
                 SettingsDivider()
 
                 SettingsRow(
+                    title: "Show Output Button",
+                    subtitle: "A button beside the song's title that lists your speakers, headphones and displays, and sets the volume. AirPlay shows as one entry; pick its receivers in Control Center.",
+                    systemImage: "airplayaudio",
+                    isEnabled: settings.media.enabled
+                ) {
+                    SettingsToggle(isOn: $settings.media.showOutputButton)
+                }
+
+                SettingsDivider()
+
+                SettingsRow(
                     title: "Show Which App Is Playing",
                     subtitle: "A small icon of the app on the corner of the artwork.",
                     systemImage: "app.badge",

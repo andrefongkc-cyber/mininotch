@@ -146,6 +146,12 @@ enum DebugWindowCapture {
         // The closed pill shows nothing at all unless the indicators are switched on, so a
         // capture of it is blank without this.
         if arguments.contains("--extended") { settings.general.extendPillForIndicators = true }
+        // The Now Playing card with its sound output list open, reading this Mac's real outputs.
+        if arguments.contains("--output-sheet") {
+            settings.media.showOutputButton = true
+            environment.audioOutputs.refresh()
+            environment.nowPlaying.isShowingOutputSheet = true
+        }
         if arguments.contains("--sample-shelf") {
             settings.shelf.enabled = true
             environment.shelf.applySample()

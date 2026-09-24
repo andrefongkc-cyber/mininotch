@@ -63,7 +63,7 @@ MinNotch --capture-notch out.png [--collapsed] [--tab system] [--glow bars|off] 
                                  [--sample-calendar] [--calendar-step 1] [--calendar-pick 2]
                                  [--card compact|fullArtwork] [--controls shuffle,playPause,repeatMode]
                                  [--lyrics-sheet] [--sample-stats] [--shadow] [--closed-lyrics]
-                                 [--sample-shelf]
+                                 [--sample-shelf] [--output-sheet]
 MinNotch --check-lyrics "Khalid" "8TEEN" 229                      # LRCLIBClient + LRCParser
 MinNotch --check-lyric-sync [--out f]                             # matching lyrics to the audio
 MinNotch --check-stats 5                                          # CPU/GPU/memory/network
@@ -81,6 +81,7 @@ MinNotch --check-links "<url or text>" ...                        # link shelf: 
 MinNotch --check-downloads [--out f]                              # download activities, in a scratch folder
 MinNotch --check-lock-screen                                      # the SkyLight calls behind the lock screen HUD
 MinNotch --check-meeting-links                                    # which invitation links count as a meeting
+MinNotch --check-audio-outputs                                    # the outputs the card would offer
 ```
 
 `--capture-notch` grew three options for the animated effects. `--glow off` disables the
@@ -677,6 +678,17 @@ across the menu bar. A settings file without `pillSongText` predates it and gets
 beside its Live Activity, once. The cover and the song show while a song is loaded, paused or
 not; the playing indicator shows whenever something plays, beside the cover rather than instead
 of it.
+
+**The output switcher is public Core Audio, and AirPlay is one device.** `AudioOutputService`
+lists devices with output streams that can be the default, leaving out hidden ones and aggregates
+(the audio tap builds a private aggregate to listen through), and sets
+`kAudioHardwarePropertyDefaultOutputDevice` and the virtual main volume, which is all the Sound
+menu does. No permission. AirPlay receivers cannot be listed or picked without private API, so
+AirPlay is one row and the Settings subtitle says to pick receivers in Control Center. The sheet
+takes the lyrics sheet's place, never both, and sizes to the outputs there are, one to four; the
+button reads the list before opening so the card is the right height on its first frame.
+`--check-audio-outputs` lists what the card would offer, read-only, and `--output-sheet` captures
+the card with the list open.
 
 **Shelf clicks and drags both arrive through `ShelfDragSource`.** The AppKit drag view covers
 each chip so it can offer move or copy and hear how the drag ended, so it is also what receives
