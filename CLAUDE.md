@@ -389,7 +389,10 @@ Scripts/          build, run, preview
   while `shuffle`, `heart` and the arrows in the same row took theirs, and the identical code
   in a standalone window drew correctly. Transport buttons therefore go through
   `TransportSymbol.image`, an `NSImage` symbol at a point size drawn as a template, which takes
-  its colour every time. Found by forcing `.red` and reading pixels off `--capture-notch`.
+  its colour every time. Found by forcing `.red` and reading pixels off `--capture-notch`. The same thing
+  hit the lyric strip's Show Lyrics When Closed button: its glyph came out pure white on and off
+  alike until it went through `TransportSymbol.image` too. Any symbol whose colour says something,
+  on or off, playing or not, goes through `TransportSymbol.image`.
 - **The notch panel is always black in both appearances.** Never use a semantic label colour
   (`Palette.primaryText`, `.labelColor`) for content drawn on it: it disappears in light
   mode. Use explicit `.white` with opacity. `Palette` is for the Settings window.
@@ -644,7 +647,7 @@ space at 400, and moves one window into it. `LockScreenHUDController` makes that
 mouse, can never become key, and draws the HUD and nothing between readings. It is a window of
 its own, not the notch's, so the private calls can never leave the real notch in a space it
 should not be in. `--check-lock-screen` proves the calls resolve and a moved window stays on
-screen; only locking the screen shows it drawing there, which a tool cannot do and then undo.
+screen, and the user confirmed on 2026-09-24 that the HUD really does draw over a locked Mac.
 Private API, so it cannot ship in an App Store build.
 
 **An `if` in a modifier is two different views.** `PanelShadow` applied `.shadow` only while
@@ -674,7 +677,8 @@ not; the playing indicator shows whenever something plays, beside the cover rath
 of it.
 
 **Lyrics with the notch closed use the sneak peek's shape and size**, so a track change swaps what
-the strip says rather than resizing the notch. Only synced lyrics, only while playing; it redraws
+the strip says rather than resizing the notch. The lyric strip on the card has a button for it,
+left of the expand button, writing the same setting as Media > Show Lyrics When Closed. Only synced lyrics, only while playing; it redraws
 ten times a second while it is up, about 4% of a core in a Debug build.
 
 **Five things make the glow look right, and all five were bugs first.** A segment covering
@@ -888,8 +892,8 @@ hand, and each one is a place to look first when something is reported.
   display has ever been used.
 - Sandboxed behaviour. Everything so far assumes unsandboxed.
 - From the 0.3 feedback batch (2026-09-23): the rewritten drag and drop in Settings > Layout
-  (built and reasoned through, never dragged), the HUD over a real lock screen, the closed lyrics
-  strip against a real song, and the tutorial's Allow Now for system audio and Accessibility.
+  (built and reasoned through, never dragged), the closed lyrics strip against a real song, and
+  the tutorial's Allow Now for system audio and Accessibility.
 
 **Known to be missing**
 

@@ -1,6 +1,6 @@
 # MinNotch workplan
 
-Status: 0.3 feedback batch done and pushed, 0.4.0 notes written, no DMG; next: the user tries the batch (lock screen, Layout drag and drop, closed lyrics), then a 0.4.0 DMG, then the macOS 13 decision.
+Status: doing the 0.4 additions (see below), starting with the meeting countdown; next: the user tries 0.4, then a 0.4.0 DMG.
 
 Living document. Update the checkboxes as work lands. `CLAUDE.md` holds the architecture
 rules and the traps; this file holds the sequence.
@@ -24,8 +24,8 @@ at last. Notarisation still needs a paid membership nobody is buying.
 
 **Do these next, in this order:**
 
-0. The user tries the 0.3 feedback batch below, above all the HUD on a locked screen, dragging in
-   Settings > Layout, and the closed lyrics with a real song, then a 0.4.0 DMG.
+0. Build the "0.4 additions" below, then the user tries them with the rest of 0.4 (dragging in
+   Settings > Layout, closed lyrics with a real song), then a 0.4.0 DMG.
 1. Answer the user on macOS 13 (Platforms below). They were asked and have not decided.
 2. A test target. Nothing is verified automatically across more than a hundred files, and the
    Swift 6 migration is exactly the kind of change one would have caught.
@@ -36,6 +36,18 @@ at last. Notarisation still needs a paid membership nobody is buying.
    playing track, downloads, a device connecting, and the album-art bars with real music.
 
 ---
+
+## 0.4 additions (2026-09-24)
+
+Picked by the user from a list of ideas. Focus was dropped: macOS has no API to switch it, and
+its state file needs Full Disk Access, so the only way was Shortcuts the user builds by hand.
+Sparkle was asked about and deferred ("not now"); it is free (MIT) and needs no paid account.
+
+- [ ] Next meeting countdown in the pill, with Join for Zoom, Meet, Teams, Webex, FaceTime links.
+- [ ] Shelf: select and drag several files at once; AirDrop from the shelf.
+- [ ] Audio output switcher and volume on the Now Playing card.
+- [ ] Media controls on the lock screen, beside the HUD that is already there.
+- [ ] Weather: location or a typed city, Open-Meteo, a tab and a pill indicator.
 
 ## 0.3 feedback (2026-09-23)
 
@@ -60,7 +72,9 @@ The user's first round on 0.3, with screenshots. In the order they are being don
 - [x] Lyrics with the notch closed, a strip the size of the sneak peek.
 - [x] "New" badges in Settings for rows added in the current release.
 - [x] Tutorial lists every permission, with Allow Now for Accessibility and system audio too.
-- [~] HUDs on the lock screen, through a SkyLight space above it (private API). Built; `--check-lock-screen` shows the SkyLight calls work, but only locking the screen can show it drawing there.
+- [x] HUDs on the lock screen, through a SkyLight space above it (private API). Confirmed working
+      on a locked Mac by the user on 2026-09-24.
+- [x] A Show Lyrics When Closed button on the lyric strip, left of the expand button.
 - [x] Then update the GitHub page (README) for all of the above, and push. Asked for 2026-09-23.
       Features not in a download yet are marked _(0.4)_ in the README.
 - [x] 0.4.0 release notes written and `MARKETING_VERSION` bumped, because the "New" badges key

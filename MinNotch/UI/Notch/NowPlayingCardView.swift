@@ -661,6 +661,7 @@ struct LyricsStripView: View {
     let lyrics: Lyrics
 
     @Environment(AppEnvironment.self) private var environment
+    @Environment(SettingsStore.self) private var settings
 
     /// Fast enough that the highlight lands on the beat. Only the strip redraws, and only
     /// while the panel is open with lyrics showing.
@@ -687,14 +688,48 @@ struct LyricsStripView: View {
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
 
-                LyricsSheetView.toggleButton(isOpen: false) {
-                    environment.nowPlaying.isShowingLyricsSheet = true
+                HStack(spacing: 6) {
+                    closedLyricsButton
+
+                    LyricsSheetView.toggleButton(isOpen: false) {
+                        environment.nowPlaying.isShowingLyricsSheet = true
+                    }
                 }
             }
         }
         .frame(height: 40)
         .accessibilityElement()
         .accessibilityLabel("Lyrics")
+    }
+
+    /// Keeps the lyrics on screen under the closed notch, or stops.
+    ///
+    /// Beside the lyrics themselves, because that is where someone reading them decides they
+    /// want to keep reading with the notch shut. The same stored setting as Settings > Media >
+    /// Show Lyrics When Closed, so the two cannot disagree; lit in the accent while it is on,
+    /// like the pop-out button above it.
+    private var closedLyricsButton: some View {
+        let isOn = settings.media.showLyricsWhenClosed
+
+        return Button {
+            settings.media.showLyricsWhenClosed.toggle()
+            Haptics.perform(enabled: settings.advanced.hapticFeedbackEnabled, strength: settings.advanced.hapticStrength)
+        } label: {
+            // Through `TransportSymbol`, not `Image(systemName:)` with a font: drawn that way the
+            // glyph came out plain white on and off alike, so the button never showed its state.
+            TransportSymbol.image("text.below.photo", pointSize: 10, weight: .semibold)
+                .foregroundStyle(isOn ? settings.appearance.resolvedAccent : Color.white.opacity(0.55))
+                .frame(width: 22, height: 20)
+                .background(
+                    RoundedRectangle(cornerRadius: 5, style: .continuous)
+                        .fill(Color.white.opacity(isOn ? 0.14 : 0.08))
+                )
+                .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .help(isOn ? "Stop showing lyrics when the notch is closed" : "Keep showing lyrics when the notch is closed")
+        .accessibilityLabel(isOn ? "Hide lyrics when closed" : "Show lyrics when closed")
+        .animation(Motion.hover, value: isOn)
     }
 
     // MARK: Lines

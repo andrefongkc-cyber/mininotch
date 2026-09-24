@@ -34,7 +34,7 @@ struct ReleaseNotes {
                 symbol: "text.below.photo",
                 title: "Lyrics With the Notch Closed",
                 detail: "The line being sung sits just under the closed notch while a song plays, the current word lit up.",
-                howTo: "Settings > Media > Show Lyrics When Closed. Show Lyrics must be on."
+                howTo: "Click the button beside the lyrics, or Settings > Media > Show Lyrics When Closed."
             ),
             ReleaseNote(
                 symbol: "textformat",
