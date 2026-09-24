@@ -268,6 +268,7 @@ struct WidgetTiles: View {
         case .clipboard: return { settings.advanced.clipboardHistoryEnabled.toggle() }
         case .links: return { settings.advanced.linkShelfEnabled.toggle() }
         case .timer: return { settings.timer.enabled.toggle() }
+        case .weather: return { settings.weather.enabled.toggle() }
         }
     }
 }

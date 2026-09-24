@@ -13,6 +13,7 @@ enum NotchTab: String, Codable, CaseIterable, Identifiable {
     case clipboard
     case links
     case timer
+    case weather
 
     var id: String { rawValue }
 
@@ -25,6 +26,7 @@ enum NotchTab: String, Codable, CaseIterable, Identifiable {
         case .clipboard: return "Clipboard"
         case .links: return "Links"
         case .timer: return "Timer"
+        case .weather: return "Weather"
         }
     }
 
@@ -37,6 +39,7 @@ enum NotchTab: String, Codable, CaseIterable, Identifiable {
         case .clipboard: return "doc.on.clipboard"
         case .links: return "link"
         case .timer: return "timer"
+        case .weather: return "cloud.sun"
         }
     }
 }

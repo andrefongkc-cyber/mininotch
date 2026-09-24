@@ -50,9 +50,9 @@ enum FeatureFlag: String, CaseIterable {
         case .lyrics:
             return .beta
         case .gestures, .haptics, .shelf, .hud, .reminders, .customVisualizers, .audioReactiveGlow,
-             .clipboardHistory, .pomodoro, .liveActivities, .linkShelf:
+             .clipboardHistory, .pomodoro, .liveActivities, .linkShelf, .weather:
             return .beta
-        case .weather, .shortcutsWidget, .quickNotes, .focusMode, .mirror, .upNext:
+        case .shortcutsWidget, .quickNotes, .focusMode, .mirror, .upNext:
             return .hidden
         }
     }

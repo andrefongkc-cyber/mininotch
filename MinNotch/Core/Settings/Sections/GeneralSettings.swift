@@ -92,6 +92,7 @@ enum PillIndicator: String, Codable, CaseIterable, Identifiable, LayoutArrangeab
     case activity
     case playing
     case battery
+    case weather
 
     var id: String { rawValue }
 
@@ -102,6 +103,7 @@ enum PillIndicator: String, Codable, CaseIterable, Identifiable, LayoutArrangeab
         case .activity: return "Live Activity"
         case .playing: return "Playing Indicator"
         case .battery: return "Battery"
+        case .weather: return "Weather"
         }
     }
 
@@ -112,6 +114,7 @@ enum PillIndicator: String, Codable, CaseIterable, Identifiable, LayoutArrangeab
         case .activity: return "bolt.badge.clock"
         case .playing: return "waveform"
         case .battery: return "battery.100percent"
+        case .weather: return "cloud.sun"
         }
     }
 

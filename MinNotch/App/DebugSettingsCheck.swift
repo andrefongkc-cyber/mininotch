@@ -70,6 +70,10 @@ enum DebugSettingsCheck {
         // A file from before the Song indicator gets it placed where the Live Activity is.
         report("  pill                 \(settings.general.pillLeading.map(\.rawValue)) | \(settings.general.pillTrailing.map(\.rawValue))  (song beside activity when the file predates it)")
         report("  pillSongText         \(settings.general.pillSongText.rawValue)")
+        let city = settings.weather.cityCoordinate.map { "\($0.latitude), \($0.longitude)" } ?? "none"
+        report("  weather.city         \(city)  (a pair on the globe, or none)")
+        report("  weather.units        \(settings.weather.units.rawValue)")
+        report(String(format: "  meetingLeadMinutes   %10.2f   (1...60)", settings.calendar.meetingLeadMinutes))
         report("")
         report("Every value must sit inside the range beside it, whatever the file asked for.")
 

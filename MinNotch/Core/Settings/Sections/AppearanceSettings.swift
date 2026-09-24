@@ -121,6 +121,7 @@ enum TopStripItem: String, Codable, CaseIterable, Identifiable, LayoutArrangeabl
     case clipboard
     case links
     case timer
+    case weather
     case settings
     case battery
     /// Debug buttons, shown only while Settings > Advanced > Debug Buttons in Top Bar is on.
@@ -141,6 +142,7 @@ enum TopStripItem: String, Codable, CaseIterable, Identifiable, LayoutArrangeabl
         case .clipboard: self = .clipboard
         case .links: self = .links
         case .timer: self = .timer
+        case .weather: self = .weather
         }
     }
 

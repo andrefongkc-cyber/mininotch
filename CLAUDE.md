@@ -63,7 +63,7 @@ MinNotch --capture-notch out.png [--collapsed] [--tab system] [--glow bars|off] 
                                  [--sample-calendar] [--calendar-step 1] [--calendar-pick 2]
                                  [--card compact|fullArtwork] [--controls shuffle,playPause,repeatMode]
                                  [--lyrics-sheet] [--sample-stats] [--shadow] [--closed-lyrics]
-                                 [--sample-shelf] [--output-sheet]
+                                 [--sample-shelf] [--output-sheet] [--sample-weather]
 MinNotch --check-lyrics "Khalid" "8TEEN" 229                      # LRCLIBClient + LRCParser
 MinNotch --check-lyric-sync [--out f]                             # matching lyrics to the audio
 MinNotch --check-stats 5                                          # CPU/GPU/memory/network
@@ -83,6 +83,7 @@ MinNotch --check-lock-screen                                      # the SkyLight
 MinNotch --capture-lock-screen out.png [--hud]                    # what the lock screen window draws
 MinNotch --check-meeting-links                                    # which invitation links count as a meeting
 MinNotch --check-audio-outputs                                    # the outputs the card would offer
+MinNotch --check-weather London | 51.5 -0.13 [--fahrenheit]       # a real forecast, parsed
 ```
 
 `--capture-notch` grew three options for the animated effects. `--glow off` disables the
@@ -182,6 +183,9 @@ MinNotch/
     Shelf/        the drag-and-drop file tray
     Clipboard/    copy history, polled
     Downloads/    the Downloads folder watch behind the download activity
+    Audio/        sound outputs and volume, for the Now Playing card
+    Weather/      Open-Meteo forecast, location, city search
+    LockScreen/   the window drawn above the lock screen: HUD and media
     LinkShelf/    saved web links, page titles and icons
     Timer/        countdown and the Pomodoro cycle on top of it
     HUD/          volume, brightness and keyboard backlight monitors
@@ -533,6 +537,7 @@ open -n -a <path to MinNotch.app> --args --check-permissions --out /tmp/perm.log
 | Accessibility | `AXIsProcessTrustedWithOptions`, then a `CGEvent` tap | Switching on HUDs > Hide the System Overlay |
 | Notifications | `UNUserNotificationCenter` | First low-battery alert |
 | Downloads folder | Reading `~/Downloads` | Switching on Layout > Downloads |
+| Location | `CLLocationManager`, then Open-Meteo | Weather on with Use My Location; Allow in Weather, the Weather tab, or the tutorial |
 
 None are requested at launch. The first-launch tutorial explains each one on its permissions
 page, only for features that were ticked, and offers an "Allow Now" button for Calendar and
@@ -683,6 +688,20 @@ across the menu bar. A settings file without `pillSongText` predates it and gets
 beside its Live Activity, once. The cover and the song show while a song is loaded, paused or
 not; the playing indicator shows whenever something plays, beside the cover rather than instead
 of it.
+
+**Weather sends two rounded numbers, and only when asked to.** `WeatherService` fetches from
+Open-Meteo (free, no key) through a `BoundedHTTPClient` allowed only its two hosts, with the
+location rounded to two decimals, about a kilometre, in `OpenMeteo.forecastURL`. The place name
+comes from Apple's reverse geocoder, so Open-Meteo never sees more than the two numbers. Location
+needs three things, the same lesson as the audio tap: `ENABLE_RESOURCE_ACCESS_LOCATION = YES`
+(the hardened runtime refuses Core Location without it), `NSLocationUsageDescription` in
+`Config/Info.plist`, and the request made from the foreground. A typed city needs none of them.
+Every settings change fans out to `settingsChanged`, so the service compares the weather section
+with the one it last applied and only then touches the network; otherwise it refreshes on a half
+hour timer, which the pill needs because it shows the temperature with the widget closed. Times
+are asked for as Unix seconds and labelled in the place's own time zone. `--check-weather London`
+or `--check-weather 51.5 -0.13` fetches for real; `--sample-weather` captures the tab and the pill
+offline.
 
 **The output switcher is public Core Audio, and AirPlay is one device.** `AudioOutputService`
 lists devices with output streams that can be the default, leaving out hidden ones and aggregates

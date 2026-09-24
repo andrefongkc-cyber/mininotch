@@ -1,3 +1,4 @@
+import CoreLocation
 import EventKit
 import SwiftUI
 
@@ -524,6 +525,12 @@ private struct PermissionsPage: View {
                 ) { audioAction }
 
                 permission(
+                    symbol: "location.fill", tint: .systemCyan,
+                    title: "Location",
+                    detail: "For the weather where you are, rounded to about a kilometre. Or type a city in Settings > Weather and skip this."
+                ) { locationAction }
+
+                permission(
                     symbol: "bell.badge", tint: .systemRed,
                     title: "Notifications",
                     detail: "To tell you when a timer or focus session ends, and when the battery is low."
@@ -538,19 +545,14 @@ private struct PermissionsPage: View {
                         .font(.system(size: 11))
                         .foregroundStyle(Palette.tertiaryText)
                 }
-
-                if selection.contains(.onlineLyrics) {
-                    permission(
-                        symbol: "network", tint: .systemTeal,
-                        title: "Lyrics lookup",
-                        detail: "Not a permission, but worth knowing: the current track's title, artist, album and length are sent to lrclib.net to find its lyrics."
-                    ) { EmptyView() }
-                }
             }
 
-            Label("Everything else stays on your Mac. No accounts, no analytics, nothing uploaded.", systemImage: "lock")
+            // Part of this line rather than a card of its own: it is not a permission, and a
+            // seventh card does not fit the window.
+            Label(privacyLine, systemImage: "lock")
                 .font(.system(size: 12))
                 .foregroundStyle(Palette.secondaryText)
+                .fixedSize(horizontal: false, vertical: true)
         }
         // Accessibility is granted in System Settings with no callback, so look again while
         // this page is showing.
@@ -567,6 +569,13 @@ private struct PermissionsPage: View {
             // Allowed now; keep listening only if a setting actually wants it.
             environment.reconcileAudioAnalysis()
         }
+    }
+
+    private var privacyLine: String {
+        guard selection.contains(.onlineLyrics) else {
+            return "Everything else stays on your Mac. No accounts, no analytics, nothing uploaded."
+        }
+        return "Synced Lyrics sends the track's title, artist, album and length to lrclib.net. Everything else stays on your Mac."
     }
 
     @ViewBuilder
@@ -605,6 +614,18 @@ private struct PermissionsPage: View {
                 audioAsked = true
                 environment.requestSystemAudioAccess()
             }
+        }
+    }
+
+    @ViewBuilder
+    private var locationAction: some View {
+        switch environment.weather.locationAuthorization {
+        case .notDetermined:
+            Button("Allow Now") { environment.weather.requestLocationAccess() }
+        case .denied, .restricted:
+            changeInSettings
+        default:
+            granted
         }
     }
 
@@ -655,7 +676,7 @@ private struct PermissionsPage: View {
             action()
         }
         .padding(.horizontal, 12)
-        .padding(.vertical, 8)
+        .padding(.vertical, 6)
         .background(
             RoundedRectangle(cornerRadius: 10, style: .continuous)
                 .fill(Palette.cardBackground)

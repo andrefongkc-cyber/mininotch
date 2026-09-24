@@ -113,6 +113,10 @@ enum SettingsSearchIndex {
         .init(tab: .timer, section: "Pomodoro", title: "Long Break Length", subtitle: "", symbolName: "figure.walk"),
         .init(tab: .timer, section: "Pomodoro", title: "Intervals Before a Long Break", subtitle: "", symbolName: "repeat"),
         .init(tab: .timer, section: "Pomodoro", title: "Start the Next Interval Automatically", subtitle: "Off means each interval waits for you. On is the point of the technique: it keeps going while you are concentrating.", symbolName: "play.circle"),
+        .init(tab: .weather, section: "Weather", title: "Show Weather", subtitle: "The forecast in its own tab, and the temperature in the closed pill. Forecasts come from Open-Meteo.", symbolName: "cloud.sun"),
+        .init(tab: .weather, section: "Weather", title: "Temperature Units", subtitle: "Celsius or Fahrenheit.", symbolName: "thermometer.medium"),
+        .init(tab: .weather, section: "Location", title: "Use My Location", subtitle: "Uses Location Services. Or choose a city instead.", symbolName: "location"),
+        .init(tab: .weather, section: "Location", title: "City", subtitle: "Search, then pick one, to use a city instead of your location.", symbolName: "mappin.and.ellipse"),
         .init(tab: .shortcuts, section: "Global Shortcuts", title: "Enable Global Shortcuts", subtitle: "Turn this off to silence every shortcut without losing what you recorded.", symbolName: "command"),
         .init(tab: .advanced, section: "Displays", title: "Show on Displays Without a Notch", subtitle: "", symbolName: "display.2"),
         .init(tab: .advanced, section: "Displays", title: "Show On", subtitle: "Which display carries the notch when several are connected.", symbolName: "rectangle.on.rectangle"),
@@ -215,6 +219,7 @@ extension SettingsTab {
         case .battery: return ["charge", "power", "airpods", "bluetooth"]
         case .shelf: return ["files", "drag", "drop", "tray"]
         case .timer: return ["pomodoro", "countdown", "focus", "break"]
+        case .weather: return ["forecast", "temperature", "rain", "location", "city"]
         case .shortcuts: return ["hotkey", "keyboard", "keys"]
         case .advanced: return ["display", "monitor", "external", "clipboard", "debug", "export", "import", "reset",
                                 "welcome", "tutorial", "onboarding", "tour", "links", "bookmarks", "url"]

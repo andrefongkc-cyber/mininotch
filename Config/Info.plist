@@ -53,6 +53,13 @@
 	<key>NSAppleEventsUsageDescription</key>
 	<string>MinNotch controls Music and Spotify so it can show and control what you are listening to.</string>
 
+	<!-- Location, only while Weather is on with Use My Location, for the forecast. Rounded to
+	     about a kilometre before it leaves the Mac. -->
+	<key>NSLocationUsageDescription</key>
+	<string>MinNotch uses your approximate location, while Weather is on, to show the forecast where you are. It is rounded to about a kilometre and sent only to Open-Meteo.</string>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>MinNotch uses your approximate location, while Weather is on, to show the forecast where you are. It is rounded to about a kilometre and sent only to Open-Meteo.</string>
+
 	<!-- Downloads folder, read only while Layout > Downloads is on, to show a file's progress
 	     in the closed pill. -->
 	<key>NSDownloadsFolderUsageDescription</key>
@@ -65,8 +72,9 @@
 
 	<!-- App Transport Security. These are already the platform defaults; they are written out
 	     so that relaxing them has to be a deliberate edit to this file rather than something
-	     that happens by accident. The app makes exactly one kind of outbound request, to
-	     lrclib.net, and only when the user turns the online lyrics lookup on.
+	     that happens by accident. Every outbound request is one the user switched on: lyrics
+	     from lrclib.net with the online lookup, the forecast from Open-Meteo with Weather, and
+	     a saved link's title and icon from its own site with the link shelf.
 
 	     This does not cover file: URLs, which ATS ignores entirely. Scheme checking is done
 	     in BoundedHTTPClient, which every outbound request goes through. -->

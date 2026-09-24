@@ -15,6 +15,7 @@ enum OnboardingFeature: String, CaseIterable, Identifiable {
     case clipboardHistory
     case linkShelf
     case shelf
+    case weather
     case ambientLighting
     case huds
     case gestures
@@ -36,7 +37,7 @@ enum OnboardingFeature: String, CaseIterable, Identifiable {
         switch self {
         case .nowPlaying, .onlineLyrics, .calendar, .timer, .systemStats, .closedIndicators:
             return .notch
-        case .clipboardHistory, .linkShelf, .shelf, .ambientLighting, .huds, .gestures, .floatingWindow:
+        case .clipboardHistory, .linkShelf, .shelf, .weather, .ambientLighting, .huds, .gestures, .floatingWindow:
             return .extras
         case .launchAtLogin, .menuBarIcon:
             return .startup
@@ -54,6 +55,7 @@ enum OnboardingFeature: String, CaseIterable, Identifiable {
         case .clipboardHistory: return "Clipboard History"
         case .linkShelf: return "Link Shelf"
         case .shelf: return "File Shelf"
+        case .weather: return "Weather"
         case .ambientLighting: return "Ambient Lighting"
         case .huds: return "Volume and Brightness HUDs"
         case .gestures: return "Trackpad Gestures"
@@ -84,6 +86,8 @@ enum OnboardingFeature: String, CaseIterable, Identifiable {
             return "Drop or paste links onto the notch to keep them, then click one to open it."
         case .shelf:
             return "Drop files on the notch to hold them, then drag them out wherever they need to go."
+        case .weather:
+            return "The forecast where you are, and the temperature in the closed notch."
         case .ambientLighting:
             return "A soft glow around the notch, coloured from the album cover."
         case .huds:
@@ -115,6 +119,8 @@ enum OnboardingFeature: String, CaseIterable, Identifiable {
             return "Kept in memory only. Copies an app marks as private, like passwords, are skipped."
         case .linkShelf:
             return "Reads each link's title and icon from its site when you add it."
+        case .weather:
+            return "Sends your approximate location to open-meteo.com. You can type a city instead."
         case .ambientLighting:
             return "Uses noticeably more power while it animates."
         case .huds:
@@ -139,6 +145,7 @@ enum OnboardingFeature: String, CaseIterable, Identifiable {
         case .clipboardHistory: return "doc.on.clipboard"
         case .linkShelf: return "link"
         case .shelf: return "tray.full"
+        case .weather: return "cloud.sun"
         case .ambientLighting: return "light.beacon.max"
         case .huds: return "speaker.wave.2"
         case .gestures: return "hand.draw"
@@ -156,7 +163,7 @@ enum OnboardingFeature: String, CaseIterable, Identifiable {
         case .systemStats: return Color(nsColor: .systemGreen)
         case .closedIndicators, .menuBarIcon, .launchAtLogin: return Color(nsColor: .systemGray)
         case .clipboardHistory: return Color(nsColor: .systemBlue)
-        case .linkShelf: return Color(nsColor: .systemCyan)
+        case .linkShelf, .weather: return Color(nsColor: .systemCyan)
         case .shelf: return Color(nsColor: .systemTeal)
         case .ambientLighting: return Color(nsColor: .systemPink)
         case .huds: return Color(nsColor: .systemPurple)
@@ -176,6 +183,7 @@ enum OnboardingFeature: String, CaseIterable, Identifiable {
         case .clipboardHistory: return .clipboardHistory
         case .linkShelf: return .linkShelf
         case .shelf: return .shelf
+        case .weather: return .weather
         case .huds: return .hud
         case .gestures: return .gestures
         case .closedIndicators, .ambientLighting, .launchAtLogin, .menuBarIcon: return nil
@@ -203,6 +211,7 @@ enum OnboardingFeature: String, CaseIterable, Identifiable {
         case .clipboardHistory: return settings.advanced.clipboardHistoryEnabled
         case .linkShelf: return settings.advanced.linkShelfEnabled
         case .shelf: return settings.shelf.enabled
+        case .weather: return settings.weather.enabled
         case .ambientLighting: return settings.appearance.ambientGlow.isEnabled
         case .huds:
             return settings.huds.replaceVolumeHUD
@@ -240,6 +249,8 @@ enum OnboardingFeature: String, CaseIterable, Identifiable {
             settings.advanced.linkShelfEnabled = isOn
         case .shelf:
             settings.shelf.enabled = isOn
+        case .weather:
+            settings.weather.enabled = isOn
         case .ambientLighting:
             settings.appearance.ambientGlow.isEnabled = isOn
         case .huds:

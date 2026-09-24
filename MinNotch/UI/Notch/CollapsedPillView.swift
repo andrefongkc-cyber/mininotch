@@ -13,6 +13,8 @@ struct CollapsedPillContent: Equatable {
     var isPlaying: Bool
     var battery: BatteryStatus
     var showPercentage: Bool
+    /// The current conditions, when Weather is on and has a forecast.
+    var weather: WeatherReport? = nil
     /// When false the pill stays exactly the size of the hardware notch and shows nothing,
     /// which on a notched display makes it invisible.
     var isExtended: Bool
@@ -63,6 +65,7 @@ struct CollapsedPillContent: Equatable {
             isPlaying: track?.isPlaying ?? false,
             battery: environment.battery.status,
             showPercentage: settings.battery.showPercentage,
+            weather: settings.weather.enabled ? environment.weather.report : nil,
             isExtended: isExtended,
             leadingLayout: settings.general.pillLeading,
             trailingLayout: settings.general.pillTrailing
@@ -96,6 +99,7 @@ struct CollapsedPillContent: Equatable {
             // the waveform on the other side of the notch never saw it.
             return isPlaying
         case .battery: return battery.isPresent
+        case .weather: return weather != nil
         }
     }
 
@@ -131,6 +135,9 @@ struct CollapsedPillContent: Equatable {
             // narrower than at "100" and it would visibly resize as the battery drained.
             let label = showPercentage ? Self.detailSpacing + Self.measure("100") : 0
             return Self.batteryGlyphWidth + label
+        case .weather:
+            // At the widest a temperature gets, so the pill does not resize as it warms up.
+            return Self.glyphWidth + Self.detailSpacing + Self.measure("-00°")
         }
     }
 
@@ -319,6 +326,21 @@ struct PillIndicatorView: View {
             }
             .accessibilityElement(children: .combine)
             .accessibilityLabel("Battery \(content.battery.percentage) percent")
+
+        case .weather:
+            if let weather = content.weather {
+                HStack(spacing: CollapsedPillContent.detailSpacing) {
+                    Image(systemName: weather.condition.symbolName(isDay: weather.isDay))
+                        .symbolRenderingMode(.multicolor)
+                        .font(.system(size: 12))
+                        .frame(width: CollapsedPillContent.glyphWidth)
+                    Text(WeatherReport.degrees(weather.temperature))
+                        .font(Typography.timecode)
+                        .foregroundStyle(.white.opacity(0.92))
+                }
+                .accessibilityElement(children: .combine)
+                .accessibilityLabel("\(weather.condition.title), \(WeatherReport.degrees(weather.temperature))")
+            }
         }
     }
 }

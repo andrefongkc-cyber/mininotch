@@ -21,6 +21,7 @@ struct SettingsSnapshot: Codable, Equatable {
     var timer = TimerSettings()
     var shortcuts = ShortcutSettings()
     var advanced = AdvancedSettings()
+    var weather = WeatherSettings()
 
     init() {}
 
@@ -37,6 +38,7 @@ struct SettingsSnapshot: Codable, Equatable {
         timer = c.value(.timer, TimerSettings())
         shortcuts = c.value(.shortcuts, ShortcutSettings())
         advanced = c.value(.advanced, AdvancedSettings())
+        weather = c.value(.weather, WeatherSettings())
     }
 }
 

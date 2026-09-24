@@ -22,6 +22,7 @@ final class SettingsStore {
     var timer = TimerSettings() { didSet { didChange(oldValue != timer) } }
     var shortcuts = ShortcutSettings() { didSet { didChange(oldValue != shortcuts) } }
     var advanced = AdvancedSettings() { didSet { didChange(oldValue != advanced) } }
+    var weather = WeatherSettings() { didSet { didChange(oldValue != weather) } }
 
     /// Fired after a section actually changed value, on the main thread.
     /// `AppEnvironment` uses this to reconcile side effects such as login-item
@@ -72,6 +73,7 @@ final class SettingsStore {
             snapshot.timer = timer
             snapshot.shortcuts = shortcuts
             snapshot.advanced = advanced
+            snapshot.weather = weather
             return snapshot
         }
         set { apply(newValue) }
@@ -88,6 +90,7 @@ final class SettingsStore {
         timer = snapshot.timer
         shortcuts = snapshot.shortcuts
         advanced = snapshot.advanced
+        weather = snapshot.weather
     }
 
     // MARK: Persistence

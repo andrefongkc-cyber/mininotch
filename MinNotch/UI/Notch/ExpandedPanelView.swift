@@ -50,6 +50,8 @@ struct ExpandedPanelView: View {
             LinkShelfWidgetView()
         case .timer:
             TimerWidgetView(viewModel: viewModel)
+        case .weather:
+            WeatherWidgetView()
         }
     }
 

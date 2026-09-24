@@ -21,6 +21,7 @@ final class AppEnvironment {
     let hud = HUDCoordinator()
     let audioAnalyzer = AudioAnalyzer()
     let audioOutputs = AudioOutputService()
+    let weather = WeatherService()
 
     @ObservationIgnored private let gestures = NotchGestureMonitor()
     let liveActivities = LiveActivityCenter()
@@ -89,6 +90,8 @@ final class AppEnvironment {
         bluetooth.start(settings: settings)
         shelf.start(settings: settings)
         hud.start(settings: settings)
+        // Does nothing until Weather is switched on; then fetches, and every half hour after.
+        weather.start(settings: settings)
         // Only listens for the screen locking; the window exists between lock and unlock.
         lockScreen.start()
         applyAudioAnalysisSetting()
@@ -140,6 +143,7 @@ final class AppEnvironment {
         // Also removes the key tap, so the volume and brightness keys go straight back to macOS.
         hud.stop()
         lockScreen.stop()
+        weather.stop()
         meetingTimer?.invalidate()
         meetingTimer = nil
         audioAnalyzer.stop()
@@ -168,6 +172,7 @@ final class AppEnvironment {
         clipboard.settingsChanged()
         linkShelf.settingsChanged()
         hud.applySettings()
+        weather.settingsChanged()
         applyAudioAnalysisSetting()
         gestures.applySettings()
         calendarService.refresh()

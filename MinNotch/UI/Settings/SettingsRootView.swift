@@ -251,6 +251,7 @@ struct SettingsRootView: View {
         case .battery: BatterySettingsView()
         case .shelf: ShelfSettingsView()
         case .timer: TimerSettingsView()
+        case .weather: WeatherSettingsView()
         case .shortcuts: ShortcutsSettingsView()
         case .advanced: AdvancedSettingsView()
         case .about: AboutSettingsView()

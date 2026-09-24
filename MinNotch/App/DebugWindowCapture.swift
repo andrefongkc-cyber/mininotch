@@ -152,6 +152,16 @@ enum DebugWindowCapture {
             environment.audioOutputs.refresh()
             environment.nowPlaying.isShowingOutputSheet = true
         }
+        // A fixed forecast, so the Weather tab and the pill's temperature can be captured with
+        // no network and no location.
+        if arguments.contains("--sample-weather") {
+            settings.weather.enabled = true
+            environment.weather.applySample()
+            // Weather is not in the default pill arrangement, so place it for the capture.
+            if !settings.general.pillLeading.contains(.weather), !settings.general.pillTrailing.contains(.weather) {
+                settings.general.pillTrailing.insert(.weather, at: 0)
+            }
+        }
         if arguments.contains("--sample-shelf") {
             settings.shelf.enabled = true
             environment.shelf.applySample()

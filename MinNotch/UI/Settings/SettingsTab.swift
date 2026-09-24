@@ -14,6 +14,7 @@ enum SettingsTab: String, CaseIterable, Identifiable {
     case battery
     case shelf
     case timer
+    case weather
     case shortcuts
     case advanced
     case about
@@ -31,6 +32,7 @@ enum SettingsTab: String, CaseIterable, Identifiable {
         case .battery: return "Battery"
         case .shelf: return "Shelf"
         case .timer: return "Timer"
+        case .weather: return "Weather"
         case .shortcuts: return "Shortcuts"
         case .advanced: return "Advanced"
         case .about: return "About"
@@ -48,6 +50,7 @@ enum SettingsTab: String, CaseIterable, Identifiable {
         case .battery: return "battery.100percent"
         case .shelf: return "tray.full"
         case .timer: return "timer"
+        case .weather: return "cloud.sun"
         case .shortcuts: return "command"
         case .advanced: return "slider.horizontal.3"
         case .about: return "info.circle"
@@ -67,6 +70,7 @@ enum SettingsTab: String, CaseIterable, Identifiable {
         case .battery: return Color(nsColor: .systemGreen)
         case .shelf: return Color(nsColor: .systemTeal)
         case .timer: return Color(nsColor: .systemYellow)
+        case .weather: return Color(nsColor: .systemCyan)
         case .shortcuts: return Color(nsColor: .systemIndigo)
         case .advanced: return Color(nsColor: .systemBlue)
         case .about: return Color(nsColor: .systemGray)
@@ -79,13 +83,14 @@ enum SettingsTab: String, CaseIterable, Identifiable {
         case .huds: return FeatureFlag.hud.badge
         case .shelf: return FeatureFlag.shelf.badge
         case .timer: return FeatureFlag.pomodoro.badge
+        case .weather: return FeatureFlag.weather.badge
         default: return nil
         }
     }
 
     static let groups: [[SettingsTab]] = [
         [.general, .appearance, .layout],
-        [.media, .calendar, .huds, .battery, .shelf, .timer],
+        [.media, .calendar, .huds, .battery, .shelf, .timer, .weather],
         [.shortcuts, .advanced, .about]
     ]
 }

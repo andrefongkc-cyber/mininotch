@@ -457,6 +457,8 @@ struct NotchRootView: View {
             height = LinkShelfWidgetView.preferredHeight
         case .timer:
             height = TimerWidgetView.preferredHeight
+        case .weather:
+            height = WeatherWidgetView.preferredHeight
         }
 
         // The top strip is the band hidden behind the camera housing, so it is added at
