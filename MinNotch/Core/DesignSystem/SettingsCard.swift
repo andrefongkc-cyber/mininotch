@@ -101,6 +101,7 @@ struct SettingsRow<Control: View>: View {
                         .font(Typography.body)
                         .foregroundStyle(Palette.primaryText)
                     if let badge { BadgeView(badge) }
+                    if SettingsNewRows.isNew(title) { BadgeView(.new) }
                 }
                 if let subtitle {
                     Text(subtitle)

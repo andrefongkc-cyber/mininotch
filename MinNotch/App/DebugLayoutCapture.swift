@@ -31,10 +31,13 @@ enum DebugLayoutCapture {
         let settings = environment.settings
         // Something in every tray, so the capture shows one.
         settings.general.extendPillForIndicators = true
-        settings.general.pillLeading = [.artwork, .playing]
-        settings.general.pillTrailing = [.battery]
+        settings.general.pillLeading = [.artwork, .song]
+        settings.general.pillTrailing = [.playing, .battery]
         settings.media.controlOrder = [.shuffle, .previous, .playPause, .next]
         settings.advanced.showDebugButtons = false
+        // The sample song and battery, so the live miniature has something real to draw.
+        environment.battery.applySampleStatus()
+        environment.nowPlaying.applySample(settings: settings)
 
         let pages: [(String, AnyView)] = [
             ("pill", AnyView(IconLayoutEditor(
@@ -42,6 +45,18 @@ enum DebugLayoutCapture {
                 leading: binding(settings, \.general.pillLeading),
                 trailing: binding(settings, \.general.pillTrailing),
                 catalogue: PillIndicator.allCases
+            ))),
+            // What Settings draws: the pill's own indicators from the sample track, not symbols.
+            ("pill-live", AnyView(IconLayoutEditor(
+                surface: .closedPill,
+                leading: binding(settings, \.general.pillLeading),
+                trailing: binding(settings, \.general.pillTrailing),
+                catalogue: PillIndicator.allCases,
+                livePreview: { indicator in
+                    let pill = CollapsedPillContent.live(environment: environment, settings: settings, isExtended: true)
+                    guard pill.hasContent(indicator) else { return nil }
+                    return AnyView(PillIndicatorView(indicator: indicator, content: pill))
+                }
             ))),
             ("pill-off", AnyView(IconLayoutEditor(
                 surface: .closedPill,

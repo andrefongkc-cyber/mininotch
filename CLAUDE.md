@@ -16,7 +16,7 @@ the only ones, and they are updated in place.
 ## Start here
 
 The app builds clean, runs, and is feature-complete for everything in `WORKPLAN.md` marked
-`[x]`. 133 Swift files, in Swift 6 language mode.
+`[x]`. 138 Swift files, in Swift 6 language mode.
 
 **It is signed, as of 2026-09-15, with the user's free personal team** (`CODE_SIGN_STYLE =
 Automatic`, an Apple Development certificate, no provisioning profile needed for a local Mac
@@ -62,7 +62,7 @@ MinNotch --capture-notch out.png [--collapsed] [--tab system] [--glow bars|off] 
                                  [--paused] [--placements closed,open]
                                  [--sample-calendar] [--calendar-step 1] [--calendar-pick 2]
                                  [--card compact|fullArtwork] [--controls shuffle,playPause,repeatMode]
-                                 [--lyrics-sheet] [--sample-stats]
+                                 [--lyrics-sheet] [--sample-stats] [--shadow] [--closed-lyrics]
 MinNotch --check-lyrics "Khalid" "8TEEN" 229                      # LRCLIBClient + LRCParser
 MinNotch --check-lyric-sync [--out f]                             # matching lyrics to the audio
 MinNotch --check-stats 5                                          # CPU/GPU/memory/network
@@ -78,6 +78,7 @@ MinNotch --check-media [--scripts <dir>] [--out f]                # snapshot, sh
 MinNotch --check-keys [--simulate] [--control] [--out f]          # volume/brightness key tap
 MinNotch --check-links "<url or text>" ...                        # link shelf: titles, icons, refusals
 MinNotch --check-downloads [--out f]                              # download activities, in a scratch folder
+MinNotch --check-lock-screen                                      # the SkyLight calls behind the lock screen HUD
 ```
 
 `--capture-notch` grew three options for the animated effects. `--glow off` disables the
@@ -254,6 +255,18 @@ Scripts/          build, run, preview
   arrangement, not what `TopStripLayout` resolves, or a drop would appear to land in the wrong
   place. `ImageRenderer` cannot draw drag sources or drop targets, so `--capture-layout` sets
   `LayoutEditorRendering.isStatic` and renders the editors without them.
+- **A drop lands where it is let go, judged against the icons' midpoints.** Each side of the
+  editor is one `DropDelegate` target that reads the pointer's position, which is also what lets
+  it draw a marker in the gap before anything is dropped. It used to be a target per icon that
+  inserted before it, and a side that appended: everywhere off an icon meant "at the end", so on
+  the closed pill, whose left side hugs the cutout, dropping in the empty space on the left moved
+  an icon right, and moving one left needed a hit on a 26 point icon. Reported as "moving right
+  is really good but moving left is really hard". The gap index is counted with the dragged item
+  still in place, so `place(_:on:at:)` takes one off when it is moving right within a side.
+- **The closed pill's miniature is the pill.** `PillIndicatorView` draws one indicator for both
+  the notch and Settings > Layout, and `CollapsedPillContent.live` builds the live state for
+  both, so the miniature shows this cover, this title and this battery. An indicator with
+  nothing to show right now keeps its symbol, faded, so it can still be dragged.
 - **The top bar's arrangement is a preference; `TopStripLayout` decides placement.** Every
   enabled feature adds a tab, and a fixed tab strip on the left pushed the seventh (Links)
   behind the camera housing. Items that do not fit on their side cross to the other side next
@@ -572,9 +585,16 @@ defaulting on only under `#if DEBUG`) for checking both at a glance. Review it w
 `--capture-whats-new`, which renders the notes on their own because a window capture does not
 draw `ScrollView` content.
 
-`ReleaseNotes.latest` is 0.3.0 and `MARKETING_VERSION` matches. 0.3.0 was released on
-2026-09-23 as the GitHub release `v0.3.0`, signed with the personal team like 0.2.0, so the next
-shared build needs new notes, a new `id`, and a version bump.
+`ReleaseNotes.latest` is 0.4.0 and `MARKETING_VERSION` matches, written on 2026-09-23 and not yet
+released: no DMG has been built. 0.3.0 was released the same day as the GitHub release `v0.3.0`,
+signed with the personal team like 0.2.0. The README marks what is on `main` but not in a download
+with _(0.4)_; take those markers out when 0.4.0 ships.
+
+**Settings says what is new.** `SettingsNewRows` maps row titles to the release that brought them,
+and every row from `ReleaseNotes.latest.version` gets a "New" badge, as does its pane in the
+sidebar. Add a release's new and renamed rows there when writing its notes;
+`Scripts/audit-search.sh` fails if a title there is not a real row, which is how a rename that
+would silently drop its badge gets caught.
 
 ## Releases
 
@@ -605,10 +625,57 @@ three false positives: `accentMode` and `customAccent`, read through `resolvedAc
 their own section's file, which is what the grep cannot see.
 
 If a feature genuinely cannot be built, delete its setting rather than badging it forever.
-`showOnLockScreen` was removed for this reason: macOS composites no third-party window on the
-lock screen and offers no widget surface there, unlike iOS.
+`showOnLockScreen` was once removed on the belief that macOS composites no third-party window on
+the lock screen. That was wrong, which is its own lesson: no public window level reaches it, but
+a private one does, and it is back as `HUDSettings.showOnLockScreen`. See the lock screen note
+under "How the trickier features behave". Before deleting a setting as impossible, look for how
+the apps that do it manage it.
 
 ## How the trickier features behave
+
+**The lock screen is a space above every other, and SkyLight can make another above it.** No
+window level an app can set reaches the lock screen, because it is its own window server space
+drawn over all the ordinary ones. Spaces can have an absolute level, though, which is how
+Notification Center shows on a locked Mac: 300 is the lock screen, 400 is Notification Center at
+the lock screen. `LockScreenSpace` loads `SLSSpaceCreate`, `SLSSpaceSetAbsoluteLevel`,
+`SLSShowSpaces` and `SLSSpaceAddWindowsAndRemoveFromSpaces` from SkyLight at run time, creates a
+space at 400, and moves one window into it. `LockScreenHUDController` makes that window on
+`com.apple.screenIsLocked` and throws it away on `com.apple.screenIsUnlocked`: it ignores the
+mouse, can never become key, and draws the HUD and nothing between readings. It is a window of
+its own, not the notch's, so the private calls can never leave the real notch in a space it
+should not be in. `--check-lock-screen` proves the calls resolve and a moved window stays on
+screen; only locking the screen shows it drawing there, which a tool cannot do and then undo.
+Private API, so it cannot ship in an App Store build.
+
+**An `if` in a modifier is two different views.** `PanelShadow` applied `.shadow` only while
+open, through an `if`, and that gave the whole surface a new identity when the notch opened: the
+pill was replaced by a panel that took its final size on its first frame, and the two
+cross-faded instead of one box growing. The user saw the panel come apart. The shadow is now a
+layer of its own behind the surface, present for as long as the setting is on and faded with the
+spring. Anything that changes with open and closed goes in a value, never a branch around the
+surface.
+
+**While the pill is the notch's size, the glow traces the housing, not the pill.** `NotchShape`
+insets its body by the shoulder radius, so at the notch's width the body is nine points narrower
+than the housing on each side, and the housing has no pixels. The glow's sides started inside it
+and only their blur's tail reached the screen: one point outside the housing, alpha 71 at the
+sides against 197 below. `NotchRootView.glowShape` traces the housing in that one case, and the
+two now measure 209 and 200. Capture with `--collapsed --placements closed,open` and read alpha
+just outside `x = 494` and below `y = 63` to check it.
+
+**The song is not a live activity.** It used to be presented as one, the lowest priority, which
+put the artist in the Live Activity slot with no choice of title and never took it down again, so
+the pill named an artist after the player had quit. `PillIndicator.song` reads the track directly
+and shows the title or the artist (`GeneralSettings.pillSongText`), capped at 120 points because
+both flanks are drawn at the wider one's width and one long name made the pill reach halfway
+across the menu bar. A settings file without `pillSongText` predates it and gets the Song placed
+beside its Live Activity, once. The cover and the song show while a song is loaded, paused or
+not; the playing indicator shows whenever something plays, beside the cover rather than instead
+of it.
+
+**Lyrics with the notch closed use the sneak peek's shape and size**, so a track change swaps what
+the strip says rather than resizing the notch. Only synced lyrics, only while playing; it redraws
+ten times a second while it is up, about 4% of a core in a Debug build.
 
 **Five things make the glow look right, and all five were bugs first.** A segment covering
 the whole outline is stroked as a closed path, never as a trim from 0 to 1: a trim is an open
@@ -820,6 +887,9 @@ hand, and each one is a place to look first when something is reported.
 - Multi-display targeting beyond one screen. All three modes are written; only the built-in
   display has ever been used.
 - Sandboxed behaviour. Everything so far assumes unsandboxed.
+- From the 0.3 feedback batch (2026-09-23): the rewritten drag and drop in Settings > Layout
+  (built and reasoned through, never dragged), the HUD over a real lock screen, the closed lyrics
+  strip against a real song, and the tutorial's Allow Now for system audio and Accessibility.
 
 **Known to be missing**
 

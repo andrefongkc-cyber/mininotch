@@ -7,6 +7,8 @@ import SwiftUI
 enum SettingsBadge: Equatable {
     case beta
     case comingSoon
+    /// Arrived in the current release. See `SettingsNewRows`.
+    case new
     case pro
     case custom(String, Color)
 
@@ -14,6 +16,7 @@ enum SettingsBadge: Equatable {
         switch self {
         case .beta: return "Beta"
         case .comingSoon: return "Coming soon"
+        case .new: return "New"
         case .pro: return "Pro"
         case .custom(let text, _): return text
         }
@@ -23,6 +26,7 @@ enum SettingsBadge: Equatable {
         switch self {
         case .beta: return Palette.controlAccent
         case .comingSoon: return Palette.secondaryText
+        case .new: return Color(nsColor: .systemGreen)
         case .pro: return Color(nsColor: .systemIndigo)
         case .custom(_, let color): return color
         }

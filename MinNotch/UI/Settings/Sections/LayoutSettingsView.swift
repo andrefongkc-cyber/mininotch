@@ -32,7 +32,7 @@ struct LayoutSettingsView: View {
 
                 SettingsRow(
                     title: "Arrangement",
-                    subtitle: "What the closed pill shows either side of the notch. Album art and the playing indicator appear only while something plays; a live activity is a running timer.",
+                    subtitle: "What the closed pill shows either side of the notch. Album art and the song appear while a song is loaded, the playing indicator only while it plays, and a live activity is a timer, a download or a device connecting.",
                     systemImage: "rectangle.split.3x1"
                 ) { EmptyView() }
 
@@ -43,10 +43,32 @@ struct LayoutSettingsView: View {
                     catalogue: PillIndicator.allCases,
                     inactiveCaption: settings.general.extendPillForIndicators
                         ? nil
-                        : "Indicators are off, so the closed pill shows nothing"
+                        : "Indicators are off, so the closed pill shows nothing",
+                    // The miniature shows what the pill is showing: this cover, this song, this
+                    // battery. Anything with nothing to show right now keeps its symbol, faded.
+                    livePreview: { indicator in
+                        let pill = CollapsedPillContent.live(environment: environment, settings: settings, isExtended: true)
+                        guard pill.hasContent(indicator) else { return nil }
+                        return AnyView(PillIndicatorView(indicator: indicator, content: pill))
+                    }
                 )
                 .padding(.horizontal, Metrics.cardHorizontalPadding)
                 .padding(.bottom, 12)
+
+                SettingsDivider()
+
+                SettingsRow(
+                    title: "Song Shows",
+                    subtitle: "What the Song in the closed pill says. Long names are cut short.",
+                    systemImage: "textformat",
+                    isEnabled: settings.general.extendPillForIndicators
+                ) {
+                    InlinePicker(selection: $settings.general.pillSongText) {
+                        ForEach(PillSongText.allCases) { choice in
+                            Text(choice.title).tag(choice)
+                        }
+                    }
+                }
             }
 
             SettingsCard(

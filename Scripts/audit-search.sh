@@ -25,6 +25,16 @@ indexed = set(re.findall(r'(?<![A-Za-z])title: "((?:[^"\\]|\\.)*)"', index))
 
 missing, stale = sorted(rows - indexed), sorted(indexed - rows)
 print(f"rows in panes: {len(rows)}   in index: {len(indexed)}")
+
+# Every row SettingsNewRows badges as new must still exist, or a rename quietly drops its badge.
+new_rows = open('MinNotch/UI/Settings/SettingsNewRows.swift').read()
+badged = set(re.findall(r'^\s*"((?:[^"\\]|\\.)*)": "[0-9.]+",', new_rows, re.M))
+unknown = sorted(badged - rows)
+if unknown:
+    print("in SettingsNewRows but not a row in any pane:")
+    for t in unknown: print("  " + t)
+    sys.exit(1)
+
 if not missing and not stale:
     print("search index matches the panes")
     sys.exit(0)

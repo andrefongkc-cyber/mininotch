@@ -83,6 +83,20 @@ struct HUDSettingsView: View {
             }
 
             SettingsCard(header: "Presentation") {
+                SettingsRow(
+                    title: "Show on the Lock Screen",
+                    subtitle: LockScreenSpace.shared.isAvailable
+                        ? "Volume and brightness over the lock screen too. Uses a private part of macOS, so a future version may stop it working."
+                        : "Not available on this version of macOS.",
+                    systemImage: "lock.display",
+                    isEnabled: LockScreenSpace.shared.isAvailable
+                        && (settings.huds.replaceVolumeHUD || settings.huds.replaceBrightnessHUD || settings.huds.replaceKeyboardBacklightHUD)
+                ) {
+                    SettingsToggle(isOn: $settings.huds.showOnLockScreen)
+                }
+
+                SettingsDivider()
+
                 SettingsRow(title: "Style", systemImage: "rectangle.on.rectangle") {
                     InlinePicker(selection: $settings.huds.style) {
                         ForEach(HUDStyle.allCases) { style in

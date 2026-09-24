@@ -147,13 +147,17 @@ struct GlowInput {
 }
 
 /// Where the glow takes its tempo from when it is not following the audio.
+///
+/// The song's own tempo is the default and comes first: a glow that keeps the beat of what is
+/// playing is what people expect from it, and a song without a BPM tag falls back to the Speed
+/// slider anyway, so nobody is worse off for it.
 enum GlowTempoSource: String, Codable, CaseIterable, Identifiable {
+    /// The song's own BPM tag, where the player has one. Music does; Spotify shares none.
+    case song
     /// 92 to 140 bpm across the Speed slider, as it always was.
     case speed
     /// A tempo set by hand or tapped out.
     case manual
-    /// The song's own BPM tag, where the player has one. Music does; Spotify shares none.
-    case song
 
     var id: String { rawValue }
 
@@ -197,7 +201,7 @@ struct AmbientGlowSettings: Codable, Equatable {
     var pauseInLowPowerMode: Bool = true
 
     /// Where the tempo comes from while the glow is not following the audio.
-    var tempoSource: GlowTempoSource = .speed
+    var tempoSource: GlowTempoSource = .song
     /// The tempo for `.manual`, typed or tapped.
     var manualBPM: Double = 120
 
@@ -224,7 +228,7 @@ struct AmbientGlowSettings: Codable, Equatable {
         speed = c.value(.speed, 0.5, in: 0...1)
         glowRadius = c.value(.glowRadius, 12, in: 2...28)
         pauseInLowPowerMode = c.value(.pauseInLowPowerMode, true)
-        tempoSource = c.value(.tempoSource, GlowTempoSource.speed)
+        tempoSource = c.value(.tempoSource, GlowTempoSource.song)
         manualBPM = c.value(.manualBPM, 120, in: Self.bpmRange)
     }
 

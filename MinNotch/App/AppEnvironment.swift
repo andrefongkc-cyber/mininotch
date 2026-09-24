@@ -38,6 +38,7 @@ final class AppEnvironment {
     @ObservationIgnored private(set) lazy var settingsWindow = SettingsWindowController(environment: self)
     @ObservationIgnored private(set) lazy var onboarding = OnboardingCoordinator(environment: self)
     @ObservationIgnored private(set) lazy var whatsNew = WhatsNewCoordinator()
+    @ObservationIgnored private(set) lazy var lockScreenHUD = LockScreenHUDController(environment: self)
 
     init(settings: SettingsStore = SettingsStore()) {
         self.settings = settings
@@ -87,6 +88,8 @@ final class AppEnvironment {
         bluetooth.start(settings: settings)
         shelf.start(settings: settings)
         hud.start(settings: settings)
+        // Only listens for the screen locking; the window exists between lock and unlock.
+        lockScreenHUD.start()
         applyAudioAnalysisSetting()
 
         downloads.onChange = { [weak self] items in self?.syncDownloadActivities(items) }
@@ -135,6 +138,7 @@ final class AppEnvironment {
         shelf.stop()
         // Also removes the key tap, so the volume and brightness keys go straight back to macOS.
         hud.stop()
+        lockScreenHUD.stop()
         audioAnalyzer.stop()
         notchWindows.stop()
         floatingNowPlaying.hide()
@@ -270,6 +274,20 @@ final class AppEnvironment {
         }
     }
 
+    /// Asks for the system audio permission by itself, from the tutorial.
+    ///
+    /// Starting the tap is what raises the prompt, from the foreground. Once it is running the
+    /// tutorial calls `reconcileAudioAnalysis()`, which leaves it running only if a setting
+    /// wants it, so allowing the permission early costs nothing until something uses it.
+    func requestSystemAudioAccess() {
+        audioAnalyzer.retry()
+    }
+
+    /// Puts the audio tap back to whatever the settings want.
+    func reconcileAudioAnalysis() {
+        applyAudioAnalysisSetting()
+    }
+
     /// Starts or stops the audio tap to match the settings.
     ///
     /// The tap is the one part of the glow that costs anything real and needs a permission, so
@@ -331,24 +349,17 @@ final class AppEnvironment {
     private func trackChanged(_ track: NowPlayingTrack) {
         guard settings.media.enabled else { return }
 
-        liveActivities.present(
-            LiveActivity(
-                id: "media.current",
-                kind: .media,
-                symbolName: "music.note",
-                title: track.title,
-                detail: track.artist.isEmpty ? nil : track.artist,
-                tint: nowPlaying.palette.primary,
-                priority: 10
-            )
-        )
+        // The song is not a live activity. It used to be presented as one, which put the
+        // artist in the Live Activity slot with no way to choose the title instead, and it was
+        // never taken down again, so the pill went on naming an artist after the player had
+        // quit. The pill's Song indicator reads the track directly.
 
         // Only for a track that is actually playing. A paused track loading when a player
         // opens is not news, and peeking for it announces a song nobody is hearing.
         guard FeatureFlag.liveActivities.isEnabled,
               settings.media.sneakPeekOnTrackChange,
               track.isPlaying else { return }
-        notchWindows.peekAll(duration: 2.6)
+        notchWindows.peekAll(duration: settings.media.sneakPeekDuration)
     }
 
     /// Mirrors the timer into the pill, so a countdown is visible with the notch closed.

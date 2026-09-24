@@ -489,61 +489,62 @@ private struct PermissionsPage: View {
 
     @Environment(AppEnvironment.self) private var environment
     @State private var notificationsAnswered: Bool?
+    @State private var isAccessibilityTrusted = SystemKeyInterceptor.isTrusted
+    @State private var audioAllowed = false
+    @State private var audioAsked = false
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 18) {
+        VStack(alignment: .leading, spacing: 14) {
             PageHeader(
-                title: "What MinNotch will ask for",
-                subtitle: "Nothing has been asked for yet. Each permission is requested the first time the feature that needs it is used, and only for features you switched on. You can allow them now instead, while you know why."
+                title: "What MinNotch can ask for",
+                subtitle: "Nothing has been asked for yet. Every permission is here, whatever you switched on, so you can allow them now while you know why. Anything you skip is asked for the first time a feature needs it."
             )
 
-            VStack(spacing: 8) {
-                if selection.contains(.calendar) {
-                    permission(
-                        symbol: "calendar", tint: .systemOrange,
-                        title: "Calendar and Reminders",
-                        detail: "To show your events and reminders in the notch."
-                    ) { calendarAction }
-                }
+            // Every permission, not only those for what was ticked. Someone who turns a feature
+            // on later from Settings should have seen what it asks for here first, and the two
+            // that need a trip to System Settings otherwise, Accessibility and system audio, are
+            // the ones worth allowing while the reason is on screen.
+            VStack(spacing: 7) {
+                permission(
+                    symbol: "calendar", tint: .systemOrange,
+                    title: "Calendar and Reminders",
+                    detail: "To show your events and reminders in the notch."
+                ) { calendarAction }
 
-                if selection.contains(.timer) {
-                    permission(
-                        symbol: "bell.badge", tint: .systemRed,
-                        title: "Notifications",
-                        detail: "To tell you when a timer or focus session ends, and when the battery is low."
-                    ) { notificationsAction }
-                }
+                permission(
+                    symbol: "accessibility", tint: .systemBlue,
+                    title: "Accessibility",
+                    detail: "To hide Apple's volume and brightness overlay so only MinNotch's shows. Used by HUDs > Hide the System Overlay."
+                ) { accessibilityAction }
 
-                if selection.contains(.nowPlaying) {
-                    permission(
-                        symbol: "music.note", tint: .systemPink,
-                        title: "Controlling Music and Spotify",
-                        detail: "macOS asks the first time one of them plays. MinNotch never opens either app itself."
-                    ) {
-                        Text("Asked when needed")
-                            .font(.system(size: 11))
-                            .foregroundStyle(Palette.tertiaryText)
-                    }
+                permission(
+                    symbol: "waveform", tint: .systemPurple,
+                    title: "System Audio",
+                    detail: "To hear what is playing, so the glow follows the beat and lyrics line up with the singing. Nothing is recorded or kept."
+                ) { audioAction }
+
+                permission(
+                    symbol: "bell.badge", tint: .systemRed,
+                    title: "Notifications",
+                    detail: "To tell you when a timer or focus session ends, and when the battery is low."
+                ) { notificationsAction }
+
+                permission(
+                    symbol: "music.note", tint: .systemPink,
+                    title: "Controlling Music and Spotify",
+                    detail: "macOS asks the first time one of them plays. MinNotch never opens either app itself."
+                ) {
+                    Text("Asked when needed")
+                        .font(.system(size: 11))
+                        .foregroundStyle(Palette.tertiaryText)
                 }
 
                 if selection.contains(.onlineLyrics) {
                     permission(
-                        symbol: "network", tint: .systemBlue,
+                        symbol: "network", tint: .systemTeal,
                         title: "Lyrics lookup",
                         detail: "Not a permission, but worth knowing: the current track's title, artist, album and length are sent to lrclib.net to find its lyrics."
                     ) { EmptyView() }
-                }
-
-                if !needsAnything {
-                    HStack(spacing: 10) {
-                        Image(systemName: "checkmark.seal")
-                            .font(.system(size: 18))
-                            .foregroundStyle(Color(nsColor: .systemGreen))
-                        Text("Nothing you switched on needs a permission.")
-                            .font(.system(size: 13))
-                            .foregroundStyle(Palette.secondaryText)
-                    }
-                    .padding(.vertical, 8)
                 }
             }
 
@@ -551,10 +552,21 @@ private struct PermissionsPage: View {
                 .font(.system(size: 12))
                 .foregroundStyle(Palette.secondaryText)
         }
-    }
-
-    private var needsAnything: Bool {
-        !selection.isDisjoint(with: [.calendar, .timer, .nowPlaying, .onlineLyrics])
+        // Accessibility is granted in System Settings with no callback, so look again while
+        // this page is showing.
+        .task {
+            while !Task.isCancelled {
+                isAccessibilityTrusted = SystemKeyInterceptor.isTrusted
+                try? await Task.sleep(for: .seconds(1))
+            }
+        }
+        .onAppear { audioAllowed = environment.audioAnalyzer.isRunning }
+        .onChange(of: environment.audioAnalyzer.isRunning) { _, isRunning in
+            guard isRunning, audioAsked else { return }
+            audioAllowed = true
+            // Allowed now; keep listening only if a setting actually wants it.
+            environment.reconcileAudioAnalysis()
+        }
     }
 
     @ViewBuilder
@@ -563,11 +575,36 @@ private struct PermissionsPage: View {
         case .fullAccess, .authorized:
             granted
         case .denied, .restricted, .writeOnly:
-            Text("Change in System Settings")
-                .font(.system(size: 11))
-                .foregroundStyle(Palette.secondaryText)
+            changeInSettings
         default:
             Button("Allow Now") { environment.calendarService.requestAccess() }
+        }
+    }
+
+    @ViewBuilder
+    private var accessibilityAction: some View {
+        if isAccessibilityTrusted {
+            granted
+        } else {
+            Button("Allow Now") { SystemKeyInterceptor.requestTrust() }
+                .help("macOS shows its own dialog, which opens Privacy & Security > Accessibility")
+        }
+    }
+
+    @ViewBuilder
+    private var audioAction: some View {
+        if audioAllowed {
+            granted
+        } else if audioAsked, environment.audioAnalyzer.failure != nil {
+            changeInSettings
+                .help("Privacy & Security > Screen & System Audio Recording")
+        } else if environment.audioAnalyzer.isStarting {
+            ProgressView().controlSize(.small)
+        } else {
+            Button("Allow Now") {
+                audioAsked = true
+                environment.requestSystemAudioAccess()
+            }
         }
     }
 
@@ -577,9 +614,7 @@ private struct PermissionsPage: View {
         case .some(true):
             granted
         case .some(false):
-            Text("Change in System Settings")
-                .font(.system(size: 11))
-                .foregroundStyle(Palette.secondaryText)
+            changeInSettings
         case .none:
             Button("Allow Now") {
                 NotificationCenterBridge.requestAuthorizationIfNeeded { granted in
@@ -595,25 +630,32 @@ private struct PermissionsPage: View {
             .foregroundStyle(Color(nsColor: .systemGreen))
     }
 
+    private var changeInSettings: some View {
+        Text("Change in System Settings")
+            .font(.system(size: 11))
+            .foregroundStyle(Palette.secondaryText)
+    }
+
     private func permission<Action: View>(
         symbol: String, tint: NSColor, title: String, detail: String,
         @ViewBuilder action: () -> Action
     ) -> some View {
         HStack(alignment: .center, spacing: 12) {
-            TintedIcon(symbolName: symbol, tint: Color(nsColor: tint), size: 30)
-            VStack(alignment: .leading, spacing: 2) {
+            TintedIcon(symbolName: symbol, tint: Color(nsColor: tint), size: 28)
+            VStack(alignment: .leading, spacing: 1) {
                 Text(title)
                     .font(.system(size: 13, weight: .semibold))
                     .foregroundStyle(Palette.primaryText)
                 Text(detail)
-                    .font(.system(size: 12))
+                    .font(.system(size: 11.5))
                     .foregroundStyle(Palette.secondaryText)
                     .fixedSize(horizontal: false, vertical: true)
             }
             Spacer(minLength: 8)
             action()
         }
-        .padding(12)
+        .padding(.horizontal, 12)
+        .padding(.vertical, 8)
         .background(
             RoundedRectangle(cornerRadius: 10, style: .continuous)
                 .fill(Palette.cardBackground)

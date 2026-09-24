@@ -34,6 +34,9 @@ struct GeneralSettings: Codable, Equatable {
     var pillLeading: [PillIndicator] = PillIndicator.defaultLeading
     var pillTrailing: [PillIndicator] = PillIndicator.defaultTrailing
 
+    /// Whether the closed pill's Song indicator shows the title or the artist.
+    var pillSongText: PillSongText = .title
+
     /// A live activity for each file arriving in Downloads. Off by default: it reads the
     /// Downloads folder, which is a permission of its own.
     var showDownloadActivity: Bool = false
@@ -63,6 +66,13 @@ struct GeneralSettings: Codable, Equatable {
         extendPillForIndicators = c.value(.extendPillForIndicators, false)
         pillLeading = c.value(.pillLeading, PillIndicator.defaultLeading)
         pillTrailing = c.value(.pillTrailing, PillIndicator.defaultTrailing)
+        pillSongText = c.value(.pillSongText, PillSongText.title)
+        // Before the song had an indicator of its own, it rode in the Live Activity slot as the
+        // lowest-priority activity. A file from then has no `pillSongText` key, and gets the Song
+        // placed where that slot is, so the song stays where its owner was used to seeing it.
+        if !c.contains(.pillSongText) {
+            PillIndicator.placeSong(leading: &pillLeading, trailing: &pillTrailing)
+        }
         showDownloadActivity = c.value(.showDownloadActivity, false)
         announceConnectedDevices = c.value(.announceConnectedDevices, true)
         rememberLastTab = c.value(.rememberLastTab, true)
@@ -78,6 +88,7 @@ struct GeneralSettings: Codable, Equatable {
 /// that band sits over the camera housing and only works because nothing is drawn in it.
 enum PillIndicator: String, Codable, CaseIterable, Identifiable, LayoutArrangeable {
     case artwork
+    case song
     case activity
     case playing
     case battery
@@ -87,6 +98,7 @@ enum PillIndicator: String, Codable, CaseIterable, Identifiable, LayoutArrangeab
     var layoutTitle: String {
         switch self {
         case .artwork: return "Album Art"
+        case .song: return "Song"
         case .activity: return "Live Activity"
         case .playing: return "Playing Indicator"
         case .battery: return "Battery"
@@ -96,13 +108,43 @@ enum PillIndicator: String, Codable, CaseIterable, Identifiable, LayoutArrangeab
     var layoutSymbol: String {
         switch self {
         case .artwork: return "photo"
+        case .song: return "textformat"
         case .activity: return "bolt.badge.clock"
         case .playing: return "waveform"
         case .battery: return "battery.100percent"
         }
     }
 
-    /// What today's fixed layout did, so an existing install sees no change.
-    static let defaultLeading: [PillIndicator] = [.artwork, .activity, .playing]
-    static let defaultTrailing: [PillIndicator] = [.battery]
+    /// The song beside its cover on the left, and what changes on its own on the right.
+    /// Balanced on purpose: both flanks are drawn at the wider one's width, so a layout that
+    /// piles everything on one side leaves the other side an empty black strip.
+    static let defaultLeading: [PillIndicator] = [.artwork, .song]
+    static let defaultTrailing: [PillIndicator] = [.playing, .activity, .battery]
+
+    /// Puts the Song just before the Live Activity, on whichever side that is. Nothing happens
+    /// when the Song is already placed, or when there is no Live Activity to stand beside,
+    /// since then the song was never showing.
+    static func placeSong(leading: inout [PillIndicator], trailing: inout [PillIndicator]) {
+        guard !leading.contains(.song), !trailing.contains(.song) else { return }
+        if let index = leading.firstIndex(of: .activity) {
+            leading.insert(.song, at: index)
+        } else if let index = trailing.firstIndex(of: .activity) {
+            trailing.insert(.song, at: index)
+        }
+    }
+}
+
+/// What the closed pill's Song indicator shows.
+enum PillSongText: String, Codable, CaseIterable, Identifiable {
+    case title
+    case artist
+
+    var id: String { rawValue }
+
+    var title: String {
+        switch self {
+        case .title: return "Song Title"
+        case .artist: return "Artist"
+        }
+    }
 }

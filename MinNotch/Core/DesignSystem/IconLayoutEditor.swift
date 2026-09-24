@@ -39,8 +39,13 @@ enum LayoutEditorRendering {
 ///
 /// - **An item exists in at most one side.** Dropping it anywhere removes it from wherever it
 ///   was, so a caller can treat the sides as a partition and never has to de-duplicate.
-/// - **Dropping on an icon inserts before it; dropping on a side appends.** That is what makes
-///   reordering possible at all, since a side-level drop alone can only mean "at the end".
+/// - **Where an icon lands is where it was let go.** Each side is one drop target, and the
+///   drop goes between the icons either side of the pointer, judged by their midpoints, with a
+///   marker there while the drag is over it. It used to be a target per icon that inserted
+///   before it, plus a side that appended: anywhere off an icon meant "at the end", so on the
+///   closed pill, whose left side hugs the cutout, dropping in the empty space on the left
+///   moved an icon to the right, and moving one left needed a hit on a 26 point icon. Moving
+///   right was easy and moving left was hard, which is how it was reported.
 /// - **The cutout is not a destination.** On the real notch that band is a click-through gap
 ///   with nothing in it, so the miniature draws it and accepts nothing there.
 ///
@@ -74,9 +79,21 @@ struct IconLayoutEditor<Item: LayoutArrangeable>: View {
     var isProminent: (Item) -> Bool = { _ in false }
     /// Fades the miniature while the surface is switched off, and says why.
     var inactiveCaption: String?
+    /// Draws a placed item as the surface really shows it right now, instead of its symbol.
+    /// Nil for an item with nothing to show at the moment, which then shows its symbol, faded.
+    var livePreview: ((Item) -> AnyView?)? = nil
 
     @State private var targeted: String?
     @State private var hovered: Item?
+    /// Where each placed icon is, in its side's own coordinate space, keyed by `frameKey`.
+    @State private var iconFrames: [String: CGRect] = [:]
+    /// Where a drop would land, while a drag is over a side.
+    @State private var insertion: Insertion?
+
+    private struct Insertion: Equatable {
+        var side: Side
+        var index: Int
+    }
 
     private static var trayID: String { "__tray" }
 
@@ -149,24 +166,20 @@ struct IconLayoutEditor<Item: LayoutArrangeable>: View {
     private static var gap: CGFloat { 2 }
 
     private func closedPill(stageWidth: CGFloat) -> some View {
-        let leadingCount = leading.wrappedValue.count
-        let trailingCount = trailing?.wrappedValue.count ?? 0
-        // Both flanks at the width of the fuller one, as on the real pill, which is what keeps
-        // the cutout over the camera.
-        let count = CGFloat(max(leadingCount, trailingCount, 1))
         let slot = CGSize(width: 26, height: 22)
-        let flank = count * slot.width + (count - 1) * Self.gap + 8
-        let total = min(flank * 2 + Self.cutoutWidth, stageWidth - 24)
-        let fitted = (total - Self.cutoutWidth) / 2
 
-        return HStack(spacing: 0) {
-            side(.leading, slot: slot, width: fitted, alignment: .trailing)
+        // Both flanks at the width of the fuller one, as on the real pill, which is what keeps
+        // the cutout over the camera. Measured rather than counted, because a live preview is
+        // as wide as what it shows: a song title is not one icon wide.
+        return EqualFlanks {
+            side(.leading, slot: slot, width: nil, alignment: .trailing)
             cutout(height: 28)
-            side(.trailing, slot: slot, width: fitted, alignment: .leading)
+            side(.trailing, slot: slot, width: nil, alignment: .leading)
         }
         .frame(height: 28)
         .padding(.horizontal, 6)
         .background(NotchShape(shoulderRadius: 6, bottomRadius: 10).fill(Color.black))
+        .frame(maxWidth: stageWidth - 24)
     }
 
     private func topBar(stageWidth: CGFloat) -> some View {
@@ -254,6 +267,8 @@ struct IconLayoutEditor<Item: LayoutArrangeable>: View {
 
     private func zoneID(_ side: Side) -> String { side == .leading ? "leading" : "trailing" }
 
+    private func frameKey(_ side: Side, _ item: Item) -> String { zoneID(side) + "|" + item.layoutID }
+
     private func side(_ side: Side, slot: CGSize, width: CGFloat?, alignment: Alignment) -> some View {
         let placed = items(of: side).wrappedValue
         let id = zoneID(side)
@@ -264,6 +279,11 @@ struct IconLayoutEditor<Item: LayoutArrangeable>: View {
             } else {
                 ForEach(placed) { item in
                     placedIcon(item, side: side, slot: slot)
+                        .onGeometryChange(for: CGRect.self) { proxy in
+                            proxy.frame(in: .named(id))
+                        } action: { frame in
+                            iconFrames[frameKey(side, item)] = frame
+                        }
                 }
             }
         }
@@ -274,16 +294,58 @@ struct IconLayoutEditor<Item: LayoutArrangeable>: View {
                 .fill(Palette.controlAccent.opacity(targeted == id ? 0.35 : 0))
         )
         .frame(width: width, alignment: alignment)
-        .frame(maxWidth: width == nil ? .infinity : nil)
+        .frame(maxWidth: width == nil ? .infinity : nil, alignment: alignment)
         .contentShape(Rectangle())
-        // A drop on the side, not on an icon, means "at the end". An icon's own drop takes
-        // precedence when the pointer is actually over one.
-        .modifier(DropTarget(id: id, targeted: $targeted) { payload in
-            guard let dropped = decode(payload) else { return false }
-            append(dropped, to: side)
-            return true
-        })
+        .coordinateSpace(.named(id))
+        .overlay(alignment: .topLeading) { insertionMarker(on: side, slot: slot) }
+        .modifier(ZoneDropTarget(
+            onUpdate: { location in
+                targeted = id
+                insertion = Insertion(side: side, index: insertionIndex(on: side, at: location.x))
+            },
+            onExit: {
+                if targeted == id { targeted = nil }
+                if insertion?.side == side { insertion = nil }
+            },
+            onDrop: { payload, location in
+                let index = insertionIndex(on: side, at: location.x)
+                targeted = nil
+                insertion = nil
+                guard let dropped = Item.arrangeable(layoutID: payload) else { return }
+                place(dropped, on: side, at: index)
+            }
+        ))
         .animation(Motion.hover, value: targeted)
+        .animation(Motion.hover, value: insertion)
+    }
+
+    /// The gap a drop at `x` goes into: after every icon whose middle is left of it.
+    private func insertionIndex(on side: Side, at x: CGFloat) -> Int {
+        let placed = items(of: side).wrappedValue
+        var index = 0
+        for (position, item) in placed.enumerated() {
+            if let frame = iconFrames[frameKey(side, item)], x > frame.midX { index = position + 1 }
+        }
+        return index
+    }
+
+    /// A bar in the gap a drop would go into.
+    @ViewBuilder
+    private func insertionMarker(on side: Side, slot: CGSize) -> some View {
+        let placed = items(of: side).wrappedValue
+        let frames = placed.compactMap { iconFrames[frameKey(side, $0)] }
+        if let insertion, insertion.side == side, !frames.isEmpty, frames.count == placed.count {
+            let x: CGFloat = insertion.index == 0
+                ? frames[0].minX - 1
+                : insertion.index >= frames.count
+                    ? frames[frames.count - 1].maxX + 1
+                    : (frames[insertion.index - 1].maxX + frames[insertion.index].minX) / 2
+            Capsule()
+                .fill(Palette.controlAccent)
+                .frame(width: 2.5, height: frames[0].height + 4)
+                .offset(x: x - 1.25, y: frames[0].minY - 2)
+                .allowsHitTesting(false)
+        }
     }
 
     private func placeholder(_ slot: CGSize) -> some View {
@@ -298,14 +360,30 @@ struct IconLayoutEditor<Item: LayoutArrangeable>: View {
             .help("Drag an icon here")
     }
 
+    /// An item as it sits on the surface: what it really shows, where there is a live preview,
+    /// or its symbol.
+    @ViewBuilder
+    private func face(_ item: Item, slot: CGSize) -> some View {
+        if let livePreview, let live = livePreview(item) {
+            live
+                .padding(.horizontal, 3)
+                .frame(minWidth: slot.width, minHeight: slot.height)
+        } else {
+            let size = isProminent(item) ? slot.height * 0.6 : min(13, slot.height * 0.52)
+            Image(systemName: item.layoutSymbol)
+                .font(.system(size: size, weight: .medium))
+                // Faded when the surface would show something here and has nothing right now,
+                // so the miniature tells the truth without losing the handle to drag.
+                .foregroundStyle(.white.opacity(livePreview == nil ? 0.92 : 0.4))
+                .frame(width: slot.width, height: slot.height)
+        }
+    }
+
     private func placedIcon(_ item: Item, side: Side, slot: CGSize) -> some View {
         let isHovered = hovered == item
-        let size = isProminent(item) ? slot.height * 0.6 : min(13, slot.height * 0.52)
+        let isIdle = livePreview != nil && livePreview?(item) == nil
 
-        return Image(systemName: item.layoutSymbol)
-            .font(.system(size: size, weight: .medium))
-            .foregroundStyle(.white.opacity(0.92))
-            .frame(width: slot.width, height: slot.height)
+        return face(item, slot: slot)
             .background(
                 RoundedRectangle(cornerRadius: 6, style: .continuous)
                     .fill(Color.white.opacity(isHovered ? 0.18 : 0))
@@ -329,21 +407,18 @@ struct IconLayoutEditor<Item: LayoutArrangeable>: View {
             .onHover { inside in
                 if inside { hovered = item } else if hovered == item { hovered = nil }
             }
-            .help(canRemove(item) ? item.layoutTitle : "\(item.layoutTitle): can be moved, not removed")
+            .help(helpText(item, isIdle: isIdle))
             .modifier(DragSource(payload: item.layoutID) { dragPreview(item) })
-            .modifier(DropTarget(id: nil, targeted: $targeted) { payload in
-                guard let dropped = decode(payload) else { return false }
-                guard dropped != item else { return true }
-                insert(dropped, into: side, before: item)
-                return true
-            })
+    }
+
+    private func helpText(_ item: Item, isIdle: Bool) -> String {
+        let base = canRemove(item) ? item.layoutTitle : "\(item.layoutTitle): can be moved, not removed"
+        return isIdle ? base + ". Nothing to show right now." : base
     }
 
     private func dragPreview(_ item: Item) -> some View {
-        Image(systemName: item.layoutSymbol)
-            .font(.system(size: 14, weight: .medium))
-            .foregroundStyle(.white)
-            .frame(width: 34, height: 30)
+        face(item, slot: CGSize(width: 34, height: 30))
+            .padding(.horizontal, 2)
             .background(RoundedRectangle(cornerRadius: 7, style: .continuous).fill(Color.black))
     }
 
@@ -440,14 +515,17 @@ struct IconLayoutEditor<Item: LayoutArrangeable>: View {
         items(of: side).wrappedValue.append(item)
     }
 
-    private func insert(_ item: Item, into side: Side, before anchor: Item) {
+    /// Puts an item into the gap `index` names on a side, counted with the item still wherever
+    /// it was. Taking it out of this same side first shifts every gap after it one to the left,
+    /// so a gap past its old place is one less once it has gone.
+    private func place(_ item: Item, on side: Side, at index: Int) {
+        var index = index
+        if let current = items(of: side).wrappedValue.firstIndex(of: item), current < index {
+            index -= 1
+        }
         removeEverywhere(item)
-        // The anchor's index is read after the removal, not before: taking the item out of
-        // this same side shifts everything after it, and an index captured beforehand would
-        // insert one place too far to the right.
         let target = items(of: side)
-        let index = target.wrappedValue.firstIndex(of: anchor) ?? target.wrappedValue.endIndex
-        target.wrappedValue.insert(item, at: index)
+        target.wrappedValue.insert(item, at: min(max(index, 0), target.wrappedValue.count))
     }
 
     /// Taking an item out, unless it is one that has to stay placed.
@@ -460,6 +538,90 @@ struct IconLayoutEditor<Item: LayoutArrangeable>: View {
     private func removeEverywhere(_ item: Item) {
         leading.wrappedValue.removeAll { $0 == item }
         trailing?.wrappedValue.removeAll { $0 == item }
+    }
+}
+
+/// One side of the surface as a drop target, reporting where over it the drag is.
+///
+/// A `DropDelegate` rather than `dropDestination`, because only the delegate is told the
+/// pointer's position while the drag moves, and the marker needs it before anything is let go.
+private struct ZoneDropTarget: ViewModifier {
+    var onUpdate: @MainActor (CGPoint) -> Void
+    var onExit: @MainActor @Sendable () -> Void
+    /// Sendable because the payload arrives on the item provider's own queue and is handed
+    /// back to main from there.
+    var onDrop: @MainActor @Sendable (String, CGPoint) -> Void
+
+    func body(content: Content) -> some View {
+        if LayoutEditorRendering.isStatic {
+            content
+        } else {
+            content.onDrop(of: [.plainText], delegate: Delegate(onUpdate: onUpdate, onExit: onExit, onDrop: onDrop))
+        }
+    }
+
+    private struct Delegate: DropDelegate {
+        var onUpdate: @MainActor (CGPoint) -> Void
+        var onExit: @MainActor @Sendable () -> Void
+        var onDrop: @MainActor @Sendable (String, CGPoint) -> Void
+
+        func validateDrop(info: DropInfo) -> Bool { info.hasItemsConforming(to: [.plainText]) }
+
+        func dropUpdated(info: DropInfo) -> DropProposal? {
+            onUpdate(info.location)
+            return DropProposal(operation: .move)
+        }
+
+        func dropExited(info: DropInfo) { onExit() }
+
+        func performDrop(info: DropInfo) -> Bool {
+            let location = info.location
+            guard let provider = info.itemProviders(for: [.plainText]).first else {
+                onExit()
+                return false
+            }
+            let onDrop = onDrop
+            let onExit = onExit
+            _ = provider.loadObject(ofClass: NSString.self) { object, _ in
+                let payload = (object as? NSString).map { String($0) }
+                DispatchQueue.main.async {
+                    guard let payload else { onExit(); return }
+                    onDrop(payload, location)
+                }
+            }
+            return true
+        }
+    }
+}
+
+/// Three views in a row with the outer two at the same width: the wider of the two.
+///
+/// The closed pill's rule, which keeps the cutout centred. Each flank is offered that width,
+/// so a flank with less in it still spans its whole side and can be dropped on anywhere.
+private struct EqualFlanks: Layout {
+    func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
+        guard subviews.count == 3 else { return .zero }
+        let flank = flankWidth(subviews)
+        let middle = subviews[1].sizeThatFits(.unspecified)
+        let height = subviews.map { $0.sizeThatFits(.unspecified).height }.max() ?? 0
+        return CGSize(width: flank * 2 + middle.width, height: proposal.height ?? height)
+    }
+
+    func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) {
+        guard subviews.count == 3 else { return }
+        let flank = flankWidth(subviews)
+        let middle = subviews[1].sizeThatFits(.unspecified).width
+        let side = ProposedViewSize(width: flank, height: bounds.height)
+        subviews[0].place(at: CGPoint(x: bounds.minX, y: bounds.minY), proposal: side)
+        subviews[1].place(
+            at: CGPoint(x: bounds.minX + flank, y: bounds.minY),
+            proposal: ProposedViewSize(width: middle, height: bounds.height)
+        )
+        subviews[2].place(at: CGPoint(x: bounds.minX + flank + middle, y: bounds.minY), proposal: side)
+    }
+
+    private func flankWidth(_ subviews: Subviews) -> CGFloat {
+        max(subviews[0].sizeThatFits(.unspecified).width, subviews[2].sizeThatFits(.unspecified).width)
     }
 }
 

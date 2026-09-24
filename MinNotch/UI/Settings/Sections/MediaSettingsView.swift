@@ -83,6 +83,17 @@ struct MediaSettingsView: View {
                 SettingsDivider()
 
                 SettingsRow(
+                    title: "Show Lyrics When Closed",
+                    subtitle: "The line being sung, under the closed notch, while a song with synced lyrics plays.",
+                    systemImage: "text.below.photo",
+                    isEnabled: settings.media.enabled && settings.media.showLyrics
+                ) {
+                    SettingsToggle(isOn: $settings.media.showLyricsWhenClosed)
+                }
+
+                SettingsDivider()
+
+                SettingsRow(
                     title: "Timing Offset",
                     subtitle: "Shift lyrics earlier or later. Lyric files are timed by hand and disagree between sources.",
                     systemImage: "timer",
@@ -111,7 +122,7 @@ struct MediaSettingsView: View {
                 SettingsDivider()
 
                 SettingsRow(
-                    title: "Match to the Audio",
+                    title: "Fix Timing Automatically",
                     subtitle: matchToAudioSubtitle,
                     systemImage: "waveform.and.person.filled",
                     isEnabled: settings.media.enabled && settings.media.showLyrics
@@ -165,10 +176,26 @@ struct MediaSettingsView: View {
                 SettingsDivider()
 
                 SettingsRow(
+                    title: "Sneak Peek Length",
+                    subtitle: "How long the song stays on screen after it changes.",
+                    systemImage: "timer",
+                    isEnabled: settings.media.enabled && settings.media.sneakPeekOnTrackChange
+                ) {
+                    ValueSlider(
+                        value: $settings.media.sneakPeekDuration,
+                        range: MediaSettings.sneakPeekDurationRange,
+                        step: 0.5
+                    ) { String(format: "%.1f s", $0) }
+                }
+
+                SettingsDivider()
+
+                SettingsRow(
                     title: "Show Up Next",
-                    subtitle: "The next songs under the one playing. Apple Music only, and only when playing from a playlist or album with shuffle off, because that is all Music tells other apps.",
+                    subtitle: "Off for now. Music tells other apps a playlist is shuffling when it is playing in order, so the list was wrong too often to be worth showing.",
                     systemImage: "text.line.first.and.arrowtriangle.forward",
-                    isEnabled: settings.media.enabled
+                    badge: FeatureFlag.upNext.badge,
+                    isEnabled: settings.media.enabled && FeatureFlag.upNext.isEnabled
                 ) {
                     SettingsToggle(isOn: $settings.media.showUpNext)
                 }
@@ -245,19 +272,19 @@ struct MediaSettingsView: View {
     /// is indistinguishable from a setting that does nothing.
     private var matchToAudioSubtitle: String {
         guard settings.media.matchLyricsToAudio else {
-            return "Listen for the moment a voice comes in, and shift the lyrics to match. Uses the system audio permission."
+            return "For lyrics that run early or late: listens for where the singing starts and moves the lyrics to match. Lyrics only; the glow's Follow the Beat is separate. Uses the system audio permission."
         }
         let sync = environment.nowPlaying.lyricsSync
         if let failure = environment.audioAnalyzer.failure {
             return "Waiting on the system audio: \(failure.message)"
         }
         if let offset = sync.offset {
-            return String(format: "Correcting by %+.2f s, from %d phrase entries.", offset, sync.matchCount)
+            return String(format: "Lyrics moved %+.2f s to match the singing, from %d lines.", offset, sync.matchCount)
         }
         if sync.matchCount > 0 {
-            return "Listening. \(sync.matchCount) of \(LyricsSyncCalibrator.minimumMatches) entries matched so far; nothing is corrected until they agree."
+            return "Heard the singing start on \(sync.matchCount) of the \(LyricsSyncCalibrator.minimumMatches) lines it needs. The lyrics stay where they are until they agree."
         }
-        return "Listening for a voice to come in. Nothing is corrected until several entries agree."
+        return "Listening for where the singing starts. The lyrics only move once several lines agree, so on time lyrics are left alone."
     }
 
     private var audioClockSubtitle: String {

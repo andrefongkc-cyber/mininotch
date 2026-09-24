@@ -38,6 +38,10 @@ enum FeatureFlag: String, CaseIterable {
     case customVisualizers
     case multiDisplay
     case audioReactiveGlow
+    /// The next songs under the Now Playing card. Built, and off: it depends on Music's
+    /// `shuffle enabled`, which said a playlist playing in order was shuffling, so the row
+    /// explained a shuffle that was not happening instead of listing what came next.
+    case upNext
 
     var availability: FeatureAvailability {
         switch self {
@@ -48,7 +52,7 @@ enum FeatureFlag: String, CaseIterable {
         case .gestures, .haptics, .shelf, .hud, .reminders, .customVisualizers, .audioReactiveGlow,
              .clipboardHistory, .pomodoro, .liveActivities, .linkShelf:
             return .beta
-        case .weather, .shortcutsWidget, .quickNotes, .focusMode, .mirror:
+        case .weather, .shortcutsWidget, .quickNotes, .focusMode, .mirror, .upNext:
             return .hidden
         }
     }

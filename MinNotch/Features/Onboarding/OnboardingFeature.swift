@@ -117,6 +117,8 @@ enum OnboardingFeature: String, CaseIterable, Identifiable {
             return "Reads each link's title and icon from its site when you add it."
         case .ambientLighting:
             return "Uses noticeably more power while it animates."
+        case .huds:
+            return "Hides Apple's own overlay, which needs Accessibility access."
         case .closedIndicators:
             return "Off keeps the closed notch hidden behind the camera."
         case .menuBarIcon:
@@ -244,6 +246,10 @@ enum OnboardingFeature: String, CaseIterable, Identifiable {
             settings.huds.replaceVolumeHUD = isOn
             settings.huds.replaceBrightnessHUD = isOn
             settings.huds.replaceKeyboardBacklightHUD = isOn
+            // Without this, turning the HUDs on shows two indicators for every key press:
+            // Apple's and MinNotch's. It needs Accessibility, which the permissions page offers
+            // next, and until that is allowed Apple's overlay simply keeps showing.
+            settings.huds.suppressSystemOverlay = isOn
         case .gestures:
             settings.advanced.twoFingerGesturesEnabled = isOn
         case .floatingWindow:

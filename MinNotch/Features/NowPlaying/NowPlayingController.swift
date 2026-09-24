@@ -226,7 +226,8 @@ final class NowPlayingController {
     /// Read by the card and by both surfaces that size it, so the row's height is only ever
     /// counted when the row is actually there.
     var showsUpNext: Bool {
-        guard let settings, settings.media.showUpNext, settings.media.enabled else { return false }
+        guard FeatureFlag.upNext.isEnabled,
+              let settings, settings.media.showUpNext, settings.media.enabled else { return false }
         return track?.sourceKind == .appleMusic
     }
 

@@ -1,6 +1,6 @@
 # MinNotch workplan
 
-Status: 0.3.0 released 2026-09-23 (GitHub v0.3.0); next: the macOS 13 decision, then a test target.
+Status: 0.3 feedback batch done and pushed, 0.4.0 notes written, no DMG; next: the user tries the batch (lock screen, Layout drag and drop, closed lyrics), then a 0.4.0 DMG, then the macOS 13 decision.
 
 Living document. Update the checkboxes as work lands. `CLAUDE.md` holds the architecture
 rules and the traps; this file holds the sequence.
@@ -24,6 +24,8 @@ at last. Notarisation still needs a paid membership nobody is buying.
 
 **Do these next, in this order:**
 
+0. The user tries the 0.3 feedback batch below, above all the HUD on a locked screen, dragging in
+   Settings > Layout, and the closed lyrics with a real song, then a 0.4.0 DMG.
 1. Answer the user on macOS 13 (Platforms below). They were asked and have not decided.
 2. A test target. Nothing is verified automatically across more than a hundred files, and the
    Swift 6 migration is exactly the kind of change one would have caught.
@@ -34,6 +36,35 @@ at last. Notarisation still needs a paid membership nobody is buying.
    playing track, downloads, a device connecting, and the album-art bars with real music.
 
 ---
+
+## 0.3 feedback (2026-09-23)
+
+The user's first round on 0.3, with screenshots. In the order they are being done.
+
+- [x] Panel Shadow splits the panel on open: the conditional `.shadow` swaps the surface's view
+      identity, so the content is re-inserted at its final size mid-spring.
+- [x] Closed glow is thinner at the sides than the bottom on the real screen: the pill's body is
+      inset by the shoulder radius, so with the pill at the notch's width the glow's sides sit
+      9 pt inside the camera housing. Trace the housing instead while the pill is notch-sized.
+- [x] Up Next off for now (`FeatureFlag.upNext`): Music's `shuffle enabled` does not match what
+      is playing, so it claimed a playlist was shuffling when it was not.
+- [x] Glow Tempo defaults to From the Song.
+- [x] "Match to the Audio" (now "Fix Timing Automatically") reads like Follow the Beat. Rename it so it says it is about lyrics.
+- [x] Sneak peek length is a setting (Media > Display > Sneak Peek Length).
+- [x] Closed pill: the song as its own indicator, title or artist (default title), instead of the
+      artist riding in the Live Activity slot and widening both flanks; artwork shows while
+      paused; the playing indicator no longer disappears whenever there is artwork.
+- [x] Layout editor: dropping anywhere left of an icon now lands before it (a drop off an icon
+      always appended, so moving left needed a pixel-perfect hit), with a marker where it will
+      land. The closed pill's miniature shows what the pill is really showing.
+- [x] Lyrics with the notch closed, a strip the size of the sneak peek.
+- [x] "New" badges in Settings for rows added in the current release.
+- [x] Tutorial lists every permission, with Allow Now for Accessibility and system audio too.
+- [~] HUDs on the lock screen, through a SkyLight space above it (private API). Built; `--check-lock-screen` shows the SkyLight calls work, but only locking the screen can show it drawing there.
+- [x] Then update the GitHub page (README) for all of the above, and push. Asked for 2026-09-23.
+      Features not in a download yet are marked _(0.4)_ in the README.
+- [x] 0.4.0 release notes written and `MARKETING_VERSION` bumped, because the "New" badges key
+      on the release. No DMG built: the user has not tried this batch yet.
 
 ## Blocking
 
@@ -231,7 +262,8 @@ nothing.
 - [x] Reversible swipe direction
 - [x] Hiding the system volume and brightness overlay
 - [x] Haptic strength, since macOS offers patterns rather than an amplitude
-- [x] `showOnLockScreen` deleted: macOS has no lock screen surface for third-party apps
+- [x] `showOnLockScreen` deleted on the belief macOS has no lock screen surface for third-party
+      apps; wrong, and back in 0.4 through a private SkyLight space (see 0.3 feedback)
 
 ## Ambient lighting
 
@@ -426,8 +458,9 @@ nothing.
 - [ ] Shortcuts widget triggering a macOS Shortcut.
 - [ ] Screen recording, camera, and microphone in-use indicators.
 - [ ] "Boring mirror": front camera preview with shape options.
-- Widgets on the lock screen: **will not do.** macOS composites no third-party window on the
-  lock screen and has no widget surface there; see "No setting may be inert" in CLAUDE.md.
+- Widgets on the lock screen: the earlier "will not do" was wrong. No public window level reaches
+  the lock screen, but a private SkyLight space at absolute level 400 does, and the HUD uses one as
+  of 2026-09-23 (`LockScreenSpace`). Media controls there would be the same mechanism.
 
 ## V2 — customisation
 

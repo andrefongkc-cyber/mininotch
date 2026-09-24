@@ -41,6 +41,10 @@ struct HUDSettings: Codable, Equatable {
     /// key presses should be something the user chose.
     var suppressSystemOverlay: Bool = false
 
+    /// Draw the HUD over the lock screen too, through `LockScreenSpace`. On by default: it is
+    /// the same indicator in a place the system's own shows, and needs no permission.
+    var showOnLockScreen: Bool = true
+
     init() {}
 
     init(from decoder: Decoder) throws {
@@ -52,5 +56,6 @@ struct HUDSettings: Codable, Equatable {
         dismissDelay = c.value(.dismissDelay, 1.5, in: 0.5...4)
         showNumericValue = c.value(.showNumericValue, false)
         suppressSystemOverlay = c.value(.suppressSystemOverlay, false)
+        showOnLockScreen = c.value(.showOnLockScreen, true)
     }
 }

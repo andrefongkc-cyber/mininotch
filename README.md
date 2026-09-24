@@ -10,8 +10,9 @@ shelf, saved links, a timer.
 
 ## Download
 
-[**MinNotch 0.2.0**](https://github.com/andrefongkc-cyber/mininotch/releases/latest) — open the
-DMG, drag MinNotch to Applications.
+[**MinNotch 0.3.0**](https://github.com/andrefongkc-cyber/mininotch/releases/latest) — open the
+DMG, drag MinNotch to Applications. Anything marked _(0.4)_ below is on `main` and arrives with the
+next release.
 
 The first launch is blocked, because notarising an app needs a paid Apple membership this project
 does not have. Open **System Settings > Privacy & Security**, scroll down, and click **Open
@@ -22,23 +23,33 @@ it. A Mac with no notch gets a virtual one in the same place.
 
 ## What it does
 
-**Now Playing** for Apple Music, Spotify, and a system-wide fallback for other apps. Album art, a
-scrubber you can drag to seek, transport controls with a working shuffle button, Up Next for Apple
-Music, and synced lyrics that highlight the word being sung.
+**Now Playing** for Apple Music, Spotify, VLC, and a system-wide fallback for other apps. Album
+art, a scrubber you can drag to seek, transport controls with shuffle, repeat and favourite, three
+card styles, and synced lyrics that highlight the word being sung, with a full scrolling list you
+can click to jump to a line.
 
 ![The closed pill](Docs/images/closed-pill.png)
 
-Closed, the pill can show the artwork, the battery, and a running timer. It is off by default on a
-Mac with a notch, where the pill sits behind the camera housing; turn it on in Settings > Layout.
+Closed, the pill can show the cover and the song's title or artist _(0.4)_, the battery, a playing
+indicator, and live activities: a running timer, a download's progress, or your AirPods' charge
+when they connect. What goes on which side is yours to arrange in Settings > Layout, on a picture
+of the pill that shows what it is showing right now. It is off by default on a Mac with a notch,
+where the pill sits behind the camera housing; turn it on in Settings > Layout.
 
-**Sneak peek.** When the song changes, the notch drops down for a couple of seconds with the cover
-and the title, instead of opening the whole panel.
+**Lyrics with the notch closed** _(0.4)_. The line being sung, just under the closed pill, while a
+song plays.
+
+![Lyrics under the closed notch](Docs/images/closed-lyrics.png)
+
+**Sneak peek.** When the song changes, the notch drops down with the cover and the title, instead
+of opening the whole panel, for as long as you set _(0.4)_.
 
 ![The sneak peek](Docs/images/sneak-peek.png)
 
 **Ambient lighting** around the closed pill or the open panel, in five styles, coloured from the
 album art. With the system audio permission granted it follows what is actually playing; without
-it, it animates on its own. With nothing playing it stays still.
+it, it keeps the song's own tempo from Music, a tempo you tap out, or one of its own. With nothing
+playing it stays still.
 
 **Link Shelf.** Drag a link onto the notch or press ⌘V, and it is kept with its page title and
 site icon. Click to open it, or copy it back.
@@ -46,7 +57,8 @@ site icon. Click to open it, or copy it back.
 ![The Links tab](Docs/images/links.png)
 
 **Calendar and Reminders** for the week or month, with per-calendar visibility, tick-off, and a
-quick-add field.
+quick-add field. Click a day to see what is on it, and use the arrows to move between weeks or
+months.
 
 ![The calendar tab](Docs/images/calendar.png)
 
@@ -61,14 +73,16 @@ Also:
 - **System stats**: CPU, GPU, memory, network, and the charge of connected AirPods and accessories.
 - **Volume, brightness and keyboard backlight** shown at the notch, optionally instead of Apple's
   own overlay, which MinNotch hides by taking those keys before macOS sees them (needs
-  Accessibility).
+  Accessibility). They also show over the lock screen _(0.4)_.
 - **Clipboard history** for text, links, colours, and images, held in memory only.
 - **Floating Now Playing window** for a display with no notch worth looking at.
 - **Two-finger swipes** to change tab or open and close, with optional haptics.
 - **Drag-to-arrange layouts** for the transport controls, the closed pill's two sides, and the open
-  panel's top bar, tabs included. Anything that will not fit beside the notch moves to the other
-  side of it rather than hiding behind the camera.
+  panel's top bar, tabs included, all in Settings > Layout. An icon lands where you let go of it.
+  Anything that will not fit beside the notch moves to the other side of it rather than hiding
+  behind the camera.
 - **Settings** in their own window with search: press ⌘F, type, and a result takes you to the row.
+  What is new in an update is marked New _(0.4)_.
 - **What's New** after each update, and a welcome tour on first launch.
 
 ![The release notes window](Docs/images/whats-new.png)
@@ -93,18 +107,19 @@ What that means in practice: MinNotch costs nothing while it sits closed, which 
 the time. Animation is what costs, and the ambient glow costs about a quarter of one core for as
 long as it is visible — on a ten-core M4, roughly 3% of the machine. Everything that polls, system
 stats included, samples only while its widget is on screen, and the audio tap runs only if you
-switch on Follow the Beat or lyric matching.
+switch on Follow the Beat or Fix Timing Automatically.
 
 ## Permissions
 
-Nothing is asked for at launch. Each is requested the first time a feature needs it:
+Nothing is asked for at launch. The welcome tour lists every one of these with a button to allow it
+there and then _(0.4)_; otherwise each is requested the first time a feature needs it:
 
 | What | Used for |
 |---|---|
 | Automation | Reading and controlling Music and Spotify |
 | Calendar and Reminders | Showing your events |
 | Notifications | Low-battery and timer alerts |
-| System audio recording | Only for ambient lighting that follows the beat, and lyric matching |
+| System audio recording | Only for ambient lighting that follows the beat, and fixing lyric timing |
 | Accessibility | Only to hide Apple's volume and brightness overlay |
 
 Everything stays on your Mac, with one exception that is off by default: setting **Media > Lyrics

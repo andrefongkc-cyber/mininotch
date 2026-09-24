@@ -143,6 +143,13 @@ enum DebugWindowCapture {
         // The closed pill shows nothing at all unless the indicators are switched on, so a
         // capture of it is blank without this.
         if arguments.contains("--extended") { settings.general.extendPillForIndicators = true }
+        // Media > Lyrics > Show Lyrics When Closed, with the sample song's synced lyrics.
+        if arguments.contains("--closed-lyrics") {
+            settings.media.showLyrics = true
+            settings.media.showLyricsWhenClosed = true
+        }
+        // Appearance > Panel Shadow, which is off by default and only exists while open.
+        settings.appearance.showPanelShadow = arguments.contains("--shadow")
         // Which states the glow shows in: `closed`, `open`, or `closed,open`. The glow behaves
         // differently when it is on for only one of them, so both cases have to be capturable.
         if let index = arguments.firstIndex(of: "--placements"), arguments.indices.contains(index + 1) {

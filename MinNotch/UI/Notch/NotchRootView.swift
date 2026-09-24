@@ -1,23 +1,6 @@
 import SwiftUI
 import UniformTypeIdentifiers
 
-/// Applies the panel shadow only when it is wanted.
-///
-/// A modifier rather than a `.shadow` with a zero-alpha colour: a zero-alpha shadow still
-/// forces an offscreen compositing pass, which fringes the pill's edges on a transparent
-/// window.
-private struct PanelShadow: ViewModifier {
-    var isActive: Bool
-
-    func body(content: Content) -> some View {
-        if isActive {
-            content.shadow(color: .black.opacity(0.35), radius: 18, y: 8)
-        } else {
-            content
-        }
-    }
-}
-
 /// Root of a notch surface. Draws the shape, swaps between the collapsed and expanded
 /// content, and owns hover and click handling.
 ///
@@ -37,6 +20,21 @@ struct NotchRootView: View {
     private var isPeeking: Bool {
         viewModel.state == .peeking && environment.nowPlaying.track != nil
     }
+
+    /// Synced lyrics to show under the closed pill, or nil. Only while a song is playing: a
+    /// paused song's line would sit there not moving, and the pill is the right size for that.
+    private var closedLyrics: Lyrics? {
+        guard viewModel.state == .collapsed,
+              settings.media.enabled, settings.media.showLyrics, settings.media.showLyricsWhenClosed,
+              FeatureFlag.lyrics.isEnabled,
+              environment.nowPlaying.track?.isPlaying == true,
+              let lyrics = environment.nowPlaying.lyrics, !lyrics.isEmpty, lyrics.isSynced
+        else { return nil }
+        return lyrics
+    }
+
+    /// The closed notch has something below the pill: a peek, or the lyrics.
+    private var hasClosedStrip: Bool { isPeeking || closedLyrics != nil }
 
     var body: some View {
         VStack(spacing: 0) {
@@ -62,6 +60,7 @@ struct NotchRootView: View {
             content
         }
         .frame(width: surfaceWidth, height: surfaceHeight)
+        .background(panelShadow)
         // No `GeometryReader` here. It aligns its content top-leading, and the glow's layer
         // is deliberately larger than the outline it traces, so the whole thing was pushed
         // down and right by the spill and the light no longer sat on the panel. A plain
@@ -111,7 +110,7 @@ struct NotchRootView: View {
             shoulderRadius: Metrics.notchShoulderRadius,
             bottomRadius: isExpanded
                 ? CGFloat(settings.appearance.panelCornerRadius)
-                : isPeeking
+                : hasClosedStrip
                     ? min(CGFloat(settings.appearance.panelCornerRadius), SneakPeekView.cornerRadius)
                     : min(CGFloat(settings.appearance.panelCornerRadius), geometry.collapsedSize.height / 2)
         )
@@ -151,7 +150,38 @@ struct NotchRootView: View {
             contentLayer
         }
         .clipShape(shape)
-        .modifier(PanelShadow(isActive: isExpanded && settings.appearance.showPanelShadow))
+    }
+
+    /// The open panel's shadow, as a layer of its own behind the surface.
+    ///
+    /// It used to be a `.shadow` on the surface, applied only while open through an `if` in a
+    /// modifier. That `if` gave the whole surface a different identity open and closed, so
+    /// opening replaced the pill with a new panel that took its final size on its first frame,
+    /// and the two cross-faded instead of one box growing: the panel came apart as it opened.
+    /// This layer is present for as long as the setting is on, is a `Shape` so it is pathed at
+    /// the size the surface is actually drawn at mid-spring, and fades on the surface's spring.
+    /// Nothing is drawn onto the surface itself, so the zero-alpha `.shadow` fringe cannot come
+    /// back either.
+    ///
+    /// Rasterised with room around it, as the glow is: a blur applied as a layer filter does not
+    /// appear in `--capture-notch` at all, and one flattened into a layer only its own size is
+    /// cut off at that size.
+    @ViewBuilder
+    private var panelShadow: some View {
+        if settings.appearance.showPanelShadow {
+            let radius: CGFloat = 18
+            let drop: CGFloat = 8
+            let room = radius * 2 + drop
+            shapeStyle
+                .fill(Color.black.opacity(0.35))
+                .offset(y: drop)
+                .padding(room)
+                .blur(radius: radius)
+                .drawingGroup()
+                .padding(-room)
+                .opacity(isExpanded ? 1 : 0)
+                .allowsHitTesting(false)
+        }
     }
 
     /// The collapsed or expanded content, clipped to the surface.
@@ -190,6 +220,9 @@ struct NotchRootView: View {
                     palette: environment.nowPlaying.palette
                 )
                 .transition(Self.contentTransition)
+            } else if let lyrics = closedLyrics {
+                ClosedLyricsView(geometry: geometry, pillContent: pillContent, lyrics: lyrics)
+                    .transition(Self.contentTransition)
             } else {
                 CollapsedPillView(geometry: geometry, content: pillContent)
                     .transition(Self.contentTransition)
@@ -247,7 +280,7 @@ struct NotchRootView: View {
         if glow.isActive(isLowPower: environment.battery.status.isLowPowerMode),
            !glow.placements.isEmpty {
             AmbientGlowView(
-                outline: .notch(shapeStyle),
+                outline: .notch(glowShape),
                 settings: glow,
                 palette: environment.nowPlaying.palette,
                 isPlaying: environment.nowPlaying.track?.isPlaying ?? false,
@@ -264,6 +297,24 @@ struct NotchRootView: View {
                 isVisible: glow.placements.contains(placement)
             )
         }
+    }
+
+    /// The outline the glow traces: the surface's own, except while the closed pill is exactly
+    /// the size of a hardware notch.
+    ///
+    /// `NotchShape` insets its body by the shoulder radius, so a pill the notch's width has a
+    /// body nine points narrower than the camera housing on each side, and the housing has no
+    /// pixels. Traced around that body, the glow's sides started inside the housing and only
+    /// the tail of their blur reached the screen, while the bottom edge, which is the housing's
+    /// own bottom, showed in full. Measured one point outside the housing, alpha 71 on the
+    /// sides against 197 below: even in a capture, which draws under the housing too, and
+    /// visibly thinner at the sides on the real screen. Traced around the housing itself, the
+    /// same half of the stroke is hidden on all three sides. The fill is not touched: at this
+    /// size it sits entirely behind the housing and is never seen.
+    private var glowShape: NotchShape {
+        guard !isExpanded, !hasClosedStrip, environment.hud.current == nil,
+              geometry.hasPhysicalNotch, pillContent.flankWidth == 0 else { return shapeStyle }
+        return NotchShape(shoulderRadius: 0, bottomRadius: Metrics.hardwareNotchCornerRadius)
     }
 
     /// Outlines the surface and prints its geometry, for diagnosing placement and hit-testing.
@@ -312,38 +363,28 @@ struct NotchRootView: View {
 
     private var geometry: NotchGeometry { viewModel.geometry }
 
-    /// Artwork is only worth the space in the pill when something is actually playing.
-    private var collapsedArtwork: NSImage? {
-        guard settings.media.enabled, environment.nowPlaying.track?.isPlaying == true else { return nil }
-        return environment.nowPlaying.artwork
-    }
-
     /// The pill's indicators as they appear above a peek: without the artwork and the
     /// playing glyph, because the peek shows the cover and the song right underneath and the
     /// same picture twice in one small surface reads as a mistake.
     private var peekPillContent: CollapsedPillContent {
         var content = pillContent
         content.artwork = nil
+        content.songText = nil
         content.isPlaying = false
         return content
     }
 
     private var pillContent: CollapsedPillContent {
-        CollapsedPillContent(
-            artwork: collapsedArtwork,
-            activity: environment.liveActivities.current,
-            isPlaying: environment.nowPlaying.track?.isPlaying ?? false,
-            battery: environment.battery.status,
-            showPercentage: settings.battery.showPercentage,
-            // A display with no physical notch always carries its indicators, whatever the
-            // setting says. The setting exists because on notched hardware the closed pill
-            // sits behind the camera housing and is invisible, so widening it is a real
-            // choice with a real cost. A virtual notch has no housing to hide behind: it is
-            // already a black tab stuck to the top of the screen, and leaving it empty is
-            // all of the cost and none of the benefit.
-            isExtended: settings.general.extendPillForIndicators || !geometry.hasPhysicalNotch,
-            leadingLayout: settings.general.pillLeading,
-            trailingLayout: settings.general.pillTrailing
+        // A display with no physical notch always carries its indicators, whatever the
+        // setting says. The setting exists because on notched hardware the closed pill
+        // sits behind the camera housing and is invisible, so widening it is a real
+        // choice with a real cost. A virtual notch has no housing to hide behind: it is
+        // already a black tab stuck to the top of the screen, and leaving it empty is
+        // all of the cost and none of the benefit.
+        CollapsedPillContent.live(
+            environment: environment,
+            settings: settings,
+            isExtended: settings.general.extendPillForIndicators || !geometry.hasPhysicalNotch
         )
     }
 
@@ -365,7 +406,7 @@ struct NotchRootView: View {
         // A HUD takes over the closed surface entirely, and needs both flanks to show an
         // icon and a level rather than the pill's narrower strips.
         if environment.hud.current != nil { return HUDView.width(for: geometry) }
-        if isPeeking {
+        if hasClosedStrip {
             return SneakPeekView.size(for: geometry, pillWidth: pillContent.width(for: geometry)).width
         }
         return pillContent.width(for: geometry)
@@ -382,7 +423,7 @@ struct NotchRootView: View {
             guard environment.hud.current == nil else {
                 return HUDView.height(for: geometry, style: settings.huds.style)
             }
-            if isPeeking {
+            if hasClosedStrip {
                 return SneakPeekView.size(for: geometry, pillWidth: pillContent.width(for: geometry)).height
             }
             return geometry.collapsedSize.height

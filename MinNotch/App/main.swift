@@ -25,6 +25,7 @@ if MainActor.assumeIsolated({ DebugWhatsNewCapture.runIfRequested() }) { exit(0)
 if MainActor.assumeIsolated({ DebugLyricSyncCheck.runIfRequested() }) { exit(0) }
 if MainActor.assumeIsolated({ DebugLayoutCapture.runIfRequested() }) { exit(0) }
 if MainActor.assumeIsolated({ DebugDownloadsCheck.runIfRequested() }) { exit(0) }
+if MainActor.assumeIsolated({ DebugLockScreenCheck.runIfRequested() }) { exit(0) }
 #endif
 
 let application = NSApplication.shared

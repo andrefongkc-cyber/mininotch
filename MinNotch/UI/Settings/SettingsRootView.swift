@@ -226,7 +226,10 @@ struct SettingsRootView: View {
             Text(tab.title)
                 .font(Typography.body)
             Spacer(minLength: 4)
-            if let badge = tab.badge, badge == .comingSoon {
+            if SettingsNewRows.hasNew(tab) {
+                BadgeView(.new)
+                    .help("Has settings new in this release")
+            } else if let badge = tab.badge, badge == .comingSoon {
                 Circle()
                     .fill(Palette.tertiaryText)
                     .frame(width: 5, height: 5)

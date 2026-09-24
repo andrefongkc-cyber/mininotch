@@ -27,97 +27,98 @@ struct ReleaseNotes {
     var removed: [ReleaseNote]
 
     static let latest = ReleaseNotes(
-        id: "0.3.0",
-        version: "0.3",
+        id: "0.4.0",
+        version: "0.4",
         added: [
             ReleaseNote(
-                symbol: "rectangle.3.group",
-                title: "Layout",
-                detail: "Arrange the closed notch, the top bar and the music controls on a picture of the notch. Drag icons in, or click them; drag them out, or click ×, to remove them.",
-                howTo: "Settings > Layout."
+                symbol: "text.below.photo",
+                title: "Lyrics With the Notch Closed",
+                detail: "The line being sung sits just under the closed notch while a song plays, the current word lit up.",
+                howTo: "Settings > Media > Show Lyrics When Closed. Show Lyrics must be on."
             ),
             ReleaseNote(
-                symbol: "calendar",
-                title: "Pick a Day",
-                detail: "Click any day in the calendar to see what's on it, and use the arrows to go to other weeks or months.",
-                howTo: "In the Calendar tab. Click Today to come back."
+                symbol: "textformat",
+                title: "The Song in the Closed Notch",
+                detail: "The closed notch shows the song's title beside its cover. Prefer the artist? You can switch.",
+                howTo: "Settings > Layout > Song Shows. Drag Song in the Arrangement to move it."
             ),
             ReleaseNote(
-                symbol: "quote.bubble",
-                title: "All the Lyrics",
-                detail: "Open every line of the song, scrolling along as it plays. Click a line to jump to it.",
-                howTo: "Click the expand button beside the lyrics."
+                symbol: "lock.display",
+                title: "Volume on the Lock Screen",
+                detail: "Volume and brightness show at the notch while your Mac is locked, too.",
+                howTo: "On by default. Settings > HUDs > Show on the Lock Screen."
             ),
             ReleaseNote(
-                symbol: "waveform",
-                title: "Lyrics That Match the Song",
-                detail: "MinNotch can listen for where the singing starts and line the lyrics up with it.",
-                howTo: "Settings > Media > Match to the Audio. Uses the system audio permission."
+                symbol: "timer",
+                title: "Sneak Peek Length",
+                detail: "Choose how long the new song stays on screen when it changes.",
+                howTo: "Settings > Media > Sneak Peek Length."
             ),
             ReleaseNote(
-                symbol: "repeat",
-                title: "Repeat and Favourite",
-                detail: "Repeat works with Apple Music and Spotify, favourite with Apple Music. Both light up when on.",
-                howTo: "Add them in Settings > Layout > Now Playing Controls."
-            ),
-            ReleaseNote(
-                symbol: "arrow.down.circle",
-                title: "Downloads and AirPods in the Notch",
-                detail: "See how far along a download is, and your AirPods' charge when they connect. Swipe up on the notch to put one away.",
-                howTo: "Settings > Layout > Live Activities. Show Indicators When Closed must be on."
-            ),
-            ReleaseNote(
-                symbol: "metronome",
-                title: "Glow Tempo",
-                detail: "Set the glow's beat yourself, tap it out, or use the song's BPM from Music.",
-                howTo: "Settings > Appearance > Tempo."
-            ),
-            ReleaseNote(
-                symbol: "play.rectangle",
-                title: "VLC",
-                detail: "What's playing in VLC shows in the notch, and you can drag to seek.",
+                symbol: "sparkles",
+                title: "New in Settings",
+                detail: "Settings marks what is new in each update, and the sidebar shows which sections have something new.",
                 howTo: nil
             )
         ],
         improved: [
             ReleaseNote(
-                symbol: "rectangle.on.rectangle",
-                title: "Two New Card Styles",
-                detail: "Compact, half the height, and Full Artwork, with the cover filling the card.",
-                howTo: "Settings > Appearance > Card Style."
+                symbol: "hand.draw",
+                title: "Easier Rearranging",
+                detail: "Icons land where you let go, with a marker showing the spot. Moving one left is now as easy as moving it right.",
+                howTo: "Settings > Layout."
             ),
             ReleaseNote(
-                symbol: "app.badge",
-                title: "Which App Is Playing",
-                detail: "A small icon of the playing app sits on the album art.",
-                howTo: "Settings > Media > Show Which App Is Playing."
-            ),
-            ReleaseNote(
-                symbol: "gauge.with.dots.needle.33percent",
-                title: "System History",
-                detail: "The last minute of CPU, GPU, memory and network sits behind each reading, so a spike doesn't flash past.",
+                symbol: "rectangle.split.3x1",
+                title: "A Real Preview",
+                detail: "Layout's picture of the closed notch shows your actual cover, song and battery.",
                 howTo: nil
             ),
             ReleaseNote(
-                symbol: "sparkles",
-                title: "A Glow You Can Trust",
-                detail: "The glow and the bars over the album art stay still when nothing is playing and follow the music when Follow the Beat is on.",
-                howTo: "Settings > Appearance > What It Is Hearing shows what the glow hears."
+                symbol: "circle.dashed",
+                title: "An Even Glow",
+                detail: "The glow around the closed notch is as bright down the sides as along the bottom.",
+                howTo: nil
+            ),
+            ReleaseNote(
+                symbol: "shadow",
+                title: "Panel Shadow",
+                detail: "The shadow no longer makes the panel come apart as it opens.",
+                howTo: "Settings > Appearance > Panel Shadow."
+            ),
+            ReleaseNote(
+                symbol: "metronome",
+                title: "The Glow Keeps the Song's Tempo",
+                detail: "New setups follow the song's own BPM from Music by default.",
+                howTo: "Settings > Appearance > Tempo."
+            ),
+            ReleaseNote(
+                symbol: "waveform",
+                title: "Playing Indicator",
+                detail: "It shows whenever music plays, even with the album art beside it.",
+                howTo: nil
             ),
             ReleaseNote(
                 symbol: "checklist",
-                title: "Reminders Without a Date",
-                detail: "They now show at the end of the calendar list.",
-                howTo: "Settings > Calendar > Show Reminders Without a Date."
+                title: "Permissions in the Tutorial",
+                detail: "Every permission is listed, with Allow buttons for Accessibility and system audio as well.",
+                howTo: nil
             ),
             ReleaseNote(
-                symbol: "app",
-                title: "A New Icon",
-                detail: "MinNotch has an icon of its own.",
-                howTo: nil
+                symbol: "quote.bubble",
+                title: "Clearer Lyrics Timing",
+                detail: "Match to the Audio is now Fix Timing Automatically, because it moves the lyrics, not the glow.",
+                howTo: "Settings > Media > Fix Timing Automatically."
             )
         ],
-        removed: []
+        removed: [
+            ReleaseNote(
+                symbol: "text.line.first.and.arrowtriangle.forward",
+                title: "Up Next, for Now",
+                detail: "Music told MinNotch that playlists were shuffling when they were not, so the list was often wrong.",
+                howTo: nil
+            )
+        ]
     )
 }
 

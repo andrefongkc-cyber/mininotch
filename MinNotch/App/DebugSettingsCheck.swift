@@ -53,6 +53,7 @@ enum DebugSettingsCheck {
         report(String(format: "  gestureSensitivity   %10.2f   (0...1)", settings.advanced.gestureSensitivity))
         report(String(format: "  lyricsOffset         %10.2f   (-2...2)", settings.media.lyricsOffset))
         report(String(format: "  pollInterval         %10.2f   (0.5...5)", settings.media.pollInterval))
+        report(String(format: "  sneakPeekDuration    %10.2f   (1...8)", settings.media.sneakPeekDuration))
         report(String(format: "  huds.dismissDelay    %10.2f   (0.5...4)", settings.huds.dismissDelay))
         report(String(format: "  lowBatteryThreshold  %10d   (5...50)", settings.battery.lowBatteryThreshold))
         report(String(format: "  shelf.maxItems       %10d   (4...40)", settings.shelf.maxItems))
@@ -66,6 +67,9 @@ enum DebugSettingsCheck {
         report(String(format: "  timer.countdown      %10.2f   (1...180)", settings.timer.defaultCountdownMinutes))
         report("  nonNotchDefaultTab   \(settings.advanced.nonNotchDefaultTab.rawValue)  (must be a real tab)")
         report("  glow.placements      \(settings.appearance.ambientGlow.placements.map(\.rawValue).sorted())  (unknown names dropped, the rest kept)")
+        // A file from before the Song indicator gets it placed where the Live Activity is.
+        report("  pill                 \(settings.general.pillLeading.map(\.rawValue)) | \(settings.general.pillTrailing.map(\.rawValue))  (song beside activity when the file predates it)")
+        report("  pillSongText         \(settings.general.pillSongText.rawValue)")
         report("")
         report("Every value must sit inside the range beside it, whatever the file asked for.")
 

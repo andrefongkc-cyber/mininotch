@@ -7,6 +7,8 @@ import SwiftUI
 /// spills past the shape and gets cut off by the transparent area around it.
 struct CollapsedPillContent: Equatable {
     var artwork: NSImage?
+    /// The song's title or artist, whichever Layout asks for, or nil with nothing loaded.
+    var songText: String? = nil
     var activity: LiveActivity?
     var isPlaying: Bool
     var battery: BatteryStatus
@@ -33,6 +35,39 @@ struct CollapsedPillContent: Equatable {
     static let detailSpacing: CGFloat = 3
     static let glyphWidth: CGFloat = 16
     static let batteryGlyphWidth: CGFloat = 22
+    /// The most the song's text may take. Both flanks are drawn at the wider one's width, so
+    /// an uncapped title widened the whole pill by twice its length: one long artist name made
+    /// the closed notch reach halfway across the menu bar. Past this it is cut short.
+    static let songMaxWidth: CGFloat = 120
+    /// A function rather than a stored font: `NSFont` is not `Sendable`, so a static one is
+    /// shared mutable state as far as Swift 6 is concerned.
+    static var songFont: NSFont { .systemFont(ofSize: 11, weight: .semibold) }
+
+    /// The pill as it stands right now, from the live services.
+    ///
+    /// One builder for the notch and for Settings > Layout's miniature of it, so the picture in
+    /// Settings is the real pill and not a separate idea of it that can drift.
+    @MainActor
+    static func live(environment: AppEnvironment, settings: SettingsStore, isExtended: Bool) -> CollapsedPillContent {
+        let track = settings.media.enabled ? environment.nowPlaying.track : nil
+        let songText = track.map { settings.general.pillSongText == .artist ? $0.artist : $0.title }
+        return CollapsedPillContent(
+            // The cover, whenever a song is loaded, paused or playing. It used to need the song
+            // to be playing, while the artist, which reached the pill as a live activity, stayed
+            // through a pause and even after the player quit, so a paused song showed its
+            // artist's name and nothing else. The cover and the song's text now come and go
+            // together, and only the playing indicator says whether it is actually playing.
+            artwork: track == nil ? nil : environment.nowPlaying.artwork,
+            songText: songText?.isEmpty == false ? songText : nil,
+            activity: environment.liveActivities.current,
+            isPlaying: track?.isPlaying ?? false,
+            battery: environment.battery.status,
+            showPercentage: settings.battery.showPercentage,
+            isExtended: isExtended,
+            leadingLayout: settings.general.pillLeading,
+            trailingLayout: settings.general.pillTrailing
+        )
+    }
 
     // MARK: What is showing
 
@@ -50,14 +85,16 @@ struct CollapsedPillContent: Equatable {
     enum PillSide { case leading, trailing }
 
     /// True when this indicator has something to draw right now.
-    private func hasContent(_ indicator: PillIndicator) -> Bool {
+    func hasContent(_ indicator: PillIndicator) -> Bool {
         switch indicator {
         case .artwork: return artwork != nil
+        case .song: return songText?.isEmpty == false
         case .activity: return activity != nil
         case .playing:
-            // The waveform stands in for a cover, so it steps aside whenever one is actually
-            // being drawn. Placing both is allowed and means "show it when there is no art".
-            return isPlaying && artwork == nil
+            // Shown whenever something plays, cover or not. It used to step aside whenever the
+            // artwork was drawn, which meant that placing both showed only one: someone who put
+            // the waveform on the other side of the notch never saw it.
+            return isPlaying
         case .battery: return battery.isPresent
         }
     }
@@ -81,6 +118,8 @@ struct CollapsedPillContent: Equatable {
         switch indicator {
         case .artwork:
             return Metrics.pillArtworkSize
+        case .song:
+            return songWidth
         case .activity:
             let detail = activityDetail.map { Self.detailSpacing + Self.measure($0) } ?? 0
             return Self.glyphWidth + detail
@@ -123,10 +162,17 @@ struct CollapsedPillContent: Equatable {
         geometry.collapsedSize.width + flankWidth * 2
     }
 
+    /// The song's width: its text as drawn, up to the cap. Measured at the current text rather
+    /// than the widest it could be, unlike the battery's, because it only changes with the song,
+    /// and a pill that fits each song is the point.
+    var songWidth: CGFloat {
+        guard let songText else { return 0 }
+        return min(Self.measure(songText, font: Self.songFont), Self.songMaxWidth)
+    }
+
     /// Width of `text` in the font the pill actually draws it in.
-    static func measure(_ text: String) -> CGFloat {
-        let font = NSFont.monospacedDigitSystemFont(ofSize: 11, weight: .medium)
-        return ceil(NSAttributedString(string: text, attributes: [.font: font]).size().width)
+    static func measure(_ text: String, font: NSFont = NSFont.monospacedDigitSystemFont(ofSize: 11, weight: .medium)) -> CGFloat {
+        ceil(NSAttributedString(string: text, attributes: [.font: font]).size().width)
     }
 }
 
@@ -184,7 +230,7 @@ struct CollapsedPillView: View {
         } else {
             HStack(spacing: CollapsedPillContent.itemSpacing) {
                 ForEach(showing) { indicator in
-                    view(for: indicator)
+                    PillIndicatorView(indicator: indicator, content: content)
                 }
             }
             // Never let the row compress: a squeezed SF Symbol is what makes a glyph look
@@ -194,9 +240,18 @@ struct CollapsedPillView: View {
             .transition(.scale.combined(with: .opacity))
         }
     }
+}
+
+/// One indicator as the closed pill draws it.
+///
+/// Its own view so Settings > Layout can draw the same thing in its miniature of the pill,
+/// from the same live state, rather than a symbol that stands for it.
+struct PillIndicatorView: View {
+    let indicator: PillIndicator
+    let content: CollapsedPillContent
 
     @ViewBuilder
-    private func view(for indicator: PillIndicator) -> some View {
+    var body: some View {
         switch indicator {
         case .artwork:
             if let artwork = content.artwork {
@@ -209,6 +264,16 @@ struct CollapsedPillView: View {
                         RoundedRectangle(cornerRadius: 4, style: .continuous)
                             .strokeBorder(Color.white.opacity(0.18), lineWidth: 0.5)
                     )
+            }
+
+        case .song:
+            if let songText = content.songText {
+                Text(songText)
+                    .font(Font(CollapsedPillContent.songFont))
+                    .foregroundStyle(.white.opacity(0.92))
+                    .lineLimit(1)
+                    .truncationMode(.tail)
+                    .frame(width: content.songWidth, alignment: .leading)
             }
 
         case .activity:

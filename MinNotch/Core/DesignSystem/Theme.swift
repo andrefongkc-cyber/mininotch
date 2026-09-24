@@ -35,6 +35,10 @@ enum Metrics {
     static let notchPanelCornerRadius: CGFloat = 22
     /// Radius of the two "inverted" shoulders where the notch meets the menu bar.
     static let notchShoulderRadius: CGFloat = 9
+    /// Bottom corner radius of the camera housing itself, which no API reports. On the low side
+    /// on purpose: a glow traced tighter than the real corner still clears it, one traced
+    /// rounder dips behind it and dims the corner.
+    static let hardwareNotchCornerRadius: CGFloat = 8
     /// Room kept clear outside the notch outline for the ambient glow to fall away into.
     ///
     /// A blur is only soft if it has somewhere to fade to. Clipped short it ends on a hard
