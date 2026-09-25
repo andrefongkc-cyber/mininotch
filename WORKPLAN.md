@@ -1,6 +1,6 @@
 # MinNotch workplan
 
-Status: releasing 0.4.0 (2026-09-24); next: the user tries 0.4 by hand (see "Do these next" 0), then the macOS 13 decision.
+Status: 0.4.0 released 2026-09-24 (GitHub v0.4.0); next: the user tries 0.4 by hand (see "Do these next" 0), then the macOS 13 decision.
 
 Living document. Update the checkboxes as work lands. `CLAUDE.md` holds the architecture
 rules and the traps; this file holds the sequence.
