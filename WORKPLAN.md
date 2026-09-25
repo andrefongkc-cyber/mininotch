@@ -1,6 +1,6 @@
 # MinNotch workplan
 
-Status: 0.4 additions all built and pushed (2026-09-24), no DMG; next: the user tries 0.4 by hand (see "Do these next" 0), then a 0.4.0 DMG.
+Status: releasing 0.4.0 (2026-09-24); next: the user tries 0.4 by hand (see "Do these next" 0), then the macOS 13 decision.
 
 Living document. Update the checkboxes as work lands. `CLAUDE.md` holds the architecture
 rules and the traps; this file holds the sequence.
@@ -24,10 +24,11 @@ at last. Notarisation still needs a paid membership nobody is buying.
 
 **Do these next, in this order:**
 
-0. The user tries 0.4 by hand: dragging in Settings > Layout, closed lyrics with a real song,
+0. 0.4.0 shipped on 2026-09-24 at the user's request ("just release") before this was done. Watch
+   for reports, and the user tries 0.4 by hand: dragging in Settings > Layout, closed lyrics with a real song,
    the shelf's multi-file drag and AirDrop, switching outputs with a second one connected, the
    lock screen media controls (do they clear the lock screen clock?), the weather location
-   prompt, and a real meeting's countdown and Join. Then a 0.4.0 DMG.
+   prompt, and a real meeting's countdown and Join.
 1. Answer the user on macOS 13 (Platforms below). They were asked and have not decided.
 2. A test target. Nothing is verified automatically across more than a hundred files, and the
    Swift 6 migration is exactly the kind of change one would have caught.
@@ -555,9 +556,9 @@ Decisions still open, but nothing in the code should make these harder.
 - [ ] **App Store build.** Cannot include the MediaRemote bridge. Plan is a compile-time flag
       that removes `MediaRemoteBridge` and makes `SystemNowPlayingSource` report unavailable,
       leaving Apple Music and Spotify working.
-- [~] **Direct build.** 0.3.0 is released (2026-09-23, GitHub release `v0.3.0`, tag on
-      4178bf6), signed with the personal team as 0.2.0 was, which the user chose over
-      `--anonymous` again. The next shared build needs new `ReleaseNotes.latest` notes and `id`
+- [~] **Direct build.** 0.4.0 is released (2026-09-24, GitHub release `v0.4.0`), and 0.3.0
+      the day before; both signed with the personal team as 0.2.0 was, which the user chose over
+      `--anonymous`. The next shared build needs new `ReleaseNotes.latest` notes and `id`
       and a `MARKETING_VERSION` bump first. `Scripts/release.sh` builds Release and wraps it in
       `dist/MinNotch-<version>.dmg`, with `--anonymous` to re-sign ad-hoc so the download does
       not carry the signer's Apple ID, and `Scripts/release-notes.sh` for the GitHub release

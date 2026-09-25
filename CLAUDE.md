@@ -597,10 +597,11 @@ defaulting on only under `#if DEBUG`) for checking both at a glance. Review it w
 `--capture-whats-new`, which renders the notes on their own because a window capture does not
 draw `ScrollView` content.
 
-`ReleaseNotes.latest` is 0.4.0 and `MARKETING_VERSION` matches, written on 2026-09-23 and not yet
-released: no DMG has been built. 0.3.0 was released the same day as the GitHub release `v0.3.0`,
-signed with the personal team like 0.2.0. The README marks what is on `main` but not in a download
-with _(0.4)_; take those markers out when 0.4.0 ships.
+`ReleaseNotes.latest` is 0.4.0 and `MARKETING_VERSION` matches. 0.4.0 was released on 2026-09-24
+as the GitHub release `v0.4.0`, signed with the personal team like 0.2.0 and 0.3.0, at the user's
+request before this round's features were tried by hand (see WORKPLAN "Do these next"). The next
+shared build needs new notes, a new `id`, and a version bump. When the README describes something on
+`main` that no download has yet, mark it _(next)_ and take the markers out at release.
 
 **Settings says what is new.** `SettingsNewRows` maps row titles to the release that brought them,
 and every row from `ReleaseNotes.latest.version` gets a "New" badge, as does its pane in the

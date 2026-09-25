@@ -10,9 +10,8 @@ stats, a file shelf, saved links, a timer.
 
 ## Download
 
-[**MinNotch 0.3.0**](https://github.com/andrefongkc-cyber/mininotch/releases/latest) — open the
-DMG, drag MinNotch to Applications. Anything marked _(0.4)_ below is on `main` and arrives with the
-next release.
+[**MinNotch 0.4.0**](https://github.com/andrefongkc-cyber/mininotch/releases/latest) — open the
+DMG, drag MinNotch to Applications.
 
 The first launch is blocked, because notarising an app needs a paid Apple membership this project
 does not have. Open **System Settings > Privacy & Security**, scroll down, and click **Open
@@ -30,19 +29,19 @@ can click to jump to a line.
 
 ![The closed pill](Docs/images/closed-pill.png)
 
-Closed, the pill can show the cover and the song's title or artist _(0.4)_, the battery, a playing
+Closed, the pill can show the cover and the song's title or artist, the battery, a playing
 indicator, and live activities: a running timer, a download's progress, or your AirPods' charge
 when they connect. What goes on which side is yours to arrange in Settings > Layout, on a picture
 of the pill that shows what it is showing right now. It is off by default on a Mac with a notch,
 where the pill sits behind the camera housing; turn it on in Settings > Layout.
 
-**Lyrics with the notch closed** _(0.4)_. The line being sung, just under the closed pill, while a
+**Lyrics with the notch closed**. The line being sung, just under the closed pill, while a
 song plays.
 
 ![Lyrics under the closed notch](Docs/images/closed-lyrics.png)
 
 **Sneak peek.** When the song changes, the notch drops down with the cover and the title, instead
-of opening the whole panel, for as long as you set _(0.4)_.
+of opening the whole panel, for as long as you set.
 
 ![The sneak peek](Docs/images/sneak-peek.png)
 
@@ -59,11 +58,11 @@ site icon. Click to open it, or copy it back.
 **Calendar and Reminders** for the week or month, with per-calendar visibility, tick-off, and a
 quick-add field. Click a day to see what is on it, and use the arrows to move between weeks or
 months. Before a meeting, a countdown shows in the closed pill, and Zoom, Meet, Teams, Webex and
-FaceTime meetings get a Join button _(0.4)_.
+FaceTime meetings get a Join button.
 
 ![The calendar tab](Docs/images/calendar.png)
 
-**Weather** _(0.4)_ for where you are or a city you pick, with the next hours and days, and the
+**Weather** for where you are or a city you pick, with the next hours and days, and the
 temperature in the closed pill if you place it there. Forecasts come from Open-Meteo, which needs
 no account.
 
@@ -77,13 +76,13 @@ in the closed pill.
 Also:
 
 - **Shelf** to park files on the notch and drag them out somewhere else, several at once, or send
-  them with AirDrop _(0.4)_.
-- **Sound output** _(0.4)_: switch between speakers, AirPods and displays, and set the volume, from
+  them with AirDrop.
+- **Sound output**: switch between speakers, AirPods and displays, and set the volume, from
   the Now Playing card.
 - **System stats**: CPU, GPU, memory, network, and the charge of connected AirPods and accessories.
 - **Volume, brightness and keyboard backlight** shown at the notch, optionally instead of Apple's
   own overlay, which MinNotch hides by taking those keys before macOS sees them (needs
-  Accessibility). They also show over the lock screen, as does the song with its controls _(0.4)_.
+  Accessibility). They also show over the lock screen, as does the song with its controls.
 - **Clipboard history** for text, links, colours, and images, held in memory only.
 - **Floating Now Playing window** for a display with no notch worth looking at.
 - **Two-finger swipes** to change tab or open and close, with optional haptics.
@@ -92,7 +91,7 @@ Also:
   Anything that will not fit beside the notch moves to the other side of it rather than hiding
   behind the camera.
 - **Settings** in their own window with search: press ⌘F, type, and a result takes you to the row.
-  What is new in an update is marked New _(0.4)_.
+  What is new in an update is marked New.
 - **What's New** after each update, and a welcome tour on first launch.
 
 ![The release notes window](Docs/images/whats-new.png)
@@ -122,7 +121,7 @@ switch on Follow the Beat or Fix Timing Automatically.
 ## Permissions
 
 Nothing is asked for at launch. The welcome tour lists every one of these with a button to allow it
-there and then _(0.4)_; otherwise each is requested the first time a feature needs it:
+there and then; otherwise each is requested the first time a feature needs it:
 
 | What | Used for |
 |---|---|
@@ -131,11 +130,11 @@ there and then _(0.4)_; otherwise each is requested the first time a feature nee
 | Notifications | Low-battery and timer alerts |
 | System audio recording | Only for ambient lighting that follows the beat, and fixing lyric timing |
 | Accessibility | Only to hide Apple's volume and brightness overlay |
-| Location | Only for weather where you are; a city you type needs none _(0.4)_ |
+| Location | Only for weather where you are; a city you type needs none |
 
 Everything stays on your Mac, with two exceptions, both off by default: setting **Media > Lyrics
 Source** to look up online sends the current title, artist, album and length to `lrclib.net`, and
-**Weather** _(0.4)_ sends a location rounded to about a kilometre, or the city you chose, to
+**Weather** sends a location rounded to about a kilometre, or the city you chose, to
 `open-meteo.com`. No accounts, no analytics, no telemetry. Clipboard history is never written to disk, and it skips
 anything an app marks as private. Audio becomes a handful of numbers per buffer and is discarded;
 nothing is recorded.
