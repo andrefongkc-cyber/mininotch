@@ -11,7 +11,8 @@ stats, a file shelf, saved links, a timer.
 ## Download
 
 [**MinNotch 0.4.0**](https://github.com/andrefongkc-cyber/mininotch/releases/latest) — open the
-DMG, drag MinNotch to Applications.
+DMG, drag MinNotch to Applications. It runs in the background: no Dock icon and nothing in ⌘-Tab,
+just the notch and an optional menu bar icon. Quit it from that icon or from Settings > About.
 
 The first launch is blocked, because notarising an app needs a paid Apple membership this project
 does not have. Open **System Settings > Privacy & Security**, scroll down, and click **Open

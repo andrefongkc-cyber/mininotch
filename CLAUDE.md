@@ -39,6 +39,11 @@ that changed, and what it did not:
 
 Anyone else building this has to set their own team, or signing fails.
 
+**MinNotch is a background agent.** `LSUIElement` is true in `Config/Info.plist` and
+`AppDelegate` sets `.accessory`, so it has no Dock icon and no place in ⌘-Tab; `lsappinfo` reports
+it as `UIElement`. The user wants it to stay that way. The only time it may become a regular app,
+with a Dock icon, is while macOS is actually showing it a permission prompt (`ForegroundPrompt`).
+
 ## Build, run, review
 
 ```bash
@@ -424,7 +429,15 @@ Scripts/          build, run, preview
   audio tap is worse, blocking forever instead of returning. `ForegroundPrompt.begin()` /
   `end()` takes a Dock icon for the length of the request and restores it afterwards, on a timer
   as well, so a request that never answers cannot strand the app with an icon. Wrap any new
-  permission request in it.
+  permission request in it, **but only when a prompt can actually appear.** The audio tap and
+  the Downloads watch used to take the foreground on every start, so with either feature on
+  the app flashed a Dock icon and took focus at every launch, long after the permission was
+  granted: `lsappinfo` caught it as `Foreground` for a tenth of a second. Each now remembers a
+  start that worked (`audioTap.granted`, `downloads.granted` in the standard defaults) and
+  starts straight away next time. A start that fails or times out clears the memory, and
+  `AudioAnalyzer.retry()` always asks from the front. To check, relaunch through `open -n -a`
+  and poll `lsappinfo info -only ApplicationType -app com.minnotch.MinNotch` every 100 ms: it
+  must read `UIElement` throughout.
 - **Apple's volume overlay is hidden by taking the keys, not by touching the overlay.** On macOS
   26 `OSDUIHelper` no longer draws it: suspended (state `T`) the overlay still appeared, and killing
   it had always flickered. `SystemKeyInterceptor` is a session event tap on `NX_SYSDEFINED` aux

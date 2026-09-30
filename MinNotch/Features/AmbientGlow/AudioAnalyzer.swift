@@ -92,7 +92,16 @@ final class AudioAnalyzer {
     @ObservationIgnored nonisolated(unsafe) private var beatLevel: Double = 0
     @ObservationIgnored nonisolated(unsafe) private var lastPublish = Date()
 
-    init() {
+    /// Where "the tap has started here before" is remembered. See `start()`.
+    @ObservationIgnored private let defaults: UserDefaults
+    private static let grantedKey = "audioTap.granted"
+    /// True while this start has the app in front for the permission prompt, so exactly one
+    /// `ForegroundPrompt.end()` answers the one `begin()`, whichever of success, failure or the
+    /// timeout comes first.
+    @ObservationIgnored private var isPrompting = false
+
+    init(defaults: UserDefaults = .standard) {
+        self.defaults = defaults
         dft = try? vDSP.DiscreteFourierTransform(
             previous: nil,
             count: fftSize,
@@ -125,8 +134,15 @@ final class AudioAnalyzer {
 
         // The system audio prompt, like every other, is only shown to the active app, and this
         // one is an accessory app that never activates. Asking from the background is why the
-        // request used to hang with nothing on screen.
-        DispatchQueue.main.async { ForegroundPrompt.begin() }
+        // request used to hang with nothing on screen. But only when a prompt can appear: once
+        // the tap has started here, the answer is already given, and coming to the front
+        // anyway flashed a Dock icon and took focus from whatever the user was doing, at every
+        // launch. If the permission has since been taken away, this start times out below, the
+        // memory is cleared, and the Retry that follows asks from the front again.
+        if !defaults.bool(forKey: Self.grantedKey) {
+            isPrompting = true
+            ForegroundPrompt.begin()
+        }
 
         // Off the main thread, and not optional. `AudioHardwareCreateProcessTap` does not
         // return until the system has decided whether this process may listen, and on a
@@ -142,7 +158,7 @@ final class AudioAnalyzer {
                 let latency = OutputLatency.current()
 
                 DispatchQueue.main.async {
-                    ForegroundPrompt.end()
+                    self.endPrompt(granted: true)
                     self.isStarting = false
                     self.isRunning = true
                     self.outputLatency = latency
@@ -150,7 +166,7 @@ final class AudioAnalyzer {
             } catch let error as Failure {
                 self.teardown()
                 DispatchQueue.main.async {
-                    ForegroundPrompt.end()
+                    self.endPrompt(granted: false)
                     self.isStarting = false
                     self.failure = error
                     AppLog.media.error("Audio tap failed: \(error.message, privacy: .public)")
@@ -158,7 +174,7 @@ final class AudioAnalyzer {
             } catch {
                 self.teardown()
                 DispatchQueue.main.async {
-                    ForegroundPrompt.end()
+                    self.endPrompt(granted: false)
                     self.isStarting = false
                     self.failure = .unsupported(error.localizedDescription)
                 }
@@ -168,7 +184,7 @@ final class AudioAnalyzer {
         // A tap that never comes back is reported rather than left spinning forever.
         DispatchQueue.main.asyncAfter(deadline: .now() + 8) { [weak self] in
             guard let self, self.isStarting else { return }
-            ForegroundPrompt.end()
+            self.endPrompt(granted: false)
             self.isStarting = false
             self.failure = .unsupported(
                 "The system did not answer the request to record audio within eight seconds. If no permission dialog appeared, allow MinNotch under Privacy & Security > Screen & System Audio Recording, then try again."
@@ -178,6 +194,16 @@ final class AudioAnalyzer {
 
     /// True between asking for the tap and hearing back.
     private(set) var isStarting = false
+
+    /// Hands the foreground back if this start took it, and remembers the answer: a tap that
+    /// started means the permission is granted, so the next start need not come to the front.
+    private func endPrompt(granted: Bool) {
+        if isPrompting {
+            isPrompting = false
+            ForegroundPrompt.end()
+        }
+        defaults.set(granted, forKey: Self.grantedKey)
+    }
 
     /// Stops the tap and clears any recorded failure.
     ///
@@ -195,6 +221,8 @@ final class AudioAnalyzer {
     /// automatically.
     func retry() {
         failure = nil
+        // A deliberate retry always asks from the front, whatever was remembered.
+        defaults.set(false, forKey: Self.grantedKey)
         start()
     }
 

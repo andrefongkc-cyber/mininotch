@@ -33,15 +33,20 @@ final class DownloadsMonitor {
 
     private let folder: URL?
     private let asksFromForeground: Bool
+    /// Where "the folder has been read here before" is remembered. See `start()`.
+    private let defaults: UserDefaults
+    private static let grantedKey = "downloads.granted"
 
     /// `folder` is the Downloads folder unless a check points it somewhere else, in which case
     /// there is no permission to ask for and no app to bring forward.
     init(
         folder: URL? = FileManager.default.urls(for: .downloadsDirectory, in: .userDomainMask).first,
-        asksFromForeground: Bool = true
+        asksFromForeground: Bool = true,
+        defaults: UserDefaults = .standard
     ) {
         self.folder = folder
         self.asksFromForeground = asksFromForeground
+        self.defaults = defaults
     }
     private var source: DispatchSourceFileSystemObject?
     private var pollTimer: Timer?
@@ -59,19 +64,25 @@ final class DownloadsMonitor {
     func start() {
         guard source == nil, let folder else { return }
 
-        // Opening the folder is what asks for access, so it is done with the app frontmost.
-        if asksFromForeground { ForegroundPrompt.begin(timeout: 30) }
+        // Opening the folder is what asks for access, so it is done with the app frontmost, but
+        // only until it has worked once. Coming to the front when the answer is already yes
+        // flashed a Dock icon and took focus at every launch. A folder that stops being readable
+        // clears the memory, so switching Downloads off and on asks from the front again.
+        let prompts = asksFromForeground && !defaults.bool(forKey: Self.grantedKey)
+        if prompts { ForegroundPrompt.begin(timeout: 30) }
         let descriptor = open(folder.path, O_EVTONLY)
         let readable = (try? FileManager.default.contentsOfDirectory(atPath: folder.path)) != nil
-        if asksFromForeground { ForegroundPrompt.end() }
+        if prompts { ForegroundPrompt.end() }
 
         guard descriptor >= 0, readable else {
             if descriptor >= 0 { close(descriptor) }
             hasAccess = false
+            if asksFromForeground { defaults.set(false, forKey: Self.grantedKey) }
             AppLog.app.error("Downloads folder is not readable; download activities are off")
             return
         }
         hasAccess = true
+        if asksFromForeground { defaults.set(true, forKey: Self.grantedKey) }
 
         let source = DispatchSource.makeFileSystemObjectSource(
             fileDescriptor: descriptor,
