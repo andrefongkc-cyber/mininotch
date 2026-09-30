@@ -183,7 +183,9 @@ final class NotchWindowManager {
                 environment.liveActivities.cycle(by: offset)
                 return
             }
-            let tabs = viewModel.availableTabs
+            // In the order the top bar shows them, which is the user's arrangement, not the
+            // order features were registered in.
+            let tabs = viewModel.topStripLayout(battery: environment.battery.status).tabsInOrder
             guard tabs.count > 1,
                   let index = tabs.firstIndex(of: viewModel.selectedTab) else { return }
             let next = (index + offset + tabs.count) % tabs.count

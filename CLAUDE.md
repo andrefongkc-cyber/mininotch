@@ -89,6 +89,7 @@ MinNotch --capture-lock-screen out.png [--hud]                    # what the loc
 MinNotch --check-meeting-links                                    # which invitation links count as a meeting
 MinNotch --check-audio-outputs                                    # the outputs the card would offer
 MinNotch --check-weather London | 51.5 -0.13 [--fahrenheit]       # a real forecast, parsed
+MinNotch --check-tab-order                                        # the swipe steps through tabs as the bar draws them
 ```
 
 `--capture-notch` grew three options for the animated effects. `--glow off` disables the
@@ -288,7 +289,11 @@ Scripts/          build, run, preview
   to 21 points; only then does `NotchGeometry.panelWidth` widen the panel. The view and the
   geometry both read widths from `TopStripLayout`, so they cannot disagree. Tabs cannot be
   removed from the bar (`canRemove`), because a feature that is on must stay reachable, and a
-  tab missing from both saved lists joins the left at display time.
+  tab missing from both saved lists joins the left at display time. The sideways swipe between
+  tabs walks the same layout (`NotchViewModel.topStripLayout(battery:)`, then `tabsInOrder`), left
+  to right as drawn. It used to walk `availableTabs`, the registry's fixed order, so after a tab
+  was moved the swipe skipped it and came back to it out of place. `--check-tab-order` rearranges
+  the bar and compares.
 - **Nothing may hardcode which indicator is the wide one.** `flankWidth` sums whatever the
   user assigned to each side, in their order, with the same spacings the view lays out, and
   takes the larger of the two. It used to know that artwork was 18 points and battery was

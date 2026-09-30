@@ -15,7 +15,6 @@ struct ExpandedPanelView: View {
     @Environment(AppEnvironment.self) private var environment
     @Environment(SettingsStore.self) private var settings
 
-    private var tabs: [NotchTab] { viewModel.availableTabs }
     private var geometry: NotchGeometry { viewModel.geometry }
 
     /// Height of the band that has to stay clear of readable content.
@@ -59,18 +58,7 @@ struct ExpandedPanelView: View {
 
     /// Where each item goes this time, from the user's arrangement and the room available.
     private var topStripLayout: TopStripLayout {
-        let battery = environment.battery.status
-        return TopStripLayout.make(
-            leading: settings.appearance.topStripLeading,
-            trailing: settings.appearance.topStripTrailing,
-            availableTabs: tabs,
-            batteryWidth: battery.isPresent
-                ? TopStripLayout.batteryWidth(showPercentage: settings.battery.showPercentage)
-                : nil,
-            showsDebug: settings.advanced.showDebugButtons,
-            panelWidth: viewModel.expandedPanelWidth,
-            cutoutWidth: geometry.collapsedSize.width
-        )
+        viewModel.topStripLayout(battery: environment.battery.status)
     }
 
     /// Items either side of the cutout, as arranged in Settings > Layout > Top Bar.

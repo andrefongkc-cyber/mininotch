@@ -92,6 +92,25 @@ final class NotchViewModel {
         self.geometry = geometry
     }
 
+    /// The open panel's top bar as it is drawn right now: the user's arrangement, placed into the
+    /// room there is. One builder for `ExpandedPanelView` and for the swipe between tabs, so the
+    /// swipe goes in the order the bar shows. It used to step through `availableTabs`, which is
+    /// the registry's fixed order, so after a tab was moved in Settings > Layout the swipe
+    /// skipped over it and came back to it out of place.
+    func topStripLayout(battery: BatteryStatus) -> TopStripLayout {
+        TopStripLayout.make(
+            leading: settings.appearance.topStripLeading,
+            trailing: settings.appearance.topStripTrailing,
+            availableTabs: availableTabs,
+            batteryWidth: battery.isPresent
+                ? TopStripLayout.batteryWidth(showPercentage: settings.battery.showPercentage)
+                : nil,
+            showsDebug: settings.advanced.showDebugButtons,
+            panelWidth: expandedPanelWidth,
+            cutoutWidth: geometry.collapsedSize.width
+        )
+    }
+
     /// Tabs currently worth showing. Recomputed on every read so toggling a feature in
     /// Settings updates the strip immediately.
     var availableTabs: [NotchTab] {

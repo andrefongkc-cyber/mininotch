@@ -23,6 +23,10 @@ import Foundation
 struct TopStripLayout: Equatable {
     var leading: [TopStripItem]
     var trailing: [TopStripItem]
+
+    /// The tabs as they read left to right across the bar, cutout and all. What a sideways
+    /// swipe steps through, so it goes to the tab next to this one on screen.
+    var tabsInOrder: [NotchTab] { (leading + trailing).compactMap(\.tab) }
     /// Width of each icon button, tabs and settings alike.
     var buttonWidth: CGFloat
 

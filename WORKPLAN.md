@@ -1,6 +1,6 @@
 # MinNotch workplan
 
-Status: "After 0.4" done and pushed (hidden virtual notch, no Dock flash), unreleased; next: the user tries 0.4 and these by hand, then 0.5.
+Status: "After 0.4" done and pushed (hidden virtual notch, no Dock flash, swipe order), unreleased; next: the user tries 0.4 and these by hand, then 0.5.
 
 Living document. Update the checkboxes as work lands. `CLAUDE.md` holds the architecture
 rules and the traps; this file holds the sequence.
@@ -46,6 +46,8 @@ at last. Notarisation still needs a paid membership nobody is buying.
       and opens when the pointer reaches the top middle. Settings > Advanced > Displays. Captures
       confirm nothing is drawn at rest and the panel grows in on open; the hover itself needs
       trying on a real external monitor.
+- [x] Swiping between tabs follows the top bar as drawn, not the registry's fixed order, so a
+      rearranged tab is no longer skipped over or visited out of place. `--check-tab-order`.
 - [x] No Dock icon unless a permission is really being asked: the audio tap and the Downloads
       watch used `ForegroundPrompt` on every start, flashing a Dock icon and taking focus at
       launch even with access long granted. Before: `Foreground` for ~100 ms at launch. After:
