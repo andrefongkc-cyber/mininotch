@@ -51,6 +51,17 @@ struct AdvancedSettingsView: View {
                         }
                     }
                 }
+
+                SettingsDivider()
+
+                SettingsRow(
+                    title: "Hide Until Hovered",
+                    subtitle: "On displays without a notch, draw nothing until the pointer reaches the top middle of the screen, then open as usual. Volume and brightness still show. Needs Open on Hover, or click there instead.",
+                    systemImage: "eye.slash",
+                    isEnabled: settings.advanced.showOnNonNotchDisplays
+                ) {
+                    SettingsToggle(isOn: $settings.advanced.hideVirtualNotchUntilHover)
+                }
             }
 
             SettingsCard(

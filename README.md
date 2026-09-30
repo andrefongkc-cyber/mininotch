@@ -18,7 +18,8 @@ does not have. Open **System Settings > Privacy & Security**, scroll down, and c
 Anyway**. That is once per version.
 
 Requires macOS 14.4 or later, Apple silicon or Intel; on anything older, macOS refuses to open
-it. A Mac with no notch gets a virtual one in the same place.
+it. A Mac with no notch gets a virtual one in the same place, and on an external monitor it can
+stay out of sight until the pointer reaches the top middle of the screen _(next)_.
 
 ## What it does
 

@@ -61,6 +61,15 @@ struct AdvancedSettings: Codable, Equatable {
     /// with nothing to blend into, so it should be showing something worth the space.
     var nonNotchDefaultTab: NotchTab = .timer
 
+    /// On a display with no physical notch, draw nothing while closed, and open as usual when the
+    /// pointer reaches the spot the notch would be in.
+    ///
+    /// For an external monitor where a black tab at the top is unwanted but the notch is not.
+    /// Only the virtual notch: a real one already hides behind the camera housing. Hidden means
+    /// the resting pill, its glow, the sneak peek and the lyrics strip; a volume or brightness HUD
+    /// still shows, because it answers something the user just did.
+    var hideVirtualNotchUntilHover: Bool = false
+
     /// Remember what has been copied, and offer it back from the Clipboard tab.
     var clipboardHistoryEnabled: Bool = false
 
@@ -96,11 +105,9 @@ struct AdvancedSettings: Codable, Equatable {
     /// How firm the tap is. macOS has no amplitude control, only different patterns.
     var hapticStrength: HapticStrength = .firm
 
-    // There is no `showOnLockScreen`. macOS gives third-party apps no way to draw on the
-    // lock screen: no window level is composited there and there is no widget surface for it,
-    // unlike iOS. The setting used to exist and did nothing, so it was removed rather than
-    // left as a switch that could never work. Old settings files still carrying the key are
-    // ignored by the lenient decode.
+    // Drawing on the lock screen lives in `HUDSettings.showOnLockScreen` and
+    // `MediaSettings.showOnLockScreen`, through `LockScreenSpace`. An older `showOnLockScreen`
+    // key here, from when it was wrongly thought impossible, is ignored by the lenient decode.
 
     /// Draw the notch's hit-test region so window placement problems are visible.
     var showDebugOverlay: Bool = false
@@ -129,6 +136,7 @@ struct AdvancedSettings: Codable, Equatable {
         displayTargeting = c.value(.displayTargeting, DisplayTargeting.activeDisplay)
         notchHeightMode = c.value(.notchHeightMode, NotchHeightMode.matchPhysical)
         nonNotchDefaultTab = c.value(.nonNotchDefaultTab, NotchTab.timer)
+        hideVirtualNotchUntilHover = c.value(.hideVirtualNotchUntilHover, false)
         clipboardHistoryEnabled = c.value(.clipboardHistoryEnabled, false)
         clipboardHistoryLimit = c.value(.clipboardHistoryLimit, 20, in: 5...100)
         linkShelfEnabled = c.value(.linkShelfEnabled, false)

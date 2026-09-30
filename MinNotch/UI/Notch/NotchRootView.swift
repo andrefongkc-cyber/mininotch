@@ -18,13 +18,32 @@ struct NotchRootView: View {
     /// is not the panel: it has its own size, its own content, and it uses the closed notch's
     /// glow placement. It needs a track to show, so a peek with nothing playing is just the pill.
     private var isPeeking: Bool {
-        viewModel.state == .peeking && environment.nowPlaying.track != nil
+        viewModel.state == .peeking && environment.nowPlaying.track != nil && !hidesWhenClosed
+    }
+
+    /// Settings > Advanced > Hide Until Hovered, on a display with no physical notch.
+    ///
+    /// A real notch is never affected: it already sits behind the camera housing.
+    private var hidesWhenClosed: Bool {
+        settings.advanced.hideVirtualNotchUntilHover && !geometry.hasPhysicalNotch
+    }
+
+    /// True while a hidden virtual notch is at rest: nothing is drawn, but the surface keeps its
+    /// size and its content shape, so the pointer arriving at that spot is still a hover and a
+    /// click there still opens it. A HUD still shows, because it answers something the user just
+    /// did.
+    ///
+    /// A value, not an `if` around the surface: the fill fades on the same spring that grows the
+    /// box, so hovering makes the panel grow out of nothing, and an `if` would swap the surface
+    /// for another view mid-spring, which is what once made the panel come apart as it opened.
+    private var isHiddenAtRest: Bool {
+        hidesWhenClosed && !isExpanded && environment.hud.current == nil
     }
 
     /// Synced lyrics to show under the closed pill, or nil. Only while a song is playing: a
     /// paused song's line would sit there not moving, and the pill is the right size for that.
     private var closedLyrics: Lyrics? {
-        guard viewModel.state == .collapsed,
+        guard viewModel.state == .collapsed, !hidesWhenClosed,
               settings.media.enabled, settings.media.showLyrics, settings.media.showLyricsWhenClosed,
               FeatureFlag.lyrics.isEnabled,
               environment.nowPlaying.track?.isPlaying == true,
@@ -150,6 +169,7 @@ struct NotchRootView: View {
             contentLayer
         }
         .clipShape(shape)
+        .opacity(isHiddenAtRest ? 0 : 1)
     }
 
     /// The open panel's shadow, as a layer of its own behind the surface.
@@ -294,7 +314,7 @@ struct NotchRootView: View {
                 // the default radius made the rasterised layer twice the area for a falloff
                 // that had already reached nothing.
                 spill: min(CGFloat(glow.glowRadius) * 2, Metrics.notchGlowSpill),
-                isVisible: glow.placements.contains(placement)
+                isVisible: glow.placements.contains(placement) && !isHiddenAtRest
             )
         }
     }
@@ -380,7 +400,8 @@ struct NotchRootView: View {
         // sits behind the camera housing and is invisible, so widening it is a real
         // choice with a real cost. A virtual notch has no housing to hide behind: it is
         // already a black tab stuck to the top of the screen, and leaving it empty is
-        // all of the cost and none of the benefit.
+        // all of the cost and none of the benefit. That is what it draws when it is drawn at
+        // all: Hide Until Hovered draws nothing (`isHiddenAtRest`).
         CollapsedPillContent.live(
             environment: environment,
             settings: settings,
@@ -390,19 +411,24 @@ struct NotchRootView: View {
 
     /// Everything that changes the surface's size, in one comparable value.
     private var surfaceMetrics: SurfaceMetrics {
-        SurfaceMetrics(width: surfaceWidth, height: surfaceHeight, isExpanded: isExpanded)
+        SurfaceMetrics(width: surfaceWidth, height: surfaceHeight, isExpanded: isExpanded, isHidden: isHiddenAtRest)
     }
 
+    /// `isHidden` is here so the hidden notch's fade rides the same spring as its size.
     private struct SurfaceMetrics: Equatable {
         var width: CGFloat
         var height: CGFloat
         var isExpanded: Bool
+        var isHidden: Bool
     }
 
     private var surfaceWidth: CGFloat {
         guard !isExpanded else {
             return viewModel.expandedPanelWidth
         }
+        // Hidden, the surface is only the hover target: the virtual notch's own rect, not a
+        // pill widened for indicators nobody can see.
+        if isHiddenAtRest { return geometry.collapsedSize.width }
         // A HUD takes over the closed surface entirely, and needs both flanks to show an
         // icon and a level rather than the pill's narrower strips.
         if environment.hud.current != nil { return HUDView.width(for: geometry) }

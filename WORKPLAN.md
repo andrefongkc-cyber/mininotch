@@ -1,6 +1,6 @@
 # MinNotch workplan
 
-Status: 0.4.0 released 2026-09-24 (GitHub v0.4.0); next: the user tries 0.4 by hand (see "Do these next" 0), then the macOS 13 decision.
+Status: doing "After 0.4" (hide the virtual notch until hovered, then no Dock icon unless asking); next: the user tries 0.4 by hand, then 0.5.
 
 Living document. Update the checkboxes as work lands. `CLAUDE.md` holds the architecture
 rules and the traps; this file holds the sequence.
@@ -39,6 +39,16 @@ at last. Notarisation still needs a paid membership nobody is buying.
    playing track, downloads, a device connecting, and the album-art bars with real music.
 
 ---
+
+## After 0.4 (2026-09-30)
+
+- [x] Hide Until Hovered: on a display without a notch, the virtual notch draws nothing at rest
+      and opens when the pointer reaches the top middle. Settings > Advanced > Displays. Captures
+      confirm nothing is drawn at rest and the panel grows in on open; the hover itself needs
+      trying on a real external monitor.
+- [ ] No Dock icon unless a permission is really being asked: the audio tap and the Downloads
+      watch used `ForegroundPrompt` on every start, flashing a Dock icon and taking focus at
+      launch even with access long granted.
 
 ## 0.4 additions (2026-09-24)
 

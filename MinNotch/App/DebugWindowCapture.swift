@@ -172,6 +172,9 @@ enum DebugWindowCapture {
         if arguments.contains("--closed-lyrics") { settings.media.showLyrics = true }
         // Appearance > Panel Shadow, which is off by default and only exists while open.
         settings.appearance.showPanelShadow = arguments.contains("--shadow")
+        // Advanced > Hide Until Hovered, which only changes a virtual notch, so pair it with
+        // `--virtual`. Set either way, so a capture does not inherit it from the real settings.
+        settings.advanced.hideVirtualNotchUntilHover = arguments.contains("--hide-virtual")
         // Which states the glow shows in: `closed`, `open`, or `closed,open`. The glow behaves
         // differently when it is on for only one of them, so both cases have to be capturable.
         if let index = arguments.firstIndex(of: "--placements"), arguments.indices.contains(index + 1) {

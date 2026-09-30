@@ -246,7 +246,8 @@ Scripts/          build, run, preview
   widening it is a real choice with a real cost. A virtual notch has no housing: it is
   already a black tab stuck to the top of the screen, and leaving it empty is all of the cost
   and none of the benefit. `isExtended` is therefore
-  `extendPillForIndicators || !geometry.hasPhysicalNotch`.
+  `extendPillForIndicators || !geometry.hasPhysicalNotch`. That is what it draws when it is drawn
+  at all: Advanced > Hide Until Hovered draws nothing at rest (see "A hidden virtual notch").
 - **The pill's leading flank composes, it does not choose.** Artwork and a Live Activity are
   drawn side by side. They used to be a chain of else-ifs with artwork first, which meant a
   running timer was invisible for as long as anything was playing, which is precisely when
@@ -671,6 +672,20 @@ cross-faded instead of one box growing. The user saw the panel come apart. The s
 layer of its own behind the surface, present for as long as the setting is on and faded with the
 spring. Anything that changes with open and closed goes in a value, never a branch around the
 surface.
+
+**A hidden virtual notch is invisible, not absent.** Advanced > Hide Until Hovered
+(`hideVirtualNotchUntilHover`) is for an external monitor where a black tab at the top is
+unwanted. While it is at rest (`NotchRootView.isHiddenAtRest`: the setting, no physical notch,
+closed, no HUD) the surface keeps the virtual notch's own rect and its `.contentShape`, so
+hovering there still reaches `NotchViewModel.hoverChanged` and a click still opens it. Only the
+clipped fill and content fade to zero opacity, and the glow's `isVisible` goes false.
+`isHiddenAtRest` sits in `SurfaceMetrics`, so the fade rides the same spring that grows the box:
+opening, the panel grows out of nothing; closing, it shrinks back into nothing. It is a value and
+never an `if` around the surface, for the reason under "An `if` in a modifier". The sneak peek and
+the closed lyrics strip are off on a hidden notch, so nothing reveals it on its own, but a
+volume or brightness HUD still shows because it answers what the user just did. A real notch is
+never affected. `--capture-notch --virtual --collapsed --extended --hide-virtual` must draw
+nothing at all; add `--midway 0.12` without `--collapsed` to see it grow in.
 
 **While the pill is the notch's size, the glow traces the housing, not the pill.** `NotchShape`
 insets its body by the shoulder radius, so at the notch's width the body is nine points narrower

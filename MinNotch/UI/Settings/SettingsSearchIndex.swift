@@ -121,6 +121,7 @@ enum SettingsSearchIndex {
         .init(tab: .advanced, section: "Displays", title: "Show on Displays Without a Notch", subtitle: "", symbolName: "display.2"),
         .init(tab: .advanced, section: "Displays", title: "Show On", subtitle: "Which display carries the notch when several are connected.", symbolName: "rectangle.on.rectangle"),
         .init(tab: .advanced, section: "Displays", title: "Opens On Without a Notch", subtitle: "Which tab a virtual notch starts on. A real notch hides behind the camera housing; one on an external monitor does not, so it may as well be showing something.", symbolName: "rectangle.topthird.inset.filled"),
+        .init(tab: .advanced, section: "Displays", title: "Hide Until Hovered", subtitle: "On displays without a notch, draw nothing until the pointer reaches the top middle of the screen, then open as usual. Volume and brightness still show. Needs Open on Hover, or click there instead.", symbolName: "eye.slash"),
         .init(tab: .advanced, section: "Link Shelf", title: "Link Shelf", subtitle: "Keep links on the notch in a Links tab. Opening one uses your default browser.", symbolName: "link"),
         .init(tab: .advanced, section: "Link Shelf", title: "Links Kept", subtitle: "The oldest link is dropped once the shelf is full.", symbolName: "list.bullet"),
         .init(tab: .advanced, section: "Clipboard", title: "Clipboard History", subtitle: "Remember what you copy and offer it back from the Clipboard tab.", symbolName: "doc.on.clipboard"),
