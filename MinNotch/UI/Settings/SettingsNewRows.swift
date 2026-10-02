@@ -44,6 +44,7 @@ enum SettingsNewRows {
 
         // 0.5
         "Hide Until Hovered": "0.5",
+        "Show Temperatures": "0.5",
     ]
 
     static func isNew(_ title: String) -> Bool {

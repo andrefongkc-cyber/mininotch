@@ -11,7 +11,8 @@ struct SystemWidgetView: View {
     /// Height the widget needs, excluding the panel's padding and top strip.
     static func preferredHeight(bluetoothDeviceCount: Int) -> CGFloat {
         let batteryBlock: CGFloat = 54
-        let statsBlock: CGFloat = 58
+        // The readout, then the graph under it.
+        let statsBlock: CGFloat = 58 + StatChart.spacing + StatChart.height
         let deviceBlock: CGFloat = 26
         let divider: CGFloat = 1
         let spacing: CGFloat = 12
@@ -117,6 +118,13 @@ struct SystemWidgetView: View {
                 }
 
                 Spacer()
+
+                if let temperature = environment.systemStats.stats.batteryTemperature, showsStats {
+                    Label(TemperatureFormat.string(celsius: temperature, fahrenheit: usesFahrenheit), systemImage: "thermometer.medium")
+                        .font(.system(size: 11, weight: .medium).monospacedDigit())
+                        .foregroundStyle(.white.opacity(0.6))
+                        .help("Battery temperature")
+                }
 
                 if status.isLowPowerMode {
                     Text("Low Power")
@@ -225,6 +233,49 @@ struct SystemWidgetView: View {
                 secondaryText: "↑ " + ByteFormat.rate(stats.networkOut),
                 history: Self.scaledToPeak(history.network)
             )
+
+            if settings.advanced.showTemperatures {
+                temperatureCell
+            }
+        }
+    }
+
+    /// The chip's hottest point, with the SSD beside it in the label.
+    ///
+    /// The bar and the graph span 30 to 100 °C, roughly idle to throttling, and take their
+    /// colour from the heat rather than from load. A Mac that reports no temperatures shows
+    /// "n/a" rather than nothing, as the GPU does, so the gap reads as unmeasured.
+    @ViewBuilder
+    private var temperatureCell: some View {
+        let ssd = stats.ssdTemperature.map { " · SSD " + TemperatureFormat.string(celsius: $0, fahrenheit: usesFahrenheit) } ?? ""
+        if let chip = stats.chipTemperature {
+            statCell(
+                label: "Chip" + ssd,
+                symbol: "thermometer.medium",
+                value: TemperatureFormat.string(celsius: chip, fahrenheit: usesFahrenheit),
+                fraction: Self.heatFraction(chip),
+                history: history.chipTemperature.map(Self.heatFraction),
+                barTint: Self.heatTint(chip),
+                chartTint: Self.heatTint(chip)
+            )
+        } else {
+            statCell(label: "Chip", symbol: "thermometer.medium", value: "n/a", fraction: nil)
+        }
+    }
+
+    private var usesFahrenheit: Bool { settings.weather.units.usesFahrenheit }
+
+    private static func heatFraction(_ celsius: Double) -> Double {
+        min(max((celsius - 30) / 70, 0), 1)
+    }
+
+    /// Cool reads as calm, warm as a warning, hot as a problem: green under 70 °C, orange
+    /// under 90, red above.
+    private static func heatTint(_ celsius: Double) -> Color {
+        switch celsius {
+        case ..<70: return Color(nsColor: .systemGreen)
+        case ..<90: return Color(nsColor: .systemOrange)
+        default: return Color(nsColor: .systemRed)
         }
     }
 
@@ -236,7 +287,9 @@ struct SystemWidgetView: View {
         value: String,
         fraction: Double?,
         secondaryText: String? = nil,
-        history: [Double] = []
+        history: [Double] = [],
+        barTint: Color? = nil,
+        chartTint: Color? = nil
     ) -> some View {
         VStack(spacing: 2) {
             Image(systemName: symbol)
@@ -256,7 +309,7 @@ struct SystemWidgetView: View {
                         ZStack(alignment: .leading) {
                             Capsule().fill(Color.white.opacity(0.14))
                             Capsule()
-                                .fill(tint(for: fraction))
+                                .fill(barTint ?? tint(for: fraction))
                                 .frame(width: proxy.size.width * min(max(fraction, 0), 1))
                         }
                     }
@@ -278,22 +331,14 @@ struct SystemWidgetView: View {
             Text(label)
                 .font(.system(size: 9))
                 .foregroundStyle(.white.opacity(0.4))
+                .lineLimit(1)
+                .minimumScaleFactor(0.8)
+
+            StatChart(values: history, tint: chartTint ?? settings.appearance.resolvedAccent)
+                .padding(.horizontal, 8)
+                .padding(.top, StatChart.spacing - 2)
         }
         .frame(maxWidth: .infinity)
-        // The last minute or so behind the numbers, faint enough to read over, so a spike that
-        // came and went between glances is still there to see.
-        .background {
-            if history.count > 1 {
-                ZStack {
-                    SparklineShape(values: history, closed: true)
-                        .fill(Color.white.opacity(0.06))
-                    SparklineShape(values: history, closed: false)
-                        .stroke(Color.white.opacity(0.2), style: StrokeStyle(lineWidth: 1, lineJoin: .round))
-                }
-                .padding(.horizontal, 6)
-                .allowsHitTesting(false)
-            }
-        }
         .animation(Motion.content, value: value)
     }
 
@@ -311,11 +356,48 @@ struct SystemWidgetView: View {
     }
 }
 
-/// A line through `values`, each 0...1, spread evenly across the rect, newest on the right.
+/// The recent history of one reading, under it: a line in the reading's colour over a fill
+/// that fades to nothing, on a faint ground with a midline, so it reads as a graph even before
+/// there is much in it.
+///
+/// It used to sit behind the numbers, faint, spaced for a full minute and growing in from the
+/// right. Since sampling only runs while the tab is open, what anyone actually saw was a few
+/// seconds of it: a sliver against the right edge, which read as a glitch rather than as a
+/// graph. Now whatever has been sampled spans the width, and the minute fills in from there.
+struct StatChart: View {
+    var values: [Double]
+    var tint: Color
+
+    static let height: CGFloat = 22
+    static let spacing: CGFloat = 6
+
+    var body: some View {
+        ZStack {
+            RoundedRectangle(cornerRadius: 4, style: .continuous)
+                .fill(Color.white.opacity(0.05))
+            Rectangle()
+                .fill(Color.white.opacity(0.06))
+                .frame(height: 0.5)
+            if values.count > 1 {
+                SparklineShape(values: values, closed: true)
+                    .fill(LinearGradient(colors: [tint.opacity(0.35), tint.opacity(0.02)], startPoint: .top, endPoint: .bottom))
+                SparklineShape(values: values, closed: false)
+                    .stroke(tint.opacity(0.95), style: StrokeStyle(lineWidth: 1.2, lineCap: .round, lineJoin: .round))
+            }
+        }
+        .frame(height: Self.height)
+        .clipShape(RoundedRectangle(cornerRadius: 4, style: .continuous))
+        .allowsHitTesting(false)
+    }
+}
+
+/// A line through `values`, each 0...1, spread evenly across the whole rect, oldest on the left
+/// and newest on the right.
 ///
 /// A `Shape` rather than a `Canvas`, because `Canvas` output does not appear in a layer
 /// capture and this has to be checkable with `--capture-notch`. `closed` draws it down to the
-/// bottom edge and back, for the fill under the line.
+/// bottom edge and back, for the fill under the line. The line is inset a point from the top
+/// and bottom so a reading pinned at either end is not half cut off by the clip.
 struct SparklineShape: Shape {
     var values: [Double]
     var closed: Bool
@@ -323,17 +405,16 @@ struct SparklineShape: Shape {
     func path(in rect: CGRect) -> Path {
         var path = Path()
         guard values.count > 1 else { return path }
-        // Always spaced for a full history, so the line grows in from the right as samples
-        // arrive rather than stretching across the cell from the first two.
-        let step = rect.width / CGFloat(SystemStatsHistory.capacity - 1)
-        let startX = rect.maxX - step * CGFloat(values.count - 1)
+        let step = rect.width / CGFloat(values.count - 1)
+        let inset: CGFloat = 1
+        let usable = rect.height - inset * 2
 
         func point(_ index: Int) -> CGPoint {
             let value = min(max(values[index], 0), 1)
-            return CGPoint(x: startX + step * CGFloat(index), y: rect.maxY - rect.height * CGFloat(value))
+            return CGPoint(x: rect.minX + step * CGFloat(index), y: rect.maxY - inset - usable * CGFloat(value))
         }
 
-        if closed { path.move(to: CGPoint(x: startX, y: rect.maxY)); path.addLine(to: point(0)) } else { path.move(to: point(0)) }
+        if closed { path.move(to: CGPoint(x: rect.minX, y: rect.maxY)); path.addLine(to: point(0)) } else { path.move(to: point(0)) }
         for index in values.indices.dropFirst() { path.addLine(to: point(index)) }
         if closed {
             path.addLine(to: CGPoint(x: rect.maxX, y: rect.maxY))

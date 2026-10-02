@@ -90,6 +90,7 @@ MinNotch --check-meeting-links                                    # which invita
 MinNotch --check-audio-outputs                                    # the outputs the card would offer
 MinNotch --check-weather London | 51.5 -0.13 [--fahrenheit]       # a real forecast, parsed
 MinNotch --check-tab-order                                        # the swipe steps through tabs as the bar draws them
+MinNotch --check-temps                                            # every temperature sensor, and the three the System tab shows
 ```
 
 `--capture-notch` grew three options for the animated effects. `--glow off` disables the
@@ -907,6 +908,23 @@ beside it: the only thing that makes an interval a Pomodoro is what happens when
 on `onDisappear`, because a menu bar utility that wakes every couple of seconds forever is a
 battery complaint waiting to happen. Volume is the exception: CoreAudio pushes changes, so it
 costs nothing to leave attached.
+
+**Temperatures come from private HID sensors, and never on main.** `TemperatureSensors` loads
+`IOHIDEventSystemClientCreate` and `IOHIDServiceClientCopyEvent` from IOKit at run time (they are
+not in the headers), matches the vendor thermal sensors (usage page `0xff00`, usage 5), and reads
+temperature events from them, which is how monitoring apps such as Stats do it. Apple silicon does
+not label them CPU or GPU, so the chip temperature is the hottest `PMU tdie` sensor, beside the
+battery's fuel gauge and the SSD's `NAND` sensor; values outside 5 to 130 °C are calibration
+readings (`tdev` reads -22 on an M4) and are dropped. One read of the 31 sensors used takes about
+25 ms on an M4, a round trip each, so it runs on the sensors' own queue and lands in the readings a
+moment later, one interval behind the history. Units follow Settings > Weather > Temperature Units,
+with the unit letter shown, since a chip at "138°" looks broken to someone used to Celsius.
+`--check-temps` lists every sensor this Mac offers.
+
+**Each System reading has its graph under it.** `StatChart` draws whatever has been sampled
+across its full width, oldest left. It used to sit faintly behind the numbers, spaced for a full
+minute and growing in from the right, and because sampling only runs while the tab is open what
+anyone saw was a few seconds of it, a sliver against the cell's edge that read as a glitch.
 
 CPU and network are deltas between two readings, so `beginSampling()` takes one sample to
 establish a baseline and a second 0.3s later; without that the first thing the user sees is a

@@ -89,6 +89,9 @@ struct AdvancedSettings: Codable, Equatable {
     /// it is not.
     var statsRefreshInterval: Double = 2
 
+    /// The chip, battery and SSD temperatures in the System tab, from `TemperatureSensors`.
+    var showTemperatures: Bool = true
+
     // MARK: V2 scaffolding
 
     var twoFingerGesturesEnabled: Bool = false
@@ -143,6 +146,7 @@ struct AdvancedSettings: Codable, Equatable {
         linkShelfLimit = c.value(.linkShelfLimit, 25, in: 5...100)
         showSystemStats = c.value(.showSystemStats, true)
         statsRefreshInterval = c.value(.statsRefreshInterval, 2, in: 0.5...5)
+        showTemperatures = c.value(.showTemperatures, true)
         virtualNotchHeight = c.value(.virtualNotchHeight, 32, in: 22...48)
         virtualNotchWidth = c.value(.virtualNotchWidth, 190, in: 120...320)
         twoFingerGesturesEnabled = c.value(.twoFingerGesturesEnabled, false)

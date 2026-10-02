@@ -1,6 +1,6 @@
 # MinNotch workplan
 
-Status: "After 0.4" done and pushed (hidden virtual notch, no Dock flash, swipe order), unreleased; next: the user tries 0.4 and these by hand, then 0.5.
+Status: "After 0.4" done and pushed (hidden virtual notch, no Dock flash, swipe order, System graphs and temperatures), unreleased; next: the user tries these by hand, then 0.5.
 
 Living document. Update the checkboxes as work lands. `CLAUDE.md` holds the architecture
 rules and the traps; this file holds the sequence.
@@ -46,6 +46,9 @@ at last. Notarisation still needs a paid membership nobody is buying.
       and opens when the pointer reaches the top middle. Settings > Advanced > Displays. Captures
       confirm nothing is drawn at rest and the panel grows in on open; the hover itself needs
       trying on a real external monitor.
+- [x] System tab: a real graph under each reading instead of a sliver behind it, and the
+      chip, battery and SSD temperatures from the Mac's sensors (private HID event system).
+      `--check-temps`; Advanced > Show Temperatures; units from Weather.
 - [x] Swiping between tabs follows the top bar as drawn, not the registry's fixed order, so a
       rearranged tab is no longer skipped over or visited out of place. `--check-tab-order`.
 - [x] No Dock icon unless a permission is really being asked: the audio tap and the Downloads

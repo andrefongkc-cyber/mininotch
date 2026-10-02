@@ -37,7 +37,12 @@ struct WeatherSettingsView: View {
 
                 SettingsDivider()
 
-                SettingsRow(title: "Temperature Units", systemImage: "thermometer.medium", isEnabled: enabled) {
+                // Not tied to Weather being on: the System tab's temperatures use it too.
+                SettingsRow(
+                    title: "Temperature Units",
+                    subtitle: "For the forecast, and for the Mac's own temperatures in the System tab.",
+                    systemImage: "thermometer.medium"
+                ) {
                     InlinePicker(selection: $settings.weather.units) {
                         ForEach(WeatherUnits.allCases) { units in
                             Text(units.title).tag(units)

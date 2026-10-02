@@ -81,7 +81,8 @@ Also:
   them with AirDrop.
 - **Sound output**: switch between speakers, AirPods and displays, and set the volume, from
   the Now Playing card.
-- **System stats**: CPU, GPU, memory, network, and the charge of connected AirPods and accessories.
+- **System stats**: CPU, GPU, memory, network, and the charge of connected AirPods and accessories,
+  each with a graph of the last minute, plus the chip, battery and SSD temperatures _(next)_.
 - **Volume, brightness and keyboard backlight** shown at the notch, optionally instead of Apple's
   own overlay, which MinNotch hides by taking those keys before macOS sees them (needs
   Accessibility). They also show over the lock screen, as does the song with its controls.

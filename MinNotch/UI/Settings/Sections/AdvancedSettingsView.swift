@@ -193,6 +193,17 @@ struct AdvancedSettingsView: View {
                         step: 0.5
                     ) { String(format: "%.1f s", $0) }
                 }
+
+                SettingsDivider()
+
+                SettingsRow(
+                    title: "Show Temperatures",
+                    subtitle: "The chip, the battery and the SSD, read from the Mac's own sensors through a private part of macOS. In the units chosen in Settings > Weather.",
+                    systemImage: "thermometer.medium",
+                    isEnabled: settings.advanced.showSystemStats
+                ) {
+                    SettingsToggle(isOn: $settings.advanced.showTemperatures)
+                }
             }
 
             SettingsCard(header: "Interaction") {

@@ -14,6 +14,11 @@ struct SystemStats: Equatable {
     /// Bytes per second since the previous sample.
     var networkIn: Double = 0
     var networkOut: Double = 0
+    /// Degrees Celsius from `TemperatureSensors`: the chip's hottest die sensor, the battery,
+    /// and the SSD. Nil where this Mac reports none, or while temperatures are switched off.
+    var chipTemperature: Double?
+    var batteryTemperature: Double?
+    var ssdTemperature: Double?
 
     var memoryFraction: Double {
         guard memoryTotal > 0 else { return 0 }
@@ -34,12 +39,15 @@ struct SystemStatsHistory: Equatable {
     /// Bytes per second in and out together. The view scales it to its own maximum, since
     /// there is no fixed ceiling for a network rate.
     var network: [Double] = []
+    /// The chip's temperature in degrees Celsius.
+    var chipTemperature: [Double] = []
 
     mutating func append(_ stats: SystemStats) {
         push(&cpu, stats.cpuUsage)
         if let gpu = stats.gpuUsage { push(&self.gpu, gpu) }
         push(&memory, stats.memoryFraction)
         push(&network, stats.networkIn + stats.networkOut)
+        if let chip = stats.chipTemperature { push(&chipTemperature, chip) }
     }
 
     private func push(_ values: inout [Double], _ value: Double) {
@@ -139,6 +147,32 @@ final class SystemStatsService {
         // the floor.
         if cpu != nil, network != nil {
             history.append(next)
+        }
+        sampleTemperatures()
+    }
+
+    // MARK: Temperatures
+
+    /// Asks for the temperatures off the main thread, where the 20-odd milliseconds of sensor
+    /// reads cannot stutter anything, and lays them into the readings when they arrive. The
+    /// history picks them up on the next tick, one interval behind the rest, which a line a
+    /// minute long cannot show.
+    private func sampleTemperatures() {
+        guard settings?.advanced.showTemperatures == true else {
+            if stats.chipTemperature != nil || stats.batteryTemperature != nil || stats.ssdTemperature != nil {
+                stats.chipTemperature = nil
+                stats.batteryTemperature = nil
+                stats.ssdTemperature = nil
+            }
+            return
+        }
+        TemperatureSensors.shared.read { reading in
+            Task { @MainActor [weak self] in
+                guard let self, self.observers > 0 else { return }
+                self.stats.chipTemperature = reading?.chip
+                self.stats.batteryTemperature = reading?.battery
+                self.stats.ssdTemperature = reading?.ssd
+            }
         }
     }
 
@@ -323,6 +357,9 @@ extension SystemStatsService {
             stats.memoryUsed = UInt64(Double(stats.memoryTotal) * (0.52 + Double(index) * 0.004))
             stats.networkIn = index > 22 ? 2_400_000 : 40_000
             stats.networkOut = 12_000
+            stats.chipTemperature = spike ? 82 : 47 + Double(index % 5)
+            stats.batteryTemperature = 34.6
+            stats.ssdTemperature = 45
             history.append(stats)
         }
         self.stats = stats
