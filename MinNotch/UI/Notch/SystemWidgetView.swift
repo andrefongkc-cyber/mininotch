@@ -9,8 +9,9 @@ struct SystemWidgetView: View {
     private var status: BatteryStatus { environment.battery.status }
 
     /// Height the widget needs, excluding the panel's padding and top strip.
-    static func preferredHeight(bluetoothDeviceCount: Int) -> CGFloat {
-        let batteryBlock: CGFloat = 54
+    static func preferredHeight(bluetoothDeviceCount: Int, showsChargingPower: Bool) -> CGFloat {
+        var batteryBlock: CGFloat = 54
+        if showsChargingPower { batteryBlock += 8 + chargingPowerHeight }
         // The readout, then the graph under it.
         let statsBlock: CGFloat = 58 + StatChart.spacing + StatChart.height
         let deviceBlock: CGFloat = 26
@@ -52,10 +53,12 @@ struct SystemWidgetView: View {
         .onAppear {
             if showsStats { environment.systemStats.beginSampling() }
             environment.bluetooth.beginSampling()
+            environment.battery.beginPowerSampling()
         }
         .onDisappear {
             if showsStats { environment.systemStats.endSampling() }
             environment.bluetooth.endSampling()
+            environment.battery.endPowerSampling()
         }
     }
 
@@ -149,10 +152,88 @@ struct SystemWidgetView: View {
             }
             .frame(height: 6)
             .animation(Motion.content, value: status.percentage)
+
+            if environment.battery.showsChargingPower {
+                chargingPowerRow
+            }
         }
     }
 
+    // MARK: Charging power
+
+    static let chargingPowerHeight: CGFloat = 24
+
+    private var power: ChargingPower? { environment.battery.power }
+
+    /// While plugged in: what the charger delivers, what the Mac uses of it, and what goes into
+    /// the battery, over a bar as wide as the charger's rating. How much of the charger's power
+    /// is actually charging is the green part of the bar, and the figure on the right.
+    private var chargingPowerRow: some View {
+        VStack(spacing: 5) {
+            HStack(spacing: 12) {
+                powerFigure("In", power?.input.map { PowerFormat.watts($0) })
+                powerFigure("Mac", power?.system.map { PowerFormat.watts($0) })
+                powerFigure(
+                    "Battery",
+                    power?.battery.map { PowerFormat.watts($0, signed: true) },
+                    tint: power?.isDraining == true ? Color(nsColor: .systemOrange)
+                        : power?.isCharging == true ? Color(nsColor: .systemGreen) : nil
+                )
+                Spacer(minLength: 8)
+                Text(chargingSummary.text)
+                    .font(.system(size: 10, weight: .medium))
+                    .monospacedDigit()
+                    .foregroundStyle(chargingSummary.tint)
+                    .lineLimit(1)
+                    .contentTransition(.numericText())
+            }
+            .frame(height: 14)
+
+            PowerFlowBar(power: power, adapterWatts: status.adapterWatts)
+                .frame(height: 5)
+        }
+        .frame(height: Self.chargingPowerHeight)
+        .animation(Motion.content, value: power)
+    }
+
+    private func powerFigure(_ label: String, _ value: String?, tint: Color? = nil) -> some View {
+        HStack(spacing: 4) {
+            Text(label)
+                .foregroundStyle(.white.opacity(0.45))
+            Text(value ?? "–")
+                .fontWeight(.medium)
+                .foregroundStyle(tint ?? .white.opacity(0.9))
+                .contentTransition(.numericText())
+        }
+        .font(.system(size: 11))
+        .monospacedDigit()
+        .fixedSize()
+    }
+
+    /// The one-line answer to "is this charging well": the battery's share of what comes in,
+    /// or what is wrong when the battery is not gaining.
+    private var chargingSummary: (text: String, tint: Color) {
+        let quiet = Color.white.opacity(0.5)
+        let warning = Color(nsColor: .systemOrange)
+        guard let power else { return ("", quiet) }
+        if let input = power.input, input < 1 { return ("Charger giving no power", warning) }
+        if power.isDraining { return ("Charger can't keep up", warning) }
+        if let share = power.batteryShare {
+            return ("\(Int((share * 100).rounded()))% into the battery", Color(nsColor: .systemGreen))
+        }
+        // Full, or held by Optimised Charging or a charge limit: the charger is running the
+        // Mac and the battery is being kept where it is.
+        return (status.isCharged ? "Battery full" : "Not charging", quiet)
+    }
+
+    /// The state, and while plugged in the charger's rating, which is the ceiling everything in
+    /// the charging row is measured against.
     private var stateDescription: String {
+        guard environment.battery.showsChargingPower, let watts = status.adapterWatts else { return chargeState }
+        return chargeState + " · \(watts) W charger"
+    }
+
+    private var chargeState: String {
         if status.isCharged && status.isPluggedIn { return "Fully charged" }
 
         if settings.battery.showTimeRemaining {
@@ -450,5 +531,67 @@ struct SparklineShape: Shape {
             }
         }
         return path
+    }
+}
+
+/// Where the charger's power goes, as one bar the width of the charger's rating: the Mac's share
+/// in white, the battery's in green, and what the charger could give but is not, empty. While
+/// the battery is helping instead, its part is orange, after what the charger covers.
+private struct PowerFlowBar: View {
+    var power: ChargingPower?
+    var adapterWatts: Int?
+
+    var body: some View {
+        GeometryReader { proxy in
+            let segments = segments
+            let scale = scale
+            HStack(spacing: 1) {
+                ForEach(segments.indices, id: \.self) { index in
+                    Rectangle()
+                        .fill(segments[index].tint)
+                        .frame(width: max(proxy.size.width * min(segments[index].watts / scale, 1) - 1, 0))
+                }
+                Spacer(minLength: 0)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(Color.white.opacity(0.12))
+            .clipShape(Capsule())
+        }
+        .help(help)
+    }
+
+    private var segments: [(watts: Double, tint: Color)] {
+        guard let power else { return [] }
+        let mac = power.system ?? 0
+        let battery = power.battery ?? 0
+        let all: [(watts: Double, tint: Color)] = power.isDraining
+            ? [
+                (power.input ?? max(mac + battery, 0), Color.white.opacity(0.6)),
+                (-battery, Color(nsColor: .systemOrange)),
+            ]
+            : [
+                (mac, Color.white.opacity(0.6)),
+                (power.isCharging ? battery : 0, Color(nsColor: .systemGreen)),
+            ]
+        // An empty segment would still take a gap's width.
+        return all.filter { $0.watts > 0 }
+    }
+
+    /// The charger's rating, unless the readings already exceed it, as they briefly can.
+    private var scale: Double {
+        let used = (power?.system ?? 0) + max(power?.battery ?? 0, 0)
+        return max(Double(adapterWatts ?? 0), power?.input ?? 0, used, 1)
+    }
+
+    private var help: String {
+        guard let power else { return "" }
+        var parts: [String] = []
+        if let adapterWatts { parts.append("A \(adapterWatts) W charger") }
+        if let input = power.input { parts.append("giving \(PowerFormat.watts(input))") }
+        if let system = power.system { parts.append("the Mac using \(PowerFormat.watts(system))") }
+        if let battery = power.battery {
+            parts.append(battery < 0 ? "the battery adding \(PowerFormat.watts(-battery))" : "the battery taking \(PowerFormat.watts(battery))")
+        }
+        return parts.joined(separator: ", ")
     }
 }

@@ -1,6 +1,6 @@
 # MinNotch workplan
 
-Status: "After 0.4" done and pushed (hidden virtual notch, no Dock flash, swipe order, System graphs kept, temperatures), unreleased; next: the user tries these by hand, then 0.5.
+Status: "After 0.4" done and pushed (hidden virtual notch, no Dock flash, swipe order, System graphs kept, temperatures, charging power), unreleased; next: the user tries these by hand, then 0.5.
 
 Living document. Update the checkboxes as work lands. `CLAUDE.md` holds the architecture
 rules and the traps; this file holds the sequence.
@@ -59,6 +59,11 @@ at last. Notarisation still needs a paid membership nobody is buying.
       launch even with access long granted. Before: `Foreground` for ~100 ms at launch. After:
       `UIElement` for all 100 samples on the second and third launches, and `--check-audio`
       through LaunchServices still hears audio (3 of 3).
+- [x] Charging power: while plugged in, the System tab shows what the charger delivers, what
+      the Mac uses and what goes into the battery, live from the SMC, against the charger's
+      rating, and the battery's share. Settings > Battery > Show Charging Power. `--check-power`
+      reads real figures on battery (they add up); the row with a charger connected has only
+      been captured with sample numbers, so it needs trying plugged in.
 
 ## 0.4 additions (2026-09-24)
 

@@ -40,6 +40,17 @@ struct BatterySettingsView: View {
                 ) {
                     SettingsToggle(isOn: $settings.battery.showTimeRemaining)
                 }
+
+                SettingsDivider()
+
+                SettingsRow(
+                    title: "Show Charging Power",
+                    subtitle: "While plugged in, the System panel shows what the charger delivers, what the Mac uses, and how much goes into the battery.",
+                    systemImage: "bolt",
+                    isEnabled: status.isPresent
+                ) {
+                    SettingsToggle(isOn: $settings.battery.showChargingPower)
+                }
             }
 
             SettingsCard(

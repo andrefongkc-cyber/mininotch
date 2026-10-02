@@ -13,6 +13,8 @@ struct BatteryStatus: Equatable {
     /// Minutes until empty or full, or nil while the estimate is still being calculated.
     var minutesRemaining: Int?
     var isLowPowerMode: Bool = false
+    /// The connected charger's rating, as the charger itself reports it, while plugged in.
+    var adapterWatts: Int?
 
     /// SF Symbol matching the current state, using Apple's own battery glyph family.
     var symbolName: String {
@@ -50,15 +52,44 @@ struct BatteryStatus: Equatable {
     }
 }
 
+/// Where the power is going while plugged in: in from the charger, used by the Mac, into the
+/// battery. Watts, each nil where this Mac does not report it.
+struct ChargingPower: Equatable {
+    var input: Double?
+    var system: Double?
+    /// Negative while the battery is helping the charger keep up.
+    var battery: Double?
+
+    /// The share of what the charger delivers that ends up in the battery, while charging.
+    var batteryShare: Double? {
+        guard let input, let battery, input >= 1, battery > Self.idle else { return nil }
+        return min(battery / input, 1)
+    }
+
+    var isCharging: Bool { (battery ?? 0) > Self.idle }
+    var isDraining: Bool { (battery ?? 0) < -Self.idle }
+
+    /// Below half a watt either way the battery is being held, not charged or drained: that is
+    /// the gauge's noise, and the trickle that keeps a full or paused battery where it is.
+    static let idle = 0.5
+}
+
 /// Reads the internal battery and republishes it as observable state.
 ///
 /// IOKit posts a run-loop notification whenever any power source changes, so there is no
 /// polling: the readout updates the moment the charger is plugged in or the percentage
-/// ticks over.
+/// ticks over. The one exception is `power`, the live watts while plugged in, which nothing
+/// announces: it is read from the SMC once a second, and only while the System tab is showing
+/// it.
 @Observable
 @MainActor
 final class BatteryService {
     private(set) var status = BatteryStatus()
+    /// Live while plugged in and something is showing it (`beginPowerSampling()`), else nil.
+    private(set) var power: ChargingPower?
+    /// Set once the SMC has answered with none of the power keys, so nothing keeps room for
+    /// figures this Mac cannot give.
+    private(set) var isPowerUnavailable = false
 
     /// Set by `AppEnvironment` so notification posting stays out of the service.
     @ObservationIgnored var onLowBattery: ((Int) -> Void)?
@@ -68,6 +99,12 @@ final class BatteryService {
     @ObservationIgnored private var lastNotifiedThresholdCrossing: Int?
     @ObservationIgnored private var lastPluggedIn: Bool?
     @ObservationIgnored private var settings: SettingsStore?
+    @ObservationIgnored private var powerObservers = 0
+    @ObservationIgnored private var powerTimer: Timer?
+    #if DEBUG
+    /// Keeps a sample reading in place for a capture, instead of the real SMC's.
+    @ObservationIgnored private var holdsSamplePower = false
+    #endif
 
     init() {}
 
@@ -94,6 +131,8 @@ final class BatteryService {
             CFRunLoopRemoveSource(CFRunLoopGetMain(), runLoopSource, .defaultMode)
         }
         runLoopSource = nil
+        powerObservers = 0
+        applyPowerSchedule()
     }
 
     func refresh() {
@@ -103,6 +142,79 @@ final class BatteryService {
 
         evaluateLowBattery(previous: previous, current: newStatus)
         evaluatePowerSourceChange(current: newStatus)
+        applyPowerSchedule()
+    }
+
+    // MARK: Charging power
+
+    /// True when the System tab should keep a row for the charging figures: plugged in, the
+    /// setting on, and a Mac that has them. It does not wait for the first reading, so the
+    /// panel is the right height on the frame it opens.
+    var showsChargingPower: Bool {
+        status.isPresent && status.isPluggedIn && !isPowerUnavailable
+            && (settings?.battery.showChargingPower ?? false)
+    }
+
+    /// Reference counted, like the other samplers, to the view that shows the figures.
+    func beginPowerSampling() {
+        powerObservers += 1
+        applyPowerSchedule()
+    }
+
+    func endPowerSampling() {
+        powerObservers = max(0, powerObservers - 1)
+        applyPowerSchedule()
+    }
+
+    /// Reads every second while plugged in and watched, the rate the SMC itself updates at, and
+    /// not at all otherwise. Called on every power source change, so unplugging stops it.
+    private func applyPowerSchedule() {
+        #if DEBUG
+        if holdsSamplePower { return }
+        #endif
+        let wanted = powerObservers > 0 && showsChargingPower
+        if wanted, powerTimer == nil {
+            samplePower()
+            let timer = Timer.onMain(every: 1) { [weak self] in self?.samplePower() }
+            timer.tolerance = 0.1
+            powerTimer = timer
+        } else if !wanted, powerTimer != nil {
+            powerTimer?.invalidate()
+            powerTimer = nil
+            power = nil
+            PowerSensors.shared.close()
+        }
+    }
+
+    private func samplePower() {
+        PowerSensors.shared.read { reading in
+            Task { @MainActor [weak self] in
+                guard let self, self.powerTimer != nil else { return }
+                guard let reading else {
+                    AppLog.battery.info("This Mac reports no charging power")
+                    self.isPowerUnavailable = true
+                    self.applyPowerSchedule()
+                    return
+                }
+                self.power = Self.smoothed(reading, after: self.power)
+            }
+        }
+    }
+
+    /// The Mac's own use swings by several watts from one second to the next as work comes
+    /// and goes, which as a raw readout is a number nobody can read. A short average, about
+    /// three seconds, keeps it legible and still follows a real change within a few seconds.
+    private static func smoothed(_ reading: PowerSensors.Reading, after previous: ChargingPower?) -> ChargingPower {
+        func blend(_ new: Double?, _ old: Double?) -> Double? {
+            guard let new else { return nil }
+            guard let old else { return new }
+            return old + (new - old) * 0.4
+        }
+        return ChargingPower(
+            input: blend(reading.input, previous?.input),
+            system: blend(reading.system, previous?.system),
+            battery: blend(reading.battery, previous?.battery)
+        )
     }
 
     // MARK: Reading IOKit
@@ -129,6 +241,11 @@ final class BatteryService {
             status.isCharging = info[kIOPSIsChargingKey] as? Bool ?? false
             status.isCharged = info[kIOPSIsChargedKey] as? Bool ?? false
             status.isPluggedIn = (info[kIOPSPowerSourceStateKey] as? String) == kIOPSACPowerValue
+            if status.isPluggedIn,
+               let adapter = IOPSCopyExternalPowerAdapterDetails()?.takeRetainedValue() as? [String: Any],
+               let watts = adapter[kIOPSPowerAdapterWattsKey] as? Int, watts > 0 {
+                status.adapterWatts = watts
+            }
 
             // IOKit reports -1 while it is still computing an estimate, which it does for a
             // minute or two after any power state change and after waking from sleep. A nil
@@ -191,6 +308,23 @@ extension BatteryService {
             minutesRemaining: 214,
             isLowPowerMode: false
         )
+    }
+
+    /// Charging from a 60 W charger, for `--capture-notch --tab system --sample-power`.
+    func applySampleCharging(settings: SettingsStore) {
+        self.settings = settings
+        holdsSamplePower = true
+        status = BatteryStatus(
+            isPresent: true,
+            percentage: 41,
+            isCharging: true,
+            isPluggedIn: true,
+            isCharged: false,
+            minutesRemaining: 74,
+            isLowPowerMode: false,
+            adapterWatts: 60
+        )
+        power = ChargingPower(input: 53.6, system: 9.7, battery: 42.4)
     }
 }
 #endif

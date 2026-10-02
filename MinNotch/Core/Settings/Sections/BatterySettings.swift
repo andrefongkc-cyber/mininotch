@@ -23,6 +23,10 @@ struct BatterySettings: Codable, Equatable {
     /// Show estimated time remaining in the expanded battery detail.
     var showTimeRemaining: Bool = true
 
+    /// While plugged in, show what the charger delivers, what the Mac uses, and what goes into
+    /// the battery, in the System tab.
+    var showChargingPower: Bool = true
+
     // MARK: V2 scaffolding
 
     /// Live Activity showing AirPods and other Bluetooth device charge.
@@ -37,6 +41,7 @@ struct BatterySettings: Codable, Equatable {
         lowBatteryThreshold = c.value(.lowBatteryThreshold, 20, in: 5...50)
         notifyOnPowerSourceChange = c.value(.notifyOnPowerSourceChange, false)
         showTimeRemaining = c.value(.showTimeRemaining, true)
+        showChargingPower = c.value(.showChargingPower, true)
         showBluetoothDeviceBattery = c.value(.showBluetoothDeviceBattery, false)
     }
 }

@@ -88,6 +88,11 @@ enum DebugWindowCapture {
             environment.systemStats.applySampleHistory()
         }
 
+        // `--sample-power` plugs the sample battery into a 60 W charger, with fixed watts.
+        if arguments.contains("--sample-power") {
+            environment.battery.applySampleCharging(settings: settings)
+        }
+
         // `--lyrics-sheet` opens the full lyrics list instead of the two-line strip.
         if arguments.contains("--lyrics-sheet") {
             environment.nowPlaying.isShowingLyricsSheet = true

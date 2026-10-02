@@ -95,6 +95,7 @@ enum SettingsSearchIndex {
         .init(tab: .huds, section: "Presentation", title: "Preview", subtitle: "Show an indicator now, so you can see the style without reaching for a key.", symbolName: "eye"),
         .init(tab: .battery, section: "In the Notch", title: "Show Percentage", subtitle: "Otherwise only the battery glyph is shown. Whether the battery appears at all, and where, is arranged in General and Appearance.", symbolName: "percent"),
         .init(tab: .battery, section: "In the Notch", title: "Show Time Remaining", subtitle: "In the expanded System panel.", symbolName: "clock.arrow.circlepath"),
+        .init(tab: .battery, section: "In the Notch", title: "Show Charging Power", subtitle: "While plugged in, the System panel shows what the charger delivers, what the Mac uses, and how much goes into the battery.", symbolName: "bolt"),
         .init(tab: .battery, section: "Notifications", title: "Low Battery Alert", subtitle: "", symbolName: "exclamationmark.triangle"),
         .init(tab: .battery, section: "Notifications", title: "Alert Threshold", subtitle: "Notify once the charge drops to this level.", symbolName: "gauge.with.dots.needle.33percent"),
         .init(tab: .battery, section: "Notifications", title: "Power Adapter Alerts", subtitle: "Notify when the charger is connected or removed.", symbolName: "powerplug"),

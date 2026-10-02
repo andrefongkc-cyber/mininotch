@@ -473,7 +473,8 @@ struct NotchRootView: View {
             )
         case .system:
             height = SystemWidgetView.preferredHeight(
-                bluetoothDeviceCount: environment.bluetooth.devices.count
+                bluetoothDeviceCount: environment.bluetooth.devices.count,
+                showsChargingPower: environment.battery.showsChargingPower
             )
         case .shelf:
             height = ShelfView.preferredHeight

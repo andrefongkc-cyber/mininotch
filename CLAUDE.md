@@ -69,6 +69,7 @@ MinNotch --capture-notch out.png [--collapsed] [--tab system] [--glow bars|off] 
                                  [--card compact|fullArtwork] [--controls shuffle,playPause,repeatMode]
                                  [--lyrics-sheet] [--sample-stats] [--shadow] [--closed-lyrics]
                                  [--sample-shelf] [--output-sheet] [--sample-weather]
+                                 [--sample-power]
 MinNotch --check-lyrics "Khalid" "8TEEN" 229                      # LRCLIBClient + LRCParser
 MinNotch --check-lyric-sync [--out f]                             # matching lyrics to the audio
 MinNotch --check-stats 5                                          # CPU/GPU/memory/network
@@ -92,6 +93,7 @@ MinNotch --check-weather London | 51.5 -0.13 [--fahrenheit]       # a real forec
 MinNotch --check-tab-order                                        # the swipe steps through tabs as the bar draws them
 MinNotch --check-temps                                            # every temperature sensor, and the three the System tab shows
 MinNotch --check-stats-history                                    # the graphs' history survives the System tab closing
+MinNotch --check-power [seconds]                                  # charger in, Mac use, battery, from the SMC
 ```
 
 `--capture-notch` grew three options for the animated effects. `--glow off` disables the
@@ -904,8 +906,8 @@ only decides when to redraw. Pomodoro is a preset on the countdown rather than a
 beside it: the only thing that makes an interval a Pomodoro is what happens when it ends, so
 `TimerPhase` decides whether anything follows and the timer stays one thing.
 
-**Sampling is reference counted to the view that shows it.** `BluetoothBatteryService` and the
-HUD's brightness polling start on `onAppear` and stop on `onDisappear`, because a menu bar
+**Sampling is reference counted to the view that shows it.** `BluetoothBatteryService`, the
+charging power and the HUD's brightness polling start on `onAppear` and stop on `onDisappear`, because a menu bar
 utility that wakes every couple of seconds forever is a battery complaint waiting to happen.
 Volume is the exception: CoreAudio pushes changes, so it costs nothing to leave attached.
 
@@ -928,6 +930,27 @@ readings (`tdev` reads -22 on an M4) and are dropped. One read of the 31 sensors
 moment later, one interval behind the history. Units follow Settings > Weather > Temperature Units,
 with the unit letter shown, since a chip at "138°" looks broken to someone used to Celsius.
 `--check-temps` lists every sensor this Mac offers.
+
+**Charging power comes from the SMC, not the battery's registry entry.** While plugged in, the
+System tab shows what the charger delivers, what the Mac uses and what goes into the battery, over
+a bar as wide as the charger's rating, with the battery's share as a percentage
+(Settings > Battery > Show Charging Power). The battery's IO registry entry has a
+`PowerTelemetryData` dictionary that looks like the answer and is not: it refreshes about every 45
+seconds, its load and battery figures disagreed with the battery's own current while charging, and
+on battery it reported a power in of 2^64 - 160. `PowerSensors` reads the SMC instead, as Stats and
+AlDente do, through the `AppleSMC` user client any process may read: `PDTR` (watts in), `PSTR`
+(watts the Mac uses, not counting the battery) and `B0AC` × `B0AV` (battery milliamps and
+millivolts, positive while charging). These update every second and add up to within a watt or two
+of conversion loss. Apple silicon stores them little-endian, `flt ` for the watts and `si16`/`ui16`
+for the battery; the Intel path (big-endian, `sp78`-style fixed point) is written and has never run.
+The request struct is handled as 80 bytes at C's offsets, because a Swift struct does not promise
+C's padding. A reading is about 1 ms, on its own queue. `BatteryService` reads once a second, only
+while plugged in and while the System tab is showing it, and smooths over about three seconds,
+because the Mac's own draw swings by several watts a second. The row's height is reserved from
+`showsChargingPower` (plugged in, setting on, keys present), not from the first reading, so the
+panel is the right height on its first frame. The charger's rating is public
+(`IOPSCopyExternalPowerAdapterDetails`). `--check-power` prints each figure, what it is made of,
+and the loss; `--sample-power` captures the row with fixed numbers.
 
 **Each System reading has its graph under it.** `StatChart` draws the last five minutes by time,
 newest at the right edge, and breaks the line where samples are more than 20 s apart (the Mac
