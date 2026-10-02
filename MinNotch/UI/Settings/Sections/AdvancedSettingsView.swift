@@ -169,7 +169,7 @@ struct AdvancedSettingsView: View {
 
             SettingsCard(
                 header: "System Stats",
-                footer: "Sampling only runs while the System tab is open, so nothing is measured in the background."
+                footer: "The graphs keep the last five minutes: measured every five seconds in the background, and at the refresh interval while the System tab is open. Nothing is measured while this is off or the Mac is in Low Power Mode."
             ) {
                 SettingsRow(
                     title: "Show CPU, GPU, Memory and Network",

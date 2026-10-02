@@ -32,6 +32,7 @@ if MainActor.assumeIsolated({ DebugLockScreenCapture.runIfRequested() }) { exit(
 if MainActor.assumeIsolated({ DebugWeatherCheck.runIfRequested() }) { exit(0) }
 if MainActor.assumeIsolated({ DebugTabOrderCheck.runIfRequested() }) { exit(0) }
 if MainActor.assumeIsolated({ DebugTemperatureCheck.runIfRequested() }) { exit(0) }
+if MainActor.assumeIsolated({ DebugStatsHistoryCheck.runIfRequested() }) { exit(0) }
 #endif
 
 let application = NSApplication.shared

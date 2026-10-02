@@ -91,6 +91,7 @@ MinNotch --check-audio-outputs                                    # the outputs 
 MinNotch --check-weather London | 51.5 -0.13 [--fahrenheit]       # a real forecast, parsed
 MinNotch --check-tab-order                                        # the swipe steps through tabs as the bar draws them
 MinNotch --check-temps                                            # every temperature sensor, and the three the System tab shows
+MinNotch --check-stats-history                                    # the graphs' history survives the System tab closing
 ```
 
 `--capture-notch` grew three options for the animated effects. `--glow off` disables the
@@ -903,11 +904,18 @@ only decides when to redraw. Pomodoro is a preset on the countdown rather than a
 beside it: the only thing that makes an interval a Pomodoro is what happens when it ends, so
 `TimerPhase` decides whether anything follows and the timer stays one thing.
 
-**Sampling is reference counted to the view that shows it.** `SystemStatsService`,
-`BluetoothBatteryService`, and the HUD's brightness polling all start on `onAppear` and stop
-on `onDisappear`, because a menu bar utility that wakes every couple of seconds forever is a
-battery complaint waiting to happen. Volume is the exception: CoreAudio pushes changes, so it
-costs nothing to leave attached.
+**Sampling is reference counted to the view that shows it.** `BluetoothBatteryService` and the
+HUD's brightness polling start on `onAppear` and stop on `onDisappear`, because a menu bar
+utility that wakes every couple of seconds forever is a battery complaint waiting to happen.
+Volume is the exception: CoreAudio pushes changes, so it costs nothing to leave attached.
+
+`SystemStatsService` is the other exception, like the clipboard. It used to stop with the System
+tab and throw its history away, so the graphs only ever showed the seconds since the tab opened,
+and the user asked for them to be kept. It now samples at the refresh interval while the tab is
+open and every five seconds otherwise (temperatures every fifteen), with timer tolerance so the
+wakeups can share, and not at all while the readout is off or in Low Power Mode. The history is
+timestamped and kept for five minutes. Measured on its own, `--check-stats-history` (27 s, five of
+them at one sample a second) used 0.07 s of CPU, about a quarter of a percent of one core.
 
 **Temperatures come from private HID sensors, and never on main.** `TemperatureSensors` loads
 `IOHIDEventSystemClientCreate` and `IOHIDServiceClientCopyEvent` from IOKit at run time (they are
@@ -921,10 +929,11 @@ moment later, one interval behind the history. Units follow Settings > Weather >
 with the unit letter shown, since a chip at "138°" looks broken to someone used to Celsius.
 `--check-temps` lists every sensor this Mac offers.
 
-**Each System reading has its graph under it.** `StatChart` draws whatever has been sampled
-across its full width, oldest left. It used to sit faintly behind the numbers, spaced for a full
-minute and growing in from the right, and because sampling only runs while the tab is open what
-anyone saw was a few seconds of it, a sliver against the cell's edge that read as a glitch.
+**Each System reading has its graph under it.** `StatChart` draws the last five minutes by time,
+newest at the right edge, and breaks the line where samples are more than 20 s apart (the Mac
+asleep or in Low Power Mode) rather than joining across the gap. It used to sit faintly behind the
+numbers with a history thrown away whenever the tab closed, so what anyone saw was a few seconds
+of it, a sliver against the cell's edge that read as a glitch.
 
 CPU and network are deltas between two readings, so `beginSampling()` takes one sample to
 establish a baseline and a second 0.3s later; without that the first thing the user sees is a

@@ -26,42 +26,71 @@ struct SystemStats: Equatable {
     }
 }
 
-/// The last few readings of each stat, oldest first, for the sparkline behind each cell.
+/// The readings of the last five minutes, each with the moment it was taken, for the graph
+/// under each reading.
 ///
-/// Only as long as the widget has been on screen: sampling stops when it is not, so a history
-/// kept across that gap would join two unrelated stretches of time into one line.
+/// Timestamped, because samples do not arrive at one rate: at the refresh interval while the
+/// System tab is open, every few seconds otherwise. Drawn by time, a mixed cadence still makes an
+/// honest line, and a stretch with no samples (the Mac asleep, Low Power Mode) shows as a gap
+/// rather than being joined up.
 struct SystemStatsHistory: Equatable {
-    static let capacity = 30
+    /// How far back the graphs reach.
+    static let window: TimeInterval = 5 * 60
 
-    var cpu: [Double] = []
-    var gpu: [Double] = []
-    var memory: [Double] = []
-    /// Bytes per second in and out together. The view scales it to its own maximum, since
-    /// there is no fixed ceiling for a network rate.
-    var network: [Double] = []
-    /// The chip's temperature in degrees Celsius.
-    var chipTemperature: [Double] = []
-
-    mutating func append(_ stats: SystemStats) {
-        push(&cpu, stats.cpuUsage)
-        if let gpu = stats.gpuUsage { push(&self.gpu, gpu) }
-        push(&memory, stats.memoryFraction)
-        push(&network, stats.networkIn + stats.networkOut)
-        if let chip = stats.chipTemperature { push(&chipTemperature, chip) }
+    struct Sample: Equatable {
+        var time: Date
+        var cpu: Double
+        var gpu: Double?
+        var memory: Double
+        /// Bytes per second in and out together. The view scales it to its own maximum, since
+        /// there is no fixed ceiling for a network rate.
+        var network: Double
+        /// Degrees Celsius.
+        var chipTemperature: Double?
     }
 
-    private func push(_ values: inout [Double], _ value: Double) {
-        values.append(value)
-        if values.count > Self.capacity { values.removeFirst(values.count - Self.capacity) }
+    private(set) var samples: [Sample] = []
+
+    mutating func append(_ stats: SystemStats, at time: Date = Date()) {
+        samples.append(Sample(
+            time: time,
+            cpu: stats.cpuUsage,
+            gpu: stats.gpuUsage,
+            memory: stats.memoryFraction,
+            network: stats.networkIn + stats.networkOut,
+            chipTemperature: stats.chipTemperature
+        ))
+        let cutoff = time.addingTimeInterval(-Self.window)
+        if let first = samples.firstIndex(where: { $0.time >= cutoff }), first > 0 {
+            samples.removeFirst(first)
+        }
+    }
+
+    /// One reading as points across the window: `x` runs from 0, five minutes before the newest
+    /// sample, to 1, the newest.
+    func points(_ value: (Sample) -> Double?) -> [ChartPoint] {
+        guard let newest = samples.last?.time else { return [] }
+        return samples.compactMap { sample in
+            value(sample).map { ChartPoint(x: 1 - newest.timeIntervalSince(sample.time) / Self.window, value: $0) }
+        }
     }
 }
 
-/// Samples CPU, GPU, memory, and network load.
+/// A point on a `StatChart`: `x` and `value` both 0...1.
+struct ChartPoint: Equatable {
+    var x: Double
+    var value: Double
+}
+
+/// Samples CPU, GPU, memory, network and temperature.
 ///
-/// Sampling is reference counted through `beginSampling()` and `endSampling()` so the timer
-/// only runs while something is actually showing the numbers. A menu bar utility that wakes
-/// up every couple of seconds forever is a battery complaint waiting to happen, and nothing
-/// here is worth measuring when nobody is looking at it.
+/// Two speeds. While the System tab is on screen (`beginSampling()` / `endSampling()`, counted),
+/// at the refresh interval the user chose. Otherwise every five seconds, temperatures every
+/// fifteen, so that opening the tab shows the last five minutes instead of a graph that starts
+/// from nothing each time, which is what the user saw when sampling stopped with the tab closed.
+/// That background rate is the cost of keeping a history at all: a handful of kernel counters
+/// per tick, with timer tolerance so macOS can fold the wakeups into ones it was doing anyway,
+/// and nothing at all while the readout is switched off or the Mac is in Low Power Mode.
 @Observable
 @MainActor
 final class SystemStatsService {
@@ -72,18 +101,28 @@ final class SystemStatsService {
     /// rather than showing a permanent zero.
     fileprivate(set) var isGPUAvailable = true
 
+    private static let backgroundInterval: TimeInterval = 5
+    private static let backgroundTemperatureInterval: TimeInterval = 15
+
     @ObservationIgnored private var settings: SettingsStore?
     @ObservationIgnored private var timer: Timer?
+    @ObservationIgnored private var timerInterval: TimeInterval = 0
     @ObservationIgnored private var observers = 0
+    @ObservationIgnored private var lastTemperatureRead = Date.distantPast
 
     @ObservationIgnored private var previousCPUTicks: (busy: Double, total: Double)?
     @ObservationIgnored private var previousNetwork: (input: UInt64, output: UInt64, at: Date)?
 
     init() {}
 
+    private var isEnabled: Bool {
+        FeatureFlag.systemStats.isEnabled && settings?.advanced.showSystemStats == true
+    }
+
     func start(settings: SettingsStore) {
         self.settings = settings
         stats.memoryTotal = ProcessInfo.processInfo.physicalMemory
+        applySchedule()
     }
 
     /// Called when a view that shows these numbers appears.
@@ -91,44 +130,69 @@ final class SystemStatsService {
         observers += 1
         guard observers == 1 else { return }
 
-        // CPU and network are deltas between two readings, so one sample establishes a
-        // baseline and reports zero. A second sample follows quickly so the first number the
-        // user sees is real, rather than a zero that sits there until the interval elapses.
-        sample()
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { [weak self] in
-            guard let self, self.observers > 0 else { return }
-            self.sample()
+        // CPU and network are deltas between two readings. Sampling in the background normally
+        // leaves a baseline in place; when it has not (the readout was off, or Low Power Mode),
+        // a second sample follows quickly so the first number the user sees is real, rather
+        // than a zero that sits there until the interval elapses.
+        let hadBaseline = previousCPUTicks != nil
+        sample(force: true)
+        if !hadBaseline {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { [weak self] in
+                guard let self, self.observers > 0 else { return }
+                self.sample(force: true)
+            }
         }
-
-        restartTimer()
+        applySchedule()
     }
 
     func endSampling() {
         observers = max(0, observers - 1)
         guard observers == 0 else { return }
-        timer?.invalidate()
-        timer = nil
-        previousCPUTicks = nil
-        previousNetwork = nil
-        history = SystemStatsHistory()
+        applySchedule()
     }
 
-    /// Reapplies the refresh interval after a settings change.
+    /// Reapplies the switch and the refresh interval after a settings change.
     func settingsChanged() {
-        guard observers > 0 else { return }
-        restartTimer()
+        applySchedule()
     }
 
-    private func restartTimer() {
-        timer?.invalidate()
-        let interval = max(0.5, settings?.advanced.statsRefreshInterval ?? 2)
-                let timer = Timer.onMain(every: interval) { [weak self] in
-            self?.sample()
+    /// Runs the timer at whichever speed fits, or not at all with the readout switched off, in
+    /// which case the history goes too: there is nothing to keep it for.
+    private func applySchedule() {
+        guard isEnabled else {
+            timer?.invalidate()
+            timer = nil
+            timerInterval = 0
+            history = SystemStatsHistory()
+            previousCPUTicks = nil
+            previousNetwork = nil
+            return
         }
+        let interval = observers > 0
+            ? max(0.5, settings?.advanced.statsRefreshInterval ?? 2)
+            : Self.backgroundInterval
+        guard timer == nil || interval != timerInterval else { return }
+
+        timer?.invalidate()
+        let timer = Timer.onMain(every: interval) { [weak self] in
+            self?.sample(force: false)
+        }
+        // A quarter of the interval in the background, so the wakeups can share; a tenth while
+        // someone is watching the numbers move.
+        timer.tolerance = interval * (observers > 0 ? 0.1 : 0.25)
         self.timer = timer
+        timerInterval = interval
     }
 
-    private func sample() {
+    private func sample(force: Bool) {
+        // Nothing in the background while the Mac is saving power. The deltas start again
+        // afterwards rather than averaging across the gap, and the graph shows the gap.
+        if !force, observers == 0, ProcessInfo.processInfo.isLowPowerModeEnabled {
+            previousCPUTicks = nil
+            previousNetwork = nil
+            return
+        }
+
         var next = stats
         next.memoryTotal = ProcessInfo.processInfo.physicalMemory
         let cpu = sampleCPU()
@@ -148,15 +212,21 @@ final class SystemStatsService {
         if cpu != nil, network != nil {
             history.append(next)
         }
-        sampleTemperatures()
+
+        // The sensors are the expensive part, so in the background they are read less often.
+        let temperatureInterval = observers > 0 ? 0 : Self.backgroundTemperatureInterval
+        if Date().timeIntervalSince(lastTemperatureRead) >= temperatureInterval {
+            lastTemperatureRead = Date()
+            sampleTemperatures()
+        }
     }
 
     // MARK: Temperatures
 
     /// Asks for the temperatures off the main thread, where the 20-odd milliseconds of sensor
     /// reads cannot stutter anything, and lays them into the readings when they arrive. The
-    /// history picks them up on the next tick, one interval behind the rest, which a line a
-    /// minute long cannot show.
+    /// history picks them up on the next tick, one interval behind the rest, which a line five
+    /// minutes long cannot show.
     private func sampleTemperatures() {
         guard settings?.advanced.showTemperatures == true else {
             if stats.chipTemperature != nil || stats.batteryTemperature != nil || stats.ssdTemperature != nil {
@@ -168,7 +238,7 @@ final class SystemStatsService {
         }
         TemperatureSensors.shared.read { reading in
             Task { @MainActor [weak self] in
-                guard let self, self.observers > 0 else { return }
+                guard let self, self.isEnabled else { return }
                 self.stats.chipTemperature = reading?.chip
                 self.stats.batteryTemperature = reading?.battery
                 self.stats.ssdTemperature = reading?.ssd
@@ -350,17 +420,20 @@ extension SystemStatsService {
         var stats = SystemStats()
         stats.memoryTotal = 16 << 30
         var history = SystemStatsHistory()
-        for index in 0..<SystemStatsHistory.capacity {
-            let spike = (14...17).contains(index)
-            stats.cpuUsage = spike ? 0.92 : 0.12 + 0.05 * sin(Double(index) / 2)
+        let count = 60
+        let now = Date()
+        for index in 0..<count {
+            let spike = (28...33).contains(index)
+            stats.cpuUsage = spike ? 0.92 : 0.12 + 0.05 * sin(Double(index) / 3)
             stats.gpuUsage = spike ? 0.55 : 0.08
-            stats.memoryUsed = UInt64(Double(stats.memoryTotal) * (0.52 + Double(index) * 0.004))
-            stats.networkIn = index > 22 ? 2_400_000 : 40_000
+            stats.memoryUsed = UInt64(Double(stats.memoryTotal) * (0.52 + Double(index) * 0.002))
+            stats.networkIn = index > 45 ? 2_400_000 : 40_000
             stats.networkOut = 12_000
             stats.chipTemperature = spike ? 82 : 47 + Double(index % 5)
             stats.batteryTemperature = 34.6
             stats.ssdTemperature = 45
-            history.append(stats)
+            // Five minutes at the background rate, as a tab opened after a while would find it.
+            history.append(stats, at: now.addingTimeInterval(-Double(count - 1 - index) * 5))
         }
         self.stats = stats
         self.history = history

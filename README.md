@@ -82,7 +82,7 @@ Also:
 - **Sound output**: switch between speakers, AirPods and displays, and set the volume, from
   the Now Playing card.
 - **System stats**: CPU, GPU, memory, network, and the charge of connected AirPods and accessories,
-  each with a graph of the last minute, plus the chip, battery and SSD temperatures _(next)_.
+  each with a graph of the last five minutes, plus the chip, battery and SSD temperatures _(next)_.
 - **Volume, brightness and keyboard backlight** shown at the notch, optionally instead of Apple's
   own overlay, which MinNotch hides by taking those keys before macOS sees them (needs
   Accessibility). They also show over the lock screen, as does the song with its controls.
@@ -117,9 +117,11 @@ for fourteen seconds.
 
 What that means in practice: MinNotch costs nothing while it sits closed, which is almost all of
 the time. Animation is what costs, and the ambient glow costs about a quarter of one core for as
-long as it is visible — on a ten-core M4, roughly 3% of the machine. Everything that polls, system
-stats included, samples only while its widget is on screen, and the audio tap runs only if you
-switch on Follow the Beat or Fix Timing Automatically.
+long as it is visible — on a ten-core M4, roughly 3% of the machine. Everything that polls samples
+only while its widget is on screen, except system stats, which take a reading every five seconds
+in the background so their graphs keep the last five minutes, about a quarter of a percent of one
+core _(next)_. The audio tap runs only if you switch on Follow the Beat or Fix Timing
+Automatically.
 
 ## Permissions
 

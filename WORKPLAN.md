@@ -1,6 +1,6 @@
 # MinNotch workplan
 
-Status: "After 0.4" done and pushed (hidden virtual notch, no Dock flash, swipe order, System graphs and temperatures), unreleased; next: the user tries these by hand, then 0.5.
+Status: "After 0.4" done and pushed (hidden virtual notch, no Dock flash, swipe order, System graphs kept, temperatures), unreleased; next: the user tries these by hand, then 0.5.
 
 Living document. Update the checkboxes as work lands. `CLAUDE.md` holds the architecture
 rules and the traps; this file holds the sequence.
@@ -49,6 +49,9 @@ at last. Notarisation still needs a paid membership nobody is buying.
 - [x] System tab: a real graph under each reading instead of a sliver behind it, and the
       chip, battery and SSD temperatures from the Mac's sensors (private HID event system).
       `--check-temps`; Advanced > Show Temperatures; units from Weather.
+- [x] The System graphs keep their history: five minutes, timestamped, sampled every 5 s in the
+      background (temperatures every 15 s) and at the refresh interval while the tab is open.
+      `--check-stats-history`. The sampler alone costs about 0.25% of one core.
 - [x] Swiping between tabs follows the top bar as drawn, not the registry's fixed order, so a
       rearranged tab is no longer skipped over or visited out of place. `--check-tab-order`.
 - [x] No Dock icon unless a permission is really being asked: the audio tap and the Downloads

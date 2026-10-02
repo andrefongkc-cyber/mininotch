@@ -194,9 +194,9 @@ struct SystemWidgetView: View {
 
     /// A rate history as fractions of its own peak, since a network rate has no fixed ceiling.
     /// A floor keeps an idle connection's few bytes from being drawn as a full-height line.
-    private static func scaledToPeak(_ values: [Double]) -> [Double] {
-        let peak = max(values.max() ?? 0, 64 * 1024)
-        return values.map { $0 / peak }
+    private static func scaledToPeak(_ points: [ChartPoint]) -> [ChartPoint] {
+        let peak = max(points.map(\.value).max() ?? 0, 64 * 1024)
+        return points.map { ChartPoint(x: $0.x, value: $0.value / peak) }
     }
 
     private var statsRow: some View {
@@ -206,11 +206,11 @@ struct SystemWidgetView: View {
                 symbol: "cpu",
                 value: percentage(stats.cpuUsage),
                 fraction: stats.cpuUsage,
-                history: history.cpu
+                history: history.points { $0.cpu }
             )
 
             if let gpu = stats.gpuUsage {
-                statCell(label: "GPU", symbol: "cpu.fill", value: percentage(gpu), fraction: gpu, history: history.gpu)
+                statCell(label: "GPU", symbol: "cpu.fill", value: percentage(gpu), fraction: gpu, history: history.points { $0.gpu })
             } else {
                 // Some Macs publish no GPU utilisation counter. Showing a permanent zero
                 // would read as an idle GPU rather than as a missing measurement.
@@ -222,7 +222,7 @@ struct SystemWidgetView: View {
                 symbol: "memorychip",
                 value: ByteFormat.size(stats.memoryUsed),
                 fraction: stats.memoryFraction,
-                history: history.memory
+                history: history.points { $0.memory }
             )
 
             statCell(
@@ -231,7 +231,7 @@ struct SystemWidgetView: View {
                 value: "↓ " + ByteFormat.rate(stats.networkIn),
                 fraction: nil,
                 secondaryText: "↑ " + ByteFormat.rate(stats.networkOut),
-                history: Self.scaledToPeak(history.network)
+                history: Self.scaledToPeak(history.points { $0.network })
             )
 
             if settings.advanced.showTemperatures {
@@ -254,7 +254,7 @@ struct SystemWidgetView: View {
                 symbol: "thermometer.medium",
                 value: TemperatureFormat.string(celsius: chip, fahrenheit: usesFahrenheit),
                 fraction: Self.heatFraction(chip),
-                history: history.chipTemperature.map(Self.heatFraction),
+                history: history.points { $0.chipTemperature.map(Self.heatFraction) },
                 barTint: Self.heatTint(chip),
                 chartTint: Self.heatTint(chip)
             )
@@ -287,7 +287,7 @@ struct SystemWidgetView: View {
         value: String,
         fraction: Double?,
         secondaryText: String? = nil,
-        history: [Double] = [],
+        history: [ChartPoint] = [],
         barTint: Color? = nil,
         chartTint: Color? = nil
     ) -> some View {
@@ -356,16 +356,16 @@ struct SystemWidgetView: View {
     }
 }
 
-/// The recent history of one reading, under it: a line in the reading's colour over a fill
+/// The last five minutes of one reading, under it: a line in the reading's colour over a fill
 /// that fades to nothing, on a faint ground with a midline, so it reads as a graph even before
 /// there is much in it.
 ///
-/// It used to sit behind the numbers, faint, spaced for a full minute and growing in from the
-/// right. Since sampling only runs while the tab is open, what anyone actually saw was a few
-/// seconds of it: a sliver against the right edge, which read as a glitch rather than as a
-/// graph. Now whatever has been sampled spans the width, and the minute fills in from there.
+/// It used to sit behind the numbers, faint, and its history was thrown away whenever the tab
+/// closed, so what anyone saw was a few seconds of it, a sliver against the right edge that read
+/// as a glitch. The service now samples in the background too, and the graph is drawn by time:
+/// newest at the right edge, five minutes ago at the left.
 struct StatChart: View {
-    var values: [Double]
+    var values: [ChartPoint]
     var tint: Color
 
     static let height: CGFloat = 22
@@ -379,9 +379,9 @@ struct StatChart: View {
                 .fill(Color.white.opacity(0.06))
                 .frame(height: 0.5)
             if values.count > 1 {
-                SparklineShape(values: values, closed: true)
+                SparklineShape(points: values, closed: true)
                     .fill(LinearGradient(colors: [tint.opacity(0.35), tint.opacity(0.02)], startPoint: .top, endPoint: .bottom))
-                SparklineShape(values: values, closed: false)
+                SparklineShape(points: values, closed: false)
                     .stroke(tint.opacity(0.95), style: StrokeStyle(lineWidth: 1.2, lineCap: .round, lineJoin: .round))
             }
         }
@@ -391,34 +391,54 @@ struct StatChart: View {
     }
 }
 
-/// A line through `values`, each 0...1, spread evenly across the whole rect, oldest on the left
-/// and newest on the right.
+/// A line through `points`, placed by their `x` across the rect.
 ///
 /// A `Shape` rather than a `Canvas`, because `Canvas` output does not appear in a layer
-/// capture and this has to be checkable with `--capture-notch`. `closed` draws it down to the
-/// bottom edge and back, for the fill under the line. The line is inset a point from the top
-/// and bottom so a reading pinned at either end is not half cut off by the clip.
+/// capture and this has to be checkable with `--capture-notch`. `closed` draws each stretch down
+/// to the bottom edge and back, for the fill under the line. Two samples further apart than
+/// `maxGap` are not joined: that is the Mac asleep or saving power, not a reading that slid from
+/// one value to the other. The line is inset a point from the top and bottom so a reading pinned
+/// at either end is not half cut off by the clip.
 struct SparklineShape: Shape {
-    var values: [Double]
+    var points: [ChartPoint]
     var closed: Bool
+    /// Twenty seconds, as a fraction of the five minute window.
+    var maxGap: Double = 20 / SystemStatsHistory.window
 
     func path(in rect: CGRect) -> Path {
         var path = Path()
-        guard values.count > 1 else { return path }
-        let step = rect.width / CGFloat(values.count - 1)
         let inset: CGFloat = 1
         let usable = rect.height - inset * 2
 
-        func point(_ index: Int) -> CGPoint {
-            let value = min(max(values[index], 0), 1)
-            return CGPoint(x: rect.minX + step * CGFloat(index), y: rect.maxY - inset - usable * CGFloat(value))
+        func position(_ point: ChartPoint) -> CGPoint {
+            CGPoint(
+                x: rect.minX + rect.width * CGFloat(min(max(point.x, 0), 1)),
+                y: rect.maxY - inset - usable * CGFloat(min(max(point.value, 0), 1))
+            )
         }
 
-        if closed { path.move(to: CGPoint(x: rect.minX, y: rect.maxY)); path.addLine(to: point(0)) } else { path.move(to: point(0)) }
-        for index in values.indices.dropFirst() { path.addLine(to: point(index)) }
-        if closed {
-            path.addLine(to: CGPoint(x: rect.maxX, y: rect.maxY))
-            path.closeSubpath()
+        var runs: [[ChartPoint]] = []
+        for point in points {
+            if let last = runs.last?.last, point.x - last.x <= maxGap {
+                runs[runs.count - 1].append(point)
+            } else {
+                runs.append([point])
+            }
+        }
+
+        for run in runs where run.count > 1 {
+            let first = position(run[0])
+            if closed {
+                path.move(to: CGPoint(x: first.x, y: rect.maxY))
+                path.addLine(to: first)
+            } else {
+                path.move(to: first)
+            }
+            for point in run.dropFirst() { path.addLine(to: position(point)) }
+            if closed {
+                path.addLine(to: CGPoint(x: position(run[run.count - 1]).x, y: rect.maxY))
+                path.closeSubpath()
+            }
         }
         return path
     }
