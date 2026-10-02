@@ -119,8 +119,10 @@ struct SystemWidgetView: View {
 
                 Spacer()
 
+                // Named, because a bare thermometer and a number here read as the chip's temperature
+                // further down, which is the question this answered when it had no label.
                 if let temperature = environment.systemStats.stats.batteryTemperature, showsStats {
-                    Label(TemperatureFormat.string(celsius: temperature, fahrenheit: usesFahrenheit), systemImage: "thermometer.medium")
+                    Label("Battery " + TemperatureFormat.string(celsius: temperature, fahrenheit: usesFahrenheit), systemImage: "thermometer.medium")
                         .font(.system(size: 11, weight: .medium).monospacedDigit())
                         .foregroundStyle(.white.opacity(0.6))
                         .help("Battery temperature")
@@ -296,12 +298,16 @@ struct SystemWidgetView: View {
                 .font(.system(size: 11))
                 .foregroundStyle(.white.opacity(0.45))
 
+            // Every text that changes with the reading rolls its digits rather than cross-fading.
+            // A cross-fade drew the old number and the new one on top of each other for a moment,
+            // which read as a scrambled "9ɞ°F" rather than as 95 becoming 96.
             Text(value)
                 .font(.system(size: 12, weight: .medium))
                 .monospacedDigit()
                 .foregroundStyle(.white.opacity(0.9))
                 .lineLimit(1)
                 .minimumScaleFactor(0.7)
+                .contentTransition(.numericText())
 
             Group {
                 if let fraction {
@@ -322,6 +328,7 @@ struct SystemWidgetView: View {
                         .foregroundStyle(.white.opacity(0.4))
                         .lineLimit(1)
                         .minimumScaleFactor(0.7)
+                        .contentTransition(.numericText())
                 } else {
                     Color.clear
                 }
@@ -330,9 +337,11 @@ struct SystemWidgetView: View {
 
             Text(label)
                 .font(.system(size: 9))
+                .monospacedDigit()
                 .foregroundStyle(.white.opacity(0.4))
                 .lineLimit(1)
                 .minimumScaleFactor(0.8)
+                .contentTransition(.numericText())
 
             StatChart(values: history, tint: chartTint ?? settings.appearance.resolvedAccent)
                 .padding(.horizontal, 8)
