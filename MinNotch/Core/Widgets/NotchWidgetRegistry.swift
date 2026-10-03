@@ -28,9 +28,16 @@ enum NotchWidgetRegistry {
         NotchWidgetDescriptor(tab: .weather, flag: .weather) { $0.weather.enabled }
     ]
 
-    /// Tabs the panel should currently render, in display order.
+    /// Tabs the panel should currently render, in display order. `all` lists features, and two
+    /// of them, the Shelf and Links, share a tab (`NotchTab.panelTab`), so it appears once, where
+    /// the first of them is on.
     static func availableTabs(_ settings: SettingsStore) -> [NotchTab] {
-        all.filter { $0.flag.isEnabled && $0.isEnabled(settings) }.map(\.tab)
+        var tabs: [NotchTab] = []
+        for descriptor in all where descriptor.flag.isEnabled && descriptor.isEnabled(settings) {
+            let tab = descriptor.tab.panelTab
+            if !tabs.contains(tab) { tabs.append(tab) }
+        }
+        return tabs
     }
 
     /// What the panel actually offers: the available tabs, or System alone when every feature

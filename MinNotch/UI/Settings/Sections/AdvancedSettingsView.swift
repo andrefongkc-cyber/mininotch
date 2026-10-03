@@ -70,7 +70,7 @@ struct AdvancedSettingsView: View {
             ) {
                 SettingsRow(
                     title: "Link Shelf",
-                    subtitle: "Keep links on the notch in a Links tab. Opening one uses your default browser.",
+                    subtitle: "Keep links on the notch, in the Shelf tab under any files. Opening one uses your default browser.",
                     systemImage: "link"
                 ) {
                     SettingsToggle(isOn: $settings.advanced.linkShelfEnabled)

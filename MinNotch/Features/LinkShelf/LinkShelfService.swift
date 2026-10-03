@@ -40,6 +40,17 @@ final class LinkShelfService {
     private(set) var icons: [String: NSImage] = [:]
     /// True while a drag carrying a link is over the drop zone, so the view can highlight it.
     var isDropTargeted = false
+    /// Said briefly after a paste or drop that found nothing to keep, so the attempt is not
+    /// silent. Here rather than in the view, because the Shelf tab takes drops for both shelves
+    /// and the link half shows what happened.
+    private(set) var notice: String?
+
+    func flash(_ message: String) {
+        notice = message
+        DispatchQueue.main.asyncAfter(deadline: .now() + 2) { [weak self] in
+            if self?.notice == message { self?.notice = nil }
+        }
+    }
 
     @ObservationIgnored private var settings: SettingsStore?
     @ObservationIgnored private let defaults: UserDefaults

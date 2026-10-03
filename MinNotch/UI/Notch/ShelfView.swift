@@ -11,24 +11,69 @@ struct ShelfView: View {
 
     @State private var isAirDropTargeted = false
 
+    /// The upper half of the Shelf tab, over the links. The tab takes the drops for both halves,
+    /// and this keeps to a fixed height, with its footer always there, so the panel does not
+    /// change size as files come and go.
+    var isCombined = false
+
     static let preferredHeight: CGFloat = 150
+    static let combinedRowHeight: CGFloat = 78
 
     var body: some View {
-        VStack(spacing: 8) {
-            if service.items.isEmpty {
-                HStack(spacing: 10) {
-                    emptyState
-                    airDropTile
+        if isCombined {
+            VStack(spacing: 4) {
+                Group {
+                    if service.items.isEmpty {
+                        HStack(spacing: 10) {
+                            compactEmptyState
+                            airDropTile
+                        }
+                    } else {
+                        itemRow
+                    }
                 }
-            } else {
-                itemRow
+                .frame(height: Self.combinedRowHeight)
                 footer
             }
+        } else {
+            VStack(spacing: 8) {
+                if service.items.isEmpty {
+                    HStack(spacing: 10) {
+                        emptyState
+                        airDropTile
+                    }
+                } else {
+                    itemRow
+                    footer
+                }
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .onDrop(of: [.fileURL], isTargeted: dropTarget) { providers in
+                accept(providers)
+            }
         }
+    }
+
+    private var compactEmptyState: some View {
+        HStack(spacing: 8) {
+            Image(systemName: service.isDropTargeted ? "tray.and.arrow.down.fill" : "tray.and.arrow.down")
+                .font(.system(size: 17))
+                .foregroundStyle(service.isDropTargeted ? settings.appearance.resolvedAccent : .white.opacity(0.35))
+            Text(service.isDropTargeted ? "Drop to hold" : "Drag files here to hold them, then drag them out where they need to go.")
+                .font(Typography.helper)
+                .foregroundStyle(.white.opacity(0.5))
+                .lineLimit(2)
+        }
+        .padding(.horizontal, 12)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .onDrop(of: [.fileURL], isTargeted: dropTarget) { providers in
-            accept(providers)
-        }
+        .overlay(
+            RoundedRectangle(cornerRadius: 10, style: .continuous)
+                .strokeBorder(
+                    service.isDropTargeted ? settings.appearance.resolvedAccent : Color.white.opacity(0.18),
+                    style: StrokeStyle(lineWidth: service.isDropTargeted ? 1.5 : 1, dash: [4, 4])
+                )
+        )
+        .animation(Motion.hover, value: service.isDropTargeted)
     }
 
     private var dropTarget: Binding<Bool> {
@@ -211,15 +256,19 @@ struct ShelfView: View {
 
             Spacer()
 
-            Button("Clear") { service.clear() }
-                .buttonStyle(.plain)
-                .font(.system(size: 11))
-                .foregroundStyle(.white.opacity(0.6))
+            if !service.items.isEmpty {
+                Button("Clear") { service.clear() }
+                    .buttonStyle(.plain)
+                    .font(.system(size: 11))
+                    .foregroundStyle(.white.opacity(0.6))
+                    .help("Remove every file from the shelf")
+            }
         }
         .frame(height: 14)
     }
 
     private var footerText: String {
+        guard !service.items.isEmpty else { return "Files" }
         let count = "\(service.items.count) of \(settings.shelf.maxItems)"
         guard !service.selection.isEmpty else { return count + " · Click to select, ⌘ or ⇧ for more" }
         return count + " · \(service.selection.count) selected"
@@ -239,6 +288,13 @@ struct ShelfView: View {
     }
 
     private func accept(_ providers: [NSItemProvider]) -> Bool {
+        Self.accept(providers, into: service, settings: settings)
+    }
+
+    /// Holds every file a drop carries. Shared with the Shelf tab, which takes drops for files
+    /// and links alike and sends each to its own shelf.
+    @discardableResult
+    static func accept(_ providers: [NSItemProvider], into service: ShelfService, settings: SettingsStore) -> Bool {
         loadURLs(from: providers) { urls in
             service.add(urls)
             Haptics.perform(enabled: settings.advanced.hapticFeedbackEnabled, strength: settings.advanced.hapticStrength)
@@ -246,8 +302,12 @@ struct ShelfView: View {
         return true
     }
 
-    /// Loads every file URL a drop carries, then hands them over together, on main.
     private func loadURLs(from providers: [NSItemProvider], then deliver: @escaping @MainActor ([URL]) -> Void) {
+        Self.loadURLs(from: providers, then: deliver)
+    }
+
+    /// Loads every file URL a drop carries, then hands them over together, on main.
+    private static func loadURLs(from providers: [NSItemProvider], then deliver: @escaping @MainActor ([URL]) -> Void) {
         let group = DispatchGroup()
         // Each provider loads on a queue of its own, possibly at the same time as the others,
         // so the list they add to is behind a lock. It was a plain array, which several

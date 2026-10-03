@@ -754,6 +754,18 @@ button reads the list before opening so the card is the right height on its firs
 `--check-audio-outputs` lists what the card would offer, read-only, and `--output-sheet` captures
 the card with the list open.
 
+**Files and links share the Shelf tab.** The user asked for the Shelf (files, AirDrop) and Links
+(paste a link, copy it back) together, so `NotchTab.links` is a feature but no longer a tab:
+`panelTab` maps it to `.shelf`, `NotchWidgetRegistry.availableTabs` lists the shared tab once, and
+`selectedTab` turns a request for Links into the Shelf. The case stays so saved arrangements and a
+remembered tab still decode; `TopStripLayout.resolve` drops the `.links` item because no shown tab
+matches it. `ShelfTabView` draws files over links, each in a fixed-height `isCombined` layout so
+the panel does not resize under a drop, and takes every drop itself (`ShelfTabDrop`): files go to
+the shelf wherever they land, anything else to the links, and the half a drop will go to lights up.
+A file is also a URL, which is why two separate targets would not do. Paste (⌘V) holds files copied
+in Finder and keeps a copied link. With either feature off the tab is the other one, drawn as
+before. Layout keeps a tile for each feature.
+
 **Shelf clicks and drags both arrive through `ShelfDragSource`.** The AppKit drag view covers
 each chip so it can offer move or copy and hear how the drag ended, so it is also what receives
 the click: a mouse-up with no drag in between is a click, and selects (⌘ toggles, ⇧ extends). A

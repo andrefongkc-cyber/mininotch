@@ -116,11 +116,12 @@ struct NotchRootView: View {
         viewModel.expand()
     }
 
-    /// Opens the notch on the Links tab when a link or text is dragged over the closed pill.
+    /// Opens the notch on the Shelf tab, where links are kept, when a link or text is dragged
+    /// over the closed pill.
     private func openLinksForDrag() {
         guard settings.advanced.linkShelfEnabled,
               FeatureFlag.linkShelf.isEnabled else { return }
-        viewModel.selectedTab = .links
+        viewModel.selectedTab = .shelf
         viewModel.expand()
     }
 
@@ -476,12 +477,10 @@ struct NotchRootView: View {
                 bluetoothDeviceCount: environment.bluetooth.devices.count,
                 showsChargingPower: environment.battery.showsChargingPower
             )
-        case .shelf:
-            height = ShelfView.preferredHeight
+        case .shelf, .links:
+            height = ShelfTabView.preferredHeight(settings: settings)
         case .clipboard:
             height = ClipboardWidgetView.preferredHeight
-        case .links:
-            height = LinkShelfWidgetView.preferredHeight
         case .timer:
             height = TimerWidgetView.preferredHeight
         case .weather:

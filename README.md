@@ -53,7 +53,8 @@ it, it keeps the song's own tempo from Music, a tempo you tap out, or one of its
 playing it stays still.
 
 **Link Shelf.** Drag a link onto the notch or press ⌘V, and it is kept with its page title and
-site icon. Click to open it, or copy it back.
+site icon. Click to open it, or copy it back. Links sit in the Shelf tab under your files, and
+⌘V there holds files you copied in Finder too _(next)_.
 
 ![The Links tab](Docs/images/links.png)
 

@@ -38,6 +38,8 @@ final class NotchViewModel {
 
     var selectedTab: NotchTab {
         didSet {
+            // Links lives in the Shelf tab now; asking for it opens that.
+            if selectedTab == .links { selectedTab = .shelf }
             guard oldValue != selectedTab else { return }
             // Only the real notch writes the remembered tab. `lastTab` is one value shared
             // by every surface, so a virtual notch on a second monitor writing to it would
@@ -60,7 +62,7 @@ final class NotchViewModel {
     init(settings: SettingsStore, geometry: NotchGeometry) {
         self.settings = settings
         self.geometry = geometry
-        self.selectedTab = Self.initialTab(settings: settings, geometry: geometry)
+        self.selectedTab = Self.initialTab(settings: settings, geometry: geometry).panelTab
     }
 
     /// The tab this surface opens on.

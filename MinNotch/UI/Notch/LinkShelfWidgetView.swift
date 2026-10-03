@@ -13,29 +13,96 @@ struct LinkShelfWidgetView: View {
 
     private var service: LinkShelfService { environment.linkShelf }
 
+    /// The lower half of the Shelf tab, under the files, rather than a tab of its own. The tab
+    /// then takes the drops and the paste for both halves, and this draws a shorter list with
+    /// its controls underneath.
+    var isCombined = false
+    /// What Paste does in the combined tab, where it takes files as well as links.
+    var onPaste: (() -> Void)?
+
     static let preferredHeight: CGFloat = 168
     /// A `ScrollView` has no ideal height and lays out at zero inside the panel without one.
     private static let listHeight: CGFloat = 128
-
-    /// Set briefly after a paste or drop that found no link, so the attempt is not silent.
-    @State private var notice: String?
+    static let combinedListHeight: CGFloat = 86
+    static let footerHeight: CGFloat = 14
 
     var body: some View {
-        VStack(spacing: 6) {
-            header
+        if isCombined {
+            VStack(spacing: 4) {
+                Group {
+                    if service.items.isEmpty { compactDropZone } else { list }
+                }
+                .frame(height: Self.combinedListHeight)
+                combinedFooter
+            }
+        } else {
+            VStack(spacing: 6) {
+                header
 
-            if service.items.isEmpty {
-                dropZone
-            } else {
-                list
+                if service.items.isEmpty {
+                    dropZone
+                } else {
+                    list
+                }
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+            // The whole widget accepts a drop, not only the empty state, so adding a second link
+            // is as easy as the first.
+            .onDrop(of: [.url, .plainText], isTargeted: dropTargetBinding) { providers in
+                Self.accept(providers, into: service)
             }
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
-        // The whole widget accepts a drop, not only the empty state, so adding a second link is
-        // as easy as the first.
-        .onDrop(of: [.url, .plainText], isTargeted: dropTargetBinding) { providers in
-            accept(providers)
+    }
+
+    // MARK: Combined
+
+    private var compactDropZone: some View {
+        HStack(spacing: 8) {
+            Image(systemName: service.isDropTargeted ? "link.badge.plus" : "link")
+                .font(.system(size: 15))
+                .foregroundStyle(service.isDropTargeted ? settings.appearance.resolvedAccent : .white.opacity(0.35))
+            Text(service.isDropTargeted ? "Drop to keep the link" : "Drop a link here or press ⌘V. Click one to open it.")
+                .font(Typography.helper)
+                .foregroundStyle(.white.opacity(0.5))
         }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .overlay(
+            RoundedRectangle(cornerRadius: 10, style: .continuous)
+                .strokeBorder(
+                    service.isDropTargeted ? settings.appearance.resolvedAccent : Color.white.opacity(0.18),
+                    style: StrokeStyle(lineWidth: service.isDropTargeted ? 1.5 : 1, dash: [4, 4])
+                )
+        )
+        .animation(Motion.hover, value: service.isDropTargeted)
+    }
+
+    private var combinedFooter: some View {
+        HStack(spacing: 10) {
+            Text(service.notice ?? (service.items.isEmpty ? "Links" : "\(service.items.count) \(service.items.count == 1 ? "link" : "links")"))
+                .font(.system(size: 10))
+                .foregroundStyle(.white.opacity(service.notice == nil ? 0.4 : 0.7))
+                .lineLimit(1)
+
+            Spacer(minLength: 0)
+
+            // ⌘V works whenever the panel has keyboard focus, for files and links alike.
+            Button("Paste") { onPaste?() }
+                .buttonStyle(.plain)
+                .font(.system(size: 11))
+                .foregroundStyle(.white.opacity(0.7))
+                .keyboardShortcut("v", modifiers: .command)
+                .help("Add the files or the link on the clipboard (⌘V)")
+
+            if !service.items.isEmpty {
+                Button("Clear") { service.clearAll() }
+                    .buttonStyle(.plain)
+                    .font(.system(size: 11))
+                    .foregroundStyle(.white.opacity(0.6))
+                    .help("Remove every link")
+            }
+        }
+        .frame(height: Self.footerHeight)
+        .animation(Motion.hover, value: service.notice)
     }
 
     private var dropTargetBinding: Binding<Bool> {
@@ -50,7 +117,7 @@ struct LinkShelfWidgetView: View {
                 .font(Typography.sectionHeader)
                 .foregroundStyle(.white.opacity(0.8))
 
-            if let notice {
+            if let notice = service.notice {
                 Text(notice)
                     .font(Typography.helper)
                     .foregroundStyle(.white.opacity(0.45))
@@ -75,7 +142,7 @@ struct LinkShelfWidgetView: View {
                     .help("Remove every link")
             }
         }
-        .animation(Motion.hover, value: notice)
+        .animation(Motion.hover, value: service.notice)
     }
 
     // MARK: Empty
@@ -121,7 +188,7 @@ struct LinkShelfWidgetView: View {
                 }
             }
         }
-        .frame(height: Self.listHeight)
+        .frame(height: isCombined ? Self.combinedListHeight : Self.listHeight)
         .overlay(
             RoundedRectangle(cornerRadius: 8, style: .continuous)
                 .strokeBorder(settings.appearance.resolvedAccent, lineWidth: 1.5)
@@ -134,12 +201,12 @@ struct LinkShelfWidgetView: View {
 
     private func paste() {
         let added = service.addFromPasteboard()
-        if added == 0 { flash("No link on the clipboard") }
+        if added == 0 { service.flash("No link on the clipboard") }
     }
 
     /// Takes URLs first, then plain text, which covers a link dragged from a browser's address
     /// bar, a link inside a page, and a selection of text that contains links.
-    private func accept(_ providers: [NSItemProvider]) -> Bool {
+    static func accept(_ providers: [NSItemProvider], into service: LinkShelfService) -> Bool {
         var handled = false
         for provider in providers {
             if provider.hasItemConformingToTypeIdentifier(UTType.url.identifier) {
@@ -148,7 +215,7 @@ struct LinkShelfWidgetView: View {
                     guard let url else { return }
                     DispatchQueue.main.async {
                         if LinkShelfService.normalised(url) == nil {
-                            flash("Only web links can be kept")
+                            service.flash("Only web links can be kept")
                         } else {
                             service.add(url)
                         }
@@ -159,19 +226,12 @@ struct LinkShelfWidgetView: View {
                 _ = provider.loadObject(ofClass: String.self) { text, _ in
                     guard let text else { return }
                     DispatchQueue.main.async {
-                        if service.add(fromText: text) == 0 { flash("No link in that text") }
+                        if service.add(fromText: text) == 0 { service.flash("No link in that text") }
                     }
                 }
             }
         }
         return handled
-    }
-
-    private func flash(_ message: String) {
-        notice = message
-        DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
-            if notice == message { notice = nil }
-        }
     }
 }
 

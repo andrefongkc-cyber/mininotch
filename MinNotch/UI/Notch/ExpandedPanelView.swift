@@ -41,12 +41,10 @@ struct ExpandedPanelView: View {
             CalendarWidgetView(viewModel: viewModel)
         case .system:
             SystemWidgetView()
-        case .shelf:
-            ShelfView()
+        case .shelf, .links:
+            ShelfTabView()
         case .clipboard:
             ClipboardWidgetView()
-        case .links:
-            LinkShelfWidgetView()
         case .timer:
             TimerWidgetView(viewModel: viewModel)
         case .weather:

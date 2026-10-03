@@ -17,6 +17,11 @@ enum NotchTab: String, Codable, CaseIterable, Identifiable {
 
     var id: String { rawValue }
 
+    /// The tab this one is drawn in. Links is a feature but no longer a tab: it shares the Shelf
+    /// tab with the files. The case stays so saved arrangements and a remembered tab still
+    /// decode, and anything that asks for Links is sent to the Shelf.
+    var panelTab: NotchTab { self == .links ? .shelf : self }
+
     var title: String {
         switch self {
         case .media: return "Now Playing"

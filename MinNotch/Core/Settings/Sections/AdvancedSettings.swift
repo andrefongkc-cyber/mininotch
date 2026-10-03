@@ -76,7 +76,7 @@ struct AdvancedSettings: Codable, Equatable {
     /// Unpinned items kept before the oldest is dropped. Pinned items are not counted.
     var clipboardHistoryLimit: Int = 20
 
-    /// Keep links on the notch, in the Links tab.
+    /// Keep links on the notch, in the Shelf tab under the files.
     var linkShelfEnabled: Bool = false
 
     /// Links kept before the oldest is dropped.

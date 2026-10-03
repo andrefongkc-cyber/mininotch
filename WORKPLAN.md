@@ -61,6 +61,12 @@ at last. Notarisation still needs a paid membership nobody is buying.
 - [x] Keep the Notch Open: ⌃⌥P (Settings > Shortcuts) holds the open panel on its display; the
       pin appears in the top bar while held and lets go on a click. Placeable in Layout.
       `--check-keep-open` passes; needs trying with two displays.
+- [x] Shelf and Links in one tab ("combine shelf+airdrop with link copy and paste"): files and
+      AirDrop on top, links below, one drop target that sends files to the shelf and links to the
+      links, ⌘V for either. Each keeps its own switch. Captured with and without files; the drops
+      and the paste need trying by hand.
+- [x] The HUDs pane's Accessibility button asks for access (Allow…) instead of only opening System
+      Settings, so the running copy is the one put in the list.
 - [x] Volume and brightness HUD narrower ("just shrink it down width wise"): Bar Below Notch
       393 to 233 points, Inline and Ring 417 to 321; heights unchanged. `--hud-style` captures it.
 - [ ] Apple's overlay still showing: this copy is not trusted for Accessibility

@@ -126,7 +126,7 @@ struct LayoutSettingsView: View {
             ) {
                 SettingsRow(
                     title: "Widgets",
-                    subtitle: "Click to switch a widget on or off. Each one that is on gets a tab in the top bar.",
+                    subtitle: "Click to switch a widget on or off. Each one that is on gets a tab in the top bar; Shelf and Links share one.",
                     systemImage: "square.grid.2x2"
                 ) { EmptyView() }
 
