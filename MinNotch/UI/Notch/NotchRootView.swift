@@ -431,7 +431,7 @@ struct NotchRootView: View {
         if isHiddenAtRest { return geometry.collapsedSize.width }
         // A HUD takes over the closed surface entirely, and needs both flanks to show an
         // icon and a level rather than the pill's narrower strips.
-        if environment.hud.current != nil { return HUDView.width(for: geometry) }
+        if environment.hud.current != nil { return HUDView.width(for: geometry, style: settings.huds.style) }
         if hasClosedStrip {
             return SneakPeekView.size(for: geometry, pillWidth: pillContent.width(for: geometry)).width
         }

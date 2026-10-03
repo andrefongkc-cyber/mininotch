@@ -223,6 +223,14 @@ enum DebugWindowCapture {
             midway = Double(arguments[i + 1])
         }
         if expanded && midway == nil { viewModel.expand() }
+        // `--hud-style floatingPill|notchInline|progressRing` shows a volume indicator in that style,
+        // with `--collapsed`. A long dismiss delay keeps it up until the capture.
+        if let index = arguments.firstIndex(of: "--hud-style"), arguments.indices.contains(index + 1),
+           let style = HUDStyle(rawValue: arguments[index + 1]) {
+            settings.huds.style = style
+            settings.huds.dismissDelay = 10
+            environment.hud.preview(.volume)
+        }
         // `--keep-open` holds the panel open, which puts its pin in the top bar.
         if expanded && midway == nil && arguments.contains("--keep-open") { viewModel.setKeptOpen(true) }
         // The track-change drop below the pill. Held for longer than the real one, so the

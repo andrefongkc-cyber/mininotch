@@ -69,7 +69,7 @@ MinNotch --capture-notch out.png [--collapsed] [--tab system] [--glow bars|off] 
                                  [--card compact|fullArtwork] [--controls shuffle,playPause,repeatMode]
                                  [--lyrics-sheet] [--sample-stats] [--shadow] [--closed-lyrics]
                                  [--sample-shelf] [--output-sheet] [--sample-weather]
-                                 [--sample-power] [--keep-open]
+                                 [--sample-power] [--keep-open] [--hud-style floatingPill]
 MinNotch --check-lyrics "Khalid" "8TEEN" 229                      # LRCLIBClient + LRCParser
 MinNotch --check-lyric-sync [--out f]                             # matching lyrics to the audio, synthetic
 MinNotch --check-lyric-sync --audio f.mp3 --lrc f.lrc --shifts 0,0.5 [--peaks]   # …and a real song, old method beside it

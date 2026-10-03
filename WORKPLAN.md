@@ -61,6 +61,11 @@ at last. Notarisation still needs a paid membership nobody is buying.
 - [x] Keep the Notch Open: ⌃⌥P (Settings > Shortcuts) holds the open panel on its display; the
       pin appears in the top bar while held and lets go on a click. Placeable in Layout.
       `--check-keep-open` passes; needs trying with two displays.
+- [x] Volume and brightness HUD narrower ("just shrink it down width wise"): Bar Below Notch
+      393 to 233 points, Inline and Ring 417 to 321; heights unchanged. `--hud-style` captures it.
+- [ ] Apple's overlay still showing: this copy is not trusted for Accessibility
+      (`--check-keys`: trusted false, tap not installed). The user has to re-add MinNotch in
+      Privacy & Security > Accessibility; the app picks the grant up within two seconds.
 - [x] Workplan entries done long ago but still unticked: undated reminders, shelf multi-drag and
       AirDrop, weather; Focus marked dropped.
 

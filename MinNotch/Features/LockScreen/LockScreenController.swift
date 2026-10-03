@@ -131,7 +131,7 @@ struct LockScreenView: View {
         let hudHeight = HUDStyle.allCases.map { HUDView.height(for: geometry, style: $0) }.max() ?? 80
         let media = SneakPeekView.size(for: geometry, pillWidth: geometry.collapsedSize.width)
         return CGSize(
-            width: max(HUDView.width(for: geometry), media.width) + 16,
+            width: max(HUDStyle.allCases.map { HUDView.width(for: geometry, style: $0) }.max() ?? 0, media.width) + 16,
             height: max(hudHeight, media.height) + 8
         )
     }
@@ -145,7 +145,7 @@ struct LockScreenView: View {
                 Spacer(minLength: 0)
                 if let reading {
                     surface(
-                        width: HUDView.width(for: geometry),
+                        width: HUDView.width(for: geometry, style: settings.huds.style),
                         height: HUDView.height(for: geometry, style: settings.huds.style),
                         bottomRadius: min(CGFloat(settings.appearance.panelCornerRadius), geometry.collapsedSize.height / 2)
                     ) {

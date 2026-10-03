@@ -15,11 +15,23 @@ struct HUDView: View {
     let showsNumericValue: Bool
     let accent: Color
 
-    /// Extra width claimed on each side of the cutout.
-    static let flankWidth: CGFloat = 116
+    /// Extra width claimed on each side of the cutout by the inline and ring styles, which put
+    /// the icon on one side and the level on the other. It was 116, which made a volume change
+    /// stretch the notch most of the way across the menu bar; reported as "really big".
+    static let flankWidth: CGFloat = 80
+    /// How far the bar below the notch reaches past the cutout on each side. It sits under the
+    /// cutout rather than beside it, so it needs no flanks of its own, only a little overhang.
+    static let pillOverhang: CGFloat = 36
+    /// Height of the bar below the notch. Only the width was too much; this stays.
+    static let pillHeight: CGFloat = 34
 
-    static func width(for geometry: NotchGeometry) -> CGFloat {
-        geometry.collapsedSize.width + flankWidth * 2
+    static func width(for geometry: NotchGeometry, style: HUDStyle) -> CGFloat {
+        switch style {
+        case .notchInline, .progressRing:
+            return geometry.collapsedSize.width + flankWidth * 2
+        case .floatingPill:
+            return geometry.collapsedSize.width + pillOverhang * 2
+        }
     }
 
     static func height(for geometry: NotchGeometry, style: HUDStyle) -> CGFloat {
@@ -28,7 +40,7 @@ struct HUDView: View {
             return geometry.collapsedSize.height
         case .floatingPill:
             // Hangs below the cutout so the bar has room to be a real bar.
-            return geometry.collapsedSize.height + 34
+            return geometry.collapsedSize.height + pillHeight
         }
     }
 
@@ -49,21 +61,22 @@ struct HUDView: View {
     private var inline: some View {
         HStack(spacing: 0) {
             icon
+                .padding(.trailing, 8)
                 .frame(width: Self.flankWidth, alignment: .trailing)
-                .padding(.trailing, 10)
 
             Spacer(minLength: 0)
                 .frame(width: geometry.collapsedSize.width)
 
-            HStack(spacing: 7) {
+            HStack(spacing: 6) {
                 bar
                 if showsNumericValue { valueLabel }
             }
+            .padding(.leading, 8)
+            .padding(.trailing, Metrics.notchShoulderRadius + 4)
             .frame(width: Self.flankWidth, alignment: .leading)
-            .padding(.leading, 10)
         }
         .frame(
-            width: Self.width(for: geometry),
+            width: Self.width(for: geometry, style: .notchInline),
             height: geometry.collapsedSize.height
         )
     }
@@ -72,8 +85,8 @@ struct HUDView: View {
     private var ring: some View {
         HStack(spacing: 0) {
             icon
+                .padding(.trailing, 8)
                 .frame(width: Self.flankWidth, alignment: .trailing)
-                .padding(.trailing, 10)
 
             Spacer(minLength: 0)
                 .frame(width: geometry.collapsedSize.width)
@@ -93,11 +106,11 @@ struct HUDView: View {
 
                 if showsNumericValue { valueLabel }
             }
+            .padding(.leading, 8)
             .frame(width: Self.flankWidth, alignment: .leading)
-            .padding(.leading, 10)
         }
         .frame(
-            width: Self.width(for: geometry),
+            width: Self.width(for: geometry, style: .progressRing),
             height: geometry.collapsedSize.height
         )
     }
@@ -108,16 +121,16 @@ struct HUDView: View {
             Spacer(minLength: 0)
                 .frame(height: geometry.collapsedSize.height)
 
-            HStack(spacing: 10) {
+            HStack(spacing: 8) {
                 icon
                 bar
                 if showsNumericValue { valueLabel }
             }
-            .padding(.horizontal, 22)
-            .frame(height: 34)
+            .padding(.horizontal, 14)
+            .frame(height: Self.pillHeight)
         }
         .frame(
-            width: Self.width(for: geometry),
+            width: Self.width(for: geometry, style: .floatingPill),
             height: Self.height(for: geometry, style: .floatingPill)
         )
     }
