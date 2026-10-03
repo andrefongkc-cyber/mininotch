@@ -16,14 +16,28 @@ final class NowPlayingController {
     private(set) var palette: ArtworkPalette = .fallback
     private(set) var lyrics: Lyrics? {
         didSet {
-            // The correction belongs to the file, so a new one starts the measurement again.
-            if let lyrics, lyrics.isSynced { lyricsSync.begin(lyrics: lyrics) } else { lyricsSync.reset() }
+            // The correction belongs to the file, so a new one starts the measurement again,
+            // from the answer an earlier play of the same track and file arrived at, if any.
+            if let lyrics, lyrics.isSynced {
+                calibrator.begin(lyrics: lyrics)
+                lyricsMemoryKey = track.map { LyricsSyncMemory.key(track: $0.artworkKey, lyrics: lyrics) }
+                if let lyricsMemoryKey, let remembered = LyricsSyncMemory.offset(for: lyricsMemoryKey) {
+                    calibrator.restore(offset: remembered)
+                }
+            } else {
+                calibrator.reset()
+                lyricsMemoryKey = nil
+            }
+            publishLyricsSync()
         }
     }
 
-    /// Measures how far this lyric file sits from the audio. Stored rather than ignored, so the
-    /// strip and the Settings row both redraw as it settles.
-    private(set) var lyricsSync = LyricsSyncCalibrator()
+    /// Measures how far this lyric file sits from the audio. Ignored by observation, because it
+    /// changes with every window the tap analyses; `lyricsSync` is what views read.
+    @ObservationIgnored private var calibrator = LyricsSyncCalibrator()
+    @ObservationIgnored private var lyricsMemoryKey: String?
+    /// The measurement's answer, for the strip and the Settings row.
+    private(set) var lyricsSync = LyricsSyncSummary()
     /// Why the lyric strip looks the way it does. Without this the strip silently renders
     /// nothing when a lookup fails, which is indistinguishable from the feature being broken.
     private(set) var lyricsStatus: LyricsStatus = .idle
@@ -203,12 +217,15 @@ final class NowPlayingController {
         }
 
         stickySource = source.kind
-        snapshotDate = capturedAt
 
         let isNewTrack = snapshot.trackIdentity != lastTrackIdentity
             || snapshot.artworkKey != track?.artworkKey
 
         var published = snapshot
+        if !isNewTrack, let current = track, current.isPlaying, snapshot.isPlaying, !isScrubbing {
+            published.elapsed = Self.smoothedPosition(reported: snapshot.elapsed, predicted: elapsed(at: capturedAt))
+        }
+        snapshotDate = capturedAt
         // Hold the user's drag position until the seek round-trips.
         if isScrubbing, let scrubTarget { published.elapsed = scrubTarget }
         track = published
@@ -220,6 +237,20 @@ final class NowPlayingController {
         loadArtwork(from: source, for: snapshot)
         loadLyrics(for: snapshot)
         loadUpNext(from: source, for: snapshot)
+    }
+
+    /// Where to put the clock after a poll, given where the player said it was and where the
+    /// clock had already got to by itself.
+    ///
+    /// Each read carries its own error: an Apple Event takes a variable time, and the position is
+    /// read somewhere inside it. Taking every read as the truth moved the lyric highlight back and
+    /// forth by that much twice a second. So a small disagreement moves the clock a third of the
+    /// way, and repeated reads pull it onto the player's time within a couple of seconds; only a
+    /// large one, which is a seek, a stall or a skip, is taken at once.
+    static func smoothedPosition(reported: TimeInterval, predicted: TimeInterval) -> TimeInterval {
+        let error = reported - predicted
+        guard abs(error) < 0.25 else { return reported }
+        return predicted + error * 0.35
     }
 
     // MARK: Up Next
@@ -285,7 +316,8 @@ final class NowPlayingController {
         lyrics = nil
         lastTrackIdentity = nil
         loadedLyricsKey = nil
-        lyricsSync.reset()
+        calibrator.reset()
+        publishLyricsSync()
     }
 
     // MARK: Artwork and lyrics
@@ -435,16 +467,33 @@ final class NowPlayingController {
         return lyricsSync.offset ?? 0
     }
 
-    /// Records an onset the audio tap heard, for the lyric measurement.
+    /// Records the level of the singing the audio tap heard, for the lyric measurement.
     ///
     /// Only while a synced file is playing and nobody is dragging the scrubber, since a position
     /// read during a drag is the drag's, not the track's.
-    func noteAudioOnset(at date: Date, strength: Double) {
+    func noteVoiceLevel(at date: Date, level: Double) {
         guard settings?.media.matchLyricsToAudio == true,
               let track, track.isPlaying, !isScrubbing,
               lyrics?.isSynced == true
         else { return }
-        lyricsSync.noteOnset(at: elapsed(at: date), strength: strength)
+        let before = calibrator.offset
+        calibrator.noteVoiceLevel(level, at: elapsed(at: date), time: date.timeIntervalSinceReferenceDate)
+        if calibrator.offset != before {
+            if let lyricsMemoryKey { LyricsSyncMemory.store(calibrator.offset, for: lyricsMemoryKey) }
+            // Numbers only, so the log says how the measurement went and nothing about what played.
+            let answer = calibrator.offset.map { String(format: "%+.2f s", $0) } ?? "withdrawn"
+            let lines = calibrator.matchCount
+            let margin = calibrator.confidence ?? 0
+            let significance = calibrator.significance ?? 0
+            AppLog.media.info("Lyric timing: \(answer, privacy: .public) after \(lines) lines, margin \(margin, privacy: .public), significance \(significance, privacy: .public)")
+        }
+        publishLyricsSync()
+    }
+
+    /// Publishes the measurement's answer when it changes, and only then.
+    private func publishLyricsSync() {
+        let summary = LyricsSyncSummary(offset: calibrator.offset, matchCount: calibrator.matchCount)
+        if summary != lyricsSync { lyricsSync = summary }
     }
 
     /// Buffering currently being compensated for, in seconds. Zero when the tap is not

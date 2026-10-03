@@ -45,7 +45,12 @@ at last. Notarisation still needs a paid membership nobody is buying.
 - [x] The audio tap runs only while something is playing, instead of for as long as Follow the
       Beat or Fix Timing Automatically is on, and pauses 20 s after playback stops. Idle went from
       about 6% of a core to 0.2-0.3%. Starting on play needs a real song to watch.
-- [ ] Lyric timing: "sometimes accurate, sometimes behind, sometimes ahead". Find what varies.
+- [x] Lyric timing: "sometimes accurate, sometimes behind, sometimes ahead". The automatic
+      correction locked onto drums: on a real song it moved on-time lyrics by +0.49 s and was 0.5 s
+      wrong on 4 of 5 answers. Rebuilt as a whole-song alignment of line starts against the
+      singing (centre channel, voice range), with refusals for anything unclear, a memory per
+      track, and a smoothed playback clock. Real song: 9/9 right to 0.05 s, 28/28 wrong cases
+      refused. Only one sung song tested; it answers 2-3 minutes in. Needs real listening.
 - [ ] Up Next: is there any API that gives Music's real queue? Answer the user.
 - [x] Keep the Notch Open: ⌃⌥P (Settings > Shortcuts) holds the open panel on its display; the
       pin appears in the top bar while held and lets go on a click. Placeable in Layout.

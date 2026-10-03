@@ -303,12 +303,18 @@ struct MediaSettingsView: View {
             return "Waiting on the system audio: \(failure.message)"
         }
         if let offset = sync.offset {
+            if offset == 0 {
+                return "These lyrics are on time, checked against \(sync.matchCount) lines of singing, so they stay where they are."
+            }
             return String(format: "Lyrics moved %+.2f s to match the singing, from %d lines.", offset, sync.matchCount)
         }
-        if sync.matchCount > 0 {
-            return "Heard the singing start on \(sync.matchCount) of the \(LyricsSyncCalibrator.minimumMatches) lines it needs. The lyrics stay where they are until they agree."
+        if sync.matchCount >= LyricsSyncCalibrator.minimumMatches {
+            return "Heard \(sync.matchCount) lines, but the singing does not line up clearly with any timing, so the lyrics stay where they are."
         }
-        return "Listening for where the singing starts. The lyrics only move once several lines agree, so on time lyrics are left alone."
+        if sync.matchCount > 0 {
+            return "Heard \(sync.matchCount) of the \(LyricsSyncCalibrator.minimumMatches) lines it needs. The lyrics stay where they are until then."
+        }
+        return "Listening for where the singing starts. The lyrics only move when the singing clearly says so, so on time lyrics are left alone."
     }
 
     private var audioClockSubtitle: String {

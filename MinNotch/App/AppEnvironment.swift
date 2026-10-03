@@ -67,10 +67,10 @@ final class AppEnvironment {
         nowPlaying.onPlayingChange = { [weak self] _ in
             self?.applyAudioAnalysisSetting()
         }
-        // The tap hears a voice come in; the controller knows where the track was at that
-        // moment. Neither knows about the other, so the wiring lives here.
-        audioAnalyzer.onVocalOnset = { [weak self] date, strength in
-            self?.nowPlaying.noteAudioOnset(at: date, strength: strength)
+        // The tap hears the singing; the controller knows where the track was at that moment.
+        // Neither knows about the other, so the wiring lives here.
+        audioAnalyzer.onVoiceLevel = { [weak self] date, level in
+            self?.nowPlaying.noteVoiceLevel(at: date, level: level)
         }
         nowPlaying.onTrackChange = { [weak self] track in
             self?.trackChanged(track)

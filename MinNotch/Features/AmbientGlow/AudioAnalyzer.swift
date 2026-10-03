@@ -1,4 +1,3 @@
-import Accelerate
 import AudioToolbox
 import CoreAudio
 import Observation
@@ -46,10 +45,9 @@ final class AudioAnalyzer {
         }
     }
 
-    /// Raised when the mid frequencies jump, which is what a voice or a lead entering sounds
-    /// like, with the moment it was heard and how sharply it rose. Used to match lyric files to
-    /// the audio; the glow reads `current` instead, because it wants every buffer.
-    @ObservationIgnored var onVocalOnset: ((Date, Double) -> Void)?
+    /// The level of whatever is singing, with the moment it was heard, for every window analysed.
+    /// Used to match lyric files to the audio (`LyricsSyncCalibrator`); the glow reads `current`.
+    @ObservationIgnored var onVoiceLevel: ((Date, Double) -> Void)?
 
     private(set) var current: Analysis?
     private(set) var isRunning = false
@@ -77,22 +75,11 @@ final class AudioAnalyzer {
     @ObservationIgnored nonisolated(unsafe) private var ioProcID: AudioDeviceIOProcID?
     @ObservationIgnored private let queue = DispatchQueue(label: "com.minnotch.audio-tap", qos: .userInitiated)
 
-    /// 1024 frames is about 21 ms at 48 kHz: short enough to catch a transient, long enough
-    /// for the low bands to have something to say.
-    @ObservationIgnored private let fftSize = 1024
-    @ObservationIgnored nonisolated(unsafe) private var dft: vDSP.DiscreteFourierTransform<Float>?
-    @ObservationIgnored nonisolated(unsafe) private var window: [Float] = []
-    @ObservationIgnored nonisolated(unsafe) private var sampleBuffer: [Float] = []
-    /// Scales a raw bin magnitude back to the amplitude of the sinusoid that produced it, so
-    /// a full-scale tone reads as 1 rather than as some multiple of the window length.
-    /// Without it every decibel figure below is offset by about +48 dB and pinned at the top.
-    @ObservationIgnored nonisolated(unsafe) private var windowGain: Double = 1
-
-    @ObservationIgnored nonisolated(unsafe) private var previousEnergy: Double = 0
-    @ObservationIgnored nonisolated(unsafe) private var previousMidLevel: Double = 0
-    @ObservationIgnored nonisolated(unsafe) private var lastMidOnset = Date.distantPast
-    @ObservationIgnored nonisolated(unsafe) private var beatLevel: Double = 0
-    @ObservationIgnored nonisolated(unsafe) private var lastPublish = Date()
+    /// The analysis itself, made when the tap's format is known. See `SpectrumFrameAnalyzer`.
+    @ObservationIgnored nonisolated(unsafe) private var spectrum: SpectrumFrameAnalyzer?
+    /// The most recent frames of each channel, two windows' worth.
+    @ObservationIgnored nonisolated(unsafe) private var leftSamples: [Float] = []
+    @ObservationIgnored nonisolated(unsafe) private var rightSamples: [Float] = []
 
     /// Where "the tap has started here before" is remembered. See `start()`.
     @ObservationIgnored private let defaults: UserDefaults
@@ -104,20 +91,6 @@ final class AudioAnalyzer {
 
     init(defaults: UserDefaults = .standard) {
         self.defaults = defaults
-        dft = try? vDSP.DiscreteFourierTransform(
-            previous: nil,
-            count: fftSize,
-            direction: .forward,
-            transformType: .complexComplex,
-            ofType: Float.self
-        )
-        window = vDSP.window(
-            ofType: Float.self,
-            usingSequence: .hanningDenormalized,
-            count: fftSize,
-            isHalfWindow: false
-        )
-        windowGain = 2 / max(Double(vDSP.sum(window)), 1)
     }
 
     deinit { teardown() }
@@ -313,6 +286,9 @@ final class AudioAnalyzer {
         guard formatStatus == noErr else {
             throw Failure.coreAudio(formatStatus, "reading the tap's format")
         }
+        spectrum = SpectrumFrameAnalyzer(sampleRate: format.mSampleRate)
+        leftSamples.removeAll()
+        rightSamples.removeAll()
 
         var procID: AudioDeviceIOProcID?
         let status = AudioDeviceCreateIOProcIDWithBlock(&procID, aggregateID, queue) {
@@ -349,155 +325,55 @@ final class AudioAnalyzer {
 
     // MARK: Analysis
 
+    /// Splits a buffer into its two channels and analyses the latest window of each.
+    ///
+    /// The tap delivers interleaved stereo in one buffer; a non-interleaved device would give one
+    /// buffer per channel, and a mono one a single channel, which is used for both.
     nonisolated private func handle(_ bufferList: UnsafePointer<AudioBufferList>) {
-        let buffers = UnsafeMutableAudioBufferListPointer(
-            UnsafeMutablePointer(mutating: bufferList)
-        )
+        let buffers = UnsafeMutableAudioBufferListPointer(UnsafeMutablePointer(mutating: bufferList))
         guard let first = buffers.first, let data = first.mData else { return }
 
         let sampleCount = Int(first.mDataByteSize) / MemoryLayout<Float>.size
         guard sampleCount > 0 else { return }
+        let samples = UnsafeBufferPointer(start: data.assumingMemoryBound(to: Float.self), count: sampleCount)
 
-        let pointer = data.assumingMemoryBound(to: Float.self)
-        let incoming = UnsafeBufferPointer(start: pointer, count: sampleCount)
-
-        // Interleaved stereo arrives as one buffer. One channel is plenty for a lighting
-        // effect and halves the work.
-        let channelStride = max(Int(first.mNumberChannels), 1)
-        var mono = [Float]()
-        mono.reserveCapacity(sampleCount / channelStride)
-        for index in stride(from: 0, to: sampleCount, by: channelStride) {
-            mono.append(incoming[index])
-        }
-
-        sampleBuffer.append(contentsOf: mono)
-        if sampleBuffer.count > fftSize * 2 {
-            sampleBuffer.removeFirst(sampleBuffer.count - fftSize * 2)
-        }
-        guard sampleBuffer.count >= fftSize else { return }
-
-        analyse(Array(sampleBuffer.suffix(fftSize)))
-    }
-
-    nonisolated private func analyse(_ frame: [Float]) {
-        guard let dft else { return }
-
-        let windowed = vDSP.multiply(frame, window)
-        let output = dft.transform(
-            real: windowed,
-            imaginary: [Float](repeating: 0, count: fftSize)
-        )
-
-        // Only the first half carries distinct frequencies for a real input signal.
-        let usable = fftSize / 2
-        var magnitudes = [Float](repeating: 0, count: usable)
-        for index in 0..<usable {
-            let real = output.real[index]
-            let imaginary = output.imaginary[index]
-            magnitudes[index] = sqrt(real * real + imaginary * imaginary)
-        }
-
-        publish(energy: Double(vDSP.rootMeanSquare(frame)), bands: bucket(magnitudes))
-    }
-
-    /// Maps a linear amplitude onto the 0...1 range the glow works in, by way of decibels.
-    ///
-    /// Loudness is logarithmic and a linear FFT magnitude is not, so a linear map spends
-    /// almost its whole range on the difference between loud and very loud. Everything below
-    /// that sits squashed against zero, which is why a correct analysis can still drive a
-    /// visual that barely moves.
-    private enum Loudness {
-        /// Quietest level that registers at all. Anything below is silence.
-        static let floorDecibels: Double = -62
-        /// Lift applied per band as frequency rises. Music carries far less energy per octave
-        /// towards the top, so even in decibels a hi-hat reads as inert beside a kick without
-        /// it. Three decibels a band over eight log-spaced bands is the usual pink tilt.
-        static let tiltPerBand: Double = 3
-
-        static func normalised(amplitude: Double, boost: Double = 0) -> Double {
-            guard amplitude > 0 else { return 0 }
-            let decibels = 20 * log10(amplitude) + boost
-            return min(max((decibels - floorDecibels) / -floorDecibels, 0), 1)
-        }
-    }
-
-    /// Groups the spectrum into log-spaced bands and maps each onto a tilted decibel scale.
-    ///
-    /// Two corrections, and both are needed. The *spacing* is logarithmic because pitch is,
-    /// and linear buckets put almost everything into the first one. The *magnitude* is
-    /// logarithmic for the same reason loudness is, and tilted upward with frequency because
-    /// music has less energy per octave as it rises. Skip either and the bass bands are the
-    /// only ones that ever visibly move.
-    nonisolated private func bucket(_ magnitudes: [Float]) -> [Double] {
-        let count = GlowInput.bandCount
-        var bands = [Double](repeating: 0, count: count)
-        let usable = magnitudes.count
-
-        for band in 0..<count {
-            let lower = Int(pow(Double(usable), Double(band) / Double(count)))
-            let upper = max(lower + 1, Int(pow(Double(usable), Double(band + 1) / Double(count))))
-            let slice = magnitudes[min(lower, usable - 1)..<min(upper, usable)]
-            guard !slice.isEmpty else { continue }
-
-            let mean = Double(slice.reduce(0, +)) / Double(slice.count) * windowGain
-            bands[band] = Loudness.normalised(
-                amplitude: mean, boost: Double(band) * Loudness.tiltPerBand
+        let channels = Int(first.mNumberChannels)
+        if channels >= 2 {
+            for index in stride(from: 0, to: sampleCount - 1, by: channels) {
+                leftSamples.append(samples[index])
+                rightSamples.append(samples[index + 1])
+            }
+        } else if buffers.count >= 2, let secondData = buffers[1].mData {
+            let second = UnsafeBufferPointer(
+                start: secondData.assumingMemoryBound(to: Float.self),
+                count: min(sampleCount, Int(buffers[1].mDataByteSize) / MemoryLayout<Float>.size)
             )
+            leftSamples.append(contentsOf: samples.prefix(second.count))
+            rightSamples.append(contentsOf: second)
+        } else {
+            leftSamples.append(contentsOf: samples)
+            rightSamples.append(contentsOf: samples)
         }
-        return bands
-    }
 
-    /// Bands a voice occupies, of the eight the spectrum is split into. The lowest two are
-    /// bass and the top two are air and cymbals; what carries a vocal is in between.
-    nonisolated private static let midBands = 2...5
-    /// How far the mid bands must jump over the previous buffer to count as something entering.
-    nonisolated private static let midOnsetRise: Double = 0.045
-    /// Nothing counts as a second onset until this long after the last, so one entry is one
-    /// event rather than a burst of them.
-    nonisolated private static let midOnsetGap: TimeInterval = 0.2
-
-    nonisolated private func midBandRise(_ bands: [Double]) -> Double {
-        guard bands.count > Self.midBands.upperBound else { return 0 }
-        let level = bands[Self.midBands].reduce(0, +) / Double(Self.midBands.count)
-        let rise = level - previousMidLevel
-        previousMidLevel = level
-        return rise
-    }
-
-    /// Publishes one buffer's numbers, unscaled.
-    ///
-    /// Deliberately no gain riding here. It used to divide each band by the loudest band in
-    /// the same buffer, which guaranteed that some band was always at full scale no matter
-    /// how quiet the music was, so the bars could never all drop together and the effect had
-    /// no dynamics at all. Levelling now happens once, in `GlowDynamics`, which runs per
-    /// displayed frame and therefore knows how much time has passed.
-    nonisolated private func publish(energy: Double, bands: [Double]) {
-        let level = Loudness.normalised(amplitude: energy)
+        let size = SpectrumFrameAnalyzer.fftSize
+        if leftSamples.count > size * 2 {
+            leftSamples.removeFirst(leftSamples.count - size * 2)
+            rightSamples.removeFirst(rightSamples.count - size * 2)
+        }
+        guard leftSamples.count >= size, spectrum != nil else { return }
 
         let now = Date()
-        let elapsed = now.timeIntervalSince(lastPublish)
-        lastPublish = now
+        guard let frame = spectrum?.analyse(
+            left: Array(leftSamples.suffix(size)),
+            right: Array(rightSamples.suffix(size)),
+            at: now.timeIntervalSinceReferenceDate
+        ) else { return }
 
-        // A sharp rise over the previous buffer is a transient. Buffers land about every
-        // 21 ms, which is quick enough to catch one; making it *visible* is the shaper's job.
-        let rise = level - previousEnergy
-        previousEnergy = level
-        beatLevel = rise > 0.06 ? 1 : max(0, beatLevel - elapsed * 6)
-
-        // Separately, a rise in the mid bands only. Voices and leads live there, while the kick
-        // and the hats that dominate a full-spectrum onset do not, so this fires far less often
-        // and means something more specific: something new has entered the middle of the mix.
-        let midRise = midBandRise(bands)
-        let onset: (Date, Double)? = {
-            guard midRise > Self.midOnsetRise, now.timeIntervalSince(lastMidOnset) > Self.midOnsetGap else { return nil }
-            lastMidOnset = now
-            return (now, midRise)
-        }()
-
-        let analysis = Analysis(energy: level, bands: bands, beat: beatLevel)
+        // Deliberately no gain riding here. Levelling happens once, in `GlowDynamics`, which runs
+        // per displayed frame and therefore knows how much time has passed.
         DispatchQueue.main.async { [weak self] in
-            self?.current = analysis
-            if let onset { self?.onVocalOnset?(onset.0, onset.1) }
+            self?.current = frame.analysis
+            self?.onVoiceLevel?(now, frame.voiceLevel)
         }
     }
 }

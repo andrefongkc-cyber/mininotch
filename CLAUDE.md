@@ -71,7 +71,8 @@ MinNotch --capture-notch out.png [--collapsed] [--tab system] [--glow bars|off] 
                                  [--sample-shelf] [--output-sheet] [--sample-weather]
                                  [--sample-power] [--keep-open]
 MinNotch --check-lyrics "Khalid" "8TEEN" 229                      # LRCLIBClient + LRCParser
-MinNotch --check-lyric-sync [--out f]                             # matching lyrics to the audio
+MinNotch --check-lyric-sync [--out f]                             # matching lyrics to the audio, synthetic
+MinNotch --check-lyric-sync --audio f.mp3 --lrc f.lrc --shifts 0,0.5 [--peaks]   # …and a real song, old method beside it
 MinNotch --check-stats 5                                          # CPU/GPU/memory/network
 MinNotch --check-audio 8 [--out f]                                # Core Audio tap
 MinNotch --check-glow 2 [--source step|fallback|tempo]            # glow shaping chain, tempo grid
@@ -839,18 +840,36 @@ both and fades with `isVisible` rather than being inserted, because an inserted 
 final layout on its first frame and would jump ahead of the growing box. There is no album art
 placement: the artwork is drawn still, on purpose.
 
-**Lyrics are matched to the audio by listening for a voice, not by matching beats.**
-`LyricsSyncCalibrator` exists because the player's clock is right and the *file* is wrong: LRC
-timings differ between sources by a second or more. General onset matching cannot fix that, since
-a busy mix has an onset every beat and a two second search window then locks onto the drums. A
-line that starts after a five second gap in the lyrics is the exception: something enters there
-that was not there before, and it is a voice. So only those lines count, only the strongest
-mid-band onset near each one is kept (`AudioAnalyzer.onVocalOnset`, bands 2-5), and the answer is
-the median across at least three of them, refused outright when they disagree by more than 0.25 s
-and clamped to two seconds either way. `--check-lyric-sync` feeds it synthetic tracks with a known
-offset, drums throughout, and jitter on the entries; it recovers the offset to a hundredth of a
-second, and refuses an instrumental. That check caught a five-second threshold being a two-second
-one, which had made every ordinary line an "entry".
+**Lyrics are matched to the audio by lining every line up with the singing at once.** The player's
+clock is right and the *file* is wrong: LRCLIB alone holds a dozen uploads of one song, each a
+slightly different length. `LyricsSyncCalibrator` takes the tap's `voiceLevel` (the centre of the
+stereo image, 300 Hz to 4 kHz, less the sides, from `SpectrumFrameAnalyzer`), works out each
+moment's rise (the next 0.12 s against the 0.25 s before), and keeps it on the track's clock in
+50 ms bins. Every offset within ±2 s is scored at once: the rise at each sung line's start moved by
+that offset, weighted by nearness, lines after a pause counting up to three times, less any rise
+inside an instrumental break. It answers only when the best offset is clear of every other by
+0.45 dB a line, when line starts stand 3.5 standard errors above random moments of the same audio
+(`significance`), when nothing up to 12 s out fits better (`isBestFarAndWide`, a song's four bar
+repeat sits about 9 s away), and once the answer has held while two more lines were heard. A
+remembered answer (`LyricsSyncMemory`, hashed per track and file) applies from the first line of
+the next play. The calibrator changes ninety times a second, so it is `@ObservationIgnored` and
+views read `lyricsSync`, a summary published only when it changes.
+
+It replaced a method that took the strongest jump in the 94 Hz to 1.5 kHz bands near each line
+after a five second gap. Those bands hold the kick, snare and bass as much as the voice, and the
+band comes back after a break before the singer does, so it locked onto the drums: on a real song
+it moved on-time lyrics by +0.49 s and was half a second wrong on four of the five files it
+answered, which is what "sometimes accurate, sometimes behind, sometimes ahead" was. Every
+threshold above was set from `--check-lyric-sync --audio song.mp3 --lrc song.lrc --shifts …`,
+which decodes a file through the live analysis and moves the lyric file by known amounts; the
+right answer moves with the shift whatever the song's true offset is. On the one sung song
+available (Life Is a Highway, a video version 27.25 s out), 9 of 9 files within reach came out
+right to 0.05 s, answered once each and never changed; 7 of 7 too far out and 21 of 21 lyric files
+against instrumentals were refused. It answers late, two to three minutes into a song, because it
+waits to be sure; the memory is what makes that acceptable. Only one sung song has been through it,
+so its thresholds are the first thing to revisit when a report comes in: `log show --predicate
+'subsystem == "com.minnotch.MinNotch"' --info` prints every answer with its margin and
+significance, and nothing about what played. `--check-lyric-sync` alone runs the synthetic cases.
 
 **A glow that moves with nothing playing is worse than one that freezes.** `GlowFallbackSource`
 used to breathe while playback was paused, so that the light never looked dead. In use that reads
@@ -860,7 +879,10 @@ verified by two captures 1.2 s apart being byte-identical, and Settings > Ambien
 live meter of what the tap is hearing so "is this real" has an answer that is not a guess.
 
 **Lyric timing is only as good as its timestamp.** `NowPlayingController` stamps the
-capture time on the queue that read the player, not on main after the hop. An Apple Event
+capture time on the queue that read the player, not on main after the hop. Each read still carries
+its own error, so a poll that disagrees with the running clock by under a quarter second moves it
+a third of the way (`smoothedPosition`) instead of resetting it, which kept the highlight from
+twitching twice a second; a larger difference is a seek or a stall and is taken at once. An Apple Event
 round trip is a hundred milliseconds or more, and timestamping on arrival makes every later
 extrapolation that much late, which shows up as the lyric highlight trailing the vocal.
 `lyricsTime(at:)` adds the user's offset on top and is separate from `elapsed(at:)` so the
