@@ -28,8 +28,8 @@ else cloning this. `codesign -dv` on the built app must show `flags=0x10000(runt
 `TeamIdentifier`; an ad-hoc build shows `flags=0x2(adhoc)` and means signing has broken. What
 that changed, and what it did not:
 
-1. The signature is stable across rebuilds, so TCC grants should now survive a build rather
-   than resetting every time. Not yet confirmed by watching a grant survive one.
+1. The signature is stable across rebuilds, so TCC grants survive a build. Confirmed on 2026-10-02
+   for Accessibility: granted, rebuilt, relaunched, still trusted.
 2. **The audio tap works.** Signing, `ENABLE_RESOURCE_ACCESS_AUDIO_INPUT = YES` and asking
    from the foreground together fixed it: `--check-audio` received audio on 8 of 8 checks
    against a real sound, with energy 0.59 and live band values. The FFT, banding and onset
@@ -542,6 +542,17 @@ An ad-hoc build is signed without the hardened runtime flag (`codesign -dv` show
 the hardened runtime, and a Core Audio tap app then carries this entitlement, as AudioCap does.
 Do not add App Sandbox to get it: Audio Input lives under Hardened Runtime too, and MinNotch
 assumes it is unsandboxed. An explicit build setting beats the file's `app-sandbox` `false`.
+
+**Old builds leave entries behind that a switch cannot fix.** Every differently signed build
+(each ad-hoc one before signing, and each copy at another path) adds its own MinNotch row to
+Privacy & Security, and macOS matched against a stale one: the user switched MinNotch on, re-added
+it with +, and `--check-keys` still said `accessibility trusted: false`. `tccutil reset
+Accessibility com.minnotch.MinNotch` cleared seven of them; then the HUDs pane's Allow… (which
+calls `AXIsProcessTrustedWithOptions` with the prompt, so it is the running copy that is listed)
+and one switch fixed it. That reset changes the user's privacy settings, so it is theirs to run.
+`SystemKeyInterceptor` logs every key it sees and what it did (`Key volumeUp: taken`) at info
+level; read them with `/usr/bin/log`, not `log`, which in zsh is a shell built-in that silently
+does something else. Confirmed against real key presses on 2026-10-02, not only simulated ones.
 
 **Never test permissions by running the binary directly.** A process started from a shell has
 the terminal as its responsible process, so TCC judges the request against the terminal and

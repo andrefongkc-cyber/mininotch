@@ -32,7 +32,7 @@ at last. Notarisation still needs a paid membership nobody is buying.
 1. Answer the user on macOS 13 (Platforms below). They were asked and have not decided.
 2. A test target. Nothing is verified automatically across more than a hundred files, and the
    Swift 6 migration is exactly the kind of change one would have caught.
-3. Confirm a granted permission survives a rebuild (listed under Blocking below).
+3. ~~Confirm a granted permission survives a rebuild~~ Done 2026-10-02 (Accessibility).
 4. Watch for reports against 0.3.0, released 2026-09-23. It shipped at the user's request
    without these being tried by hand, so they are the first place to look: the drag-and-drop
    in Settings > Layout, the calendar against a real calendar, repeat and favourite against a
@@ -69,9 +69,9 @@ at last. Notarisation still needs a paid membership nobody is buying.
       Settings, so the running copy is the one put in the list.
 - [x] Volume and brightness HUD narrower ("just shrink it down width wise"): Bar Below Notch
       393 to 233 points, Inline and Ring 417 to 321; heights unchanged. `--hud-style` captures it.
-- [ ] Apple's overlay still showing: this copy is not trusted for Accessibility
-      (`--check-keys`: trusted false, tap not installed). The user has to re-add MinNotch in
-      Privacy & Security > Accessibility; the app picks the grant up within two seconds.
+- [x] Apple's overlay still showing: seven stale MinNotch entries in Accessibility, from older
+      differently signed builds. The user ran `tccutil reset Accessibility com.minnotch.MinNotch`,
+      then Allow… and one switch; real volume and brightness presses are now taken (logged).
 - [x] Workplan entries done long ago but still unticked: undated reminders, shelf multi-drag and
       AirDrop, weather; Focus marked dropped.
 
@@ -153,7 +153,8 @@ The user's first round on 0.3, with screenshots. In the order they are being don
 
       What that leaves open:
 
-      - [ ] Confirm a TCC grant actually survives a rebuild now, instead of assuming it.
+      - [x] Confirm a TCC grant actually survives a rebuild now, instead of assuming it. Done
+            2026-10-02 for Accessibility: still trusted after a rebuild and relaunch.
       - [x] The audio tap works. Signing alone was not enough: the request also has to be made
             from the foreground, since macOS shows the prompt only to the active app and
             `AudioHardwareCreateProcessTap` blocks rather than refusing. `ForegroundPrompt` now

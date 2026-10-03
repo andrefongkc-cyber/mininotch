@@ -137,6 +137,7 @@ final class SystemKeyInterceptor {
 
         self.tap = tap
         self.source = source
+        AppLog.app.notice("Key tap installed")
         return true
     }
 
@@ -163,6 +164,7 @@ final class SystemKeyInterceptor {
         // The system switches off a tap whose callback was slow, or while secure input is on.
         // Switch it back on, or the keys would quietly go back to showing Apple's overlay.
         if type == .tapDisabledByTimeout || type == .tapDisabledByUserInput {
+            AppLog.app.notice("Key tap switched off by the system (\(type == .tapDisabledByTimeout ? "timeout" : "secure input", privacy: .public)); switching it back on")
             if let tap { CGEvent.tapEnable(tap: tap, enable: true) }
             return Unmanaged.passUnretained(event)
         }
@@ -172,10 +174,18 @@ final class SystemKeyInterceptor {
               let press = Self.press(from: nsEvent)
         else { return Unmanaged.passUnretained(event) }
 
+        // Which keys arrive and what became of them, by name only, for when "Apple's overlay
+        // still shows" needs telling apart from "the key never reached the tap".
         if press.isDown {
-            guard wantsKey?(press.key) == true, perform?(press) == true else {
+            guard wantsKey?(press.key) == true else {
+                AppLog.app.info("Key \(String(describing: press.key), privacy: .public): left to macOS, its indicator is off")
                 return Unmanaged.passUnretained(event)
             }
+            guard perform?(press) == true else {
+                AppLog.app.info("Key \(String(describing: press.key), privacy: .public): left to macOS, the level could not be set")
+                return Unmanaged.passUnretained(event)
+            }
+            AppLog.app.info("Key \(String(describing: press.key), privacy: .public): taken")
             if !heldKeys.contains(press.key) { heldKeys.append(press.key) }
             return nil
         }
