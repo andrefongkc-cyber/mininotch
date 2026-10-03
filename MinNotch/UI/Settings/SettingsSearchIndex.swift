@@ -87,7 +87,7 @@ enum SettingsSearchIndex {
         .init(tab: .huds, section: "Show in the Notch", title: "Brightness", subtitle: "", symbolName: "sun.max"),
         .init(tab: .huds, section: "Show in the Notch", title: "Keyboard Backlight", subtitle: "", symbolName: "keyboard"),
         .init(tab: .huds, section: "System Overlay", title: "Hide the System Overlay", subtitle: "Show only MinNotch's volume and brightness indicator instead of both. Works for whichever of those two is switched on above.", symbolName: "rectangle.slash"),
-        .init(tab: .huds, section: "System Overlay", title: "Accessibility Access Needed", subtitle: "Turn on MinNotch in Privacy & Security > Accessibility. Until then Apple's overlay still appears. After installing a new copy of MinNotch, remove it from the list and add it again.", symbolName: "exclamationmark.triangle"),
+        .init(tab: .huds, section: "System Overlay", title: "Accessibility Access Needed", subtitle: "Click Allow, then turn on MinNotch in the list macOS shows. If it is already on and this message stays, that entry is for an older copy: remove it with the minus button, then click Allow again.", symbolName: "exclamationmark.triangle"),
         .init(tab: .huds, section: "Presentation", title: "Show on the Lock Screen", subtitle: "Volume and brightness over the lock screen too. Uses a private part of macOS, so a future version may stop it working.", symbolName: "lock.display"),
         .init(tab: .huds, section: "Presentation", title: "Style", subtitle: "", symbolName: "rectangle.on.rectangle"),
         .init(tab: .huds, section: "Presentation", title: "Dismiss After", subtitle: "How long the indicator stays on screen after the last change.", symbolName: "timer"),

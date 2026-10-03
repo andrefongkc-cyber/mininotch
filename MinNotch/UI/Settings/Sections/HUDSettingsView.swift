@@ -73,11 +73,17 @@ struct HUDSettingsView: View {
 
                     SettingsRow(
                         title: "Accessibility Access Needed",
-                        subtitle: "Turn on MinNotch in Privacy & Security > Accessibility. Until then Apple's overlay still appears. After installing a new copy of MinNotch, remove it from the list and add it again.",
+                        subtitle: "Click Allow, then turn on MinNotch in the list macOS shows. If it is already on and this message stays, that entry is for an older copy: remove it with the minus button, then click Allow again.",
                         systemImage: "exclamationmark.triangle"
                     ) {
-                        Button("Open Settings") { SystemKeyInterceptor.openAccessibilitySettings() }
-                            .controlSize(.small)
+                        // Asking, not just opening the pane: the request is what puts this copy, with
+                        // this signature, into the list. An entry added by hand, or left by an older
+                        // build, can be switched on and still not match the copy that is running.
+                        Button("Allow…") {
+                            coordinator.requestAccessibility()
+                            SystemKeyInterceptor.openAccessibilitySettings()
+                        }
+                        .controlSize(.small)
                     }
                 }
             }
