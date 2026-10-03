@@ -1,6 +1,6 @@
 # MinNotch workplan
 
-Status: doing the 2026-10-02 batch (audio tap only while playing, lyric timing that drifts ahead and behind, can Up Next be read some other way); next: the user tries "After 0.4" by hand, then 0.5.
+Status: 2026-10-02 batch done and pushed (tap only while playing, Keep the Notch Open, lyric timing rebuilt, Up Next answered), unreleased; next: the user listens to lyrics and tries these by hand, decides on the Up Next offer, then 0.5.
 
 Living document. Update the checkboxes as work lands. `CLAUDE.md` holds the architecture
 rules and the traps; this file holds the sequence.
@@ -51,7 +51,13 @@ at last. Notarisation still needs a paid membership nobody is buying.
       singing (centre channel, voice range), with refusals for anything unclear, a memory per
       track, and a smoothed playback clock. Real song: 9/9 right to 0.05 s, 28/28 wrong cases
       refused. Only one sung song tested; it answers 2-3 minutes in. Needs real listening.
-- [ ] Up Next: is there any API that gives Music's real queue? Answer the user.
+- [x] Up Next: is there any API that gives Music's real queue? No. MusicKit's `SystemMusicPlayer`,
+      which reads the Music app's queue on iOS, is `@available(macOS, unavailable)` in the macOS 26.5
+      SDK; `ApplicationMusicPlayer` is MinNotch's own player, not Music's. Music's scripting
+      dictionary has `current playlist`, `shuffle enabled` and `shuffle mode`, and nothing for Up
+      Next or Playing Next. MediaRemote's queue calls are private and gated by an entitlement on
+      recent macOS. Offered instead: bring Up Next back as the playlist's order, checked against
+      what actually plays next rather than trusting `shuffle enabled`. Awaiting the user.
 - [x] Keep the Notch Open: ⌃⌥P (Settings > Shortcuts) holds the open panel on its display; the
       pin appears in the top bar while held and lets go on a click. Placeable in Layout.
       `--check-keep-open` passes; needs trying with two displays.
