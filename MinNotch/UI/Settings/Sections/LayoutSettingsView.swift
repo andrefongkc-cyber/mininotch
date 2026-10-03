@@ -190,7 +190,7 @@ struct LayoutSettingsView: View {
     /// while their setting is on.
     private var topBarCatalogue: [TopStripItem] {
         NotchWidgetRegistry.shownTabs(settings).map(TopStripItem.init)
-            + [.settings, .battery]
+            + [.settings, .battery, .keepOpen]
             + (settings.advanced.showDebugButtons ? [.whatsNew, .tutorial] : [])
     }
 

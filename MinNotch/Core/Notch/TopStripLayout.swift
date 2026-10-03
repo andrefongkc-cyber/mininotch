@@ -55,7 +55,8 @@ struct TopStripLayout: Equatable {
 
     /// The two lists with anything that is not showing removed, each item once, any tab that is
     /// on neither side added to the end of the left, and any debug button that is on neither side
-    /// added to the start of the right.
+    /// added to the start of the right. Keep Open joins the start of the right the same way
+    /// while the panel is being kept open, so the way to let it go is always on screen.
     ///
     /// A tab can be missing from both lists after a hand-edited settings file, or when a later
     /// version adds a tab the saved arrangement has never heard of. Either way a feature that is
@@ -67,7 +68,8 @@ struct TopStripLayout: Equatable {
         trailing: [TopStripItem],
         availableTabs: [NotchTab],
         showsBattery: Bool,
-        showsDebug: Bool
+        showsDebug: Bool,
+        showsKeepOpen: Bool = false
     ) -> (leading: [TopStripItem], trailing: [TopStripItem]) {
         // A single tab has nothing to switch between, so the bar shows no tabs at all.
         let showsTabs = availableTabs.count > 1
@@ -93,6 +95,9 @@ struct TopStripLayout: Equatable {
             let missing = [TopStripItem.whatsNew, .tutorial].filter { !seen.contains($0) }
             right.insert(contentsOf: missing, at: 0)
         }
+        if showsKeepOpen, !seen.contains(.keepOpen) {
+            right.insert(.keepOpen, at: 0)
+        }
         return (left, right)
     }
 
@@ -104,6 +109,7 @@ struct TopStripLayout: Equatable {
         availableTabs: [NotchTab],
         batteryWidth: CGFloat?,
         showsDebug: Bool,
+        showsKeepOpen: Bool = false,
         panelWidth: CGFloat,
         cutoutWidth: CGFloat
     ) -> TopStripLayout {
@@ -112,7 +118,8 @@ struct TopStripLayout: Equatable {
             trailing: trailing,
             availableTabs: availableTabs,
             showsBattery: batteryWidth != nil,
-            showsDebug: showsDebug
+            showsDebug: showsDebug,
+            showsKeepOpen: showsKeepOpen
         )
         let capacity = flankCapacity(panelWidth: panelWidth, cutoutWidth: cutoutWidth)
 
@@ -177,12 +184,15 @@ struct TopStripLayout: Equatable {
         showsDebug: Bool,
         cutoutWidth: CGFloat
     ) -> CGFloat {
+        // Room for Keep Open too, which appears by itself while the panel is kept open: geometry
+        // is worked out from settings alone, and cannot know whether it is.
         let resolved = resolve(
             leading: leading,
             trailing: trailing,
             availableTabs: availableTabs,
             showsBattery: true,
-            showsDebug: showsDebug
+            showsDebug: showsDebug,
+            showsKeepOpen: true
         )
         let sequence = resolved.leading + resolved.trailing
         guard !sequence.isEmpty else { return 0 }

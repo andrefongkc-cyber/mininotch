@@ -184,6 +184,10 @@ struct AmbientLightingCard: View {
                     systemImage: "waveform"
                 ) {
                     AudioLevelMeter(analyzer: environment.audioAnalyzer)
+                        // The tap only listens while something plays; while this meter is
+                        // showing it listens anyway, so silence reads as silence.
+                        .onAppear { environment.beginAudioPreview() }
+                        .onDisappear { environment.endAudioPreview() }
                 }
             }
 

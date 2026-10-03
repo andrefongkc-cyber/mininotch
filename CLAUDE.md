@@ -69,7 +69,7 @@ MinNotch --capture-notch out.png [--collapsed] [--tab system] [--glow bars|off] 
                                  [--card compact|fullArtwork] [--controls shuffle,playPause,repeatMode]
                                  [--lyrics-sheet] [--sample-stats] [--shadow] [--closed-lyrics]
                                  [--sample-shelf] [--output-sheet] [--sample-weather]
-                                 [--sample-power]
+                                 [--sample-power] [--keep-open]
 MinNotch --check-lyrics "Khalid" "8TEEN" 229                      # LRCLIBClient + LRCParser
 MinNotch --check-lyric-sync [--out f]                             # matching lyrics to the audio
 MinNotch --check-stats 5                                          # CPU/GPU/memory/network
@@ -94,6 +94,7 @@ MinNotch --check-tab-order                                        # the swipe st
 MinNotch --check-temps                                            # every temperature sensor, and the three the System tab shows
 MinNotch --check-stats-history                                    # the graphs' history survives the System tab closing
 MinNotch --check-power [seconds]                                  # charger in, Mac use, battery, from the SMC
+MinNotch --check-keep-open                                        # Keep the Notch Open: holds, lets go, pin, shortcut default
 ```
 
 `--capture-notch` grew three options for the animated effects. `--glow off` disables the
@@ -887,6 +888,32 @@ armed, or everything already connected arrives as news at launch.
 `elapsed + offset + audio correction - latency`, so seeking to a line's timestamp directly would
 land that far from the line. `seek(toLyricsTime:)` takes the difference between the two clocks
 and undoes it.
+
+**The audio tap listens only while something plays.** Both of its users want music: the glow
+stands still with nothing playing, and lyrics exist only while a song does. It used to run for as
+long as Follow the Beat or Fix Timing Automatically was on, about 6% of a core analysing silence.
+`AppEnvironment.applyAudioAnalysisSetting` now starts it on `NowPlayingController.onPlayingChange`
+and pauses it 20 seconds after playback stops (`audioIdleGrace`, which rides out a skip or a
+pause). The pause is `AudioAnalyzer.pause()`, not `stop()`: `stop()` clears a recorded failure so
+that switching the setting off and on asks again, and a pause that did that would re-prompt a
+refused permission at every song. The Ambient Lighting meter keeps it listening while it is on
+screen (`beginAudioPreview`), playing or not. The output latency is kept across a pause
+(`hasMeasuredLatency`), so lyric compensation does not drop out for the moment a tap takes to
+start. Idle with nothing playing measured 0.2 to 0.3% after, against about 6% before. Siri's
+`corespeechd` holds a tap of its own, so `pmset -g assertions` showing an `AudioTap` is not proof
+MinNotch is listening: check the PID it was created for.
+
+**Keep the Notch Open holds the panel on the display it is open on.** ⌃⌥P by default (Settings >
+Shortcuts), or the top bar's Keep Open pin, which can be placed in Layout and appears by itself
+while the panel is kept, so letting go is always on screen. `NotchViewModel.isKeptOpen` stops the
+pointer leaving and a click on the panel from closing it; `collapse()` clears it, so anything that
+closes the panel on purpose lets it go and it can never be stuck. `NotchWindowManager.toggleKeepOpen`
+picks the panel that is open, else the one under the pointer. In Follow the Pointer mode the one
+notch already stays put while open, so a kept panel stays on its display while the pointer works
+on another. A new shortcut's default reaches settings saved before it through
+`ShortcutSettings.knownActions`: an action missing from it gets its default once, unless the combo
+is taken, because a cleared shortcut and an unknown one are otherwise the same missing key.
+`--check-keep-open` covers all of it.
 
 **The clipboard is the one sampler that does not stop when nobody is looking.** Every other
 polling service is reference counted to the view that displays it, because nothing is lost by

@@ -223,6 +223,8 @@ enum DebugWindowCapture {
             midway = Double(arguments[i + 1])
         }
         if expanded && midway == nil { viewModel.expand() }
+        // `--keep-open` holds the panel open, which puts its pin in the top bar.
+        if expanded && midway == nil && arguments.contains("--keep-open") { viewModel.setKeptOpen(true) }
         // The track-change drop below the pill. Held for longer than the real one, so the
         // capture lands while it is still out.
         if arguments.contains("--peek") { viewModel.peek(for: 60) }

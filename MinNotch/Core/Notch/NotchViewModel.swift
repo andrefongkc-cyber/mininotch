@@ -30,6 +30,12 @@ final class NotchViewModel {
     /// collapsing the panel out from under someone who is typing loses what they typed.
     var isInteractionLocked = false
 
+    /// Kept open on purpose, by the Keep the Notch Open shortcut or the top bar's pin: the
+    /// pointer leaving does not close it, and neither does a click on the panel. Anything that
+    /// closes it on purpose (a swipe up, the shortcut that toggles it, a button that opens a
+    /// window) also lets it go, so it can never be stuck open.
+    private(set) var isKeptOpen = false
+
     var selectedTab: NotchTab {
         didSet {
             guard oldValue != selectedTab else { return }
@@ -106,6 +112,7 @@ final class NotchViewModel {
                 ? TopStripLayout.batteryWidth(showPercentage: settings.battery.showPercentage)
                 : nil,
             showsDebug: settings.advanced.showDebugButtons,
+            showsKeepOpen: isKeptOpen,
             panelWidth: expandedPanelWidth,
             cutoutWidth: geometry.collapsedSize.width
         )
@@ -136,8 +143,21 @@ final class NotchViewModel {
 
     func collapse() {
         cancelPendingWork()
+        isKeptOpen = false
         guard state != .collapsed else { return }
         setState(.collapsed)
+    }
+
+    /// Opens and holds the panel, or lets it go. Letting go closes it unless the pointer is
+    /// over it, the same as if the pointer had just left.
+    func setKeptOpen(_ keep: Bool) {
+        if keep {
+            expand()
+            isKeptOpen = true
+        } else {
+            isKeptOpen = false
+            if !isHovering { collapse() }
+        }
     }
 
     func toggle() {
@@ -211,12 +231,12 @@ final class NotchViewModel {
     }
 
     private func scheduleCloseIfNeeded() {
-        guard !isInteractionLocked else { return }
+        guard !isInteractionLocked, !isKeptOpen else { return }
         guard settings.general.closeOnMouseExit, state == .expanded else { return }
         // A short grace period stops the panel snapping shut when the pointer crosses a
         // gap between two subviews.
         let work = DispatchWorkItem { [weak self] in
-            guard let self, !self.isHovering, !self.isInteractionLocked else { return }
+            guard let self, !self.isHovering, !self.isInteractionLocked, !self.isKeptOpen else { return }
             self.collapse()
         }
         hoverOpenWork = work
@@ -225,7 +245,7 @@ final class NotchViewModel {
 
     /// Click on the collapsed pill.
     func clicked() {
-        guard settings.general.clickToOpen else { return }
+        guard settings.general.clickToOpen, !isKeptOpen else { return }
         toggle()
     }
 }

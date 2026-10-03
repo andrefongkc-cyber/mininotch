@@ -15,6 +15,7 @@ enum HotkeyAction: String, CaseIterable, Identifiable {
     case toggleShelf
     case quickNote
     case startTimer
+    case keepOpen
 
     var id: String { rawValue }
 
@@ -28,6 +29,7 @@ enum HotkeyAction: String, CaseIterable, Identifiable {
         case .toggleShelf: return "Toggle Shelf"
         case .quickNote: return "New Quick Note"
         case .startTimer: return "Start Timer"
+        case .keepOpen: return "Keep the Notch Open"
         }
     }
 
@@ -41,13 +43,14 @@ enum HotkeyAction: String, CaseIterable, Identifiable {
         case .toggleShelf: return "tray.full"
         case .quickNote: return "note.text"
         case .startTimer: return "timer"
+        case .keepOpen: return "pin"
         }
     }
 
     /// Feature that must be enabled for this action to do anything.
     var requiredFlag: FeatureFlag? {
         switch self {
-        case .toggleNotch, .openSettings: return nil
+        case .toggleNotch, .openSettings, .keepOpen: return nil
         case .playPause, .nextTrack, .previousTrack: return .nowPlaying
         case .toggleShelf: return .shelf
         case .quickNote: return .quickNotes
@@ -57,11 +60,21 @@ enum HotkeyAction: String, CaseIterable, Identifiable {
 
     var isAvailable: Bool { requiredFlag?.isEnabled ?? true }
 
-    /// ⌃⌥N is unclaimed by macOS and by the common apps that would conflict.
+    /// ⌃⌥N and ⌃⌥P are unclaimed by macOS and by the common apps that would conflict.
     static let defaultBindings: [String: KeyCombo] = [
         HotkeyAction.toggleNotch.rawValue: KeyCombo(
             keyCode: UInt32(kVK_ANSI_N),
             modifierFlags: NSEvent.ModifierFlags([.control, .option]).rawValue
-        )
+        ),
+        HotkeyAction.keepOpen.rawValue: KeyCombo(
+            keyCode: UInt32(kVK_ANSI_P),
+            modifierFlags: NSEvent.ModifierFlags([.control, .option]).rawValue
+        ),
+    ]
+
+    /// Every action there was before `knownActions` was saved, for settings files older than it.
+    static let actionsBeforeKnownActions: [String] = [
+        "toggleNotch", "openSettings", "playPause", "nextTrack", "previousTrack",
+        "toggleShelf", "quickNote", "startTimer",
     ]
 }

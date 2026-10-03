@@ -150,6 +150,22 @@ final class NotchWindowManager {
         controller.viewModel.toggle()
     }
 
+    /// Keeps the open panel open, on whichever display it is open on, or lets it go.
+    ///
+    /// The panel already stays on its display while it is open, even when the notch follows the
+    /// pointer between displays; what closes it is the pointer leaving. So the target is the
+    /// panel that is open, the one just clicked, and only with none open the one under the
+    /// pointer, which opens. Pressed again, every kept panel is let go.
+    func toggleKeepOpen() {
+        let kept = controllers.values.filter { $0.viewModel.isKeptOpen }
+        guard kept.isEmpty else {
+            kept.forEach { $0.viewModel.setKeptOpen(false) }
+            return
+        }
+        let open = controllers.values.first { $0.viewModel.state == .expanded }
+        (open ?? preferredController())?.viewModel.setKeptOpen(true)
+    }
+
     func peekAll(duration: TimeInterval = 2.0) {
         controllers.values.forEach { $0.viewModel.peek(for: duration) }
     }

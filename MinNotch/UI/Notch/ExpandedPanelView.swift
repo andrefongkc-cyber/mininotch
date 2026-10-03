@@ -123,6 +123,16 @@ struct ExpandedPanelView: View {
             }
         } else if item == .battery {
             battery
+        } else if item == .keepOpen {
+            NotchIconButton(
+                systemImage: viewModel.isKeptOpen ? "pin.fill" : "pin",
+                help: viewModel.isKeptOpen ? "Let the notch close again" : "Keep the notch open",
+                accent: settings.appearance.resolvedAccent,
+                isActive: viewModel.isKeptOpen,
+                width: buttonWidth
+            ) {
+                viewModel.setKeptOpen(!viewModel.isKeptOpen)
+            }
         } else if item == .whatsNew {
             NotchIconButton(
                 systemImage: item.layoutSymbol,

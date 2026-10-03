@@ -58,6 +58,10 @@ final class NowPlayingController {
 
     /// Fired when a genuinely different track starts. Wired to the sneak-peek animation.
     @ObservationIgnored var onTrackChange: ((NowPlayingTrack) -> Void)?
+    /// Fired when something starts or stops playing, from any source. Wired to the audio tap,
+    /// which only listens while there is something to hear.
+    @ObservationIgnored var onPlayingChange: ((Bool) -> Void)?
+    @ObservationIgnored private var lastReportedPlaying = false
 
     @ObservationIgnored private let appleMusic = AppleScriptMediaSource(descriptor: .appleMusic)
     @ObservationIgnored private let spotify = AppleScriptMediaSource(descriptor: .spotify)
@@ -208,6 +212,7 @@ final class NowPlayingController {
         // Hold the user's drag position until the seek round-trips.
         if isScrubbing, let scrubTarget { published.elapsed = scrubTarget }
         track = published
+        reportPlaying(snapshot.isPlaying)
 
         guard isNewTrack else { return }
         lastTrackIdentity = snapshot.trackIdentity
@@ -265,7 +270,14 @@ final class NowPlayingController {
         }
     }
 
+    private func reportPlaying(_ isPlaying: Bool) {
+        guard isPlaying != lastReportedPlaying else { return }
+        lastReportedPlaying = isPlaying
+        onPlayingChange?(isPlaying)
+    }
+
     private func clear() {
+        reportPlaying(false)
         upNext = .idle
         track = nil
         artwork = nil

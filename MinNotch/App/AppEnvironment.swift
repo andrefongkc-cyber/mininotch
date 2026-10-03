@@ -59,9 +59,13 @@ final class AppEnvironment {
         battery.onPowerSourceChange = { [weak self] isPluggedIn in
             self?.postPowerSourceNotification(isPluggedIn)
         }
+        // Measured when the tap starts, and still true while it is paused between songs.
         nowPlaying.audioLatencyProvider = { [weak self] in
-            guard let self, self.audioAnalyzer.isRunning else { return nil }
+            guard let self, self.audioAnalyzer.hasMeasuredLatency else { return nil }
             return self.audioAnalyzer.outputLatency
+        }
+        nowPlaying.onPlayingChange = { [weak self] _ in
+            self?.applyAudioAnalysisSetting()
         }
         // The tap hears a voice come in; the controller knows where the track was at that
         // moment. Neither knows about the other, so the wiring lives here.
@@ -361,7 +365,11 @@ final class AppEnvironment {
     ///
     /// The tap is the one part of the glow that costs anything real and needs a permission, so
     /// it runs only when something actually wants it: the glow following the beat, or the lyric
-    /// strip matching itself to the audio.
+    /// strip matching itself to the audio. And only while it can hear something worth hearing:
+    /// the glow stands still with nothing playing, and lyrics only exist while a song does. It
+    /// used to run for as long as either setting was on, which with nothing playing cost about
+    /// 6% of a core analysing silence. Now it starts when something plays and pauses
+    /// `audioIdleGrace` after playback stops.
     private func applyAudioAnalysisSetting() {
         let glow = settings.appearance.ambientGlow
         let glowWantsAudio = glow.isActive(isLowPower: battery.status.isLowPowerMode) && glow.isAudioReactive
@@ -371,15 +379,53 @@ final class AppEnvironment {
             && FeatureFlag.lyrics.isEnabled
         let wanted = glowWantsAudio || lyricsWantAudio
 
-        if wanted {
-            // `start()` refuses to run again after a failure, so a refused permission cannot
-            // turn into a prompt on every settings change.
-            audioAnalyzer.start()
-        } else {
+        guard wanted else {
+            audioIdleStop?.cancel()
+            audioIdleStop = nil
             // Stopping also clears the recorded failure, which makes switching the setting
             // off and on the natural way to ask again.
             audioAnalyzer.stop()
+            return
         }
+
+        if nowPlaying.track?.isPlaying == true || audioPreviewCount > 0 {
+            audioIdleStop?.cancel()
+            audioIdleStop = nil
+            // `start()` refuses to run again after a failure, so a refused permission cannot
+            // turn into a prompt on every settings change or every song.
+            audioAnalyzer.start()
+        } else if audioIdleStop == nil, audioAnalyzer.isRunning || audioAnalyzer.isStarting {
+            audioIdleStop = Task { @MainActor [weak self] in
+                try? await Task.sleep(for: Self.audioIdleGrace)
+                guard let self, !Task.isCancelled else { return }
+                self.audioIdleStop = nil
+                guard self.nowPlaying.track?.isPlaying != true, self.audioPreviewCount == 0 else { return }
+                // `pause()` keeps a recorded failure, so the next song cannot re-prompt, and
+                // leaves a start still waiting on its answer to finish.
+                self.audioAnalyzer.pause()
+            }
+        }
+    }
+
+    /// Settings views that show what the tap hears, such as the Ambient Lighting meter. They keep
+    /// it listening while they are on screen, playing or not, so the meter can prove it works.
+    @ObservationIgnored private var audioPreviewCount = 0
+    /// The pause that follows playback stopping, pending until it runs or playback resumes.
+    @ObservationIgnored private var audioIdleStop: Task<Void, Never>?
+
+    /// How long the tap keeps listening after playback stops. Long enough to ride out a pause, a
+    /// skip or the gap between two songs, which would otherwise tear the tap down and build it
+    /// again; short enough that a Mac left with nothing playing stops paying for it.
+    static let audioIdleGrace: Duration = .seconds(20)
+
+    func beginAudioPreview() {
+        audioPreviewCount += 1
+        applyAudioAnalysisSetting()
+    }
+
+    func endAudioPreview() {
+        audioPreviewCount = max(0, audioPreviewCount - 1)
+        applyAudioAnalysisSetting()
     }
 
     // MARK: Actions
@@ -398,6 +444,8 @@ final class AppEnvironment {
             nowPlaying.send(.nextTrack)
         case .previousTrack:
             nowPlaying.send(.previousTrack)
+        case .keepOpen:
+            notchWindows.toggleKeepOpen()
         case .toggleShelf, .quickNote, .startTimer:
             // Handled once the matching feature lands; the binding is already recordable.
             AppLog.app.debug("Action \(action.rawValue, privacy: .public) is not implemented yet")

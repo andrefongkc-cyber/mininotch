@@ -57,8 +57,10 @@ final class AudioAnalyzer {
 
     /// Seconds of buffering between the system reporting a playback position and the sound
     /// actually being audible. Large over Bluetooth and AirPlay, near zero over built-in
-    /// speakers.
+    /// speakers. Read when the tap starts, and kept while it is paused between songs.
     private(set) var outputLatency: TimeInterval = 0
+    /// True once `outputLatency` has been read at all this launch.
+    private(set) var hasMeasuredLatency = false
 
     // MARK: Audio-queue state
     //
@@ -162,6 +164,7 @@ final class AudioAnalyzer {
                     self.isStarting = false
                     self.isRunning = true
                     self.outputLatency = latency
+                    self.hasMeasuredLatency = true
                 }
             } catch let error as Failure {
                 self.teardown()
@@ -217,6 +220,18 @@ final class AudioAnalyzer {
         failure = nil
     }
 
+    /// Stops listening for now, keeping any recorded failure.
+    ///
+    /// For when nothing is playing, not for when the setting goes off. `stop()` clears the
+    /// failure so that switching the setting off and on asks again; a pause that did that would
+    /// turn a refused permission into a fresh prompt every time a song started.
+    func pause() {
+        guard !isStarting else { return }
+        teardown()
+        isRunning = false
+        current = nil
+    }
+
     /// Clears a recorded failure and tries again. Called from the Settings row, never
     /// automatically.
     func retry() {
@@ -229,6 +244,7 @@ final class AudioAnalyzer {
     /// Re-reads the output device's latency, after the device changes.
     func refreshLatency() {
         outputLatency = OutputLatency.current()
+        hasMeasuredLatency = true
     }
 
     // MARK: Core Audio setup

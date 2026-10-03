@@ -1,6 +1,6 @@
 # MinNotch workplan
 
-Status: "After 0.4" done and pushed (hidden virtual notch, no Dock flash, swipe order, System graphs kept, temperatures, charging power), unreleased; next: the user tries these by hand, then 0.5.
+Status: doing the 2026-10-02 batch (audio tap only while playing, lyric timing that drifts ahead and behind, can Up Next be read some other way); next: the user tries "After 0.4" by hand, then 0.5.
 
 Living document. Update the checkboxes as work lands. `CLAUDE.md` holds the architecture
 rules and the traps; this file holds the sequence.
@@ -39,6 +39,19 @@ at last. Notarisation still needs a paid membership nobody is buying.
    playing track, downloads, a device connecting, and the album-art bars with real music.
 
 ---
+
+## 2026-10-02 batch
+
+- [x] The audio tap runs only while something is playing, instead of for as long as Follow the
+      Beat or Fix Timing Automatically is on, and pauses 20 s after playback stops. Idle went from
+      about 6% of a core to 0.2-0.3%. Starting on play needs a real song to watch.
+- [ ] Lyric timing: "sometimes accurate, sometimes behind, sometimes ahead". Find what varies.
+- [ ] Up Next: is there any API that gives Music's real queue? Answer the user.
+- [x] Keep the Notch Open: ⌃⌥P (Settings > Shortcuts) holds the open panel on its display; the
+      pin appears in the top bar while held and lets go on a click. Placeable in Layout.
+      `--check-keep-open` passes; needs trying with two displays.
+- [x] Workplan entries done long ago but still unticked: undated reminders, shelf multi-drag and
+      AirDrop, weather; Focus marked dropped.
 
 ## After 0.4 (2026-09-30)
 
@@ -449,9 +462,10 @@ nothing.
 
 ## V2 — calendar and productivity
 
-- [ ] Reminders with no due date. Only dated ones appear, because the list is ordered by
-      time and an undated item has nowhere to sit.
-- [ ] Focus / Do Not Disturb toggle, plus adapting the UI to the active Focus mode.
+- [x] Reminders with no due date. Settings > Calendar > Show Reminders Without a Date (0.3)
+      lists them after everything that is due.
+- Focus / Do Not Disturb toggle: dropped by the user on 2026-09-24. macOS has no API to switch
+  Focus, so it would have been a Shortcut or a private call.
 - [x] Pomodoro and countdown timer, surfaced as a Live Activity. Built as one thing: a
       deadline-based countdown, with Pomodoro as a preset that decides what follows an
       interval. Settings > Timer. Cycle verified: work, short break, work, long break.
@@ -492,8 +506,9 @@ nothing.
       Dragging a link over the closed notch opens the tab; a file still opens the Shelf.
       `--check-links` verified real titles and icons for four sites, refused `file:` and
       `javascript:`, and read the list back from disk.
-- [ ] **Shelf polish.** Dragging several files out at once, and a Quick Share target.
-- [ ] Weather widget.
+- [x] **Shelf polish.** Dragging several files out at once, and AirDrop as the share target (0.4).
+- [x] Weather widget (0.4): current location or a typed city, Open-Meteo, the Weather tab and a
+      closed-pill indicator.
 - [x] System stats: CPU, GPU, memory, and network, sampled only while the System tab is
       open, with a refresh interval in Settings > Advanced
 - [ ] Quick-launch row for favourite apps.
