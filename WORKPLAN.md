@@ -1,6 +1,6 @@
 # MinNotch workplan
 
-Status: after 0.5: pill flank fix pushed (unreleased), Temperature Units popup waiting on what fails; next: likely 0.5.1 with both.
+Status: after 0.5: pill flank fix pushed (unreleased); next: 0.5.1 with it when the user wants a release.
 
 Living document. Update the checkboxes as work lands. `CLAUDE.md` holds the architecture
 rules and the traps; this file holds the sequence.
@@ -46,8 +46,8 @@ at last. Notarisation still needs a paid membership nobody is buying.
       was an `EmptyView`, which took no width, so the row was centred and slid half a flank left,
       under the camera housing. Found from the user's screenshot against macOS's own notch width
       (185 points, correct). Fixed and captured with `--no-media`. Not released.
-- [ ] Settings > Weather > Temperature Units "doesn't work". Asked what happens: does the menu not
-      open, or does the choice not change anything?
+- [x] Settings > Weather > Temperature Units "doesn't work": not a bug. The user then saw the
+      weather showing; the units only show somewhere once Weather or the temperatures are on.
 
 ## 2026-10-02 batch
 
