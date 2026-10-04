@@ -1,6 +1,6 @@
 # MinNotch workplan
 
-Status: 0.5.0 released 2026-10-03 (GitHub v0.5.0); next: the user tries 0.5 by hand (lyric timing, combined Shelf, Keep Open on two displays), decides on the Up Next offer.
+Status: after 0.5: pill flank fix pushed (unreleased), Temperature Units popup waiting on what fails; next: likely 0.5.1 with both.
 
 Living document. Update the checkboxes as work lands. `CLAUDE.md` holds the architecture
 rules and the traps; this file holds the sequence.
@@ -39,6 +39,15 @@ at last. Notarisation still needs a paid membership nobody is buying.
    playing track, downloads, a device connecting, and the album-art bars with real music.
 
 ---
+
+## After 0.5 (2026-10-03)
+
+- [x] Battery cut off on the MacBook Pro's closed pill: with nothing playing the empty left flank
+      was an `EmptyView`, which took no width, so the row was centred and slid half a flank left,
+      under the camera housing. Found from the user's screenshot against macOS's own notch width
+      (185 points, correct). Fixed and captured with `--no-media`. Not released.
+- [ ] Settings > Weather > Temperature Units "doesn't work". Asked what happens: does the menu not
+      open, or does the choice not change anything?
 
 ## 2026-10-02 batch
 

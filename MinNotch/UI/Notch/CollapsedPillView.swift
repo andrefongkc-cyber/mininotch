@@ -228,12 +228,18 @@ struct CollapsedPillView: View {
     ///
     /// Guarded on the side being empty rather than only on its width: a view in a zero-width
     /// frame is not clipped by SwiftUI, so an unguarded thumbnail spills outside the pill.
+    ///
+    /// An empty side is a zero-size clear view, never `EmptyView`. Padding and a frame on an
+    /// `EmptyView` take no space at all, so with nothing playing the empty left side vanished,
+    /// the row came out a whole flank narrower than its frame and was centred in it, and the
+    /// cutout and everything right of it moved half a flank left. On a MacBook Pro that put the
+    /// battery's percentage and half its glyph under the camera housing, where nothing shows.
     @ViewBuilder
     private func flank(_ side: CollapsedPillContent.PillSide) -> some View {
         let showing = content.items(on: side)
 
         if showing.isEmpty {
-            EmptyView()
+            Color.clear.frame(width: 0, height: 0)
         } else {
             HStack(spacing: CollapsedPillContent.itemSpacing) {
                 ForEach(showing) { indicator in

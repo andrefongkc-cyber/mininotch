@@ -223,6 +223,12 @@ enum DebugWindowCapture {
             midway = Double(arguments[i + 1])
         }
         if expanded && midway == nil { viewModel.expand() }
+        // `--no-media` captures with nothing playing, so a side whose indicators are all about the
+        // song is empty: the case that slid the pill off the camera housing.
+        if arguments.contains("--no-media") {
+            settings.media.enabled = false
+        }
+
         // `--hud-style floatingPill|notchInline|progressRing` shows a volume indicator in that style,
         // with `--collapsed`. A long dismiss delay keeps it up until the capture.
         if let index = arguments.firstIndex(of: "--hud-style"), arguments.indices.contains(index + 1),

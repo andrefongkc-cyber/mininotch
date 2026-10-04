@@ -69,7 +69,7 @@ MinNotch --capture-notch out.png [--collapsed] [--tab system] [--glow bars|off] 
                                  [--card compact|fullArtwork] [--controls shuffle,playPause,repeatMode]
                                  [--lyrics-sheet] [--sample-stats] [--shadow] [--closed-lyrics]
                                  [--sample-shelf] [--output-sheet] [--sample-weather]
-                                 [--sample-power] [--keep-open] [--hud-style floatingPill]
+                                 [--sample-power] [--keep-open] [--hud-style floatingPill] [--no-media]
 MinNotch --check-lyrics "Khalid" "8TEEN" 229                      # LRCLIBClient + LRCParser
 MinNotch --check-lyric-sync [--out f]                             # matching lyrics to the audio, synthetic
 MinNotch --check-lyric-sync --audio f.mp3 --lrc f.lrc --shifts 0,0.5 [--peaks]   # …and a real song, old method beside it
@@ -318,6 +318,14 @@ Scripts/          build, run, preview
   overflow is centred, and content is pushed past the pill's edge onto transparency: that is
   what made the pill artwork render with a slice missing. `.padding().frame(width:)` is the
   order that adds up.
+- **`EmptyView` takes no space, whatever frame it is given.** The pill's empty flank was an
+  `EmptyView` with `.padding().frame(width: flankWidth)`, and both modifiers vanish with it. With
+  nothing playing the left side was empty, the row came out a flank narrower than its frame and
+  was centred, and the cutout spacer and the right flank slid half a flank left: on the user's
+  MacBook Pro the battery's percentage and half its glyph sat under the camera housing. A screenshot
+  showed it (it includes the pixels under the housing); a photo only showed the cut. An empty side
+  is now a zero-size `Color.clear`, which keeps the frame. `--capture-notch --collapsed --extended
+  --no-media` is the case: with a 179-point notch the battery must start right of x = 851.
 - **A zero-width frame does not clip in SwiftUI.** Hiding pill content by giving it a
   zero-width frame leaves the content drawn, centred, spilling outside the shape. Guard the
   view itself, not just its size.
