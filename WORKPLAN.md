@@ -1,6 +1,6 @@
 # MinNotch workplan
 
-Status: 2026-10-02 batch done and pushed (tap only while playing, Keep the Notch Open, lyric timing rebuilt, Up Next answered), unreleased; next: the user listens to lyrics and tries these by hand, decides on the Up Next offer, then 0.5.
+Status: 0.5.0 released 2026-10-03 (GitHub v0.5.0); next: the user tries 0.5 by hand (lyric timing, combined Shelf, Keep Open on two displays), decides on the Up Next offer.
 
 Living document. Update the checkboxes as work lands. `CLAUDE.md` holds the architecture
 rules and the traps; this file holds the sequence.
@@ -41,6 +41,10 @@ at last. Notarisation still needs a paid membership nobody is buying.
 ---
 
 ## 2026-10-02 batch
+
+- [x] 0.5.0 released on 2026-10-03 as GitHub release `v0.5.0`, signed with the personal team like
+      0.2.0 to 0.4.0. Notes cover everything since 0.4.0; README markers removed, Shelf screenshot
+      replaces the Links one.
 
 - [x] The audio tap runs only while something is playing, instead of for as long as Follow the
       Beat or Fix Timing Automatically is on, and pauses 20 s after playback stops. Idle went from
@@ -619,9 +623,9 @@ Decisions still open, but nothing in the code should make these harder.
 - [ ] **App Store build.** Cannot include the MediaRemote bridge. Plan is a compile-time flag
       that removes `MediaRemoteBridge` and makes `SystemNowPlayingSource` report unavailable,
       leaving Apple Music and Spotify working.
-- [~] **Direct build.** 0.4.0 is released (2026-09-24, GitHub release `v0.4.0`), and 0.3.0
-      the day before; both signed with the personal team as 0.2.0 was, which the user chose over
-      `--anonymous`. The next shared build needs new `ReleaseNotes.latest` notes and `id`
+- [~] **Direct build.** 0.5.0 is released (2026-10-03, GitHub release `v0.5.0`), after 0.4.0
+      (2026-09-24) and 0.3.0 (2026-09-23); all signed with the personal team as 0.2.0 was, which
+      the user chose over `--anonymous`. The next shared build needs new `ReleaseNotes.latest` notes and `id`
       and a `MARKETING_VERSION` bump first. `Scripts/release.sh` builds Release and wraps it in
       `dist/MinNotch-<version>.dmg`, with `--anonymous` to re-sign ad-hoc so the download does
       not carry the signer's Apple ID, and `Scripts/release-notes.sh` for the GitHub release

@@ -10,7 +10,7 @@ stats, a file shelf, saved links, a timer.
 
 ## Download
 
-[**MinNotch 0.4.0**](https://github.com/andrefongkc-cyber/mininotch/releases/latest) — open the
+[**MinNotch 0.5.0**](https://github.com/andrefongkc-cyber/mininotch/releases/latest) — open the
 DMG, drag MinNotch to Applications. It runs in the background: no Dock icon and nothing in ⌘-Tab,
 just the notch and an optional menu bar icon. Quit it from that icon or from Settings > About.
 
@@ -20,14 +20,15 @@ Anyway**. That is once per version.
 
 Requires macOS 14.4 or later, Apple silicon or Intel; on anything older, macOS refuses to open
 it. A Mac with no notch gets a virtual one in the same place, and on an external monitor it can
-stay out of sight until the pointer reaches the top middle of the screen _(next)_.
+stay out of sight until the pointer reaches the top middle of the screen.
 
 ## What it does
 
 **Now Playing** for Apple Music, Spotify, VLC, and a system-wide fallback for other apps. Album
 art, a scrubber you can drag to seek, transport controls with shuffle, repeat and favourite, three
 card styles, and synced lyrics that highlight the word being sung, with a full scrolling list you
-can click to jump to a line.
+can click to jump to a line. With the system audio permission, lyrics that run early or late are
+lined up with the singing, and each song's correction is remembered.
 
 ![The closed pill](Docs/images/closed-pill.png)
 
@@ -52,11 +53,12 @@ album art. With the system audio permission granted it follows what is actually 
 it, it keeps the song's own tempo from Music, a tempo you tap out, or one of its own. With nothing
 playing it stays still.
 
-**Link Shelf.** Drag a link onto the notch or press ⌘V, and it is kept with its page title and
-site icon. Click to open it, or copy it back. Links sit in the Shelf tab under your files, and
-⌘V there holds files you copied in Finder too _(next)_.
+**Shelf.** Park files and links on the notch. Drag files onto it and drag them out somewhere else
+later, several at once, or send them with AirDrop. Drag a link onto it or press ⌘V and it is kept
+with its page title and site icon; click to open it, or copy it back. ⌘V also holds files you
+copied in Finder.
 
-![The Links tab](Docs/images/links.png)
+![The Shelf tab, files above links](Docs/images/shelf.png)
 
 **Calendar and Reminders** for the week or month, with per-calendar visibility, tick-off, and a
 quick-add field. Click a day to see what is on it, and use the arrows to move between weeks or
@@ -78,14 +80,13 @@ in the closed pill.
 
 Also:
 
-- **Shelf** to park files on the notch and drag them out somewhere else, several at once, or send
-  them with AirDrop.
+- **Keep the notch open** with ⌃⌥P, on whichever display it is on, while you work on another.
 - **Sound output**: switch between speakers, AirPods and displays, and set the volume, from
   the Now Playing card.
 - **System stats**: CPU, GPU, memory, network, and the charge of connected AirPods and accessories,
-  each with a graph of the last five minutes, plus the chip, battery and SSD temperatures _(next)_.
+  each with a graph of the last five minutes, plus the chip, battery and SSD temperatures.
   Plugged in, it shows what the charger is giving, what the Mac uses, and how much of it is going
-  into the battery _(next)_.
+  into the battery.
 - **Volume, brightness and keyboard backlight** shown at the notch, optionally instead of Apple's
   own overlay, which MinNotch hides by taking those keys before macOS sees them (needs
   Accessibility). They also show over the lock screen, as does the song with its controls.
@@ -123,8 +124,8 @@ the time. Animation is what costs, and the ambient glow costs about a quarter of
 long as it is visible — on a ten-core M4, roughly 3% of the machine. Everything that polls samples
 only while its widget is on screen, except system stats, which take a reading every five seconds
 in the background so their graphs keep the last five minutes, about a quarter of a percent of one
-core _(next)_. The audio tap runs only if you switch on Follow the Beat or Fix Timing
-Automatically.
+core. The audio tap runs only if you switch on Follow the Beat or Fix Timing Automatically, and
+only while something is playing.
 
 ## Permissions
 

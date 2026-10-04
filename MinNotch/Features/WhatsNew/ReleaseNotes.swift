@@ -27,119 +27,95 @@ struct ReleaseNotes {
     var removed: [ReleaseNote]
 
     static let latest = ReleaseNotes(
-        id: "0.4.0",
-        version: "0.4",
+        id: "0.5.0",
+        version: "0.5",
         added: [
             ReleaseNote(
-                symbol: "text.below.photo",
-                title: "Lyrics With the Notch Closed",
-                detail: "The line being sung sits just under the closed notch while a song plays, the current word lit up.",
-                howTo: "Click the button beside the lyrics, or Settings > Media > Show Lyrics When Closed."
+                symbol: "tray.full",
+                title: "Files and Links Together",
+                detail: "The Shelf holds your files and your saved links in one tab, files on top with AirDrop, links underneath. Drop either anywhere on it, or press ⌘V to add files you copied in Finder or a link you copied.",
+                howTo: "The Shelf tab. Shelf and Links each still switch on and off in Settings > Layout."
             ),
             ReleaseNote(
-                symbol: "textformat",
-                title: "The Song in the Closed Notch",
-                detail: "The closed notch shows the song's title beside its cover. Prefer the artist? You can switch.",
-                howTo: "Settings > Layout > Song Shows. Drag Song in the Arrangement to move it."
+                symbol: "pin",
+                title: "Keep the Notch Open",
+                detail: "Press ⌃⌥P and the open panel stays open on whichever display it is on, even while you work on another. Press it again, or click the pin in the top bar, to let it close.",
+                howTo: "Change the shortcut in Settings > Shortcuts. The pin can also live in the top bar: Settings > Layout."
             ),
             ReleaseNote(
-                symbol: "cloud.sun",
-                title: "Weather",
-                detail: "The forecast in its own tab, and the temperature in the closed notch if you put it there.",
-                howTo: "Settings > Weather. Uses your location, or a city you choose."
+                symbol: "bolt",
+                title: "Charging Power",
+                detail: "While plugged in, the System tab shows what the charger is giving, what the Mac is using, and how much of it is going into the battery.",
+                howTo: "On by default. Settings > Battery > Show Charging Power."
             ),
             ReleaseNote(
-                symbol: "video",
-                title: "Your Next Meeting",
-                detail: "A countdown to your next event in the closed notch. Zoom, Meet, Teams, Webex and FaceTime meetings get a Join button in the Calendar tab.",
-                howTo: "On by default. Settings > Layout > Upcoming Meetings."
+                symbol: "thermometer.medium",
+                title: "Temperatures",
+                detail: "The chip, battery and SSD temperatures in the System tab, in the units you chose for the weather.",
+                howTo: "Settings > Advanced > Show Temperatures."
             ),
             ReleaseNote(
-                symbol: "airplayaudio",
-                title: "Choose Where Sound Plays",
-                detail: "Switch between speakers, AirPods and displays, and set the volume, from the Now Playing card.",
-                howTo: "Click the button beside the song's title."
-            ),
-            ReleaseNote(
-                symbol: "lock.display",
-                title: "Music and Volume on the Lock Screen",
-                detail: "The song, with play, pause and skip, and the volume and brightness indicator show at the notch while your Mac is locked.",
-                howTo: "On by default. Settings > Media > Controls on the Lock Screen, and Settings > HUDs > Show on the Lock Screen."
-            ),
-            ReleaseNote(
-                symbol: "timer",
-                title: "Sneak Peek Length",
-                detail: "Choose how long the new song stays on screen when it changes.",
-                howTo: "Settings > Media > Sneak Peek Length."
-            ),
-            ReleaseNote(
-                symbol: "sparkles",
-                title: "New in Settings",
-                detail: "Settings marks what is new in each update, and the sidebar shows which sections have something new.",
+                symbol: "chart.xyaxis.line",
+                title: "Graphs in the System Tab",
+                detail: "Each reading has a graph of the last five minutes under it, kept while the tab is closed.",
                 howTo: nil
+            ),
+            ReleaseNote(
+                symbol: "eye.slash",
+                title: "Hide the Notch on Other Displays",
+                detail: "On a monitor without a notch, MinNotch can stay out of sight until the pointer reaches the top middle of the screen.",
+                howTo: "Settings > Advanced > Hide Until Hovered."
             )
         ],
         improved: [
             ReleaseNote(
-                symbol: "tray.full",
-                title: "A Better Shelf",
-                detail: "Select several files and drag them out together, or send them with AirDrop.",
-                howTo: "Click to select, with ⌘ or ⇧ for more. AirDrop is at the end of the shelf."
+                symbol: "quote.bubble",
+                title: "Lyrics on Time",
+                detail: "Fix Timing Automatically now lines the lyrics up with the singing instead of the drums, which pushed some songs early and others late. It waits until it is sure, then remembers each song, so the next play is right from the first line.",
+                howTo: "Settings > Media > Fix Timing Automatically."
+            ),
+            ReleaseNote(
+                symbol: "speaker.wave.2",
+                title: "A Smaller Volume Indicator",
+                detail: "The volume and brightness indicator takes up much less of the menu bar.",
+                howTo: nil
+            ),
+            ReleaseNote(
+                symbol: "hand.raised",
+                title: "Hiding Apple's Volume Overlay",
+                detail: "If Apple's overlay still shows beside MinNotch's, Settings now asks macOS for the access it needs instead of only opening System Settings.",
+                howTo: "Settings > HUDs > Allow…"
+            ),
+            ReleaseNote(
+                symbol: "leaf",
+                title: "Lighter on the Battery",
+                detail: "MinNotch only listens to the music while something is playing, rather than all the time.",
+                howTo: nil
+            ),
+            ReleaseNote(
+                symbol: "dock.rectangle",
+                title: "No More Dock Flash",
+                detail: "MinNotch no longer shows a Dock icon for a moment when it starts.",
+                howTo: nil
             ),
             ReleaseNote(
                 symbol: "hand.draw",
-                title: "Easier Rearranging",
-                detail: "Icons land where you let go, with a marker showing the spot. Moving one left is now as easy as moving it right.",
-                howTo: "Settings > Layout."
-            ),
-            ReleaseNote(
-                symbol: "rectangle.split.3x1",
-                title: "A Real Preview",
-                detail: "Layout's picture of the closed notch shows your actual cover, song and battery.",
+                title: "Swiping Between Tabs",
+                detail: "Swiping goes through the tabs in the order the top bar shows them, including ones you moved.",
                 howTo: nil
             ),
             ReleaseNote(
-                symbol: "circle.dashed",
-                title: "An Even Glow",
-                detail: "The glow around the closed notch is as bright down the sides as along the bottom.",
+                symbol: "battery.100percent",
+                title: "Clearer System Tab",
+                detail: "The battery temperature is labelled, and changing numbers roll instead of blurring together.",
                 howTo: nil
-            ),
-            ReleaseNote(
-                symbol: "shadow",
-                title: "Panel Shadow",
-                detail: "The shadow no longer makes the panel come apart as it opens.",
-                howTo: "Settings > Appearance > Panel Shadow."
-            ),
-            ReleaseNote(
-                symbol: "metronome",
-                title: "The Glow Keeps the Song's Tempo",
-                detail: "New setups follow the song's own BPM from Music by default.",
-                howTo: "Settings > Appearance > Tempo."
-            ),
-            ReleaseNote(
-                symbol: "waveform",
-                title: "Playing Indicator",
-                detail: "It shows whenever music plays, even with the album art beside it.",
-                howTo: nil
-            ),
-            ReleaseNote(
-                symbol: "checklist",
-                title: "Permissions in the Tutorial",
-                detail: "Every permission is listed, with Allow buttons for Accessibility and system audio as well.",
-                howTo: nil
-            ),
-            ReleaseNote(
-                symbol: "quote.bubble",
-                title: "Clearer Lyrics Timing",
-                detail: "Match to the Audio is now Fix Timing Automatically, because it moves the lyrics, not the glow.",
-                howTo: "Settings > Media > Fix Timing Automatically."
             )
         ],
         removed: [
             ReleaseNote(
-                symbol: "text.line.first.and.arrowtriangle.forward",
-                title: "Up Next, for Now",
-                detail: "Music told MinNotch that playlists were shuffling when they were not, so the list was often wrong.",
+                symbol: "link",
+                title: "The Separate Links Tab",
+                detail: "Links now sit in the Shelf tab, under your files.",
                 howTo: nil
             )
         ]
