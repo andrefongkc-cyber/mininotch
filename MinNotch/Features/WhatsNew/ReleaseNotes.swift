@@ -97,7 +97,7 @@ final class WhatsNewCoordinator: NSObject, NSWindowDelegate {
             backing: .buffered,
             defer: false
         )
-        window.title = "What's New in MinNotch"
+        window.title = "What's New in MiniNotch"
         window.titleVisibility = .hidden
         window.titlebarAppearsTransparent = true
         window.isMovableByWindowBackground = true

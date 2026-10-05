@@ -13,7 +13,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         // the notch feel like part of the system rather than a running application.
         NSApp.setActivationPolicy(.accessory)
         environment.start()
-        AppLog.app.info("MinNotch started")
+        AppLog.app.info("MiniNotch started")
     }
 
     func applicationWillTerminate(_ notification: Notification) {

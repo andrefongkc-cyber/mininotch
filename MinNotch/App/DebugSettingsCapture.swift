@@ -3,7 +3,7 @@ import AppKit
 
 /// Prints what a Settings search matches, in ranked order.
 ///
-/// Run with `MinNotch --check-settings-search pomodoro`.
+/// Run with `MiniNotch --check-settings-search pomodoro`.
 ///
 /// Text rather than a screenshot on purpose. The Settings window cannot be captured here:
 /// `NavigationSplitView` and the sidebar's material come back as an empty white rectangle

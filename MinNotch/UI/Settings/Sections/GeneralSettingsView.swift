@@ -11,12 +11,12 @@ struct GeneralSettingsView: View {
             SettingsCard(
                 header: "Startup",
                 footer: LaunchAtLogin.isBlockedByUser
-                    ? "Login items for MinNotch are turned off in System Settings > General > Login Items."
+                    ? "Login items for MiniNotch are turned off in System Settings > General > Login Items."
                     : nil
             ) {
                 SettingsRow(
                     title: "Launch at Login",
-                    subtitle: "Start MinNotch automatically when you log in.",
+                    subtitle: "Start MiniNotch automatically when you log in.",
                     systemImage: "power"
                 ) {
                     SettingsToggle(isOn: $settings.general.launchAtLogin)

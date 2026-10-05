@@ -141,7 +141,7 @@ final class LRCLIBClient: Sendable {
     /// LRCLIB asks clients to identify themselves so they can contact a misbehaving one.
     private var headers: [String: String] {
         let version = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "0"
-        return ["User-Agent": "MinNotch/\(version) (macOS notch utility)"]
+        return ["User-Agent": "MiniNotch/\(version) (macOS notch utility)"]
     }
 
     /// Fetches the exact-match endpoint and returns the lyric text worth using, if any. Calls

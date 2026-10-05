@@ -3,7 +3,7 @@ import AppKit
 
 /// Runs the glow's shaping chain headlessly and prints what each stage did.
 ///
-/// Run with `MinNotch --check-glow [seconds] [--source step|fallback] [--out file]`.
+/// Run with `MiniNotch --check-glow [seconds] [--source step|fallback] [--out file]`.
 ///
 /// The constants in `GlowDynamics.Tuning` are the entire feel of the effect, and there is no
 /// way to judge them from the glow on screen: a level pinned at the top and a level that

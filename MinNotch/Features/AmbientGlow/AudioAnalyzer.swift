@@ -163,7 +163,7 @@ final class AudioAnalyzer {
             self.endPrompt(granted: false)
             self.isStarting = false
             self.failure = .unsupported(
-                "The system did not answer the request to record audio within eight seconds. If no permission dialog appeared, allow MinNotch under Privacy & Security > Screen & System Audio Recording, then try again."
+                "The system did not answer the request to record audio within eight seconds. If no permission dialog appeared, allow MiniNotch under Privacy & Security > Screen & System Audio Recording, then try again."
             )
         }
     }
@@ -226,7 +226,7 @@ final class AudioAnalyzer {
         // Everything the machine is playing. Our own process is excluded so the effect
         // cannot feed back into the analysis.
         let description = CATapDescription(stereoGlobalTapButExcludeProcesses: [])
-        description.name = "MinNotch Ambient Lighting"
+        description.name = "MiniNotch Ambient Lighting"
         description.uuid = UUID()
         description.isPrivate = true
         // The tap must not silence what it is listening to.
@@ -248,7 +248,7 @@ final class AudioAnalyzer {
         }
 
         let description: [String: Any] = [
-            kAudioAggregateDeviceNameKey: "MinNotch Ambient Tap",
+            kAudioAggregateDeviceNameKey: "MiniNotch Ambient Tap",
             kAudioAggregateDeviceUIDKey: UUID().uuidString,
             // Private, so it never appears in Sound settings or other apps' device lists.
             kAudioAggregateDeviceIsPrivateKey: true,

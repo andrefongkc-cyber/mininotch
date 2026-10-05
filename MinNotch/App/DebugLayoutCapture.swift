@@ -4,7 +4,7 @@ import SwiftUI
 
 /// Renders the Layout pane's editors to images, in both appearances.
 ///
-/// Run with `MinNotch --capture-layout <dir> [--width 460]`.
+/// Run with `MiniNotch --capture-layout <dir> [--width 460]`.
 ///
 /// The Settings window itself cannot be captured (its split view comes back blank), so the
 /// editors are rendered on their own at the width a card gives them, over the card background.

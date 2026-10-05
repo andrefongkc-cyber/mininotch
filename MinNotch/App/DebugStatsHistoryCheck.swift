@@ -3,7 +3,7 @@ import Foundation
 
 /// Checks that the System tab's graphs keep their history when the tab is not open.
 ///
-/// Run with `MinNotch --check-stats-history`. Takes about 25 seconds.
+/// Run with `MiniNotch --check-stats-history`. Takes about 25 seconds.
 ///
 /// Plays out what the user does: the tab closed for a while, opened for a few seconds, closed
 /// again. The history must grow at the background rate while closed, faster while open, and

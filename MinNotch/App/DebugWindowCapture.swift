@@ -4,7 +4,7 @@ import SwiftUI
 
 /// Captures the notch as AppKit actually renders it, rather than as `ImageRenderer` draws it.
 ///
-/// Run with `MinNotch --capture-notch <file.png>`. `ImageRenderer` flattens a SwiftUI view
+/// Run with `MiniNotch --capture-notch <file.png>`. `ImageRenderer` flattens a SwiftUI view
 /// into one drawing context, which hides anything caused by separate layers being composited
 /// against a transparent window: edge seams, halos, and stray fills all disappear in an
 /// offscreen render and are plainly visible on screen. This builds the real `NotchPanel` with

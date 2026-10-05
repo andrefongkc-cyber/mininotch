@@ -1,6 +1,6 @@
-# MinNotch workplan
+# MiniNotch workplan
 
-Status: 0.6.0 released 2026-10-05 (GitHub v0.6.0); next: the user tries Notes by hand, Sparkle if wanted.
+Status: Sparkle and the MiniNotch rename done and pushed, unreleased; next: 0.7 ships both (first version that updates itself), the user backs up the update key.
 
 Living document. Update the checkboxes as work lands. `CLAUDE.md` holds the architecture
 rules and the traps; this file holds the sequence.
@@ -42,6 +42,16 @@ at last. Notarisation still needs a paid membership nobody is buying.
 
 ## After 0.5 (2026-10-03)
 
+- [x] Sparkle updates (2026-10-05): Sparkle 2.10 as a Swift package, an EdDSA key in the user's
+      keychain (account `mininotch`), `appcast.xml` in the repo pointing at GitHub release DMGs,
+      Check for Updates in the menu bar and Settings > About, and `Scripts/release.sh` signing each
+      DMG and writing the feed (`Scripts/appcast.sh`). Tested end to end with a separate bundle id:
+      0.6.90 updated itself to 0.6.91, and a tampered signature was refused. 0.7 is the first
+      version with it. The user should back up the key (see CLAUDE.md, Releases).
+- [x] Renamed to MiniNotch (2026-10-05), "app name only": the product, everything on screen, the
+      DMGs, every GitHub release's title, text and DMG name, the README and these notes. The bundle
+      id, Xcode project and source folder stay MinNotch; see CLAUDE.md. Accessibility stayed granted.
+
 - [x] 0.6.0 released on 2026-10-05 as GitHub release `v0.6.0`, signed with the personal team like
       0.2.0 to 0.5.0: the Notes tab and the pill flank fix.
 
@@ -73,7 +83,7 @@ at last. Notarisation still needs a paid membership nobody is buying.
       refused. Only one sung song tested; it answers 2-3 minutes in. Needs real listening.
 - [x] Up Next: is there any API that gives Music's real queue? No. MusicKit's `SystemMusicPlayer`,
       which reads the Music app's queue on iOS, is `@available(macOS, unavailable)` in the macOS 26.5
-      SDK; `ApplicationMusicPlayer` is MinNotch's own player, not Music's. Music's scripting
+      SDK; `ApplicationMusicPlayer` is MiniNotch's own player, not Music's. Music's scripting
       dictionary has `current playlist`, `shuffle enabled` and `shuffle mode`, and nothing for Up
       Next or Playing Next. MediaRemote's queue calls are private and gated by an entitlement on
       recent macOS. Offered instead: bring Up Next back as the playlist's order, checked against
@@ -89,7 +99,7 @@ at last. Notarisation still needs a paid membership nobody is buying.
       Settings, so the running copy is the one put in the list.
 - [x] Volume and brightness HUD narrower ("just shrink it down width wise"): Bar Below Notch
       393 to 233 points, Inline and Ring 417 to 321; heights unchanged. `--hud-style` captures it.
-- [x] Apple's overlay still showing: seven stale MinNotch entries in Accessibility, from older
+- [x] Apple's overlay still showing: seven stale MiniNotch entries in Accessibility, from older
       differently signed builds. The user ran `tccutil reset Accessibility com.minnotch.MinNotch`,
       then Allow… and one switch; real volume and brightness presses are now taken (logged).
 - [x] Workplan entries done long ago but still unticked: undated reminders, shelf multi-drag and
@@ -528,7 +538,7 @@ nothing.
 - [x] **Hide Apple's volume and brightness overlay on macOS 26.** The user still saw both
       overlays: on macOS 26 the overlay is not drawn by `OSDUIHelper` (it was suspended, state T,
       and the overlay still appeared). `SystemKeyInterceptor` now takes the volume, mute and
-      brightness keys with an event tap, `HUDCoordinator` sets the level and shows only MinNotch's
+      brightness keys with an event tap, `HUDCoordinator` sets the level and shows only MiniNotch's
       indicator. Needs Accessibility; HUDs pane warns and links to it when missing. Proven with
       `--check-keys --simulate --control`: a posted volume-up moved the volume 0 → 0.0625 with no
       tap, and not at all with the tap. Keyboard backlight keys are left to macOS.
@@ -537,7 +547,7 @@ nothing.
       starting it quietly with `launchctl kickstart` first if needed, instead of killing it after
       every key press. A suspended helper cannot draw and launchd does not replace it. Resumed when
       the setting goes off, on quit, and at any launch with the setting off, which undoes a crash.
-      Only engaged while at least one MinNotch indicator is on. `--check-osd` shows the state
+      Only engaged while at least one MiniNotch indicator is on. `--check-osd` shows the state
       change (S, T with the same PID, S again); not yet confirmed with a real volume key press.
 - [x] **Link shelf.** Links tab: drag a link or a text selection onto the panel, press ⌘V or
       Paste, and links are found with `NSDataDetector` (a bare domain is kept as HTTPS). Only
@@ -609,8 +619,8 @@ database, no accounts, no cookies, and no third-party dependencies. What did app
 - [x] Nothing user-identifying is logged. Every `privacy: .public` is an error string, an
       OSStatus, or an action name.
 - [ ] Re-audit after the sandbox is turned on, which changes the file and Apple Events story
-- [ ] Dependency scanning becomes real the moment Sparkle is added. There are no
-      third-party dependencies today, so there is nothing to scan.
+- [ ] Dependency scanning: Sparkle (2.10, pinned to 2.x in the project) is the one third-party
+      dependency since 2026-10-05. Watch its releases for security fixes; nothing scans it yet.
 
 ---
 
@@ -632,7 +642,7 @@ database, no accounts, no cookies, and no third-party dependencies. What did app
 
 Decisions still open, but nothing in the code should make these harder.
 
-- [ ] **Sandbox.** `Config/MinNotch.entitlements` has `app-sandbox` set to false for
+- [ ] **Sandbox.** `Config/MiniNotch.entitlements` has `app-sandbox` set to false for
       development, with the automation and calendar entitlements already listed. Turning the
       sandbox on will require temporary-exception entitlements for Apple Events to
       `com.apple.Music` and `com.spotify.client`.
@@ -643,10 +653,10 @@ Decisions still open, but nothing in the code should make these harder.
       (2026-10-03), 0.4.0 (2026-09-24) and 0.3.0 (2026-09-23); all signed with the personal team as 0.2.0 was, which
       the user chose over `--anonymous`. The next shared build needs new `ReleaseNotes.latest` notes and `id`
       and a `MARKETING_VERSION` bump first. `Scripts/release.sh` builds Release and wraps it in
-      `dist/MinNotch-<version>.dmg`, with `--anonymous` to re-sign ad-hoc so the download does
+      `dist/MiniNotch-<version>.dmg`, with `--anonymous` to re-sign ad-hoc so the download does
       not carry the signer's Apple ID, and `Scripts/release-notes.sh` for the GitHub release
-      description. Hardened runtime is on. Notarisation needs a paid membership; Sparkle for
-      updates is still to come.
+      description. Hardened runtime is on. Notarisation needs a paid membership. Sparkle updates
+      from 0.7 on: the release script signs the DMG and writes `appcast.xml`.
 - [ ] **Homebrew cask** once there is a notarised download.
 - [x] **What's New panel.** Built as a window, see V2 — customisation; About > Release Notes opens it.
 - [ ] **Monetisation.** Undecided. When decided, add a `.requiresPro` case to

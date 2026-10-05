@@ -390,7 +390,7 @@ struct CalendarWidgetView: View {
     /// A title field and a kind picker.
     ///
     /// Focusing it activates the app. The panel is non-activating by design, which means it
-    /// can take key status without MinNotch being frontmost, and keystrokes would go to
+    /// can take key status without MiniNotch being frontmost, and keystrokes would go to
     /// whatever app actually is. Typing has to be the one place that rule bends.
     private var quickAddRow: some View {
         HStack(spacing: 8) {
@@ -465,8 +465,8 @@ struct CalendarWidgetView: View {
                 .foregroundStyle(.white.opacity(0.8))
 
             Text(needsSystemSettings
-                 ? "Turn MinNotch on under Privacy & Security > Calendars."
-                 : "MinNotch reads your events to show what is coming up. Nothing leaves your Mac.")
+                 ? "Turn MiniNotch on under Privacy & Security > Calendars."
+                 : "MiniNotch reads your events to show what is coming up. Nothing leaves your Mac.")
                 .font(Typography.helper)
                 .foregroundStyle(.white.opacity(0.5))
                 .multilineTextAlignment(.center)

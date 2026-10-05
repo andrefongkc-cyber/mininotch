@@ -8,7 +8,7 @@ struct AppearanceSettingsView: View {
 
         SettingsPane(
             title: "Appearance",
-            subtitle: "MinNotch follows your Mac's light and dark appearance automatically."
+            subtitle: "MiniNotch follows your Mac's light and dark appearance automatically."
         ) {
             SettingsCard(header: "Accent") {
                 SettingsRow(

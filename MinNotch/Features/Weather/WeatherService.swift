@@ -31,7 +31,7 @@ final class WeatherService {
             case .off, .ready: return nil
             case .locating: return "Finding where you are…"
             case .loading: return "Loading the forecast…"
-            case .needsLocationAccess: return "Allow MinNotch to use your location, or choose a city in Settings > Weather."
+            case .needsLocationAccess: return "Allow MiniNotch to use your location, or choose a city in Settings > Weather."
             case .locationUnavailable(let reason), .failed(let reason): return reason
             case .needsCity: return "Choose a city in Settings > Weather."
             }
@@ -118,7 +118,7 @@ final class WeatherService {
             status = .needsLocationAccess
             return
         case .denied, .restricted:
-            status = .locationUnavailable("MinNotch is not allowed to use your location. Allow it in Privacy & Security > Location Services, or choose a city in Settings > Weather.")
+            status = .locationUnavailable("MiniNotch is not allowed to use your location. Allow it in Privacy & Security > Location Services, or choose a city in Settings > Weather.")
             return
         default:
             break
@@ -155,7 +155,7 @@ final class WeatherService {
                 guard let data, let report = OpenMeteo.report(from: data, placeName: placeName, fahrenheit: fahrenheit) else {
                     // A forecast already showing is kept; half an hour old is better than nothing.
                     if self.report == nil {
-                        self.status = .failed("The forecast could not be loaded. MinNotch will try again in half an hour.")
+                        self.status = .failed("The forecast could not be loaded. MiniNotch will try again in half an hour.")
                     }
                     return
                 }

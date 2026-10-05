@@ -158,6 +158,6 @@ final class SettingsStore {
     /// Suggested filename for an export.
     var exportFilename: String {
         let stamp = ISO8601DateFormatter().string(from: Date()).prefix(10)
-        return "MinNotch Settings \(stamp).minnotch"
+        return "MiniNotch Settings \(stamp).minnotch"
     }
 }

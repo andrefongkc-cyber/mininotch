@@ -24,7 +24,7 @@ struct WeatherSettingsView: View {
         ) {
             SettingsCard(
                 header: "Weather",
-                footer: "Forecasts come from Open-Meteo, which is free and needs no account. MinNotch sends it a location rounded to about a kilometre, and nothing else."
+                footer: "Forecasts come from Open-Meteo, which is free and needs no account. MiniNotch sends it a location rounded to about a kilometre, and nothing else."
             ) {
                 SettingsRow(
                     title: "Show Weather",
@@ -137,7 +137,7 @@ struct WeatherSettingsView: View {
         case .notDetermined:
             return "Uses Location Services, which macOS asks you about first. Or choose a city below instead."
         case .denied, .restricted:
-            return "Not allowed. Allow MinNotch in Privacy & Security > Location Services, or choose a city below."
+            return "Not allowed. Allow MiniNotch in Privacy & Security > Location Services, or choose a city below."
         default:
             return "The forecast follows the Mac. Turn this off to use the city below."
         }

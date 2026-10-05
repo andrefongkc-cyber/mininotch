@@ -3,7 +3,7 @@ import Foundation
 
 /// Reads the Mac's temperature sensors once and prints them.
 ///
-/// Run with `MinNotch --check-temps`.
+/// Run with `MiniNotch --check-temps`.
 ///
 /// The sensors are private and their names differ by chip, so this is how to see what a given
 /// Mac actually offers: every sensor the HID event system reports, then the three figures the

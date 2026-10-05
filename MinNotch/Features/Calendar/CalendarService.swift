@@ -82,7 +82,7 @@ final class CalendarService {
 
     /// Prompts for calendar access. Safe to call when already granted or denied.
     ///
-    /// The app has to be frontmost first. MinNotch is an accessory app with no Dock icon,
+    /// The app has to be frontmost first. MiniNotch is an accessory app with no Dock icon,
     /// and the notch panel is a non-activating panel specifically so that clicking it never
     /// steals focus, which means nothing here ever becomes the active app on its own. A TCC
     /// prompt raised by an app that is not frontmost is not reliably shown: the request

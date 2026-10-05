@@ -101,7 +101,7 @@ enum OnboardingFeature: String, CaseIterable, Identifiable {
         case .floatingWindow:
             return "Now Playing in a small window you can put anywhere. Handy on a monitor with no notch."
         case .launchAtLogin:
-            return "Start MinNotch when you log in, so the notch is always ready."
+            return "Start MiniNotch when you log in, so the notch is always ready."
         case .menuBarIcon:
             return "An icon in the menu bar for Settings and quitting."
         }
@@ -118,7 +118,7 @@ enum OnboardingFeature: String, CaseIterable, Identifiable {
         case .calendar:
             return "Asks for Calendar access the first time it opens."
         case .nowPlaying:
-            return "macOS asks to let MinNotch control Music or Spotify the first time one plays."
+            return "macOS asks to let MiniNotch control Music or Spotify the first time one plays."
         case .clipboardHistory:
             return "Kept in memory only. Copies an app marks as private, like passwords, are skipped."
         case .linkShelf:
@@ -268,7 +268,7 @@ enum OnboardingFeature: String, CaseIterable, Identifiable {
             settings.huds.replaceBrightnessHUD = isOn
             settings.huds.replaceKeyboardBacklightHUD = isOn
             // Without this, turning the HUDs on shows two indicators for every key press:
-            // Apple's and MinNotch's. It needs Accessibility, which the permissions page offers
+            // Apple's and MiniNotch's. It needs Accessibility, which the permissions page offers
             // next, and until that is allowed Apple's overlay simply keeps showing.
             settings.huds.suppressSystemOverlay = isOn
         case .gestures:

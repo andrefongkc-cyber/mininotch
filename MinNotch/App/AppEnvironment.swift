@@ -33,6 +33,7 @@ final class AppEnvironment {
     let clipboard = ClipboardHistoryService()
     let linkShelf = LinkShelfService()
     let notes = NotesService()
+    let updates = UpdateService()
     let timer = TimerService()
 
     @ObservationIgnored private(set) lazy var notchWindows = NotchWindowManager(environment: self)
@@ -116,6 +117,8 @@ final class AppEnvironment {
         clipboard.start(settings: settings)
         linkShelf.start(settings: settings)
         notes.load()
+        // Checks once a day in a release copy; does nothing in a Debug build.
+        updates.start()
         timer.start(settings: settings)
 
         notchWindows.start()

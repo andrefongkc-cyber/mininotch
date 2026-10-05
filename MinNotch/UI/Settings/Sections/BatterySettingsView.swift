@@ -55,7 +55,7 @@ struct BatterySettingsView: View {
 
             SettingsCard(
                 header: "Notifications",
-                footer: "MinNotch asks for notification permission the first time it needs to alert you."
+                footer: "MiniNotch asks for notification permission the first time it needs to alert you."
             ) {
                 SettingsRow(
                     title: "Low Battery Alert",

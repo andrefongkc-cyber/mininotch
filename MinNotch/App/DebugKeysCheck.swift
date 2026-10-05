@@ -4,7 +4,7 @@ import AppKit
 /// Checks everything about taking the volume and brightness keys that can be checked without
 /// pressing one.
 ///
-/// Run with `MinNotch --check-keys [--simulate] [--apply] [--out f]`, through `open -n -a` so Accessibility
+/// Run with `MiniNotch --check-keys [--simulate] [--apply] [--out f]`, through `open -n -a` so Accessibility
 /// is judged against the app and not the terminal.
 ///
 /// - Decodes a synthetic event for every key, down and up, with and without Shift and Option,

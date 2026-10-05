@@ -253,7 +253,7 @@ final class LinkShelfService {
 
     private static var headers: [String: String] {
         let version = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "0"
-        return ["User-Agent": "MinNotch/\(version) (macOS; link preview)", "Accept": "text/html,image/*"]
+        return ["User-Agent": "MiniNotch/\(version) (macOS; link preview)", "Accept": "text/html,image/*"]
     }
 
     // MARK: Persistence

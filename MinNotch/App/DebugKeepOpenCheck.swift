@@ -5,7 +5,7 @@ import AppKit
 /// letting it go closes it, that its pin shows in the top bar while it is kept, and that a
 /// settings file saved before the shortcut existed is given its default.
 ///
-/// Run with `MinNotch --check-keep-open`.
+/// Run with `MiniNotch --check-keep-open`.
 @MainActor
 enum DebugKeepOpenCheck {
     static let flag = "--check-keep-open"

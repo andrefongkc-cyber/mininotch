@@ -3,7 +3,7 @@ import Foundation
 
 /// Fetches a real forecast and prints what the widget would show.
 ///
-/// Run with `MinNotch --check-weather London` or `MinNotch --check-weather 51.5 -0.13`.
+/// Run with `MiniNotch --check-weather London` or `MiniNotch --check-weather 51.5 -0.13`.
 ///
 /// Over the network, through the same `BoundedHTTPClient` limits the app uses, so it proves the
 /// request is accepted and the response parses: the host allowance, the size cap, the Unix

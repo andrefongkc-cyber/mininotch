@@ -1,5 +1,5 @@
 #!/bin/bash
-# Build MinNotch and print only warnings/errors plus the final status.
+# Build MiniNotch and print only warnings/errors plus the final status.
 set -o pipefail
 cd "$(dirname "$0")/.." || exit 1
 CONFIG="${1:-Debug}"

@@ -8,7 +8,7 @@ struct ShortcutsSettingsView: View {
 
         SettingsPane(
             title: "Shortcuts",
-            subtitle: "Global shortcuts work from any app. MinNotch uses the system shortcut API, so no Accessibility permission is needed."
+            subtitle: "Global shortcuts work from any app. MiniNotch uses the system shortcut API, so no Accessibility permission is needed."
         ) {
             SettingsCard(header: "Global Shortcuts") {
                 SettingsRow(

@@ -3,7 +3,7 @@ import AppKit
 
 /// Checks the private window server calls behind the lock screen HUD, without locking.
 ///
-/// Run with `MinNotch --check-lock-screen`.
+/// Run with `MiniNotch --check-lock-screen`.
 ///
 /// Whether the HUD really appears over the lock screen can only be seen by locking the screen,
 /// which a tool cannot do and then undo. What a tool can check is everything short of that:

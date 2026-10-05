@@ -685,7 +685,7 @@ struct NowPlayingCardView: View {
 
     private var emptyStateHint: String {
         if AppleScriptRunner.shared.isAuthorizationDenied {
-            return "MinNotch needs permission to control Music and Spotify. Open Settings > Media."
+            return "MiniNotch needs permission to control Music and Spotify. Open Settings > Media."
         }
         return "Start playing something in Music, Spotify, or any app."
     }

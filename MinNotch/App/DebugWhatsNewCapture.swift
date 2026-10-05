@@ -4,7 +4,7 @@ import SwiftUI
 
 /// Captures the What's New window from a real window, scrolled to the top and to the bottom.
 ///
-/// Run with `MinNotch --capture-whats-new <dir>`. Writes nothing to settings or defaults, so
+/// Run with `MiniNotch --capture-whats-new <dir>`. Writes nothing to settings or defaults, so
 /// looking at the window does not mark the release as seen.
 @MainActor
 enum DebugWhatsNewCapture {

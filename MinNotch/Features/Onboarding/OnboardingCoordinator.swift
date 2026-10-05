@@ -90,7 +90,7 @@ final class OnboardingCoordinator: NSObject, NSWindowDelegate {
             backing: .buffered,
             defer: false
         )
-        window.title = "Welcome to MinNotch"
+        window.title = "Welcome to MiniNotch"
         window.titleVisibility = .hidden
         window.titlebarAppearsTransparent = true
         window.isMovableByWindowBackground = true

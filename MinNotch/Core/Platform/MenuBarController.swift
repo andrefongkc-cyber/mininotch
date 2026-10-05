@@ -29,7 +29,7 @@ final class MenuBarController {
         let item = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
         item.button?.image = NSImage(
             systemSymbolName: "rectangle.topthird.inset.filled",
-            accessibilityDescription: "MinNotch"
+            accessibilityDescription: "MiniNotch"
         )
         item.button?.image?.isTemplate = true
         item.menu = makeMenu()
@@ -71,9 +71,19 @@ final class MenuBarController {
         whatsNew.target = self
         menu.addItem(whatsNew)
 
+        if environment.updates.isAvailable {
+            let update = NSMenuItem(
+                title: "Check for Updates…",
+                action: #selector(checkForUpdates),
+                keyEquivalent: ""
+            )
+            update.target = self
+            menu.addItem(update)
+        }
+
         menu.addItem(.separator())
 
-        let quit = NSMenuItem(title: "Quit MinNotch", action: #selector(quit), keyEquivalent: "q")
+        let quit = NSMenuItem(title: "Quit MiniNotch", action: #selector(quit), keyEquivalent: "q")
         quit.target = self
         menu.addItem(quit)
 
@@ -83,5 +93,6 @@ final class MenuBarController {
     @objc private func toggleNotch() { environment.notchWindows.toggleFrontmost() }
     @objc private func openSettings() { environment.openSettings() }
     @objc private func openWhatsNew() { environment.whatsNew.present() }
+    @objc private func checkForUpdates() { environment.updates.checkForUpdates() }
     @objc private func quit() { environment.quit() }
 }

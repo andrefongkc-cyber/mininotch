@@ -1,4 +1,4 @@
-# MinNotch — working notes for Claude
+# MiniNotch — working notes for Claude
 
 A macOS menu-bar/notch utility. A borderless panel overlays the notch area: closed it is a
 thin black pill, hovering or clicking expands it into a panel of widgets. Comparable to
@@ -39,7 +39,17 @@ that changed, and what it did not:
 
 Anyone else building this has to set their own team, or signing fails.
 
-**MinNotch is a background agent.** `LSUIElement` is true in `Config/Info.plist` and
+**The app is MiniNotch; the code is still MinNotch.** Renamed on 2026-10-05, at the user's request,
+everywhere it shows: the product (`PRODUCT_NAME = MiniNotch`, so `MiniNotch.app` and a `MiniNotch`
+executable), every word on screen, the DMGs, the GitHub release titles, the README. Deliberately not
+renamed, because nothing shows them and changing them costs something: the bundle identifier
+`com.minnotch.MinNotch` (permissions, settings and Sparkle all key on it), the Xcode project, target
+and scheme, the `MinNotch/` source folder, the DerivedData folder that follows the project, and the
+floating window's saved frame name. The Notes file moved from `Application Support/MinNotch` to
+`MiniNotch`, carried across on first launch. `Scripts/run.sh` kills both executable names, since a
+copy built before the rename runs as `MinNotch`.
+
+**MiniNotch is a background agent.** `LSUIElement` is true in `Config/Info.plist` and
 `AppDelegate` sets `.accessory`, so it has no Dock icon and no place in ⌘-Tab; `lsappinfo` reports
 it as `UIElement`. The user wants it to stay that way. The only time it may become a regular app,
 with a Dock icon, is while macOS is actually showing it a permission prompt (`ForegroundPrompt`).
@@ -51,7 +61,7 @@ Scripts/build.sh          # build Debug, print only warnings/errors
 Scripts/run.sh            # build, kill any running copy, relaunch
 Scripts/preview.sh        # render notch views to PNGs in Previews/
 Scripts/audit-search.sh   # every Settings row is in the search index, and nothing stale is
-Scripts/release.sh        # Release build wrapped in dist/MinNotch-<version>.dmg
+Scripts/release.sh        # Release build wrapped in dist/MiniNotch-<version>.dmg
 Scripts/release.sh --anonymous   # …re-signed ad-hoc, carrying no team or Apple ID
 Scripts/release-notes.sh  # the same release notes as Markdown, for the GitHub release
 swift Scripts/make-icon.swift art.png   # artwork into AppIcon.appiconset, in Apple's grid
@@ -60,8 +70,8 @@ swift Scripts/make-icon.swift art.png   # artwork into AppIcon.appiconset, in Ap
 Debug-only command line flags on the binary itself, all `#if DEBUG`:
 
 ```bash
-MinNotch --render-previews <dir>                                  # what preview.sh calls
-MinNotch --capture-notch out.png [--collapsed] [--tab system] [--glow bars|off] [--debug]
+MiniNotch --render-previews <dir>                                  # what preview.sh calls
+MiniNotch --capture-notch out.png [--collapsed] [--tab system] [--glow bars|off] [--debug]
                                  [--hold 12] [--midway 0.14] [--extended] [--virtual]
                                  [--timer 12] [--width 460] [--right timer,settings,battery]
                                  [--paused] [--placements closed,open]
@@ -71,33 +81,34 @@ MinNotch --capture-notch out.png [--collapsed] [--tab system] [--glow bars|off] 
                                  [--sample-shelf] [--output-sheet] [--sample-weather]
                                  [--sample-power] [--keep-open] [--hud-style floatingPill] [--no-media]
                                  [--sample-notes]
-MinNotch --check-lyrics "Khalid" "8TEEN" 229                      # LRCLIBClient + LRCParser
-MinNotch --check-lyric-sync [--out f]                             # matching lyrics to the audio, synthetic
-MinNotch --check-lyric-sync --audio f.mp3 --lrc f.lrc --shifts 0,0.5 [--peaks]   # …and a real song, old method beside it
-MinNotch --check-stats 5                                          # CPU/GPU/memory/network
-MinNotch --check-audio 8 [--out f]                                # Core Audio tap
-MinNotch --check-glow 2 [--source step|fallback|tempo]            # glow shaping chain, tempo grid
-MinNotch --check-settings file.minnotch                           # import bounds
-MinNotch --check-settings-search pomodoro glow                    # search ranking
-MinNotch --capture-onboarding <dir> [--rerun]                     # tutorial, every page
-MinNotch --capture-whats-new <dir>                                # release notes window and notes
-MinNotch --capture-layout <dir> [--width 460]                     # Settings > Layout editors
-MinNotch --check-permissions [--request] [--out f]                # TCC state
-MinNotch --check-media [--scripts <dir>] [--out f]                # snapshot, shuffle, Up Next
-MinNotch --check-keys [--simulate] [--control] [--out f]          # volume/brightness key tap
-MinNotch --check-links "<url or text>" ...                        # link shelf: titles, icons, refusals
-MinNotch --check-downloads [--out f]                              # download activities, in a scratch folder
-MinNotch --check-lock-screen                                      # the SkyLight calls behind the lock screen HUD
-MinNotch --capture-lock-screen out.png [--hud]                    # what the lock screen window draws
-MinNotch --check-meeting-links                                    # which invitation links count as a meeting
-MinNotch --check-audio-outputs                                    # the outputs the card would offer
-MinNotch --check-weather London | 51.5 -0.13 [--fahrenheit]       # a real forecast, parsed
-MinNotch --check-tab-order                                        # the swipe steps through tabs as the bar draws them
-MinNotch --check-temps                                            # every temperature sensor, and the three the System tab shows
-MinNotch --check-stats-history                                    # the graphs' history survives the System tab closing
-MinNotch --check-power [seconds]                                  # charger in, Mac use, battery, from the SMC
-MinNotch --check-keep-open                                        # Keep the Notch Open: holds, lets go, pin, shortcut default
-MinNotch --check-notes                                            # the note is saved, read back, never overwritten by a capture
+MiniNotch --check-lyrics "Khalid" "8TEEN" 229                      # LRCLIBClient + LRCParser
+MiniNotch --check-lyric-sync [--out f]                             # matching lyrics to the audio, synthetic
+MiniNotch --check-lyric-sync --audio f.mp3 --lrc f.lrc --shifts 0,0.5 [--peaks]   # …and a real song, old method beside it
+MiniNotch --check-stats 5                                          # CPU/GPU/memory/network
+MiniNotch --check-audio 8 [--out f]                                # Core Audio tap
+MiniNotch --check-glow 2 [--source step|fallback|tempo]            # glow shaping chain, tempo grid
+MiniNotch --check-settings file.minnotch                           # import bounds
+MiniNotch --check-settings-search pomodoro glow                    # search ranking
+MiniNotch --capture-onboarding <dir> [--rerun]                     # tutorial, every page
+MiniNotch --capture-whats-new <dir>                                # release notes window and notes
+MiniNotch --capture-layout <dir> [--width 460]                     # Settings > Layout editors
+MiniNotch --check-permissions [--request] [--out f]                # TCC state
+MiniNotch --check-media [--scripts <dir>] [--out f]                # snapshot, shuffle, Up Next
+MiniNotch --check-keys [--simulate] [--control] [--out f]          # volume/brightness key tap
+MiniNotch --check-links "<url or text>" ...                        # link shelf: titles, icons, refusals
+MiniNotch --check-downloads [--out f]                              # download activities, in a scratch folder
+MiniNotch --check-lock-screen                                      # the SkyLight calls behind the lock screen HUD
+MiniNotch --capture-lock-screen out.png [--hud]                    # what the lock screen window draws
+MiniNotch --check-meeting-links                                    # which invitation links count as a meeting
+MiniNotch --check-audio-outputs                                    # the outputs the card would offer
+MiniNotch --check-weather London | 51.5 -0.13 [--fahrenheit]       # a real forecast, parsed
+MiniNotch --check-tab-order                                        # the swipe steps through tabs as the bar draws them
+MiniNotch --check-temps                                            # every temperature sensor, and the three the System tab shows
+MiniNotch --check-stats-history                                    # the graphs' history survives the System tab closing
+MiniNotch --check-power [seconds]                                  # charger in, Mac use, battery, from the SMC
+MiniNotch --check-keep-open                                        # Keep the Notch Open: holds, lets go, pin, shortcut default
+MiniNotch --check-notes                                            # the note is saved, read back, never overwritten by a capture
+MiniNotch --check-update --feed <url> [--out f]                   # a whole Sparkle update, test builds only (see Releases)
 ```
 
 `--capture-notch` grew three options for the animated effects. `--glow off` disables the
@@ -528,7 +539,7 @@ access reset to `notDetermined`. The signing identity above is what fixes it, si
 now follows the team and bundle id. Until that is actually watched surviving a rebuild, keep
 using `Scripts/run.sh --no-build` when a grant matters, and re-check rather than assume.
 
-**A prompt is only shown to a frontmost app.** MinNotch is an accessory app with no Dock icon,
+**A prompt is only shown to a frontmost app.** MiniNotch is an accessory app with no Dock icon,
 and the notch panel is non-activating precisely so it never steals focus, so it is never the
 active app. `CalendarService.requestAccess()` therefore switches to a regular activation
 policy and activates before asking, restoring the policy when the user answers or after a
@@ -545,17 +556,17 @@ timeout. With `ForegroundPrompt` wrapped around the request the tap starts and d
 **The "Audio Input" checkbox is a build setting, and the tap will need it once signed.** In
 Xcode 26, Signing & Capabilities > Hardened Runtime > Resource Access > Audio Input writes
 `ENABLE_RESOURCE_ACCESS_AUDIO_INPUT = YES` into `project.pbxproj`, and the build turns it into
-`com.apple.security.device.audio-input`; it never touches `Config/MinNotch.entitlements`, so
+`com.apple.security.device.audio-input`; it never touches `Config/MiniNotch.entitlements`, so
 checking that file for it proves nothing. It needs no paid account (an ad-hoc build embeds it).
 An ad-hoc build is signed without the hardened runtime flag (`codesign -dv` shows only
 `flags=0x2(adhoc)`), so today nothing enforces it; a real Apple Development signature applies
 the hardened runtime, and a Core Audio tap app then carries this entitlement, as AudioCap does.
-Do not add App Sandbox to get it: Audio Input lives under Hardened Runtime too, and MinNotch
+Do not add App Sandbox to get it: Audio Input lives under Hardened Runtime too, and MiniNotch
 assumes it is unsandboxed. An explicit build setting beats the file's `app-sandbox` `false`.
 
 **Old builds leave entries behind that a switch cannot fix.** Every differently signed build
-(each ad-hoc one before signing, and each copy at another path) adds its own MinNotch row to
-Privacy & Security, and macOS matched against a stale one: the user switched MinNotch on, re-added
+(each ad-hoc one before signing, and each copy at another path) adds its own MiniNotch row to
+Privacy & Security, and macOS matched against a stale one: the user switched MiniNotch on, re-added
 it with +, and `--check-keys` still said `accessibility trusted: false`. `tccutil reset
 Accessibility com.minnotch.MinNotch` cleared seven of them; then the HUDs pane's Allow… (which
 calls `AXIsProcessTrustedWithOptions` with the prompt, so it is the running copy that is listed)
@@ -570,7 +581,7 @@ reports a different status than the real app sees. `--check-permissions` run fro
 say `notDetermined` even when the app has full access. Always launch through LaunchServices:
 
 ```bash
-open -n -a <path to MinNotch.app> --args --check-permissions --out /tmp/perm.log
+open -n -a <path to MiniNotch.app> --args --check-permissions --out /tmp/perm.log
 ```
 
 ## Permissions this app asks for
@@ -643,7 +654,8 @@ defaulting on only under `#if DEBUG`) for checking both at a glance. Review it w
 `--capture-whats-new`, which renders the notes on their own because a window capture does not
 draw `ScrollView` content.
 
-`ReleaseNotes.latest` is 0.6.0 and `MARKETING_VERSION` matches. 0.6.0 was released on 2026-10-05
+`CFBundleVersion` is `$(MARKETING_VERSION)`, not a build number: Sparkle decides what is newer from
+it, and the build number had been 1 for every release. `ReleaseNotes.latest` is 0.6.0 and `MARKETING_VERSION` matches. 0.6.0 was released on 2026-10-05
 as the GitHub release `v0.6.0`, signed with the personal team like 0.2.0 to 0.5.0, at the user's
 request ("release 0.6"). The next shared build needs new notes, a new `id`, and a
 version bump. When the README describes something on
@@ -658,7 +670,7 @@ would silently drop its badge gets caught.
 ## Releases
 
 `Scripts/release.sh` builds Release, stages the app next to an Applications symlink, makes
-`dist/MinNotch-<version>.dmg`, and prints the `gh release create` line that publishes it with
+`dist/MiniNotch-<version>.dmg`, and prints the `gh release create` line that publishes it with
 `Scripts/release-notes.sh` as the description, so GitHub and the in-app What's New window say the
 same thing. It warns when `ReleaseNotes.latest.id` and `MARKETING_VERSION` disagree, because that
 combination means nobody updating sees the window.
@@ -670,8 +682,44 @@ download carries no team and no address. It costs the people who install it the 
 permission, which cannot be granted to an ad-hoc build at all, and resets their other grants on
 every version. Neither choice is free; do not make it silently on the user's behalf.
 
-Nothing is notarised, because that needs a paid membership, so every download needs
+Nothing is notarised, because that needs a paid membership, so a first download needs
 Privacy & Security > Open Anyway once.
+
+**Updates are Sparkle, fed from `appcast.xml` in the repository.** Set up on 2026-10-05; 0.7 is the
+first version that has it, so anyone on 0.6 or older updates to 0.7 by hand once. `SUFeedURL` is the
+raw GitHub URL of `appcast.xml`, and each entry's enclosure is the DMG on that version's GitHub
+release. `Scripts/release.sh` calls `Scripts/appcast.sh`, which signs the DMG with Sparkle's
+`sign_update --account mininotch` and writes the entry; publish the release, then commit and push the
+feed, never the other way round. The EdDSA private key is in this Mac's login keychain under the
+account `mininotch` (public half `SUPublicEDKey` in `Config/Info.plist`). **If it is lost, installed
+copies can never verify another update**, so it should be backed up with `generate_keys --account
+mininotch -x <file>` somewhere safe, never in the repository. A key under the account `minnotch` was
+made first, before the rename, and never used for anything; it can be deleted. Sparkle also requires
+the new app's code signature to match the installed one's, so `--anonymous` and team-signed releases
+cannot update each other: pick one and keep it (the user has always chosen the team).
+
+`UpdateService` starts only in a release build, because a development copy shares the bundle
+identifier and would offer to replace itself with the last release. A scheduled check that finds
+something activates the app so the window is in front (`supportsGentleScheduledUpdateReminders`).
+Sparkle does its own networking, the one exception to `BoundedHTTPClient`: HTTPS only, and nothing is
+installed that fails the signature check.
+
+**Adding Sparkle meant three project file edits**, the only ones beyond build settings: the package
+reference and product dependency, and `LD_RUNPATH_SEARCH_PATHS = @executable_path/../Frameworks`, without
+which the app linked Sparkle and then failed to launch (`Library not loaded: @rpath/Sparkle.framework`).
+Xcode copies and signs a binary package's framework into the app by itself; an explicit Embed
+Frameworks phase on top of that broke the build with "The file Sparkle couldn't be opened".
+
+**Testing an update end to end** (`--check-update --feed <url> --out <file>`, DEBUG): build two
+versions with `PRODUCT_BUNDLE_IDENTIFIER=com.minnotch.MinNotch.updatetest` and `MARKETING_VERSION`
+overridden, so nothing touches the real app's defaults or copy, which the tool refuses to run as.
+Sparkle refuses `file://` feeds and the app's transport security refuses plain `http`, so add
+`NSAllowsLocalNetworking` to the two test copies only, re-sign them with the same identity and
+entitlements, pack the newer one, run `Scripts/appcast.sh <dmg> --url http://localhost:8765/<dmg>
+--feed <dir>/appcast.xml`, serve the folder with `python3 -m http.server 8765 --bind 127.0.0.1`, and
+launch the older copy with the flag. On 2026-10-05: 0.6.90 found, downloaded, verified and installed
+0.6.91 and quit; the same feed with one character of the signature changed was refused ("EdDSA
+signature does not match") and left 0.6.90 in place.
 
 ## No setting may be inert
 
@@ -788,7 +836,7 @@ in Finder and keeps a copied link. With either feature off the tab is the other 
 before. Layout keeps a tile for each feature.
 
 **Notes is one plain text file, typed into the notch.** `NotesService` keeps one note in
-Application Support (`MinNotch/Notes.txt`), written 0.8 s after typing stops and at once on quit;
+Application Support (`MiniNotch/Notes.txt`), written 0.8 s after typing stops and at once on quit;
 nothing leaves the Mac. The tab (`NotesWidgetView`) is a `TextEditor` forced dark, because the panel
 is black in both appearances and a light-mode caret is black on black. Typing works the way
 Calendar's Quick Add does: the panel can become key, a click activates the app, and focus sets
@@ -973,7 +1021,7 @@ screen (`beginAudioPreview`), playing or not. The output latency is kept across 
 (`hasMeasuredLatency`), so lyric compensation does not drop out for the moment a tap takes to
 start. Idle with nothing playing measured 0.2 to 0.3% after, against about 6% before. Siri's
 `corespeechd` holds a tap of its own, so `pmset -g assertions` showing an `AudioTap` is not proof
-MinNotch is listening: check the PID it was created for.
+MiniNotch is listening: check the PID it was created for.
 
 **Keep the Notch Open holds the panel on the display it is open on.** ⌃⌥P by default (Settings >
 Shortcuts), or the top bar's Keep Open pin, which can be placed in Layout and appears by itself

@@ -100,7 +100,7 @@ struct NotchRootView: View {
         // width would arrive before the height and the shape would visibly shear.
         .animation(Motion.notch, value: surfaceMetrics)
         .accessibilityElement(children: .contain)
-        .accessibilityLabel(isExpanded ? "MinNotch panel" : "MinNotch")
+        .accessibilityLabel(isExpanded ? "MiniNotch panel" : "MiniNotch")
     }
 
     /// Opens the notch on the Shelf tab when a file is dragged over the closed pill.

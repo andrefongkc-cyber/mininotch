@@ -1,7 +1,7 @@
 import AppKit
 import SwiftUI
 
-/// What MinNotch shows over the lock screen: the volume and brightness HUD, and the song
+/// What MiniNotch shows over the lock screen: the volume and brightness HUD, and the song
 /// playing with its controls.
 ///
 /// While the screen is locked, a small window at the top of the built-in display draws the HUD

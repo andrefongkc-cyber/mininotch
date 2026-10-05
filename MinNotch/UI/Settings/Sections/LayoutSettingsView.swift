@@ -181,7 +181,7 @@ struct LayoutSettingsView: View {
 
     private var downloadsSubtitle: String {
         if settings.general.showDownloadActivity, !environment.downloads.hasAccess {
-            return "MinNotch cannot read your Downloads folder. Allow it under Privacy & Security > Files and Folders."
+            return "MiniNotch cannot read your Downloads folder. Allow it under Privacy & Security > Files and Folders."
         }
         return "Show how far along a download is, from Safari, Chrome, Firefox and most other browsers. Reads your Downloads folder."
     }

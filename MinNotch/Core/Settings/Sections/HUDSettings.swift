@@ -34,7 +34,7 @@ struct HUDSettings: Codable, Equatable {
     /// Show the numeric level alongside the bar.
     var showNumericValue: Bool = false
 
-    /// Hide macOS's own overlay so only MinNotch's indicator appears.
+    /// Hide macOS's own overlay so only MiniNotch's indicator appears.
     ///
     /// Works by taking the volume and brightness keys before macOS sees them, which needs
     /// Accessibility access; see `SystemKeyInterceptor`. Off by default, because an app reading

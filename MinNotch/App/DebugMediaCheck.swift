@@ -3,7 +3,7 @@ import AppKit
 
 /// Reads what the scriptable players report, including shuffle state and Up Next.
 ///
-/// Run with `MinNotch --check-media [--scripts <dir>] [--out file]`.
+/// Run with `MiniNotch --check-media [--scripts <dir>] [--out file]`.
 ///
 /// `--scripts` writes the exact AppleScript the sources send into a directory and exits, so
 /// `osacompile` can check every term against the player's dictionary without sending it an

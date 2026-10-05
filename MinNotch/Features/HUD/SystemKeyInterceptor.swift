@@ -3,14 +3,14 @@ import ApplicationServices
 import CoreGraphics
 
 /// Takes the volume and brightness keys before macOS sees them, so its own overlay never
-/// appears and MinNotch's indicator is the only one.
+/// appears and MiniNotch's indicator is the only one.
 ///
 /// **Why a key tap and not the overlay's helper.** Earlier versions suspended `OSDUIHelper`, the
 /// process that drew the overlay. On macOS 26 that process no longer draws it: with the helper
 /// suspended (state `T`) the overlay still appeared on every key press. There is no supported way
 /// to hide the overlay itself, so this stops the key press reaching the system at all and does
 /// what the key would have done: it sets the volume or brightness directly, and the HUD shows the
-/// new level. Nothing about macOS is changed, and if MinNotch quits, crashes or hangs the keys go
+/// new level. Nothing about macOS is changed, and if MiniNotch quits, crashes or hangs the keys go
 /// back to macOS on their own, because the tap dies with the process and the system disables a
 /// tap that stops answering.
 ///

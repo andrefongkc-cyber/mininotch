@@ -22,13 +22,26 @@
 	<key>CFBundleName</key>
 	<string>$(PRODUCT_NAME)</string>
 	<key>CFBundleDisplayName</key>
-	<string>MinNotch</string>
+	<string>MiniNotch</string>
 	<key>CFBundlePackageType</key>
 	<string>APPL</string>
 	<key>CFBundleShortVersionString</key>
 	<string>$(MARKETING_VERSION)</string>
 	<key>CFBundleVersion</key>
-	<string>$(CURRENT_PROJECT_VERSION)</string>
+	<!-- The version itself, not a separate build number: Sparkle decides what is newer from this,
+	     and the build number had been 1 for every release, so no release looked newer than another. -->
+	<string>$(MARKETING_VERSION)</string>
+	<!-- Updates, through Sparkle: the feed lives in the repository and points at the DMG on each
+	     GitHub release. Every update is checked against this public key before it is installed;
+	     the private half is in the release machine's keychain, under the account "mininotch". -->
+	<key>SUFeedURL</key>
+	<string>https://raw.githubusercontent.com/andrefongkc-cyber/mininotch/main/appcast.xml</string>
+	<key>SUPublicEDKey</key>
+	<string>ECy84H60AnfMwzoHzTQkkqBkjXRp9tLH2QDLHs4JC5I=</string>
+	<key>SUEnableAutomaticChecks</key>
+	<true/>
+	<key>SUScheduledCheckInterval</key>
+	<integer>86400</integer>
 	<key>LSMinimumSystemVersion</key>
 	<string>$(MACOSX_DEPLOYMENT_TARGET)</string>
 	<key>LSApplicationCategoryType</key>
@@ -43,32 +56,32 @@
 	<string></string>
 
 	<key>NSCalendarsUsageDescription</key>
-	<string>MinNotch shows your upcoming events in the notch.</string>
+	<string>MiniNotch shows your upcoming events in the notch.</string>
 	<key>NSCalendarsFullAccessUsageDescription</key>
-	<string>MinNotch shows your upcoming events in the notch.</string>
+	<string>MiniNotch shows your upcoming events in the notch.</string>
 	<key>NSRemindersUsageDescription</key>
-	<string>MinNotch shows your reminders in the notch.</string>
+	<string>MiniNotch shows your reminders in the notch.</string>
 	<key>NSRemindersFullAccessUsageDescription</key>
-	<string>MinNotch shows your reminders in the notch.</string>
+	<string>MiniNotch shows your reminders in the notch.</string>
 	<key>NSAppleEventsUsageDescription</key>
-	<string>MinNotch controls Music and Spotify so it can show and control what you are listening to.</string>
+	<string>MiniNotch controls Music and Spotify so it can show and control what you are listening to.</string>
 
 	<!-- Location, only while Weather is on with Use My Location, for the forecast. Rounded to
 	     about a kilometre before it leaves the Mac. -->
 	<key>NSLocationUsageDescription</key>
-	<string>MinNotch uses your approximate location, while Weather is on, to show the forecast where you are. It is rounded to about a kilometre and sent only to Open-Meteo.</string>
+	<string>MiniNotch uses your approximate location, while Weather is on, to show the forecast where you are. It is rounded to about a kilometre and sent only to Open-Meteo.</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
-	<string>MinNotch uses your approximate location, while Weather is on, to show the forecast where you are. It is rounded to about a kilometre and sent only to Open-Meteo.</string>
+	<string>MiniNotch uses your approximate location, while Weather is on, to show the forecast where you are. It is rounded to about a kilometre and sent only to Open-Meteo.</string>
 
 	<!-- Downloads folder, read only while Layout > Downloads is on, to show a file's progress
 	     in the closed pill. -->
 	<key>NSDownloadsFolderUsageDescription</key>
-	<string>MinNotch watches your Downloads folder, while Downloads is on in Settings > Layout, to show how far along a download is. Nothing is opened, moved or sent anywhere.</string>
+	<string>MiniNotch watches your Downloads folder, while Downloads is on in Settings > Layout, to show how far along a download is. Nothing is opened, moved or sent anywhere.</string>
 
 	<!-- Core Audio process tap. A separate permission from the microphone and from screen
 	     recording, and the reason the ambient lighting no longer asks for screen access. -->
 	<key>NSAudioCaptureUsageDescription</key>
-	<string>MinNotch listens to what is playing so the ambient lighting can follow the beat. The audio becomes a handful of numbers and is discarded; nothing is recorded or saved.</string>
+	<string>MiniNotch listens to what is playing so the ambient lighting can follow the beat. The audio becomes a handful of numbers and is discarded; nothing is recorded or saved.</string>
 
 	<!-- App Transport Security. These are already the platform defaults; they are written out
 	     so that relaxing them has to be a deliberate edit to this file rather than something

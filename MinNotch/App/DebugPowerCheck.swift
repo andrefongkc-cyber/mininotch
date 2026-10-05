@@ -4,7 +4,7 @@ import IOKit.ps
 
 /// Reads the charging figures the System tab shows, once a second, beside what they are made of.
 ///
-/// Run with `MinNotch --check-power [seconds]`.
+/// Run with `MiniNotch --check-power [seconds]`.
 ///
 /// The SMC keys are undocumented, so this is how to see whether a given Mac has them and whether
 /// they add up: what comes in should be about what the Mac uses plus what goes into the battery,

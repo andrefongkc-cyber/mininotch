@@ -50,7 +50,7 @@ final class SettingsWindowController: NSObject, NSWindowDelegate {
             defer: false
         )
 
-        window.title = "MinNotch Settings"
+        window.title = "MiniNotch Settings"
         window.titlebarAppearsTransparent = false
         window.toolbarStyle = .unified
         window.isReleasedWhenClosed = false

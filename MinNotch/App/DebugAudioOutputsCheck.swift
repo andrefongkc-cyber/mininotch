@@ -3,7 +3,7 @@ import Foundation
 
 /// Lists the sound outputs the Now Playing card would offer.
 ///
-/// Run with `MinNotch --check-audio-outputs`.
+/// Run with `MiniNotch --check-audio-outputs`.
 ///
 /// Read-only: it never changes the output or the volume. What it checks is the filtering, which
 /// is the part that can go wrong unseen: every real output listed with a symbol that draws, the

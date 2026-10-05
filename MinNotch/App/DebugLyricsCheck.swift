@@ -3,7 +3,7 @@ import AppKit
 
 /// Runs the real lyrics pipeline from the command line and prints what it found.
 ///
-/// Run with `MinNotch --check-lyrics "<artist>" "<title>" [duration] [--no-cache]`. Run it twice:
+/// Run with `MiniNotch --check-lyrics "<artist>" "<title>" [duration] [--no-cache]`. Run it twice:
 /// the first lookup goes to LRCLIB and fills the cache, the second should say "hit" and take
 /// a few milliseconds. `--no-cache` empties the cache first. Lyrics involve a
 /// third-party lookup and a parser, and neither is visible from the UI when it fails, so

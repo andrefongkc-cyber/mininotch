@@ -1,6 +1,6 @@
-<img src="Docs/images/icon.png" width="128" alt="The MinNotch icon">
+<img src="Docs/images/icon.png" width="128" alt="The MiniNotch icon">
 
-# MinNotch
+# MiniNotch
 
 A macOS app that lives in the notch. Closed, it is a black pill the size of the camera housing.
 Hover or click it and it opens into a panel: what is playing, your calendar, the weather, system
@@ -10,13 +10,17 @@ stats, a file shelf, saved links, a timer.
 
 ## Download
 
-[**MinNotch 0.6.0**](https://github.com/andrefongkc-cyber/mininotch/releases/latest) — open the
-DMG, drag MinNotch to Applications. It runs in the background: no Dock icon and nothing in ⌘-Tab,
+[**MiniNotch 0.6.0**](https://github.com/andrefongkc-cyber/mininotch/releases/latest) — open the
+DMG, drag MiniNotch to Applications. It runs in the background: no Dock icon and nothing in ⌘-Tab,
 just the notch and an optional menu bar icon. Quit it from that icon or from Settings > About.
 
 The first launch is blocked, because notarising an app needs a paid Apple membership this project
 does not have. Open **System Settings > Privacy & Security**, scroll down, and click **Open
-Anyway**. That is once per version.
+Anyway**.
+
+From 0.7 on, MiniNotch keeps itself up to date: it checks for a new version once a day and asks
+before installing it, or check yourself from the menu bar icon _(next)_. Earlier versions have to be
+updated by hand once, to 0.7.
 
 Requires macOS 14.4 or later, Apple silicon or Intel; on anything older, macOS refuses to open
 it. A Mac with no notch gets a virtual one in the same place, and on an external monitor it can
@@ -89,7 +93,7 @@ Also:
   Plugged in, it shows what the charger is giving, what the Mac uses, and how much of it is going
   into the battery.
 - **Volume, brightness and keyboard backlight** shown at the notch, optionally instead of Apple's
-  own overlay, which MinNotch hides by taking those keys before macOS sees them (needs
+  own overlay, which MiniNotch hides by taking those keys before macOS sees them (needs
   Accessibility). They also show over the lock screen, as does the song with its controls.
 - **Clipboard history** for text, links, colours, and images, held in memory only.
 - **Floating Now Playing window** for a display with no notch worth looking at.
@@ -120,7 +124,7 @@ for fourteen seconds.
 | Open panel, calendar | 0.0% | 60 MB |
 | Open panel, system stats | 0.7% | 56 MB |
 
-What that means in practice: MinNotch costs nothing while it sits closed, which is almost all of
+What that means in practice: MiniNotch costs nothing while it sits closed, which is almost all of
 the time. Animation is what costs, and the ambient glow costs about a quarter of one core for as
 long as it is visible — on a ten-core M4, roughly 3% of the machine. Everything that polls samples
 only while its widget is on screen, except system stats, which take a reading every five seconds
@@ -145,7 +149,8 @@ there and then; otherwise each is requested the first time a feature needs it:
 Everything stays on your Mac, with two exceptions, both off by default: setting **Media > Lyrics
 Source** to look up online sends the current title, artist, album and length to `lrclib.net`, and
 **Weather** sends a location rounded to about a kilometre, or the city you chose, to
-`open-meteo.com`. No accounts, no analytics, no telemetry. Clipboard history is never written to disk, and it skips
+`open-meteo.com`. Checking for updates fetches one small file from GitHub a day and sends nothing
+about your Mac; switch it off in Settings > About _(next)_. No accounts, no analytics, no telemetry. Clipboard history is never written to disk, and it skips
 anything an app marks as private. Audio becomes a handful of numbers per buffer and is discarded;
 nothing is recorded.
 
@@ -160,18 +165,22 @@ Signing needs your own Apple team, and a free Apple ID is enough. Copy
 `Config/Local.xcconfig.example` to `Config/Local.xcconfig` and put your team in it; that file is
 gitignored. Without it the build stops and says a development team is required.
 
-Xcode 16 or later. No dependencies, no package manager, no test target yet.
+Xcode 16 or later. One dependency, [Sparkle](https://sparkle-project.org) for updates, which Xcode
+fetches through Swift Package Manager on the first build. No test target yet.
 
 ## Releasing
 
 ```bash
-Scripts/release.sh              # writes dist/MinNotch-<version>.dmg
+Scripts/release.sh              # writes dist/MiniNotch-<version>.dmg
 Scripts/release.sh --anonymous  # the same, re-signed to carry no Apple team or ID
 ```
 
-It prints the `gh release create` line that publishes the DMG, using `Scripts/release-notes.sh` for
-the description so the GitHub page and the app's own What's New window say the same thing. Bump
-`MARKETING_VERSION` and update `ReleaseNotes.latest` first; the script warns if they disagree.
+It signs the DMG for Sparkle with the update key in this Mac's keychain, adds it to `appcast.xml`
+(`Scripts/appcast.sh`), and prints the two commands that publish it, in order: `gh release create`,
+using `Scripts/release-notes.sh` for the description so the GitHub page and the app's own What's
+New window say the same thing, and then the commit and push of `appcast.xml`, so the feed never
+points at a DMG that is not there yet. Bump `MARKETING_VERSION` and update `ReleaseNotes.latest`
+first; the script warns if they disagree.
 
 ## Repository
 

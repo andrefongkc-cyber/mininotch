@@ -11,7 +11,17 @@ struct AboutSettingsView: View {
         Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "0"
     }
 
+    private var updates: UpdateService { environment.updates }
+
+    /// The version alone once the build number is the version, as it is from 0.7 on, rather
+    /// than the same number twice.
+    private var versionText: String {
+        build == version ? "Version \(version)" : "Version \(version) (\(build))"
+    }
+
     var body: some View {
+        @Bindable var updates = updates
+
         SettingsPane(title: "About") {
             VStack(spacing: 10) {
                 RoundedRectangle(cornerRadius: 18, style: .continuous)
@@ -23,10 +33,10 @@ struct AboutSettingsView: View {
                             .foregroundStyle(.white)
                     )
 
-                Text("MinNotch")
+                Text("MiniNotch")
                     .font(.system(size: 20, weight: .bold))
 
-                Text("Version \(version) (\(build))")
+                Text(versionText)
                     .font(Typography.helper)
                     .foregroundStyle(Palette.secondaryText)
             }
@@ -41,6 +51,34 @@ struct AboutSettingsView: View {
                 ) {
                     Button("Show") { environment.whatsNew.present() }
                         .controlSize(.small)
+                }
+            }
+
+            SettingsCard(
+                header: "Updates",
+                footer: "New versions come from MiniNotch's GitHub releases, and each one is checked against MiniNotch's signing key before it installs. Checking fetches one small file from GitHub and sends nothing about your Mac."
+            ) {
+                SettingsRow(
+                    title: "Check for Updates",
+                    subtitle: updates.isAvailable
+                        ? "Look for a new version now. You can also do this from the menu bar icon."
+                        : "Not in a development build, which Xcode keeps up to date.",
+                    systemImage: "arrow.down.circle",
+                    isEnabled: updates.isAvailable
+                ) {
+                    Button("Check Now") { updates.checkForUpdates() }
+                        .controlSize(.small)
+                }
+
+                SettingsDivider()
+
+                SettingsRow(
+                    title: "Check Automatically",
+                    subtitle: "Once a day. When there is a new version, it asks before installing.",
+                    systemImage: "clock.arrow.circlepath",
+                    isEnabled: updates.isAvailable
+                ) {
+                    SettingsToggle(isOn: $updates.checksAutomatically)
                 }
             }
 
@@ -60,9 +98,9 @@ struct AboutSettingsView: View {
                 }
             }
 
-            SettingsCard(header: "MinNotch") {
+            SettingsCard(header: "MiniNotch") {
                 SettingsRow(
-                    title: "Quit MinNotch",
+                    title: "Quit MiniNotch",
                     subtitle: "The notch and the menu bar icon both disappear until you launch it again.",
                     systemImage: "power"
                 ) {

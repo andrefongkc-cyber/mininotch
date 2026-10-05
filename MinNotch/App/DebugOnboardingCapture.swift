@@ -4,7 +4,7 @@ import SwiftUI
 
 /// Captures every page of the first-launch tutorial from a real window.
 ///
-/// Run with `MinNotch --capture-onboarding <dir> [--rerun]`.
+/// Run with `MiniNotch --capture-onboarding <dir> [--rerun]`.
 ///
 /// Builds the window through `OnboardingCoordinator.makeWindow`, the same function the app
 /// uses, so the capture is the window people see rather than a copy assembled for the tool.

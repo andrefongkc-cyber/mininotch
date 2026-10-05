@@ -4,7 +4,7 @@ import SwiftUI
 
 /// Renders what the lock screen window draws, with the sample song, without locking the screen.
 ///
-/// Run with `MinNotch --capture-lock-screen <out.png> [--hud]`.
+/// Run with `MiniNotch --capture-lock-screen <out.png> [--hud]`.
 ///
 /// Locking is the only way to see the window in place, and a tool cannot lock the screen and
 /// then unlock it. This draws the same `LockScreenView` at the size the window is given, so the

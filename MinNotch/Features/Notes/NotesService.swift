@@ -33,13 +33,31 @@ final class NotesService {
     nonisolated static var defaultFileURL: URL {
         let support = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first
             ?? URL(fileURLWithPath: NSHomeDirectory()).appendingPathComponent("Library/Application Support")
-        return support.appendingPathComponent("MinNotch", isDirectory: true).appendingPathComponent("Notes.txt")
+        return support.appendingPathComponent("MiniNotch", isDirectory: true).appendingPathComponent("Notes.txt")
     }
 
     func load() {
         guard !isLoaded else { return }
+        moveNoteFromOldFolder()
         text = (try? String(contentsOf: fileURL, encoding: .utf8)) ?? ""
         isLoaded = true
+    }
+
+    /// The app was MinNotch until 0.7, and so was its folder in Application Support. A note left
+    /// there moves to the new folder the first time this version starts, unless one is there
+    /// already, which is never overwritten.
+    private func moveNoteFromOldFolder() {
+        let manager = FileManager.default
+        let old = fileURL.deletingLastPathComponent().deletingLastPathComponent()
+            .appendingPathComponent("MinNotch", isDirectory: true)
+            .appendingPathComponent(fileURL.lastPathComponent)
+        guard old != fileURL, manager.fileExists(atPath: old.path), !manager.fileExists(atPath: fileURL.path) else { return }
+        do {
+            try manager.createDirectory(at: fileURL.deletingLastPathComponent(), withIntermediateDirectories: true)
+            try manager.moveItem(at: old, to: fileURL)
+        } catch {
+            AppLog.app.error("Could not move the note to its new folder: \(error.localizedDescription, privacy: .public)")
+        }
     }
 
     func requestFocus() {

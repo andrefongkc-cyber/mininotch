@@ -3,7 +3,7 @@ import AppKit
 
 /// Starts the Core Audio tap and reports what it hears.
 ///
-/// Run with `MinNotch --check-audio [seconds]`. The tap needs the system audio recording
+/// Run with `MiniNotch --check-audio [seconds]`. The tap needs the system audio recording
 /// permission, and Core Audio reports a refusal as an ordinary error code rather than
 /// anything obviously permission-shaped, so this prints the failure verbatim along with the
 /// output device's reported latency, which is the other thing worth knowing.

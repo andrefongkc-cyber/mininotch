@@ -1,8 +1,8 @@
 import AppKit
 
-/// Brings MinNotch to the front for as long as it takes to ask for a permission.
+/// Brings MiniNotch to the front for as long as it takes to ask for a permission.
 ///
-/// macOS only shows a permission dialog to the active app. MinNotch is an accessory app with no
+/// macOS only shows a permission dialog to the active app. MiniNotch is an accessory app with no
 /// Dock icon, and its panel is non-activating precisely so it never steals focus, so it is never
 /// the active app: a request made as-is resolves with no dialog ever shown, which is
 /// indistinguishable from the user refusing one. `CalendarService.requestAccess` does this inline

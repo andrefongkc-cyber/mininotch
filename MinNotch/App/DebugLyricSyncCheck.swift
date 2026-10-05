@@ -5,8 +5,8 @@ import Foundation
 /// Checks that matching lyrics to the audio recovers an offset it is given, and refuses one it is
 /// not.
 ///
-/// Run with `MinNotch --check-lyric-sync [--out f]` for the synthetic cases, or against a real
-/// song with `MinNotch --check-lyric-sync --audio song.mp3 --lrc song.lrc --shifts 0,0.5,-1`.
+/// Run with `MiniNotch --check-lyric-sync [--out f]` for the synthetic cases, or against a real
+/// song with `MiniNotch --check-lyric-sync --audio song.mp3 --lrc song.lrc --shifts 0,0.5,-1`.
 ///
 /// The measurement cannot be judged by playing a song and squinting at the strip: the thing being
 /// measured is exactly the thing a human cannot time by eye. So it is fed signals where the right

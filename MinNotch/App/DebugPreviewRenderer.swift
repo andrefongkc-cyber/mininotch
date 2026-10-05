@@ -4,7 +4,7 @@ import SwiftUI
 
 /// Renders key views to PNG files and exits.
 ///
-/// Run with `MinNotch --render-previews <directory>`. This exists because the notch is a
+/// Run with `MiniNotch --render-previews <directory>`. This exists because the notch is a
 /// borderless overlay panel: it cannot be captured with the normal screenshot tooling
 /// without granting Screen Recording, and it has no window to point a preview at. Rendering
 /// offscreen gives a fast, permission-free way to review layout after a change, in both

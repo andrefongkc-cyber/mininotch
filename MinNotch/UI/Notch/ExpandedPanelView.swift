@@ -114,7 +114,7 @@ struct ExpandedPanelView: View {
         } else if item == .settings {
             NotchIconButton(
                 systemImage: "gearshape",
-                help: "MinNotch Settings",
+                help: "MiniNotch Settings",
                 accent: settings.appearance.resolvedAccent,
                 width: buttonWidth
             ) {

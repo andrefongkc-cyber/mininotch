@@ -13,7 +13,7 @@ struct CalendarSettingsView: View {
             if !service.hasAccess {
                 SettingsCard(
                     header: "Access",
-                    footer: "MinNotch reads events to display them, and writes only what you create with Quick Add. Nothing is sent anywhere."
+                    footer: "MiniNotch reads events to display them, and writes only what you create with Quick Add. Nothing is sent anywhere."
                 ) {
                     SettingsRow(
                         title: "Calendar Access",
@@ -56,7 +56,7 @@ struct CalendarSettingsView: View {
 
                 SettingsRow(
                     title: "Start Week on Monday",
-                    subtitle: "Otherwise MinNotch follows your region's first weekday.",
+                    subtitle: "Otherwise MiniNotch follows your region's first weekday.",
                     systemImage: "calendar.day.timeline.left",
                     isEnabled: settings.calendar.enabled
                 ) {
@@ -170,7 +170,7 @@ struct CalendarSettingsView: View {
 
                     SettingsRow(
                         title: "Reminders Access",
-                        subtitle: "MinNotch needs permission before it can show your reminders.",
+                        subtitle: "MiniNotch needs permission before it can show your reminders.",
                         systemImage: "lock"
                     ) {
                         Button("Allow…") { service.requestRemindersAccess() }
@@ -198,7 +198,7 @@ struct CalendarSettingsView: View {
     private var remindersFooter: String {
         switch service.remindersAuthorizationStatus {
         case .denied:
-            return "Reminders access is denied. Turn MinNotch on under Privacy & Security > Reminders."
+            return "Reminders access is denied. Turn MiniNotch on under Privacy & Security > Reminders."
         case .fullAccess:
             return "Reminders due in the same window as your events appear in the list, and can be ticked off from the notch."
         default:
@@ -212,9 +212,9 @@ struct CalendarSettingsView: View {
 
     private var accessDescription: String {
         switch service.authorizationStatus {
-        case .denied: return "Denied. Turn MinNotch on under Privacy & Security > Calendars."
+        case .denied: return "Denied. Turn MiniNotch on under Privacy & Security > Calendars."
         case .restricted: return "Restricted by a profile on this Mac."
-        case .writeOnly: return "MinNotch has write-only access and cannot read your events."
+        case .writeOnly: return "MiniNotch has write-only access and cannot read your events."
         default:
             return service.promptDidNotAppear
                 ? "macOS did not show the permission dialog. Grant access in System Settings."

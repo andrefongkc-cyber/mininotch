@@ -3,7 +3,7 @@ import Foundation
 
 /// Checks that a note is written to disk after typing stops, and read back by the next launch.
 ///
-/// Run with `MinNotch --check-notes`. Uses a file in a scratch folder, never the real note.
+/// Run with `MiniNotch --check-notes`. Uses a file in a scratch folder, never the real note.
 @MainActor
 enum DebugNotesCheck {
     static let flag = "--check-notes"
@@ -43,6 +43,17 @@ enum DebugNotesCheck {
         sample.applySample()
         wait(1.2)
         check(onDisk(file) == "Buy limes and coffee", "a capture's sample note never overwrites the real one")
+
+        // A note from before the rename, in the old folder, moves to the new one.
+        let renamedRoot = folder.appendingPathComponent("support")
+        let oldFile = renamedRoot.appendingPathComponent("MinNotch/Notes.txt")
+        let newFile = renamedRoot.appendingPathComponent("MiniNotch/Notes.txt")
+        try? FileManager.default.createDirectory(at: oldFile.deletingLastPathComponent(), withIntermediateDirectories: true)
+        try? "Written by MinNotch".write(to: oldFile, atomically: true, encoding: .utf8)
+        let migrated = NotesService(fileURL: newFile)
+        migrated.load()
+        check(migrated.text == "Written by MinNotch" && !FileManager.default.fileExists(atPath: oldFile.path),
+              "a note in the old MinNotch folder moves to the MiniNotch one")
 
         print(failures == 0 ? "ok   notes are kept" : "FAIL \(failures) checks")
         return true

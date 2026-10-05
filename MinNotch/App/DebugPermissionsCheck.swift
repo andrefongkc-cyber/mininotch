@@ -4,7 +4,7 @@ import EventKit
 
 /// Reports permission state and, with `--request`, attempts a prompt.
 ///
-/// Run with `MinNotch --check-permissions [--request]`. TCC failures are close to silent:
+/// Run with `MiniNotch --check-permissions [--request]`. TCC failures are close to silent:
 /// a request that is never shown looks identical to one the user dismissed, so this prints
 /// the state before and after, plus the identity macOS is judging, which is what decides
 /// whether a prompt appears at all.

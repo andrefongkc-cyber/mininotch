@@ -3,7 +3,7 @@ import Foundation
 
 /// Checks which links in an invitation count as a meeting to join.
 ///
-/// Run with `MinNotch --check-meeting-links`.
+/// Run with `MiniNotch --check-meeting-links`.
 ///
 /// A calendar invitation is text anyone can send, and the link found in it is opened with one
 /// click, so the refusals matter as much as the finds: a `file:` link, a custom scheme, plain

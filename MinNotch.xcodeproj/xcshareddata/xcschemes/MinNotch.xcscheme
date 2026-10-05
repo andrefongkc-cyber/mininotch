@@ -6,7 +6,7 @@
             <BuildableReference
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "AA0000000000000000000006"
-               BuildableName = "MinNotch.app"
+               BuildableName = "MiniNotch.app"
                BlueprintName = "MinNotch"
                ReferencedContainer = "container:MinNotch.xcodeproj">
             </BuildableReference>
@@ -22,7 +22,7 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "AA0000000000000000000006"
-            BuildableName = "MinNotch.app"
+            BuildableName = "MiniNotch.app"
             BlueprintName = "MinNotch"
             ReferencedContainer = "container:MinNotch.xcodeproj">
          </BuildableReference>
@@ -33,7 +33,7 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "AA0000000000000000000006"
-            BuildableName = "MinNotch.app"
+            BuildableName = "MiniNotch.app"
             BlueprintName = "MinNotch"
             ReferencedContainer = "container:MinNotch.xcodeproj">
          </BuildableReference>

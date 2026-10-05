@@ -54,11 +54,11 @@ struct HUDSettingsView: View {
 
             SettingsCard(
                 header: "System Overlay",
-                footer: "MinNotch takes the volume and brightness keys before macOS sees them, sets the level itself, and shows only its own indicator. This needs Accessibility access. Keyboard backlight keys are left to macOS. Quitting MinNotch gives the keys straight back."
+                footer: "MiniNotch takes the volume and brightness keys before macOS sees them, sets the level itself, and shows only its own indicator. This needs Accessibility access. Keyboard backlight keys are left to macOS. Quitting MiniNotch gives the keys straight back."
             ) {
                 SettingsRow(
                     title: "Hide the System Overlay",
-                    subtitle: "Show only MinNotch's volume and brightness indicator instead of both. Works for whichever of those two is switched on above.",
+                    subtitle: "Show only MiniNotch's volume and brightness indicator instead of both. Works for whichever of those two is switched on above.",
                     systemImage: "rectangle.slash"
                 ) {
                     SettingsToggle(isOn: $settings.huds.suppressSystemOverlay)
@@ -73,7 +73,7 @@ struct HUDSettingsView: View {
 
                     SettingsRow(
                         title: "Accessibility Access Needed",
-                        subtitle: "Click Allow, then turn on MinNotch in the list macOS shows. If it is already on and this message stays, that entry is for an older copy: remove it with the minus button, then click Allow again.",
+                        subtitle: "Click Allow, then turn on MiniNotch in the list macOS shows. If it is already on and this message stays, that entry is for an older copy: remove it with the minus button, then click Allow again.",
                         systemImage: "exclamationmark.triangle"
                     ) {
                         // Asking, not just opening the pane: the request is what puts this copy, with

@@ -1,6 +1,6 @@
 import AppKit
 
-/// A window server space drawn above the lock screen, for the one window MinNotch shows there.
+/// A window server space drawn above the lock screen, for the one window MiniNotch shows there.
 ///
 /// macOS gives third-party apps no lock screen surface, and no window level an app can set puts
 /// a window over it: the lock screen is its own space, drawn above every ordinary one. What the

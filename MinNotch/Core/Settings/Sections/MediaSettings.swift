@@ -1,6 +1,6 @@
 import Foundation
 
-/// Which player MinNotch reads from.
+/// Which player MiniNotch reads from.
 enum MediaSourceKind: String, Codable, CaseIterable, Identifiable {
     /// Pick whichever supported player is currently playing, preferring the most recent.
     case auto

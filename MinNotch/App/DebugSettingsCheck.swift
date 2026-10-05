@@ -3,7 +3,7 @@ import AppKit
 
 /// Imports a settings file and prints what the store actually ended up with.
 ///
-/// Run with `MinNotch --check-settings <file.minnotch>`.
+/// Run with `MiniNotch --check-settings <file.minnotch>`.
 ///
 /// A settings file is the one piece of structured input this app takes from outside itself:
 /// it is exported, handed to other people, edited by hand, and written by older builds with

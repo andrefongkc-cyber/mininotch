@@ -20,7 +20,7 @@ final class HUDCoordinator {
     /// True when display brightness can be read on this macOS version.
     var isBrightnessSupported: Bool { brightness.isBrightnessSupported }
 
-    /// True while hiding Apple's overlay is switched on but MinNotch is not in the Accessibility
+    /// True while hiding Apple's overlay is switched on but MiniNotch is not in the Accessibility
     /// list, so the keys still go to macOS. Settings shows it with a way to fix it.
     private(set) var needsAccessibility = false
 
@@ -86,7 +86,7 @@ final class HUDCoordinator {
         return key.isVolume ? settings.huds.replaceVolumeHUD : settings.huds.replaceBrightnessHUD
     }
 
-    /// Carries out a key MinNotch took, and shows the result at once rather than waiting for
+    /// Carries out a key MiniNotch took, and shows the result at once rather than waiting for
     /// the listener or the next brightness poll. Pressing up at full volume still shows the
     /// indicator, as macOS's own overlay does.
     private func perform(_ press: SystemKeyInterceptor.Press) -> Bool {
@@ -163,7 +163,7 @@ final class HUDCoordinator {
             return
         }
 
-        // Keys are taken only while MinNotch shows an indicator in their place. Hiding the
+        // Keys are taken only while MiniNotch shows an indicator in their place. Hiding the
         // system's overlay with nothing drawn instead would leave volume changes silent.
         applyKeyInterception()
 

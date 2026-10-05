@@ -3,7 +3,7 @@ import AppKit
 
 /// Checks that swiping between tabs goes in the order the top bar draws them.
 ///
-/// Run with `MinNotch --check-tab-order`.
+/// Run with `MiniNotch --check-tab-order`.
 ///
 /// Rearranges the top bar the way someone might in Settings > Layout, tabs moved around and one
 /// across the cutout, then walks the tabs with the same `tabsInOrder` the swipe uses and compares

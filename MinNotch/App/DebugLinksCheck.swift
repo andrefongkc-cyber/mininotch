@@ -3,7 +3,7 @@ import AppKit
 
 /// Adds links to a throwaway Link Shelf and prints what came back: title, icon, and what was refused.
 ///
-/// Run with `MinNotch --check-links "<url or text>" ...`. Uses its own defaults suite, so the
+/// Run with `MiniNotch --check-links "<url or text>" ...`. Uses its own defaults suite, so the
 /// real shelf is untouched. The title and icon are real network reads from each site.
 @MainActor
 enum DebugLinksCheck {

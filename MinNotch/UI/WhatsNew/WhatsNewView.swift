@@ -59,7 +59,7 @@ struct WhatsNewContent: View {
 
     private var header: some View {
         VStack(alignment: .leading, spacing: 4) {
-            Text("What's New in MinNotch \(notes.version)")
+            Text("What's New in MiniNotch \(notes.version)")
                 .font(.system(size: 22, weight: .bold))
                 .foregroundStyle(Palette.primaryText)
             Text("Hover over the notch or click it to open it. Everything below is also in Settings, from the menu bar icon.")

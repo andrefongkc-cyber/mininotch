@@ -3,7 +3,7 @@ import AppKit
 
 /// Prints a few system stat samples and exits.
 ///
-/// Run with `MinNotch --check-stats [samples]`. The CPU and network figures are deltas
+/// Run with `MiniNotch --check-stats [samples]`. The CPU and network figures are deltas
 /// between samples, and the GPU counter is not published by every Mac, so a single reading
 /// proves nothing. This takes several and shows them changing, which is the only way to tell
 /// a working sampler from one that returns a plausible constant.

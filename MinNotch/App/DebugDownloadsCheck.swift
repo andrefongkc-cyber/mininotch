@@ -3,7 +3,7 @@ import Foundation
 
 /// Plays out downloads in a scratch folder and checks what the monitor reports.
 ///
-/// Run with `MinNotch --check-downloads [--out f]`.
+/// Run with `MiniNotch --check-downloads [--out f]`.
 ///
 /// The real Downloads folder is a privacy permission and a real download is slow and depends on
 /// the network, so the check does what a browser does, in a folder of its own: a Chrome-style

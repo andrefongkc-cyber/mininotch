@@ -53,7 +53,7 @@ final class OnboardingModel {
     }
 }
 
-/// The first-launch tutorial: what MinNotch is, what to switch on, how to use it, and what it
+/// The first-launch tutorial: what MiniNotch is, what to switch on, how to use it, and what it
 /// will ask for.
 ///
 /// Drawn in plain colours rather than materials, so `--capture-onboarding` can read every page
@@ -148,7 +148,7 @@ struct OnboardingView: View {
             HStack(spacing: 10) {
                 Button("Open Settings") { onFinish(true) }
                     .controlSize(.large)
-                Button("Start Using MinNotch") { onFinish(false) }
+                Button("Start Using MiniNotch") { onFinish(false) }
                     .buttonStyle(.borderedProminent)
                     .controlSize(.large)
                     .keyboardShortcut(.defaultAction)
@@ -220,7 +220,7 @@ private struct WelcomePage: View {
             illustration
 
             VStack(spacing: 8) {
-                Text("Welcome to MinNotch")
+                Text("Welcome to MiniNotch")
                     .font(.system(size: 28, weight: .bold))
                     .foregroundStyle(Palette.primaryText)
 
@@ -452,7 +452,7 @@ private struct HowToPage: View {
                     "Change the shortcut in Settings › Shortcuts.")
                 tip("gearshape", .systemGray,
                     "Settings are one click away",
-                    "Click the gear in the open notch or the MinNotch icon in the menu bar. In Settings, press ⌘F to search for anything.")
+                    "Click the gear in the open notch or the MiniNotch icon in the menu bar. In Settings, press ⌘F to search for anything.")
                 tip("hand.draw", .systemTeal,
                     "Arrange it your way",
                     "Drag what shows beside the notch, the play controls, and the top bar's tabs into the order you like, in General and Appearance.")
@@ -497,7 +497,7 @@ private struct PermissionsPage: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
             PageHeader(
-                title: "What MinNotch can ask for",
+                title: "What MiniNotch can ask for",
                 subtitle: "Nothing has been asked for yet. Every permission is here, whatever you switched on, so you can allow them now while you know why. Anything you skip is asked for the first time a feature needs it."
             )
 
@@ -515,7 +515,7 @@ private struct PermissionsPage: View {
                 permission(
                     symbol: "accessibility", tint: .systemBlue,
                     title: "Accessibility",
-                    detail: "To hide Apple's volume and brightness overlay so only MinNotch's shows. Used by HUDs > Hide the System Overlay."
+                    detail: "To hide Apple's volume and brightness overlay so only MiniNotch's shows. Used by HUDs > Hide the System Overlay."
                 ) { accessibilityAction }
 
                 permission(
@@ -539,7 +539,7 @@ private struct PermissionsPage: View {
                 permission(
                     symbol: "music.note", tint: .systemPink,
                     title: "Controlling Music and Spotify",
-                    detail: "macOS asks the first time one of them plays. MinNotch never opens either app itself."
+                    detail: "macOS asks the first time one of them plays. MiniNotch never opens either app itself."
                 ) {
                     Text("Asked when needed")
                         .font(.system(size: 11))

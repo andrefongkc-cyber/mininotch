@@ -12,7 +12,7 @@ OUT="${1:-Previews}"
 
 BIN="$(xcodebuild -project MinNotch.xcodeproj -scheme MinNotch -configuration Debug \
         -showBuildSettings 2>/dev/null \
-        | awk -F' = ' '/ BUILT_PRODUCTS_DIR /{print $2}' | head -1)/MinNotch.app/Contents/MacOS/MinNotch"
+        | awk -F' = ' '/ BUILT_PRODUCTS_DIR /{print $2}' | head -1)/MiniNotch.app/Contents/MacOS/MiniNotch"
 
 rm -rf "$OUT"
 "$BIN" --render-previews "$OUT" || exit 1

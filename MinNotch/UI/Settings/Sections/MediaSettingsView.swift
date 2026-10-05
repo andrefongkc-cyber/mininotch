@@ -46,7 +46,7 @@ struct MediaSettingsView: View {
 
                     SettingsRow(
                         title: "Automation Permission",
-                        subtitle: "macOS is blocking MinNotch from controlling Music and Spotify.",
+                        subtitle: "macOS is blocking MiniNotch from controlling Music and Spotify.",
                         systemImage: "exclamationmark.triangle"
                     ) {
                         Button("Open Settings") {

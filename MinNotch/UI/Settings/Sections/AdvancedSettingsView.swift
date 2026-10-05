@@ -14,7 +14,7 @@ struct AdvancedSettingsView: View {
         SettingsPane(title: "Advanced") {
             SettingsCard(
                 header: "Displays",
-                footer: "Macs without a physical notch are fully supported. MinNotch draws a virtual one in the same place."
+                footer: "Macs without a physical notch are fully supported. MiniNotch draws a virtual one in the same place."
             ) {
                 SettingsRow(
                     title: "Show on Displays Without a Notch",
@@ -97,7 +97,7 @@ struct AdvancedSettingsView: View {
 
             SettingsCard(
                 header: "Notes",
-                footer: "Saved as you type, in Library > Application Support > MinNotch > Notes.txt, and never sent anywhere."
+                footer: "Saved as you type, in Library > Application Support > MiniNotch > Notes.txt, and never sent anywhere."
             ) {
                 SettingsRow(
                     title: "Show Notes",
@@ -334,7 +334,7 @@ struct AdvancedSettingsView: View {
             }
         }
         .confirmationDialog(
-            "Reset all MinNotch settings?",
+            "Reset all MiniNotch settings?",
             isPresented: $isConfirmingReset,
             titleVisibility: .visible
         ) {
@@ -378,13 +378,13 @@ struct AdvancedSettingsView: View {
             // never going to decode, and the picker cannot stop someone choosing a disk image.
             let size = (try? url.resourceValues(forKeys: [.fileSizeKey]).fileSize) ?? 0
             guard size <= Self.maxImportBytes else {
-                importError = "That file is too large to be a MinNotch settings file."
+                importError = "That file is too large to be a MiniNotch settings file."
                 return
             }
             try settings.importData(Data(contentsOf: url))
             importError = nil
         } catch {
-            importError = "That file could not be read as MinNotch settings."
+            importError = "That file could not be read as MiniNotch settings."
         }
     }
 }

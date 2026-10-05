@@ -2,7 +2,7 @@ import AppKit
 
 // A plain AppKit entry point rather than a SwiftUI `App`.
 //
-// MinNotch has no SwiftUI scenes: the notch is a borderless non-activating panel and
+// MiniNotch has no SwiftUI scenes: the notch is a borderless non-activating panel and
 // Settings is an `NSWindow`, both created on demand. Declaring an `App` would force a
 // scene to exist that the app would immediately have to hide.
 
@@ -36,6 +36,7 @@ if MainActor.assumeIsolated({ DebugStatsHistoryCheck.runIfRequested() }) { exit(
 if MainActor.assumeIsolated({ DebugPowerCheck.runIfRequested() }) { exit(0) }
 if MainActor.assumeIsolated({ DebugKeepOpenCheck.runIfRequested() }) { exit(0) }
 if MainActor.assumeIsolated({ DebugNotesCheck.runIfRequested() }) { exit(0) }
+if MainActor.assumeIsolated({ DebugUpdateCheck.runIfRequested() }) { exit(0) }
 #endif
 
 let application = NSApplication.shared

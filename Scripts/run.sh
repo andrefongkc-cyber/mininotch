@@ -1,5 +1,5 @@
 #!/bin/bash
-# Build and (re)launch MinNotch, replacing any running copy.
+# Build and (re)launch MiniNotch, replacing any running copy.
 set -o pipefail
 cd "$(dirname "$0")/.." || exit 1
 
@@ -14,10 +14,12 @@ else
   "$(dirname "$0")/build.sh" "$CONFIG" || exit 1
 fi
 
+pkill -x MiniNotch 2>/dev/null
+# The app was called MinNotch until 0.7; a copy built before the rename still runs under that name.
 pkill -x MinNotch 2>/dev/null
 sleep 0.5
 
 APP="$(xcodebuild -project MinNotch.xcodeproj -scheme MinNotch -configuration "$CONFIG" \
         -showBuildSettings 2>/dev/null \
-        | awk -F' = ' '/ BUILT_PRODUCTS_DIR /{print $2}' | head -1)/MinNotch.app"
+        | awk -F' = ' '/ BUILT_PRODUCTS_DIR /{print $2}' | head -1)/MiniNotch.app"
 open "$APP" && echo "Launched $APP"
