@@ -1,6 +1,6 @@
 # MinNotch workplan
 
-Status: Notes tab and the combined What's New/tutorial button done and pushed, with the pill flank fix, unreleased; next: 0.6 when the user wants a release (Sparkle offered for it).
+Status: 0.6.0 released 2026-10-05 (GitHub v0.6.0); next: the user tries Notes by hand, Sparkle if wanted.
 
 Living document. Update the checkboxes as work lands. `CLAUDE.md` holds the architecture
 rules and the traps; this file holds the sequence.
@@ -41,6 +41,9 @@ at last. Notarisation still needs a paid membership nobody is buying.
 ---
 
 ## After 0.5 (2026-10-03)
+
+- [x] 0.6.0 released on 2026-10-05 as GitHub release `v0.6.0`, signed with the personal team like
+      0.2.0 to 0.5.0: the Notes tab and the pill flank fix.
 
 - [x] Battery cut off on the MacBook Pro's closed pill: with nothing playing the empty left flank
       was an `EmptyView`, which took no width, so the row was centred and slid half a flank left,
@@ -636,8 +639,8 @@ Decisions still open, but nothing in the code should make these harder.
 - [ ] **App Store build.** Cannot include the MediaRemote bridge. Plan is a compile-time flag
       that removes `MediaRemoteBridge` and makes `SystemNowPlayingSource` report unavailable,
       leaving Apple Music and Spotify working.
-- [~] **Direct build.** 0.5.0 is released (2026-10-03, GitHub release `v0.5.0`), after 0.4.0
-      (2026-09-24) and 0.3.0 (2026-09-23); all signed with the personal team as 0.2.0 was, which
+- [~] **Direct build.** 0.6.0 is released (2026-10-05, GitHub release `v0.6.0`), after 0.5.0
+      (2026-10-03), 0.4.0 (2026-09-24) and 0.3.0 (2026-09-23); all signed with the personal team as 0.2.0 was, which
       the user chose over `--anonymous`. The next shared build needs new `ReleaseNotes.latest` notes and `id`
       and a `MARKETING_VERSION` bump first. `Scripts/release.sh` builds Release and wraps it in
       `dist/MinNotch-<version>.dmg`, with `--anonymous` to re-sign ad-hoc so the download does

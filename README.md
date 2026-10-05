@@ -10,7 +10,7 @@ stats, a file shelf, saved links, a timer.
 
 ## Download
 
-[**MinNotch 0.5.0**](https://github.com/andrefongkc-cyber/mininotch/releases/latest) — open the
+[**MinNotch 0.6.0**](https://github.com/andrefongkc-cyber/mininotch/releases/latest) — open the
 DMG, drag MinNotch to Applications. It runs in the background: no Dock icon and nothing in ⌘-Tab,
 just the notch and an optional menu bar icon. Quit it from that icon or from Settings > About.
 
@@ -81,7 +81,7 @@ in the closed pill.
 Also:
 
 - **Keep the notch open** with ⌃⌥P, on whichever display it is on, while you work on another.
-- **Notes**: a scratchpad in its own tab, kept on your Mac between opens _(next)_.
+- **Notes**: a scratchpad in its own tab, kept on your Mac between opens.
 - **Sound output**: switch between speakers, AirPods and displays, and set the volume, from
   the Now Playing card.
 - **System stats**: CPU, GPU, memory, network, and the charge of connected AirPods and accessories,

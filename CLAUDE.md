@@ -643,9 +643,9 @@ defaulting on only under `#if DEBUG`) for checking both at a glance. Review it w
 `--capture-whats-new`, which renders the notes on their own because a window capture does not
 draw `ScrollView` content.
 
-`ReleaseNotes.latest` is 0.5.0 and `MARKETING_VERSION` matches. 0.5.0 was released on 2026-10-03
-as the GitHub release `v0.5.0`, signed with the personal team like 0.2.0 to 0.4.0, at the user's
-request ("release the release on git"). The next shared build needs new notes, a new `id`, and a
+`ReleaseNotes.latest` is 0.6.0 and `MARKETING_VERSION` matches. 0.6.0 was released on 2026-10-05
+as the GitHub release `v0.6.0`, signed with the personal team like 0.2.0 to 0.5.0, at the user's
+request ("release 0.6"). The next shared build needs new notes, a new `id`, and a
 version bump. When the README describes something on
 `main` that no download has yet, mark it _(next)_ and take the markers out at release.
 
