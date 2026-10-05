@@ -45,6 +45,12 @@ final class NotchWindowController {
         panel.orderOut(nil)
     }
 
+    /// Makes the panel the key window, for typing into the Notes tab from a shortcut.
+    func takeKeyboard() {
+        NSApp.activate(ignoringOtherApps: true)
+        panel.makeKey()
+    }
+
     /// Recomputes geometry after a display change or a settings change that affects size.
     func updateGeometry() {
         let geometry = NotchGeometry.make(for: screen, settings: environment.settings)

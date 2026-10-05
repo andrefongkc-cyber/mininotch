@@ -223,6 +223,12 @@ enum DebugWindowCapture {
             midway = Double(arguments[i + 1])
         }
         if expanded && midway == nil { viewModel.expand() }
+        // `--sample-notes` fills the Notes tab with a fixed note, leaving the real one alone.
+        if arguments.contains("--sample-notes") {
+            settings.advanced.notesEnabled = true
+            environment.notes.applySample()
+        }
+
         // `--no-media` captures with nothing playing, so a side whose indicators are all about the
         // song is empty: the case that slid the pill off the camera housing.
         if arguments.contains("--no-media") {

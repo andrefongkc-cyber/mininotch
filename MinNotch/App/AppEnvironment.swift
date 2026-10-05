@@ -32,6 +32,7 @@ final class AppEnvironment {
     var tappedBeatOrigin: TimeInterval?
     let clipboard = ClipboardHistoryService()
     let linkShelf = LinkShelfService()
+    let notes = NotesService()
     let timer = TimerService()
 
     @ObservationIgnored private(set) lazy var notchWindows = NotchWindowManager(environment: self)
@@ -114,6 +115,7 @@ final class AppEnvironment {
         nowPlaying.start(settings: settings)
         clipboard.start(settings: settings)
         linkShelf.start(settings: settings)
+        notes.load()
         timer.start(settings: settings)
 
         notchWindows.start()
@@ -137,6 +139,7 @@ final class AppEnvironment {
     }
 
     func stop() {
+        notes.saveNow()
         nowPlaying.stop()
         calendarService.stop()
         clipboard.stop()
@@ -446,7 +449,11 @@ final class AppEnvironment {
             nowPlaying.send(.previousTrack)
         case .keepOpen:
             notchWindows.toggleKeepOpen()
-        case .toggleShelf, .quickNote, .startTimer:
+        case .quickNote:
+            guard settings.advanced.notesEnabled else { return }
+            notchWindows.openNotes()
+            notes.requestFocus()
+        case .toggleShelf, .startTimer:
             // Handled once the matching feature lands; the binding is already recordable.
             AppLog.app.debug("Action \(action.rawValue, privacy: .public) is not implemented yet")
         }

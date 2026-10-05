@@ -15,6 +15,7 @@ enum OnboardingFeature: String, CaseIterable, Identifiable {
     case clipboardHistory
     case linkShelf
     case shelf
+    case notes
     case weather
     case ambientLighting
     case huds
@@ -37,7 +38,7 @@ enum OnboardingFeature: String, CaseIterable, Identifiable {
         switch self {
         case .nowPlaying, .onlineLyrics, .calendar, .timer, .systemStats, .closedIndicators:
             return .notch
-        case .clipboardHistory, .linkShelf, .shelf, .weather, .ambientLighting, .huds, .gestures, .floatingWindow:
+        case .clipboardHistory, .linkShelf, .shelf, .notes, .weather, .ambientLighting, .huds, .gestures, .floatingWindow:
             return .extras
         case .launchAtLogin, .menuBarIcon:
             return .startup
@@ -55,6 +56,7 @@ enum OnboardingFeature: String, CaseIterable, Identifiable {
         case .clipboardHistory: return "Clipboard History"
         case .linkShelf: return "Link Shelf"
         case .shelf: return "File Shelf"
+        case .notes: return "Notes"
         case .weather: return "Weather"
         case .ambientLighting: return "Ambient Lighting"
         case .huds: return "Volume and Brightness HUDs"
@@ -86,6 +88,8 @@ enum OnboardingFeature: String, CaseIterable, Identifiable {
             return "Drop or paste links onto the notch to keep them, then click one to open it."
         case .shelf:
             return "Drop files on the notch to hold them, then drag them out wherever they need to go."
+        case .notes:
+            return "A scratchpad in the notch that keeps what you type."
         case .weather:
             return "The forecast where you are, and the temperature in the closed notch."
         case .ambientLighting:
@@ -145,6 +149,7 @@ enum OnboardingFeature: String, CaseIterable, Identifiable {
         case .clipboardHistory: return "doc.on.clipboard"
         case .linkShelf: return "link"
         case .shelf: return "tray.full"
+        case .notes: return "note.text"
         case .weather: return "cloud.sun"
         case .ambientLighting: return "light.beacon.max"
         case .huds: return "speaker.wave.2"
@@ -165,6 +170,7 @@ enum OnboardingFeature: String, CaseIterable, Identifiable {
         case .clipboardHistory: return Color(nsColor: .systemBlue)
         case .linkShelf, .weather: return Color(nsColor: .systemCyan)
         case .shelf: return Color(nsColor: .systemTeal)
+        case .notes: return Color(nsColor: .systemYellow)
         case .ambientLighting: return Color(nsColor: .systemPink)
         case .huds: return Color(nsColor: .systemPurple)
         case .gestures: return Color(nsColor: .systemIndigo)
@@ -183,6 +189,7 @@ enum OnboardingFeature: String, CaseIterable, Identifiable {
         case .clipboardHistory: return .clipboardHistory
         case .linkShelf: return .linkShelf
         case .shelf: return .shelf
+        case .notes: return .quickNotes
         case .weather: return .weather
         case .huds: return .hud
         case .gestures: return .gestures
@@ -211,6 +218,7 @@ enum OnboardingFeature: String, CaseIterable, Identifiable {
         case .clipboardHistory: return settings.advanced.clipboardHistoryEnabled
         case .linkShelf: return settings.advanced.linkShelfEnabled
         case .shelf: return settings.shelf.enabled
+        case .notes: return settings.advanced.notesEnabled
         case .weather: return settings.weather.enabled
         case .ambientLighting: return settings.appearance.ambientGlow.isEnabled
         case .huds:
@@ -249,6 +257,8 @@ enum OnboardingFeature: String, CaseIterable, Identifiable {
             settings.advanced.linkShelfEnabled = isOn
         case .shelf:
             settings.shelf.enabled = isOn
+        case .notes:
+            settings.advanced.notesEnabled = isOn
         case .weather:
             settings.weather.enabled = isOn
         case .ambientLighting:
@@ -298,7 +308,7 @@ enum OnboardingPreset: String, CaseIterable, Identifiable {
         let chosen: Set<OnboardingFeature>
         switch self {
         case .recommended:
-            chosen = [.nowPlaying, .calendar, .timer, .systemStats, .closedIndicators,
+            chosen = [.nowPlaying, .calendar, .timer, .systemStats, .closedIndicators, .notes,
                       .launchAtLogin, .menuBarIcon]
         case .everything:
             chosen = Set(OnboardingFeature.allCases)

@@ -191,7 +191,7 @@ struct LayoutSettingsView: View {
     private var topBarCatalogue: [TopStripItem] {
         NotchWidgetRegistry.shownTabs(settings).map(TopStripItem.init)
             + [.settings, .battery, .keepOpen]
-            + (settings.advanced.showDebugButtons ? [.whatsNew, .tutorial] : [])
+            + (settings.advanced.showDebugButtons ? [.whatsNew] : [])
     }
 
     /// One side of the top bar with the tabs of switched-off features left out of the editor.
@@ -269,6 +269,7 @@ struct WidgetTiles: View {
         case .links: return { settings.advanced.linkShelfEnabled.toggle() }
         case .timer: return { settings.timer.enabled.toggle() }
         case .weather: return { settings.weather.enabled.toggle() }
+        case .notes: return { settings.advanced.notesEnabled.toggle() }
         }
     }
 }

@@ -96,6 +96,20 @@ struct AdvancedSettingsView: View {
             }
 
             SettingsCard(
+                header: "Notes",
+                footer: "Saved as you type, in Library > Application Support > MinNotch > Notes.txt, and never sent anywhere."
+            ) {
+                SettingsRow(
+                    title: "Show Notes",
+                    subtitle: "A Notes tab in the open panel: one scratchpad, kept between opens. The Open Notes shortcut in Shortcuts opens it ready to type.",
+                    systemImage: "note.text",
+                    badge: FeatureFlag.quickNotes.badge
+                ) {
+                    SettingsToggle(isOn: $settings.advanced.notesEnabled)
+                }
+            }
+
+            SettingsCard(
                 header: "Clipboard",
                 footer: "History is kept in memory only and is never written to disk. Anything an app marks as private, which is what password managers do, is skipped."
             ) {

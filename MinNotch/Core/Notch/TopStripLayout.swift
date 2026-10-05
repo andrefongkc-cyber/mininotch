@@ -79,6 +79,8 @@ struct TopStripLayout: Equatable {
             guard seen.insert(item).inserted else { return false }
             if let tab = item.tab { return showsTabs && availableTabs.contains(tab) }
             if item == .battery { return showsBattery }
+            // Folded into the What's New button, which offers both.
+            if item == .tutorial { return false }
             if item.isDebug { return showsDebug }
             return true
         }
@@ -92,8 +94,7 @@ struct TopStripLayout: Equatable {
             }
         }
         if showsDebug {
-            let missing = [TopStripItem.whatsNew, .tutorial].filter { !seen.contains($0) }
-            right.insert(contentsOf: missing, at: 0)
+            if !seen.contains(.whatsNew) { right.insert(.whatsNew, at: 0) }
         }
         if showsKeepOpen, !seen.contains(.keepOpen) {
             right.insert(.keepOpen, at: 0)

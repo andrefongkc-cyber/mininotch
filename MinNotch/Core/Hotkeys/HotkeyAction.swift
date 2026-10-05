@@ -27,7 +27,7 @@ enum HotkeyAction: String, CaseIterable, Identifiable {
         case .nextTrack: return "Next Track"
         case .previousTrack: return "Previous Track"
         case .toggleShelf: return "Toggle Shelf"
-        case .quickNote: return "New Quick Note"
+        case .quickNote: return "Open Notes"
         case .startTimer: return "Start Timer"
         case .keepOpen: return "Keep the Notch Open"
         }

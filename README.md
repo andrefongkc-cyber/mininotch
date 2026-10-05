@@ -81,6 +81,7 @@ in the closed pill.
 Also:
 
 - **Keep the notch open** with ⌃⌥P, on whichever display it is on, while you work on another.
+- **Notes**: a scratchpad in its own tab, kept on your Mac between opens _(next)_.
 - **Sound output**: switch between speakers, AirPods and displays, and set the volume, from
   the Now Playing card.
 - **System stats**: CPU, GPU, memory, network, and the charge of connected AirPods and accessories,

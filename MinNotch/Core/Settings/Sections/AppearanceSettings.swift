@@ -122,12 +122,15 @@ enum TopStripItem: String, Codable, CaseIterable, Identifiable, LayoutArrangeabl
     case links
     case timer
     case weather
+    case notes
     case settings
     case battery
     /// Keeps the open panel open until pressed again. Not placed by default: it appears by
     /// itself while the panel is being kept open, so there is always a way to let it go.
     case keepOpen
-    /// Debug buttons, shown only while Settings > Advanced > Debug Buttons in Top Bar is on.
+    /// The debug button, shown only while Settings > Advanced > Debug Buttons in Top Bar is on.
+    /// One button offering What's New or the tutorial; `tutorial` was its own button and stays
+    /// only so saved arrangements that hold it still decode. It is never shown.
     case whatsNew
     case tutorial
 
@@ -146,6 +149,7 @@ enum TopStripItem: String, Codable, CaseIterable, Identifiable, LayoutArrangeabl
         case .links: self = .links
         case .timer: self = .timer
         case .weather: self = .weather
+        case .notes: self = .notes
         }
     }
 
@@ -157,7 +161,7 @@ enum TopStripItem: String, Codable, CaseIterable, Identifiable, LayoutArrangeabl
         case .settings: return "Settings"
         case .battery: return "Battery"
         case .keepOpen: return "Keep Open"
-        case .whatsNew: return "What's New"
+        case .whatsNew: return "What's New and Tutorial"
         case .tutorial: return "Tutorial"
         default: return tab?.title ?? rawValue
         }

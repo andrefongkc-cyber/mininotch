@@ -70,6 +70,7 @@ MinNotch --capture-notch out.png [--collapsed] [--tab system] [--glow bars|off] 
                                  [--lyrics-sheet] [--sample-stats] [--shadow] [--closed-lyrics]
                                  [--sample-shelf] [--output-sheet] [--sample-weather]
                                  [--sample-power] [--keep-open] [--hud-style floatingPill] [--no-media]
+                                 [--sample-notes]
 MinNotch --check-lyrics "Khalid" "8TEEN" 229                      # LRCLIBClient + LRCParser
 MinNotch --check-lyric-sync [--out f]                             # matching lyrics to the audio, synthetic
 MinNotch --check-lyric-sync --audio f.mp3 --lrc f.lrc --shifts 0,0.5 [--peaks]   # …and a real song, old method beside it
@@ -96,6 +97,7 @@ MinNotch --check-temps                                            # every temper
 MinNotch --check-stats-history                                    # the graphs' history survives the System tab closing
 MinNotch --check-power [seconds]                                  # charger in, Mac use, battery, from the SMC
 MinNotch --check-keep-open                                        # Keep the Notch Open: holds, lets go, pin, shortcut default
+MinNotch --check-notes                                            # the note is saved, read back, never overwritten by a capture
 ```
 
 `--capture-notch` grew three options for the animated effects. `--glow off` disables the
@@ -784,6 +786,23 @@ the shelf wherever they land, anything else to the links, and the half a drop wi
 A file is also a URL, which is why two separate targets would not do. Paste (⌘V) holds files copied
 in Finder and keeps a copied link. With either feature off the tab is the other one, drawn as
 before. Layout keeps a tile for each feature.
+
+**Notes is one plain text file, typed into the notch.** `NotesService` keeps one note in
+Application Support (`MinNotch/Notes.txt`), written 0.8 s after typing stops and at once on quit;
+nothing leaves the Mac. The tab (`NotesWidgetView`) is a `TextEditor` forced dark, because the panel
+is black in both appearances and a light-mode caret is black on black. Typing works the way
+Calendar's Quick Add does: the panel can become key, a click activates the app, and focus sets
+`isInteractionLocked` so the panel cannot close mid-sentence. The Open Notes shortcut
+(`HotkeyAction.quickNote`, unbound by default) opens the tab on the open or pointed-at panel, makes
+that panel key (`NotchWindowController.takeKeyboard`) and asks for focus (`NotesService.wantsFocus`).
+Advanced > Show Notes, on by default, and in the tutorial's Recommended set, since it is local and
+costs nothing. A capture's sample note (`--sample-notes`) is never marked loaded, so it can never be
+saved over the real one; `--check-notes` proves it with a scratch file.
+
+**What's New and the tutorial share one debug button.** `TopStripItem.whatsNew` opens a small menu
+(`NotchMenu`, an `NSMenu` at the pointer, so the button keeps the bar's look) offering either.
+`.tutorial` stays as a case only so saved arrangements decode; `TopStripLayout.resolve` never shows
+it.
 
 **Shelf clicks and drags both arrive through `ShelfDragSource`.** The AppKit drag view covers
 each chip so it can offer move or copy and hear how the drag ended, so it is also what receives

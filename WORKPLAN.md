@@ -1,6 +1,6 @@
 # MinNotch workplan
 
-Status: after 0.5: pill flank fix pushed (unreleased); next: 0.5.1 with it when the user wants a release.
+Status: Notes tab and the combined What's New/tutorial button done and pushed, with the pill flank fix, unreleased; next: 0.6 when the user wants a release (Sparkle offered for it).
 
 Living document. Update the checkboxes as work lands. `CLAUDE.md` holds the architecture
 rules and the traps; this file holds the sequence.
@@ -46,6 +46,10 @@ at last. Notarisation still needs a paid membership nobody is buying.
       was an `EmptyView`, which took no width, so the row was centred and slid half a flank left,
       under the camera housing. Found from the user's screenshot against macOS's own notch width
       (185 points, correct). Fixed and captured with `--no-media`. Not released.
+- [x] A Notes tab: one scratchpad in the notch, saved to Application Support as you type.
+      Advanced > Show Notes (on), the Open Notes shortcut (unbound), and a tutorial checkbox.
+      `--check-notes` passes; typing into it needs trying by hand.
+- [x] What's New and the tutorial in one top-bar button that offers both in a menu.
 - [x] Settings > Weather > Temperature Units "doesn't work": not a bug. The user then saw the
       weather showing; the units only show somewhere once Weather or the temperatures are on.
 
@@ -511,7 +515,7 @@ nothing.
       running.
 - [x] A running timer shows in the closed pill as a Live Activity, glyph and countdown, and
       sits beside the artwork rather than replacing it.
-- [ ] Quick notes scratchpad that persists between opens.
+- [x] Quick notes scratchpad that persists between opens: the Notes tab (2026-10-05).
 - [x] Clipboard history. Polled, because there is no push API. Text, links, colours, and
       images, with pin, clear, and click-to-copy-back. Settings > Advanced > Clipboard.
       Kept in memory only, and honours the `org.nspasteboard` concealed marker.

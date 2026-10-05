@@ -166,6 +166,17 @@ final class NotchWindowManager {
         (open ?? preferredController())?.viewModel.setKeptOpen(true)
     }
 
+    /// Opens the Notes tab ready to type into, on the panel that is open or the one under the
+    /// pointer. The panel takes the keyboard here, because the shortcut that calls this is pressed
+    /// with another app in front.
+    func openNotes() {
+        let open = controllers.values.first { $0.viewModel.state == .expanded }
+        guard let controller = open ?? preferredController() else { return }
+        controller.viewModel.selectedTab = .notes
+        controller.viewModel.expand()
+        controller.takeKeyboard()
+    }
+
     func peekAll(duration: TimeInterval = 2.0) {
         controllers.values.forEach { $0.viewModel.peek(for: duration) }
     }

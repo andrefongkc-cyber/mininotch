@@ -49,6 +49,8 @@ struct ExpandedPanelView: View {
             TimerWidgetView(viewModel: viewModel)
         case .weather:
             WeatherWidgetView()
+        case .notes:
+            NotesWidgetView(viewModel: viewModel)
         }
     }
 
@@ -132,26 +134,25 @@ struct ExpandedPanelView: View {
                 viewModel.setKeptOpen(!viewModel.isKeptOpen)
             }
         } else if item == .whatsNew {
+            // One button for both, asked for "for now": a click offers the choice.
             NotchIconButton(
                 systemImage: item.layoutSymbol,
-                help: "Show What's New (debug)",
+                help: "What's New or the tutorial (debug)",
                 accent: settings.appearance.resolvedAccent,
                 width: buttonWidth
             ) {
-                viewModel.collapse()
-                environment.whatsNew.present()
-            }
-        } else if item == .tutorial {
-            NotchIconButton(
-                systemImage: item.layoutSymbol,
-                help: "Show the tutorial (debug)",
-                accent: settings.appearance.resolvedAccent,
-                width: buttonWidth
-            ) {
-                viewModel.collapse()
-                // A rerun starts the checklist from the current settings, so looking at it
-                // changes nothing unless a box is changed.
-                environment.onboarding.present(isRerun: true)
+                NotchMenu.show([
+                    NotchMenu.Item(title: "What's New", symbol: "sparkles") {
+                        viewModel.collapse()
+                        environment.whatsNew.present()
+                    },
+                    NotchMenu.Item(title: "Tutorial", symbol: "graduationcap") {
+                        viewModel.collapse()
+                        // A rerun starts the checklist from the current settings, so looking at it
+                        // changes nothing unless a box is changed.
+                        environment.onboarding.present(isRerun: true)
+                    },
+                ])
             }
         }
     }
