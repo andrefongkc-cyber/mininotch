@@ -85,7 +85,7 @@ in the closed pill.
 Also:
 
 - **Notch Style**: six design languages, Minimal, Bento, Glass, Neumorphic, Clay and Skeuomorphic,
-  each dark or light or matching your Mac, and any of them on Liquid Glass on macOS 26, in
+  each dark or light or matching your Mac, and any of them on Liquid Glass, as see-through as you like, on macOS 26, in
   Settings > Appearance _(next)_.
 - **Keep the notch open** with ⌃⌥P, on whichever display it is on, while you work on another.
 - **Notes**: a scratchpad in its own tab, kept on your Mac between opens.

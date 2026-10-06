@@ -62,6 +62,19 @@ struct NotchStylePicker: View {
                 .pickerStyle(.segmented)
                 .fixedSize()
             }
+
+            SettingsDivider()
+
+            SettingsRow(
+                title: "Glass Opacity",
+                subtitle: "Lower lets more of the desktop through; higher brings back the style's own colour.",
+                systemImage: "circle.dotted.circle",
+                isEnabled: NotchBackground.isLiquidGlassSupported && settings.appearance.notchBackground == .liquidGlass
+            ) {
+                ValueSlider(value: $settings.appearance.liquidGlassOpacity, range: 0...1, step: 0.05) {
+                    "\(Int(($0 * 100).rounded()))%"
+                }
+            }
         }
     }
 

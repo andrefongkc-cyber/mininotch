@@ -17,6 +17,11 @@ enum DebugSupport {
         settings.appearance.notchVariant = .dark
         // `--liquid-glass` under whichever style. A capture cannot draw it; screenshot it instead.
         settings.appearance.notchBackground = arguments.contains("--liquid-glass") ? .liquidGlass : .solid
+        // `--glass-opacity 0.2` with it.
+        if let index = arguments.firstIndex(of: "--glass-opacity"), arguments.indices.contains(index + 1),
+           let opacity = Double(arguments[index + 1]) {
+            settings.appearance.liquidGlassOpacity = opacity
+        }
         guard let index = arguments.firstIndex(of: "--notch-style"), arguments.indices.contains(index + 1) else { return }
         let parts = arguments[index + 1].split(separator: "-").map(String.init)
         if let language = parts.first.flatMap(NotchDesignLanguage.init(rawValue:)) {

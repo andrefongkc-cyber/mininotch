@@ -56,6 +56,7 @@ enum SettingsNewRows {
         "Blur Until Unlocked": "0.7",
         "Light or Dark": "0.7",
         "Background": "0.7",
+        "Glass Opacity": "0.7",
     ]
 
     static func isNew(_ title: String) -> Bool {

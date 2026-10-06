@@ -38,8 +38,11 @@ extension NotchStyle {
         var style = make(language, isDark: isDark)
         if settings.notchBackground == .liquidGlass, NotchBackground.isLiquidGlassSupported {
             style.surface.liquidGlass = true
-            // Enough of the style's colour that text keeps its contrast over a busy desktop.
-            style.surface.liquidTint = isDark ? 0.45 : 0.32
+            // Settings > Appearance > Glass Opacity. The default, 0.45, keeps text's contrast over a
+            // busy desktop; a light style takes about seven tenths of it, as the same tint reads
+            // stronger in white.
+            let opacity = min(max(settings.liquidGlassOpacity, 0), 1)
+            style.surface.liquidTint = isDark ? opacity : opacity * 0.72
         }
         return style
     }

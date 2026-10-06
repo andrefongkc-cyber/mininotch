@@ -103,7 +103,8 @@ Architecture (approved 2026-10-05 with: a, Match System yes, keep Translucent Pa
 - [ ] Final visual polish: the user's review of each style on the real screen
 - [x] Liquid Glass background (2026-10-06): Settings > Appearance > Notch Style > Background, Solid or
       Liquid Glass, under any style and variant. macOS 26 only; earlier systems see the row switched
-      off with the reason. Checked on screen for four styles.
+      off with the reason. Checked on screen for four styles. Glass Opacity (asked the same day)
+      slides from see-through to nearly solid, checked on screen at 0, 0.45 and 1.
 - [x] Settings, from the user's screenshots: Light or Dark wrapped a letter at a time (shorter
       subtitle, the rest in the card footer); the tiles' contents were off centre; a one-line blurb
       under each style; scrolling Appearance was heavy on the GPU (tiles are pictures now, the glow

@@ -43,6 +43,7 @@ enum DebugSettingsCheck {
         report("")
         report(String(format: "  expandedWidth        %10.2f   (460...820)", settings.appearance.expandedWidth))
         report(String(format: "  panelCornerRadius    %10.2f   (8...32)", settings.appearance.panelCornerRadius))
+        report(String(format: "  liquidGlassOpacity   %10.2f   (0...1)", settings.appearance.liquidGlassOpacity))
         report(String(format: "  glow.intensity       %10.2f   (0.1...1)", settings.appearance.ambientGlow.intensity))
         report(String(format: "  glow.speed           %10.2f   (0...1)", settings.appearance.ambientGlow.speed))
         report(String(format: "  glow.glowRadius      %10.2f   (2...28)", settings.appearance.ambientGlow.glowRadius))

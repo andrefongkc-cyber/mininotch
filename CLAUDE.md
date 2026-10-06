@@ -882,8 +882,11 @@ weather symbols a faint outline (`notchMulticolorSymbol`), because their clouds 
 **Liquid Glass is a background under any style, macOS 26 only.** Settings > Appearance > Notch Style >
 Background (`AppearanceSettings.notchBackground`, Solid or Liquid Glass). `NotchStyle.resolve` sets
 `surface.liquidGlass` when it is chosen and `NotchBackground.isLiquidGlassSupported`; the surface is
-then SwiftUI's `glassEffect` in the notch's own outline, tinted towards the style's base, and the
-style's glass, grain and edge give way to it. Before macOS 26 the row is shown switched off with
+then SwiftUI's `glassEffect` in the notch's own outline, and the style's glass, grain and edge give
+way to it. Glass Opacity (`liquidGlassOpacity`, 0 to 1, default 0.45, light styles take 0.72 of it)
+tints *clear* glass towards the style's base and lays the base over it by the square of the amount:
+regular glass is frosted already and its tint never covers, so a slider over it barely moved, while
+this runs from the desktop showing straight through to nearly the solid style. Before macOS 26 the row is shown switched off with
 "Liquid Glass needs macOS 26 or later", and a saved Liquid Glass draws Solid. Glass takes its
 appearance from its surroundings, which follow the system, so the surface sets the style's
 colour scheme on it (`NotchSurfaceStyle.isDark`): a light style on a dark Mac drew dark glass under

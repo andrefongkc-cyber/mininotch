@@ -77,8 +77,14 @@ struct NotchSurfaceView<Edge: Shape>: View {
     @ViewBuilder
     private var liquidGlass: some View {
         if #available(macOS 26.0, *) {
-            Color.clear
-                .glassEffect(.regular.tint(style.base.opacity(style.liquidTint)), in: edge)
+            // Clear glass, the see-through kind, tinted by Glass Opacity, with the style's colour
+            // laid over it more and more towards the top of the slider: at 0 the desktop shows
+            // through with only the lensing at the edges, at 1 it is close to the solid style.
+            // Regular glass is already frosted and its tint never covers, so a slider over it
+            // barely moved anything.
+            let amount = style.liquidTint
+            style.base.opacity(amount * amount * 0.85)
+                .glassEffect(.clear.tint(style.base.opacity(amount)), in: edge)
                 // Glass takes its appearance from its surroundings, which follow the system;
                 // a light style over a dark Mac drew dark glass under dark text.
                 .environment(\.colorScheme, style.isDark ? .dark : .light)
