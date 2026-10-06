@@ -27,7 +27,7 @@ struct NotchStylePicker: View {
 
             SettingsRow(
                 title: "Light or Dark",
-                subtitle: "Match System follows your Mac.",
+                subtitle: "Auto follows your Mac's appearance.",
                 systemImage: "circle.lefthalf.filled"
             ) {
                 Picker("", selection: $settings.appearance.notchVariant) {

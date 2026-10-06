@@ -1,6 +1,6 @@
 # MiniNotch workplan
 
-Status: performance (no more redrawing ninety times a second while music plays), Clay's chosen chips, swipe flicks and tab runs, done and pushed, unreleased; next: the user checks lag with music playing and Settings open, and says how swipes still misbehave if they do; then 0.7.
+Status: Liquid Glass is Apple's regular glass now, swipes work over the whole panel, Light or Dark says Auto; pushed, unreleased; next: the user tries them, then 0.7.
 
 Living document. Update the checkboxes as work lands. `CLAUDE.md` holds the architecture
 rules and the traps; this file holds the sequence.
@@ -123,8 +123,12 @@ Architecture (approved 2026-10-05 with: a, Match System yes, keep Translucent Pa
 - [x] Clay: chosen chips and tabs are pressed in; they looked like every other chip.
 - [x] Left and right swipes, reported again: flicks count their momentum, and the panel keeps its
       height while tabs are swiped through. Ask what still misbehaves, if anything.
-- [x] Liquid Glass "only sometimes": not a bug, the glass blurs what is behind it; over a dark
-      window it looks solid. Explained to the user.
+- [x] Liquid Glass "only sometimes", then "0 still doesn't look like liquid glass": clear glass was
+      the wrong glass, invisible over plain or dark windows. Now Apple's regular glass, checked on
+      screen over a test pattern (`--backdrop`) at 0, 0.5 and 1 in Minimal Dark and Clay Light.
+- [x] Swipes over the whole panel, not just the top bar: a listen-only scroll tap, since scroll
+      views took the gesture from the local monitor.
+- [x] Light or Dark wrapped a word to a line in the user's narrower window: "Match System" is "Auto".
 
 ### Before 1.0.0: music animations
 

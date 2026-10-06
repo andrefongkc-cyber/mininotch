@@ -83,8 +83,15 @@ struct NotchSurfaceView<Edge: Shape>: View {
             // Regular glass is already frosted and its tint never covers, so a slider over it
             // barely moved anything.
             let amount = style.liquidTint
+            // Regular glass, Apple's own: a frosted body that bends what is behind it, so it reads
+            // as glass over a dark window as much as a bright one, and text on it stays legible.
+            // Glass Opacity lays the style's colour over it, more and more towards the top of the
+            // slider, from the glass alone at 0 to nearly the solid style at 1. Clear glass was
+            // tried first: it is all but invisible, glass only where something bright and busy is
+            // behind it, so over the user's dark chat window it looked like no glass at all, and
+            // like a different setting every time the window behind changed.
             style.base.opacity(amount * amount * 0.85)
-                .glassEffect(.clear.tint(style.base.opacity(amount)), in: edge)
+                .glassEffect(.regular.tint(amount > 0 ? style.base.opacity(amount) : nil), in: edge)
                 // Glass takes its appearance from its surroundings, which follow the system;
                 // a light style over a dark Mac drew dark glass under dark text.
                 .environment(\.colorScheme, style.isDark ? .dark : .light)
@@ -136,3 +143,5 @@ enum NotchGrain {
         }
     }
 }
+
+

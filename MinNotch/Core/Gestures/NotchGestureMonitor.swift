@@ -2,13 +2,17 @@ import AppKit
 
 /// Recognises two-finger trackpad swipes over the notch.
 ///
-/// Implemented as a local event monitor rather than as a view that handles `scrollWheel`.
-/// A view in the hierarchy would have to win AppKit hit-testing to receive scroll events,
-/// and winning it would also swallow the clicks the panel needs. A monitor sees the events
-/// without being in the responder chain at all.
+/// A listen-only event tap on scroll events, consulted only while the pointer is over a notch
+/// (`pointerPanel`), so scrolling the Settings window or any other app never moves it. It used to
+/// be a local event monitor, which worked over the top bar and nowhere else: a scroll view under
+/// the pointer (the clipboard, the calendar's list, the shelf, Notes, the lyrics) takes a trackpad
+/// gesture's events for itself after the first, straight off the queue, so the monitor never saw
+/// the swipe. A tap sees every event before any window does. It needs no permission, since it only
+/// listens; if it cannot be made, the local monitor is the fallback.
 ///
-/// Only events destined for a `NotchPanel` are considered, so scrolling the Settings window
-/// or any other window never moves the notch.
+/// A view in the hierarchy handling `scrollWheel` would have to win hit-testing to get the events,
+/// and winning it would also swallow the clicks the panel needs, which is why neither approach is
+/// a view.
 @MainActor
 final class NotchGestureMonitor {
     enum Direction {
@@ -18,7 +22,13 @@ final class NotchGestureMonitor {
     /// Fired once per gesture, on the main thread.
     var onSwipe: ((Direction) -> Void)?
 
+    /// The notch panel the pointer is over, if any. `AppEnvironment` answers it from the panels'
+    /// hover state.
+    var pointerPanel: (() -> NotchPanel?)?
+
     private var monitor: Any?
+    nonisolated(unsafe) private var tap: CFMachPort?
+    nonisolated(unsafe) private var tapSource: CFRunLoopSource?
     private var settings: SettingsStore?
 
     private var accumulatedX: CGFloat = 0
@@ -46,15 +56,56 @@ final class NotchGestureMonitor {
     func stop() {
         if let monitor { NSEvent.removeMonitor(monitor) }
         monitor = nil
+        if let tap { CGEvent.tapEnable(tap: tap, enable: false) }
+        if let tapSource { CFRunLoopRemoveSource(CFRunLoopGetMain(), tapSource, .commonModes) }
+        tap = nil
+        tapSource = nil
         reset()
     }
 
     private func install() {
-        guard monitor == nil else { return }
+        guard monitor == nil, tap == nil else { return }
+
+        let callback: CGEventTapCallBack = { _, type, event, context in
+            guard let context else { return Unmanaged.passUnretained(event) }
+            let monitor = Unmanaged<NotchGestureMonitor>.fromOpaque(context).takeUnretainedValue()
+            monitor.handleTapped(type: type, event: event)
+            return Unmanaged.passUnretained(event)
+        }
+        if let tap = CGEvent.tapCreate(
+            tap: .cgSessionEventTap,
+            place: .tailAppendEventTap,
+            options: .listenOnly,
+            eventsOfInterest: CGEventMask(1) << CGEventType.scrollWheel.rawValue,
+            callback: callback,
+            userInfo: Unmanaged.passUnretained(self).toOpaque()
+        ) {
+            let source = CFMachPortCreateRunLoopSource(kCFAllocatorDefault, tap, 0)
+            CFRunLoopAddSource(CFRunLoopGetMain(), source, .commonModes)
+            CGEvent.tapEnable(tap: tap, enable: true)
+            self.tap = tap
+            tapSource = source
+            return
+        }
+
+        AppLog.app.notice("Swipe tap unavailable; listening inside the notch's windows instead")
         monitor = NSEvent.addLocalMonitorForEvents(matching: [.scrollWheel]) { [weak self] event in
-            self?.handle(event)
+            if let window = event.window as? NotchPanel { self?.handle(event, in: window) }
             return event
         }
+    }
+
+    /// From the tap, on the main run loop.
+    private func handleTapped(type: CGEventType, event: CGEvent) {
+        // The system switches off a tap whose callback was slow, or during secure input.
+        if type == .tapDisabledByTimeout || type == .tapDisabledByUserInput {
+            if let tap { CGEvent.tapEnable(tap: tap, enable: true) }
+            return
+        }
+        guard type == .scrollWheel,
+              let window = pointerPanel?(),
+              let nsEvent = NSEvent(cgEvent: event) else { return }
+        handle(nsEvent, in: window)
     }
 
     private func reset() {
@@ -64,9 +115,7 @@ final class NotchGestureMonitor {
         beganOverScrollableList = false
     }
 
-    private func handle(_ event: NSEvent) {
-        guard let window = event.window as? NotchPanel else { return }
-
+    private func handle(_ event: NSEvent, in window: NotchPanel) {
         let now = Date()
         defer { lastEventAt = now }
 
@@ -141,7 +190,9 @@ final class NotchGestureMonitor {
     /// `ScrollView` is on the Mac.
     private static func isOverScrollableList(_ event: NSEvent, in window: NSWindow) -> Bool {
         guard let content = window.contentView else { return false }
-        let point = content.convert(event.locationInWindow, from: nil)
+        // From the pointer, not the event: an event from the tap belongs to no window, so its
+        // location is not in this one's coordinates.
+        let point = content.convert(window.convertPoint(fromScreen: NSEvent.mouseLocation), from: nil)
         var view = content.hitTest(point)
         while let current = view {
             if let scroll = current as? NSScrollView,

@@ -70,7 +70,9 @@ enum NotchStyleVariant: String, Codable, CaseIterable, Identifiable {
         switch self {
         case .dark: return "Dark"
         case .light: return "Light"
-        case .system: return "Match System"
+        // "Auto", as macOS's own Appearance settings say it: "Match System" made the three
+        // segments so wide that the row's title and subtitle wrapped a word to a line.
+        case .system: return "Auto"
         }
     }
 }

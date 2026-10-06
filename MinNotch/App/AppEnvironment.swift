@@ -113,6 +113,7 @@ final class AppEnvironment {
             self.notchWindows.handleSwipe(direction, environment: self)
             Haptics.perform(enabled: self.settings.advanced.hapticFeedbackEnabled, strength: self.settings.advanced.hapticStrength)
         }
+        gestures.pointerPanel = { [weak self] in self?.notchWindows.hoveredPanel() }
         gestures.start(settings: settings)
         calendarService.start(settings: settings)
         nowPlaying.start(settings: settings)

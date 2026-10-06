@@ -260,6 +260,19 @@ enum DebugWindowCapture {
         // capture lands while it is still out.
         if arguments.contains("--peek") { viewModel.peek(for: 60) }
 
+        // `--backdrop`: a bright, detailed window behind the notch, so what glass does to what is
+        // behind it can be seen whatever the user has open.
+        var backdrop: NSWindow?
+        if arguments.contains("--backdrop") {
+            let window = NSWindow(contentRect: geometry.windowFrame, styleMask: [.borderless], backing: .buffered, defer: false)
+            window.level = .floating
+            window.contentView = NSHostingView(rootView: GlassBackdrop())
+            window.setFrame(geometry.windowFrame, display: true)
+            window.orderFrontRegardless()
+            backdrop = window
+        }
+        _ = backdrop
+
         let panel = NotchPanel(contentRect: geometry.windowFrame)
         let hosting = NSHostingView(
             rootView: NotchRootView(viewModel: viewModel)
@@ -338,4 +351,23 @@ enum DebugWindowCapture {
         FileHandle.standardError.write((message + "\n").data(using: .utf8)!)
     }
 }
+/// Stripes of colour under large and small text, behind the notch for `--backdrop`.
+private struct GlassBackdrop: View {
+    var body: some View {
+        VStack(spacing: 0) {
+            ForEach(0..<12, id: \.self) { row in
+                HStack {
+                    Text(String(repeating: "Liquid Glass test 0123456789  ", count: 4))
+                        .font(.system(size: row.isMultiple(of: 3) ? 22 : 12, weight: .semibold))
+                        .foregroundStyle(row.isMultiple(of: 2) ? Color.white : Color.black)
+                        .lineLimit(1)
+                    Spacer(minLength: 0)
+                }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .background(Color(hue: Double(row) / 12, saturation: 0.7, brightness: row.isMultiple(of: 2) ? 0.55 : 0.95))
+            }
+        }
+    }
+}
 #endif
+

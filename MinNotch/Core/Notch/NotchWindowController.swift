@@ -11,6 +11,8 @@ import SwiftUI
 final class NotchWindowController {
     let viewModel: NotchViewModel
     private let panel: NotchPanel
+    /// The window, for the swipe monitor's hit test.
+    var window: NotchPanel { panel }
     private let environment: AppEnvironment
     private(set) var screen: NSScreen
 

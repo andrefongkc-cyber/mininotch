@@ -837,7 +837,7 @@ the card with the list open.
 
 **Notch Styles are data, drawn by one set of views.** Settings > Appearance > Notch Style picks a
 design language (Minimal, Bento, Glass, Neumorphic, Clay, Skeuomorphic) and Dark, Light or Match
-System (`AppearanceSettings.notchLanguage`, `notchVariant`, decoded leniently, so a file from before
+System, labelled Auto as macOS's own Appearance settings do (`AppearanceSettings.notchLanguage`, `notchVariant`, decoded leniently, so a file from before
 lands on Minimal Dark). `NotchStyle` is a plain value resolved from them (`AppEnvironment.notchStyle()`,
 with `SystemAppearance` for Match System) and read from the environment: `ink`, the surface, and a
 treatment per kind of element (tile, button, module, transport disc, groove, the accent fill, the
@@ -883,10 +883,13 @@ weather symbols a faint outline (`notchMulticolorSymbol`), because their clouds 
 Background (`AppearanceSettings.notchBackground`, Solid or Liquid Glass). `NotchStyle.resolve` sets
 `surface.liquidGlass` when it is chosen and `NotchBackground.isLiquidGlassSupported`; the surface is
 then SwiftUI's `glassEffect` in the notch's own outline, and the style's glass, grain and edge give
-way to it. Glass Opacity (`liquidGlassOpacity`, 0 to 1, default 0.45, light styles take 0.72 of it)
-tints *clear* glass towards the style's base and lays the base over it by the square of the amount:
-regular glass is frosted already and its tint never covers, so a slider over it barely moved, while
-this runs from the desktop showing straight through to nearly the solid style. Before macOS 26 the row is shown switched off with
+way to it. It is Apple's *regular* glass, the frosted kind Control Center uses, and Glass Opacity
+(`liquidGlassOpacity`, 0 to 1, default 0.45, light styles take 0.72 of it) tints it towards the
+style's base and lays the base over it by the square of the amount, from the glass alone at 0 to
+nearly the solid style at 1. *Clear* glass was tried and dropped: it is all but invisible, glass
+only where something bright and busy is behind it, so over a dark window it looked like no glass at
+all and like a different setting whenever the window behind changed. `--backdrop` puts a bright,
+detailed test pattern behind the notch for judging glass on screen. Before macOS 26 the row is shown switched off with
 "Liquid Glass needs macOS 26 or later", and a saved Liquid Glass draws Solid. Glass takes its
 appearance from its surroundings, which follow the system, so the surface sets the style's
 colour scheme on it (`NotchSurfaceStyle.isDark`): a light style on a dark Mac drew dark glass under
@@ -904,6 +907,13 @@ preview pauses scrolled away (macOS 15+) or with the window behind. An open pane
 desktop changes (`NSWorkspace.activeSpaceDidChangeNotification`), unless kept open: it sits above the
 transition and Mission Control, and anything animating in it had macOS redraw the lot every frame.
 There is no public signal for Mission Control itself.
+
+**Two-finger swipes are a listen-only scroll tap, consulted only over a notch.** A local event monitor
+saw swipes over the top bar and nowhere else: a scroll view under the pointer (clipboard, calendar
+list, shelf, Notes, lyrics) takes a trackpad gesture's events off the queue for itself after the
+first, so the monitor never saw the rest. The tap sees every scroll event before any window does,
+needs no permission because it only listens, and returns at once unless a panel is hovered
+(`NotchWindowManager.hoveredPanel`); the local monitor is the fallback if it cannot be made.
 
 **Two-finger swipes read the fingers, not the content.** `NotchGestureMonitor` flips the deltas when
 `isDirectionInvertedFromDevice` says Natural Scrolling has, so the directions are the same with it
@@ -924,10 +934,10 @@ Control, and with Settings open on Appearance. Read `isRunning`; the glow and th
 `current` inside their own timelines. The capture tools never run the tap, which is why no capture
 measurement caught it. Settings' meter also listens only while in view in a window in front.
 
-**Liquid Glass shows what is behind it, blurred.** At Glass Opacity 0 over a bright page it reads as
-glass; over a dark window with small text (the user's chat) the blur averages to dark grey and looks
-nearly solid. The user took that for the glass switching on and off at random. It is not the app
-being active or not: `--capture-notch --activate` and `--key` drew the same.
+**Liquid Glass shows what is behind it.** With clear glass, over a dark window with small text (the
+user's chat) the notch looked nearly solid, and over a bright page see-through, which the user took
+for the glass switching on and off at random; regular glass reads as glass over both. It is not the
+app being active or not: `--capture-notch --activate` and `--key` drew the same.
 
 **Files and links share the Shelf tab.** The user asked for the Shelf (files, AirDrop) and Links
 (paste a link, copy it back) together, so `NotchTab.links` is a feature but no longer a tab:

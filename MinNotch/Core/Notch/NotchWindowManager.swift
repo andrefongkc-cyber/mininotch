@@ -21,6 +21,11 @@ final class NotchWindowManager {
 
     var allViewModels: [NotchViewModel] { controllers.values.map(\.viewModel) }
 
+    /// The panel the pointer is over, open or closed, for two-finger swipes.
+    func hoveredPanel() -> NotchPanel? {
+        controllers.values.first { $0.viewModel.isHovering }?.window
+    }
+
     // MARK: Lifecycle
 
     func start() {
