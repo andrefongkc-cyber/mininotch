@@ -42,7 +42,7 @@ at last. Notarisation still needs a paid membership nobody is buying.
 
 ## After 0.5 (2026-10-03)
 
-- [x] Clipboard privacy (asked 2026-10-05): Advanced > Clipboard > Blur Until Unlocked blurs the
+- [x] Clipboard privacy (asked 2026-10-05): Advanced > Clipboard > Blur Until Unlocked (on by default) blurs the
       Clipboard tab until Touch ID or the login password, and blurs again when the tab closes, the
       screen locks or the Mac sleeps. Copies made in Apple's Passwords app or Keychain Access (which
       mark nothing private) are never recorded. `--check-clipboard` passes and `--blur-clipboard`

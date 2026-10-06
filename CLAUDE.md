@@ -1058,7 +1058,7 @@ still caught; a copy elsewhere in a moment that also visited Passwords is lost, 
 right way round.
 
 **Blur Until Unlocked never draws the real text while locked.** Advanced > Clipboard > Blur Until
-Unlocked blurs the Clipboard tab until `OwnerCheck` (LocalAuthentication's
+Unlocked, on by default at the user's request, blurs the Clipboard tab until `OwnerCheck` (LocalAuthentication's
 `deviceOwnerAuthentication`: Touch ID, else the login password, or a Watch; no permission or
 entitlement), from the Unlock button or a click on a row, which then copies it. A locked row draws
 filler text as long as the real one, blurred, so a blur that fails to apply, an accessibility
