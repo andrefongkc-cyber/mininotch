@@ -67,18 +67,25 @@ final class NotchGestureMonitor {
     private func handle(_ event: NSEvent) {
         guard let window = event.window as? NotchPanel else { return }
 
-        // Momentum is the coasting after the fingers lift. Counting it would let one flick
-        // fire several times as the deltas trail off.
-        guard event.momentumPhase == [] else { return }
-
         let now = Date()
         defer { lastEventAt = now }
+
+        // Momentum is the coasting after the fingers lift, and it belongs to the swipe that
+        // started it: a quick flick does most of its travel there, so ignoring it, as this
+        // once did, dropped flicks that never reached the threshold with the fingers down.
+        // Counted towards the same gesture, which still fires once, so the trailing deltas can
+        // never fire it again. The gesture is only over when the next one begins.
+        if event.momentumPhase != [] {
+            guard !hasFiredThisGesture else { return }
+            accumulate(event, window: window)
+            return
+        }
+
         switch event.phase {
         case .began:
             reset()
             beganOverScrollableList = Self.isOverScrollableList(event, in: window)
         case .ended, .cancelled:
-            reset()
             return
         case []:
             // A mouse wheel: no phases at all, so a quiet moment starts the next gesture.
@@ -91,7 +98,10 @@ final class NotchGestureMonitor {
         }
 
         guard !hasFiredThisGesture else { return }
+        accumulate(event, window: window)
+    }
 
+    private func accumulate(_ event: NSEvent, window: NSWindow) {
         // In the direction the fingers moved, whichever way Natural Scrolling has the content
         // go. The deltas follow the content, so with Natural Scrolling off every swipe used to
         // come out backwards.

@@ -148,6 +148,7 @@ final class NotchViewModel {
     func collapse() {
         cancelPendingWork()
         isKeptOpen = false
+        releaseSwipeHeight()
         guard state != .collapsed else { return }
         setState(.collapsed)
     }
@@ -238,6 +239,31 @@ final class NotchViewModel {
     /// to itself: a swipe to a shorter tab shrinks it out from under the pointer.
     func holdOpen(for seconds: TimeInterval) {
         holdOpenUntil = Date().addingTimeInterval(seconds)
+    }
+
+    /// The least height the open panel keeps while tabs are being swiped through. A shorter tab
+    /// used to shrink the panel at once, out from under the fingers, so the next swipe went to
+    /// whatever was behind it; held at the height it had, the panel stays under them for the
+    /// whole run, then settles to the tab's own height once the swiping stops.
+    private(set) var swipeHeightFloor: CGFloat = 0
+    /// The open panel's height as last drawn, kept by `NotchRootView` for the floor above.
+    @ObservationIgnored var lastPanelHeight: CGFloat = 0
+    @ObservationIgnored private var swipeHeightRelease: DispatchWorkItem?
+
+    func holdHeightForSwipe(for seconds: TimeInterval) {
+        swipeHeightFloor = max(swipeHeightFloor, lastPanelHeight)
+        swipeHeightRelease?.cancel()
+        let work = DispatchWorkItem { [weak self] in
+            MainActor.assumeIsolated { self?.releaseSwipeHeight() }
+        }
+        swipeHeightRelease = work
+        DispatchQueue.main.asyncAfter(deadline: .now() + seconds, execute: work)
+    }
+
+    private func releaseSwipeHeight() {
+        swipeHeightRelease?.cancel()
+        swipeHeightRelease = nil
+        if swipeHeightFloor != 0 { swipeHeightFloor = 0 }
     }
 
     private func scheduleCloseIfNeeded() {

@@ -238,6 +238,7 @@ final class NotchWindowManager {
             // The new tab can be shorter, which takes the panel out from under the pointer as it
             // resizes; that read as the pointer leaving and closed it mid-swipe.
             viewModel.holdOpen(for: 0.8)
+            viewModel.holdHeightForSwipe(for: 0.8)
             viewModel.selectedTab = tabs[next]
         }
     }

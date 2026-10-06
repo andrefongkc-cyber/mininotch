@@ -909,9 +909,25 @@ There is no public signal for Mission Control itself.
 `isDirectionInvertedFromDevice` says Natural Scrolling has, so the directions are the same with it
 off as with it on (they used to come out backwards with it off). Up and down over a scroll view with
 more in it than shows belong to the list (a hit test up to an `NSScrollView`): scrolling the clipboard
-used to close the notch. A mouse wheel has no phases, so a pause of 0.35 s starts a new gesture. A
-swipe to another tab holds the panel open for 0.8 s (`NotchViewModel.holdOpen`), since a shorter tab
-shrinks the panel out from under the pointer.
+used to close the notch. A mouse wheel has no phases, so a pause of 0.35 s starts a new gesture.
+Momentum (the coast after the fingers lift) counts towards the swipe it belongs to, which still fires
+once: a quick flick does most of its travel there, and ignoring it dropped flicks. A gesture is over
+only when the next begins. A swipe to another tab holds the panel open for 0.8 s
+(`NotchViewModel.holdOpen`) and at least the height it had (`swipeHeightFloor`), since a shorter tab
+shrank the panel out from under the fingers and the next swipe went to whatever was behind it.
+
+**Never read `AudioAnalyzer.current` in a view's body.** It changes with every audio buffer, about
+ninety times a second. `NotchRootView` and the Ambient Lighting card read it to decide whether to
+hand the analyser to the glow, so for as long as the tap ran the whole panel, and the whole card,
+evaluated ninety times a second: the GPU load and lag the user saw while music played, in Mission
+Control, and with Settings open on Appearance. Read `isRunning`; the glow and the meters read
+`current` inside their own timelines. The capture tools never run the tap, which is why no capture
+measurement caught it. Settings' meter also listens only while in view in a window in front.
+
+**Liquid Glass shows what is behind it, blurred.** At Glass Opacity 0 over a bright page it reads as
+glass; over a dark window with small text (the user's chat) the blur averages to dark grey and looks
+nearly solid. The user took that for the glass switching on and off at random. It is not the app
+being active or not: `--capture-notch --activate` and `--key` drew the same.
 
 **Files and links share the Shelf tab.** The user asked for the Shelf (files, AirDrop) and Links
 (paste a link, copy it back) together, so `NotchTab.links` is a feature but no longer a tab:

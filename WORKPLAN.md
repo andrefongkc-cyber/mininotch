@@ -1,6 +1,6 @@
 # MiniNotch workplan
 
-Status: Notch styles with a Liquid Glass background, Settings and swipe fixes, done and pushed, unreleased; next: the user tries them and reports, then 0.7. Before 1.0.0 the user plans to revamp every music animation, which is where the animated liquid background goes.
+Status: performance (no more redrawing ninety times a second while music plays), Clay's chosen chips, swipe flicks and tab runs, done and pushed, unreleased; next: the user checks lag with music playing and Settings open, and says how swipes still misbehave if they do; then 0.7.
 
 Living document. Update the checkboxes as work lands. `CLAUDE.md` holds the architecture
 rules and the traps; this file holds the sequence.
@@ -116,6 +116,15 @@ Architecture (approved 2026-10-05 with: a, Match System yes, keep Translucent Pa
 - [x] Two-finger swipes: direction with Natural Scrolling off, lists scroll instead of closing the
       notch, a mouse wheel works more than once, a tab change cannot close the panel under the
       pointer. The user called swipes "kinda buggy" without saying how; ask if it persists.
+- [x] Lag with music playing, in Mission Control, and with Settings on Appearance (2026-10-06): the
+      notch and the Ambient Lighting card read the analyser's per-buffer frame in their bodies and
+      redrew about ninety times a second; they read `isRunning` now. The meter listens only in view.
+      Not measurable with nothing playing; the user is to check.
+- [x] Clay: chosen chips and tabs are pressed in; they looked like every other chip.
+- [x] Left and right swipes, reported again: flicks count their momentum, and the panel keeps its
+      height while tabs are swiped through. Ask what still misbehaves, if anything.
+- [x] Liquid Glass "only sometimes": not a bug, the glass blurs what is behind it; over a dark
+      window it looks solid. Explained to the user.
 
 ### Before 1.0.0: music animations
 

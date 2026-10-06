@@ -108,6 +108,9 @@ struct NotchRootView: View {
         // separate values with separate curves is what made the box grow unevenly: the
         // width would arrive before the height and the shape would visibly shear.
         .animation(Motion.notch, value: surfaceMetrics)
+        .onChange(of: surfaceHeight, initial: true) { _, height in
+            if isExpanded { viewModel.lastPanelHeight = height }
+        }
         .accessibilityElement(children: .contain)
         .accessibilityLabel(isExpanded ? "MiniNotch panel" : "MiniNotch")
     }
@@ -549,7 +552,9 @@ struct NotchRootView: View {
         height += ExpandedPanelView.topStripHeight(for: geometry)
         // The room a style with modules leaves above the first (`ExpandedPanelView`).
         height += theme.moduleGap / 2
-        return min(height + Metrics.notchPanelPadding, geometry.expandedSize.height)
+        // At least the height it had while tabs are being swiped through; see
+        // `NotchViewModel.swipeHeightFloor`. Zero otherwise.
+        return min(max(height + Metrics.notchPanelPadding, viewModel.swipeHeightFloor), geometry.expandedSize.height)
     }
 }
 
