@@ -273,6 +273,13 @@ enum DebugWindowCapture {
         panel.contentView = hosting
         panel.setFrame(geometry.windowFrame, display: true)
         panel.orderFrontRegardless()
+        // `--activate` makes the app the active one, as using Settings or typing a note does;
+        // `--key` also makes the panel the key window. Liquid Glass and materials can draw
+        // differently in each, which a capture taken inactive never shows.
+        if arguments.contains("--activate") || arguments.contains("--key") {
+            NSApplication.shared.activate(ignoringOtherApps: true)
+        }
+        if arguments.contains("--key") { panel.makeKey() }
 
         // The panel has to be on screen and settled for its backing store to hold anything.
         //

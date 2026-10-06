@@ -346,7 +346,11 @@ struct NotchRootView: View {
                 settings: styledGlow(glow),
                 palette: environment.nowPlaying.palette,
                 isPlaying: environment.nowPlaying.track?.isPlaying ?? false,
-                audio: environment.audioAnalyzer.current == nil ? nil : environment.audioAnalyzer,
+                // `isRunning`, never `current`: `current` changes with every audio buffer, about
+                // ninety times a second, and reading it here made this whole view, the panel and
+                // everything in it, evaluate that often for as long as music played. The glow
+                // reads `current` itself, inside its own timeline.
+                audio: environment.audioAnalyzer.isRunning ? environment.audioAnalyzer : nil,
                 tempo: environment.glowTempo(),
                 showsLevelReadout: settings.advanced.showDebugOverlay,
                 sizeHint: CGSize(width: surfaceWidth, height: surfaceHeight),

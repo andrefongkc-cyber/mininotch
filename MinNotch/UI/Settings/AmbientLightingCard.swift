@@ -12,6 +12,23 @@ struct AmbientLightingCard: View {
     /// Whether the preview is in view in the pane's scroll view. It animates every frame while it
     /// is, which is a waste with it scrolled away or the window behind another.
     @State private var isPreviewOnScreen = true
+    @State private var isMeterOnScreen = true
+    /// Whether this card holds one of `AppEnvironment`'s audio previews, so begin and end pair up.
+    @State private var isPreviewingAudio = false
+
+    private var wantsAudioPreview: Bool {
+        isMeterOnScreen && windowState != .inactive
+    }
+
+    private func syncAudioPreview() {
+        if wantsAudioPreview, !isPreviewingAudio {
+            isPreviewingAudio = true
+            environment.beginAudioPreview()
+        } else if !wantsAudioPreview, isPreviewingAudio {
+            isPreviewingAudio = false
+            environment.endAudioPreview()
+        }
+    }
 
     /// Recent taps of the Tap button, for tap tempo.
     @State private var taps: [Date] = []
@@ -190,9 +207,17 @@ struct AmbientLightingCard: View {
                 ) {
                     AudioLevelMeter(analyzer: environment.audioAnalyzer)
                         // The tap only listens while something plays; while this meter is
-                        // showing it listens anyway, so silence reads as silence.
-                        .onAppear { environment.beginAudioPreview() }
-                        .onDisappear { environment.endAudioPreview() }
+                        // showing it listens anyway, so silence reads as silence. Showing means in
+                        // view in a window in front: the pane is not lazy, so on appearing alone
+                        // it listened from the moment Appearance opened, scrolled away or not.
+                        .modifier(ScrollVisibility(isOnScreen: $isMeterOnScreen))
+                        .onAppear { syncAudioPreview() }
+                        .onChange(of: wantsAudioPreview) { syncAudioPreview() }
+                        .onDisappear {
+                            guard isPreviewingAudio else { return }
+                            isPreviewingAudio = false
+                            environment.endAudioPreview()
+                        }
                 }
             }
 
@@ -260,7 +285,9 @@ struct AmbientLightingCard: View {
                 // Always animates here, so the preview shows the style even with nothing
                 // playing. The real surfaces settle when playback stops.
                 isPlaying: true,
-                audio: environment.audioAnalyzer.current == nil ? nil : environment.audioAnalyzer,
+                // `isRunning`, not `current`, which changes ninety times a second and made this
+                // whole card evaluate that often; see the same line in `NotchRootView`.
+                audio: environment.audioAnalyzer.isRunning ? environment.audioAnalyzer : nil,
                 tempo: environment.glowTempo(),
                 // Roughly the preview box; only used to cap the blur.
                 sizeHint: CGSize(width: 300, height: 50),

@@ -336,6 +336,8 @@ extension NotchStyle {
         let highlight: Color
         let shade: Color
         let drop: Color
+        let pressedFill: Color
+        let pressedShade: Color
         if isDark {
             base = Color(red: 0.16, green: 0.155, blue: 0.19)
             raisedFill = Color(red: 0.23, green: 0.22, blue: 0.27)
@@ -343,6 +345,8 @@ extension NotchStyle {
             highlight = .white.opacity(0.13)
             shade = .black.opacity(0.32)
             drop = .black.opacity(0.45)
+            pressedFill = Color(red: 0.12, green: 0.115, blue: 0.145)
+            pressedShade = .black.opacity(0.6)
         } else {
             base = Color(red: 0.93, green: 0.91, blue: 0.89)
             raisedFill = Color(red: 0.985, green: 0.975, blue: 0.965)
@@ -350,6 +354,8 @@ extension NotchStyle {
             highlight = .white
             shade = Color(red: 0.8, green: 0.76, blue: 0.72).opacity(0.7)
             drop = Color(red: 0.55, green: 0.5, blue: 0.46).opacity(0.38)
+            pressedFill = Color(red: 0.875, green: 0.85, blue: 0.825)
+            pressedShade = Color(red: 0.62, green: 0.56, blue: 0.5).opacity(0.75)
         }
         func inflated(_ size: CGFloat) -> NotchElementStyle {
             NotchElementStyle(
@@ -372,7 +378,15 @@ extension NotchStyle {
                 vibrancyMaterial: isDark ? .hudWindow : .popover
             ),
             tile: inflated(3),
-            button: NotchElementStyle(fill: .color(raisedFill, lift: 0.3), outer: [NotchShadow(color: drop, radius: 3, y: 2)], cornerScale: 1.5),
+            // Chosen things are pressed into the clay: a darker dent with its shadow inside, top
+            // left. A raised button beside raised chips looked the same as all of them, so the
+            // chosen rhythm or tab could not be told from the rest.
+            button: NotchElementStyle(
+                fill: .color(pressedFill, lift: 0.25),
+                inner: [NotchShadow(color: pressedShade, radius: 2.5, x: 1.5, y: 1.5),
+                        NotchShadow(color: highlight.opacity(isDark ? 0.6 : 1), radius: 2, x: -1, y: -1)],
+                cornerScale: 1.5
+            ),
             module: inflated(5),
             transport: NotchTransportStyle(disc: inflated(2.5), primaryDisc: inflated(3.5)),
             track: NotchTrackStyle(
