@@ -31,6 +31,8 @@ final class AppEnvironment {
     /// fall on the taps. Not saved: a phase from an earlier session lines up with nothing.
     var tappedBeatOrigin: TimeInterval?
     let clipboard = ClipboardHistoryService()
+    /// Dark mode, for a Notch Style set to Match System.
+    let systemAppearance = SystemAppearance()
     let linkShelf = LinkShelfService()
     let notes = NotesService()
     let updates = UpdateService()
@@ -117,6 +119,7 @@ final class AppEnvironment {
         clipboard.start(settings: settings)
         linkShelf.start(settings: settings)
         notes.load()
+        systemAppearance.start()
         // Checks once a day in a release copy; does nothing in a Debug build.
         updates.start()
         timer.start(settings: settings)
@@ -195,6 +198,12 @@ final class AppEnvironment {
     /// Only used while the glow is not following the audio: live analysis has the real beat. A
     /// song's tempo is laid on the song's own position, so its beats move with a seek and stay
     /// put across a pause, rather than drifting against the music.
+    /// The Notch Style the user chose, resolved against the system appearance for Match System.
+    /// Read inside a view's body, so a change to either redraws it.
+    func notchStyle() -> NotchStyle {
+        NotchStyle.resolve(settings.appearance, systemIsDark: systemAppearance.isDark)
+    }
+
     func glowTempo(at date: Date = Date()) -> GlowTempo? {
         let glow = settings.appearance.ambientGlow
         switch glow.tempoSource {

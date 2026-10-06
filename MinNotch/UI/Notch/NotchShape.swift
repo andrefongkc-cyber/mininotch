@@ -10,6 +10,9 @@ import SwiftUI
 struct NotchShape: Shape {
     var shoulderRadius: CGFloat = Metrics.notchShoulderRadius
     var bottomRadius: CGFloat = Metrics.notchPanelCornerRadius
+    /// False leaves the edge along the top of the display out, for a style's border: the top
+    /// edge is the screen's own, and a line there would run along the top of the display.
+    var closesTop = true
 
     /// Animate corner changes when the panel expands.
     var animatableData: AnimatablePair<CGFloat, CGFloat> {
@@ -51,7 +54,7 @@ struct NotchShape: Shape {
             control: CGPoint(x: rect.maxX - shoulder, y: rect.minY)
         )
 
-        path.closeSubpath()
+        if closesTop { path.closeSubpath() }
         return path
     }
 }

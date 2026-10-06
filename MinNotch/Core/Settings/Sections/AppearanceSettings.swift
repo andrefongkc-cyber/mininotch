@@ -78,6 +78,12 @@ struct AppearanceSettings: Codable, Equatable {
     /// floating over the desktop rather than pretending to be part of the bezel.
     var showPanelShadow: Bool = false
 
+    /// Settings > Appearance > Notch Style: which design language the notch is drawn in, and in
+    /// which variant. Minimal Dark is how the notch always looked, so a settings file from before
+    /// styles existed lands on it.
+    var notchLanguage: NotchDesignLanguage = .minimal
+    var notchVariant: NotchStyleVariant = .dark
+
     init() {}
 
     init(from decoder: Decoder) throws {
@@ -93,6 +99,8 @@ struct AppearanceSettings: Codable, Equatable {
         // then sits on the left, which is exactly where they were.
         topStripLeading = c.value(.topStripLeading, TopStripItem.defaultLeading)
         showPanelShadow = c.value(.showPanelShadow, false)
+        notchLanguage = c.value(.notchLanguage, NotchDesignLanguage.minimal)
+        notchVariant = c.value(.notchVariant, NotchStyleVariant.dark)
         ambientGlow = c.value(.ambientGlow, AmbientGlowSettings())
     }
 

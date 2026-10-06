@@ -14,6 +14,15 @@ struct NotchRootView: View {
 
     private var isExpanded: Bool { viewModel.state == .expanded }
 
+    /// The chosen Notch Style. The open panel draws in it; on a Mac with a camera housing, the
+    /// closed notch draws in `housing` over black, since the housing is black hardware.
+    private var theme: NotchStyle { environment.notchStyle() }
+
+    /// The style for whatever is showing: the panel, or the closed notch, its HUD and its peek.
+    private var contentTheme: NotchStyle {
+        isExpanded || !geometry.hasPhysicalNotch ? theme : theme.housing
+    }
+
     /// The brief drop below the pill on a track change. Separate from `isExpanded` because it
     /// is not the panel: it has its own size, its own content, and it uses the closed notch's
     /// glow placement. It needs a track to show, so a peek with nothing playing is just the pill.
@@ -138,22 +147,41 @@ struct NotchRootView: View {
 
     private var shape: some Shape { shapeStyle }
 
-    /// The surface fill.
+    /// The surface fill, in the Notch Style.
     ///
     /// Deliberately independent of whether the panel is open. When the material was applied
     /// only to the expanded state, opening swapped a black fill for a lighter translucent
     /// one part-way through the growth, which read as a flash of light rather than as a box
     /// getting bigger. Constant fill means the only thing that changes is the size.
+    ///
+    /// The one exception is a style whose surface is not black on a Mac with a camera housing.
+    /// The closed notch there has to be black to disappear into the housing, so a black cover
+    /// lies over the style's fill while closed, and its opacity rides the same spring as the size:
+    /// the box lightens as it grows rather than switching part-way. Open, the housing itself is
+    /// drawn as a black tab with its own corners, so it reads as part of the design rather than
+    /// as a hole in it. Minimal Dark's surface is black already and draws neither.
     @ViewBuilder
     private var background: some View {
-        if settings.appearance.useVibrancy {
-            ZStack {
+        let surface = NotchSurfaceView(
+            style: theme.surface,
+            isTranslucent: settings.appearance.useVibrancy && theme.language == .minimal,
+            edge: NotchShape(
+                shoulderRadius: shapeStyle.shoulderRadius,
+                bottomRadius: shapeStyle.bottomRadius,
+                closesTop: false
+            )
+        )
+        if geometry.hasPhysicalNotch, !theme.isHousingBlack {
+            ZStack(alignment: .top) {
+                surface
+                NotchShape(shoulderRadius: 0, bottomRadius: Metrics.hardwareNotchCornerRadius)
+                    .fill(Palette.notchFill)
+                    .frame(width: geometry.collapsedSize.width, height: geometry.collapsedSize.height)
                 Palette.notchFill
-                VisualEffectView(material: .hudWindow, blendingMode: .withinWindow)
-                    .opacity(0.55)
+                    .opacity(isExpanded ? 0 : 1)
             }
         } else {
-            Palette.notchFill
+            surface
         }
     }
 
@@ -187,17 +215,20 @@ struct NotchRootView: View {
     /// Rasterised with room around it, as the glow is: a blur applied as a layer filter does not
     /// appear in `--capture-notch` at all, and one flattened into a layer only its own size is
     /// cut off at that size.
+    ///
+    /// A style whose edge needs a shadow to read against the desktop (Minimal Light) brings its
+    /// own, fainter one; the setting's stronger shadow replaces it when switched on.
     @ViewBuilder
     private var panelShadow: some View {
-        if settings.appearance.showPanelShadow {
-            let radius: CGFloat = 18
-            let drop: CGFloat = 8
-            let room = radius * 2 + drop
+        if let shadow = settings.appearance.showPanelShadow
+            ? NotchShadow(color: .black.opacity(0.35), radius: 18, y: 8)
+            : theme.surface.shadow {
+            let room = shadow.radius * 2 + shadow.y
             shapeStyle
-                .fill(Color.black.opacity(0.35))
-                .offset(y: drop)
+                .fill(shadow.color)
+                .offset(y: shadow.y)
                 .padding(room)
-                .blur(radius: radius)
+                .blur(radius: shadow.radius)
                 .drawingGroup()
                 .padding(-room)
                 .opacity(isExpanded ? 1 : 0)
@@ -220,6 +251,7 @@ struct NotchRootView: View {
                     ExpandedPanelView(viewModel: viewModel)
                         .padding(.bottom, Metrics.notchPanelPadding)
                 }
+                .environment(\.notchStyle, contentTheme)
                 .transition(Self.contentTransition)
             } else if let reading = environment.hud.current {
                 // Before the peek: a volume change is something the user just did, and it
@@ -231,6 +263,7 @@ struct NotchRootView: View {
                     showsNumericValue: settings.huds.showNumericValue,
                     accent: settings.appearance.resolvedAccent
                 )
+                .environment(\.notchStyle, contentTheme)
                 .transition(Self.contentTransition)
             } else if isPeeking, let track = environment.nowPlaying.track {
                 SneakPeekView(
@@ -240,12 +273,15 @@ struct NotchRootView: View {
                     artwork: environment.nowPlaying.artwork,
                     palette: environment.nowPlaying.palette
                 )
+                .environment(\.notchStyle, contentTheme)
                 .transition(Self.contentTransition)
             } else if let lyrics = closedLyrics {
                 ClosedLyricsView(geometry: geometry, pillContent: pillContent, lyrics: lyrics)
+                    .environment(\.notchStyle, contentTheme)
                     .transition(Self.contentTransition)
             } else {
                 CollapsedPillView(geometry: geometry, content: pillContent)
+                    .environment(\.notchStyle, contentTheme)
                     .transition(Self.contentTransition)
             }
         }
@@ -302,7 +338,7 @@ struct NotchRootView: View {
            !glow.placements.isEmpty {
             AmbientGlowView(
                 outline: .notch(glowShape),
-                settings: glow,
+                settings: styledGlow(glow),
                 palette: environment.nowPlaying.palette,
                 isPlaying: environment.nowPlaying.track?.isPlaying ?? false,
                 audio: environment.audioAnalyzer.current == nil ? nil : environment.audioAnalyzer,
@@ -318,6 +354,14 @@ struct NotchRootView: View {
                 isVisible: glow.placements.contains(placement) && !isHiddenAtRest
             )
         }
+    }
+
+    /// Ambient Lighting as the user set it, at the strength the Notch Style asks for.
+    private func styledGlow(_ glow: AmbientGlowSettings) -> AmbientGlowSettings {
+        guard theme.glow.intensityScale != 1 else { return glow }
+        var styled = glow
+        styled.intensity = min(glow.intensity * theme.glow.intensityScale, 1)
+        return styled
     }
 
     /// The outline the glow traces: the surface's own, except while the closed pill is exactly
