@@ -12,6 +12,9 @@ struct NotchSurfaceView<Edge: Shape>: View {
     let isTranslucent: Bool
     /// The outline for a border: the notch's, open at the top, or a window's.
     let edge: Edge
+    /// False for a preview drawn offscreen, where an `NSVisualEffectView` cannot be drawn: glass
+    /// keeps its tint, and nothing else needs a material.
+    var drawsMaterials = true
 
     var body: some View {
         if style == .housing {
@@ -33,12 +36,16 @@ struct NotchSurfaceView<Edge: Shape>: View {
     private var styled: some View {
         ZStack {
             if let glass = style.glass {
-                VisualEffectView(material: glass.material, blendingMode: .behindWindow)
-                    .environment(\.colorScheme, glass.appearance == .darkAqua ? .dark : .light)
-                style.base.opacity(glass.tint)
+                if drawsMaterials {
+                    VisualEffectView(material: glass.material, blendingMode: .behindWindow)
+                        .environment(\.colorScheme, glass.appearance == .darkAqua ? .dark : .light)
+                    style.base.opacity(glass.tint)
+                } else {
+                    style.base.opacity(min(glass.tint + 0.35, 1))
+                }
             } else {
                 style.base
-                if isTranslucent {
+                if isTranslucent, drawsMaterials {
                     VisualEffectView(material: style.vibrancyMaterial, blendingMode: .withinWindow)
                         .opacity(0.55)
                 }

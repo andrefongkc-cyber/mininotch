@@ -61,7 +61,7 @@ struct WeatherWidgetView: View {
         VStack(alignment: .leading, spacing: 2) {
             HStack(spacing: 8) {
                 Image(systemName: report.condition.symbolName(isDay: report.isDay))
-                    .symbolRenderingMode(.multicolor)
+                    .notchMulticolorSymbol(theme)
                     .font(.system(size: 28))
                 Text(WeatherReport.degrees(report.temperature))
                     .font(.system(size: 34, weight: .light).monospacedDigit())
@@ -88,7 +88,7 @@ struct WeatherWidgetView: View {
                 .foregroundStyle(theme.ink.opacity(0.5))
                 .lineLimit(1)
             Image(systemName: symbol)
-                .symbolRenderingMode(.multicolor)
+                .notchMulticolorSymbol(theme)
                 .font(.system(size: 13))
                 .frame(height: 16)
             Text(value)

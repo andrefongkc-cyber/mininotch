@@ -8,8 +8,15 @@ struct AppearanceSettingsView: View {
 
         SettingsPane(
             title: "Appearance",
-            subtitle: "MiniNotch follows your Mac's light and dark appearance automatically."
+            subtitle: "How the notch looks: its style, accent, materials and size."
         ) {
+            SettingsCard(
+                header: "Notch Style",
+                footer: "Every style has the same controls in the same places; only how they are drawn changes."
+            ) {
+                NotchStylePicker()
+            }
+
             SettingsCard(header: "Accent") {
                 SettingsRow(
                     title: "Accent Color",
@@ -60,8 +67,9 @@ struct AppearanceSettingsView: View {
             ) {
                 SettingsRow(
                     title: "Translucent Panel",
-                    subtitle: "Let the desktop tint the notch instead of filling it with solid black.",
-                    systemImage: "square.stack.3d.up"
+                    subtitle: "Let the desktop tint the notch instead of filling it solid. Minimal only: Glass is see-through already, and the other styles are solid by design.",
+                    systemImage: "square.stack.3d.up",
+                    isEnabled: settings.appearance.notchLanguage == .minimal
                 ) {
                     SettingsToggle(isOn: $settings.appearance.useVibrancy)
                 }

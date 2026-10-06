@@ -338,7 +338,7 @@ struct PillIndicatorView: View {
             if let weather = content.weather {
                 HStack(spacing: CollapsedPillContent.detailSpacing) {
                     Image(systemName: weather.condition.symbolName(isDay: weather.isDay))
-                        .symbolRenderingMode(.multicolor)
+                        .notchMulticolorSymbol(theme)
                         .font(.system(size: 12))
                         .frame(width: CollapsedPillContent.glyphWidth)
                     Text(WeatherReport.degrees(weather.temperature))

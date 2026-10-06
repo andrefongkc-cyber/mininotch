@@ -138,6 +138,20 @@ struct NotchShadow: Equatable {
 }
 
 extension View {
+    /// A multicolour symbol in the style. Apple's weather symbols draw their clouds white, which
+    /// vanish on a light surface, so a light style gives them a faint outline of its ink; a dark
+    /// style draws them exactly as before.
+    @ViewBuilder
+    func notchMulticolorSymbol(_ theme: NotchStyle) -> some View {
+        if theme.isDark {
+            self.symbolRenderingMode(.multicolor)
+        } else {
+            self.symbolRenderingMode(.multicolor)
+                .shadow(color: theme.ink.opacity(0.45), radius: 0.6)
+                .shadow(color: theme.ink.opacity(0.25), radius: 1.2)
+        }
+    }
+
     /// A style's shadow, or none: never a shadow at zero opacity, which still costs an offscreen
     /// pass and leaves a fringe on a transparent window.
     @ViewBuilder

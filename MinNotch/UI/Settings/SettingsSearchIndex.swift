@@ -31,10 +31,11 @@ enum SettingsSearchIndex {
         .init(tab: .general, section: "Tabs", title: "Remember Last Tab", subtitle: "Reopen on whichever widget you used last.", symbolName: "arrow.uturn.backward"),
         .init(tab: .general, section: "Tabs", title: "Default Tab", subtitle: "", symbolName: "square.grid.2x2"),
         .init(tab: .general, section: "Permissions", title: "Login Items", subtitle: "Review which apps macOS allows to start at login.", symbolName: "list.bullet.rectangle"),
+        .init(tab: .appearance, section: "Notch Style", title: "Light or Dark", subtitle: "Match System follows your Mac's appearance. Over the camera housing the closed notch stays black.", symbolName: "circle.lefthalf.filled"),
         .init(tab: .appearance, section: "Accent", title: "Accent Color", subtitle: "Used for active and selected states only.", symbolName: "paintpalette"),
         .init(tab: .appearance, section: "Accent", title: "Custom Color", subtitle: "", symbolName: "eyedropper"),
         .init(tab: .appearance, section: "Accent", title: "Scrubber Color", subtitle: "What tints the Now Playing progress bar.", symbolName: "slider.horizontal.below.rectangle"),
-        .init(tab: .appearance, section: "Materials", title: "Translucent Panel", subtitle: "Let the desktop tint the notch instead of filling it with solid black.", symbolName: "square.stack.3d.up"),
+        .init(tab: .appearance, section: "Materials", title: "Translucent Panel", subtitle: "Let the desktop tint the notch instead of filling it solid. Minimal only: Glass is see-through already, and the other styles are solid by design.", symbolName: "square.stack.3d.up"),
         .init(tab: .appearance, section: "Materials", title: "Panel Shadow", subtitle: "Useful on a display with no notch. On a notched Mac it shows as a halo around the panel as it opens.", symbolName: "shadow"),
         .init(tab: .appearance, section: "Panel Size", title: "Width", subtitle: "How wide the panel grows when it opens.", symbolName: "arrow.left.and.right"),
         .init(tab: .appearance, section: "Panel Size", title: "Corner Radius", subtitle: "Match this to your display's physical notch for the cleanest join.", symbolName: "rectangle.roundedbottom"),
@@ -217,7 +218,7 @@ extension SettingsTab {
     var searchKeywords: [String] {
         switch self {
         case .general: return ["startup", "login", "hover", "click", "menu bar"]
-        case .appearance: return ["theme", "look", "colour", "color", "glow", "lighting", "width", "corner"]
+        case .appearance: return ["theme", "look", "colour", "color", "glow", "lighting", "width", "corner", "style", "notch style", "dark", "light", "minimal", "bento", "glass", "neumorphic", "clay", "skeuomorphic"]
         case .layout: return ["arrange", "rearrange", "reorder", "customise", "customize", "icons", "tabs", "toolbar",
                               "top bar", "pill", "indicators", "widgets", "buttons", "controls", "order"]
         case .media: return ["music", "spotify", "song", "track", "now playing", "lyrics", "controls"]
