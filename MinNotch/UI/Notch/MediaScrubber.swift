@@ -31,12 +31,10 @@ struct MediaScrubber: View {
             let filled = width * min(max(displayed, 0), 1)
 
             ZStack(alignment: .leading) {
-                Capsule()
-                    .fill(theme.ink.opacity(0.18))
+                NotchElementView(.groove, shape: .capsule, emphasis: 0.18)
                     .frame(height: trackHeight)
 
-                Capsule()
-                    .fill(tint)
+                NotchTrackFill(color: tint)
                     .frame(width: max(filled, 0), height: trackHeight)
 
                 if isSeekable && (isHovering || dragFraction != nil) {

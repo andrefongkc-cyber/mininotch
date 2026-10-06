@@ -159,10 +159,14 @@ struct ShelfView: View {
         }
         .padding(.vertical, 6)
         .padding(.horizontal, 4)
-        .background(
-            RoundedRectangle(cornerRadius: 8, style: .continuous)
-                .fill(isSelected ? accent.opacity(0.22) : theme.ink.opacity(0.07))
-        )
+        .background {
+            if isSelected {
+                RoundedRectangle(cornerRadius: 8, style: .continuous)
+                    .fill(accent.opacity(0.22))
+            } else {
+                NotchElementView(.tile, shape: .rounded(8), emphasis: 0.07)
+            }
+        }
         .overlay(
             RoundedRectangle(cornerRadius: 8, style: .continuous)
                 .strokeBorder(accent, lineWidth: 1.5)

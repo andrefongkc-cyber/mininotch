@@ -28,6 +28,7 @@ struct ExpandedPanelView: View {
             topStrip
 
             widget
+                .padding(.top, theme.moduleGap / 2)
                 .padding(.horizontal, Metrics.notchPanelPadding + Metrics.notchShoulderRadius)
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         }
@@ -205,8 +206,7 @@ struct NotchIconButton: View {
                 .frame(width: width, height: 21)
                 .foregroundStyle(foreground)
                 .background(
-                    RoundedRectangle(cornerRadius: 6, style: .continuous)
-                        .fill(theme.ink.opacity(backgroundOpacity))
+                    NotchElementView(.button, shape: .rounded(6), emphasis: backgroundOpacity)
                 )
                 .contentShape(Rectangle())
         }

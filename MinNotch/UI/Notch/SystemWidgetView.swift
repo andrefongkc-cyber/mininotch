@@ -152,9 +152,8 @@ struct SystemWidgetView: View {
             GeometryReader { proxy in
                 let fraction = min(max(Double(status.percentage) / 100, 0), 1)
                 ZStack(alignment: .leading) {
-                    Capsule().fill(theme.ink.opacity(0.14))
-                    Capsule()
-                        .fill(status.tint(neutral: theme.ink))
+                    NotchElementView(.groove, shape: .capsule, emphasis: 0.14)
+                    NotchTrackFill(color: status.tint(neutral: theme.ink))
                         .frame(width: proxy.size.width * fraction)
                 }
             }
@@ -402,9 +401,8 @@ struct SystemWidgetView: View {
                 if let fraction {
                     GeometryReader { proxy in
                         ZStack(alignment: .leading) {
-                            Capsule().fill(theme.ink.opacity(0.14))
-                            Capsule()
-                                .fill(barTint ?? tint(for: fraction))
+                            NotchElementView(.groove, shape: .capsule, emphasis: 0.14)
+                            NotchTrackFill(color: barTint ?? tint(for: fraction))
                                 .frame(width: proxy.size.width * min(max(fraction, 0), 1))
                         }
                     }
@@ -472,8 +470,7 @@ struct StatChart: View {
 
     var body: some View {
         ZStack {
-            RoundedRectangle(cornerRadius: 4, style: .continuous)
-                .fill(theme.ink.opacity(0.05))
+            NotchElementView(.tile, shape: .rounded(4), emphasis: 0.05)
             Rectangle()
                 .fill(theme.ink.opacity(0.06))
                 .frame(height: 0.5)

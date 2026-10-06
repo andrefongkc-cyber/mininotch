@@ -289,8 +289,7 @@ private struct LinkRow: View {
         .padding(.horizontal, 8)
         .padding(.vertical, 5)
         .background(
-            RoundedRectangle(cornerRadius: 6, style: .continuous)
-                .fill(theme.ink.opacity(isHovering ? 0.10 : 0.05))
+            NotchElementView(.tile, shape: .rounded(6), emphasis: isHovering ? 0.10 : 0.05)
         )
         .contentShape(Rectangle())
         .onHover { isHovering = $0 }

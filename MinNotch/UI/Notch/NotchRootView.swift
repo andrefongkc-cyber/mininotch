@@ -514,7 +514,8 @@ struct NotchRootView: View {
                 showingUpNext: environment.nowPlaying.showsUpNext,
                 showingLyricsSheet: environment.nowPlaying.showsLyricsSheet,
                 showingOutputSheet: environment.nowPlaying.showsOutputSheet,
-                outputDeviceCount: environment.audioOutputs.devices.count
+                outputDeviceCount: environment.audioOutputs.devices.count,
+                moduleGap: theme.moduleGap
             )
         case .calendar:
             height = CalendarWidgetView.preferredHeight(
@@ -542,6 +543,8 @@ struct NotchRootView: View {
         // full height and only the bottom gets padding. Adding padding at the top instead
         // would push the content down by that much again for no reason.
         height += ExpandedPanelView.topStripHeight(for: geometry)
+        // The room a style with modules leaves above the first (`ExpandedPanelView`).
+        height += theme.moduleGap / 2
         return min(height + Metrics.notchPanelPadding, geometry.expandedSize.height)
     }
 }

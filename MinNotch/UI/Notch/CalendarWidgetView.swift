@@ -421,8 +421,7 @@ struct CalendarWidgetView: View {
         .padding(.horizontal, 8)
         .frame(height: 24)
         .background(
-            RoundedRectangle(cornerRadius: 7, style: .continuous)
-                .fill(theme.ink.opacity(isQuickAddFocused ? 0.14 : 0.08))
+            NotchElementView(.tile, shape: .rounded(7), emphasis: isQuickAddFocused ? 0.14 : 0.08)
         )
         .contentShape(Rectangle())
         .onTapGesture {

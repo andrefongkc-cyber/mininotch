@@ -51,11 +51,12 @@ struct NotchElementView: View {
     }
 
     var body: some View {
-        if let element, emphasis > 0 || element.drawsWhenIdle {
+        if let element {
             if element.isPlain, case .ink = element.fill {
-                // Exactly the view Minimal always drew, so nothing about it can drift.
+                // Exactly the view Minimal always drew, a clear fill at zero included, so nothing
+                // about it can drift.
                 plainFill(theme.ink.opacity(emphasis))
-            } else {
+            } else if emphasis > 0 || element.drawsWhenIdle {
                 styled(element)
             }
         }
@@ -159,5 +160,31 @@ struct ElementOutline: InsettableShape {
         var copy = self
         copy.inset += amount
         return copy
+    }
+}
+
+/// The filled part of a progress or level bar, in the accent (or whatever colour the bar uses).
+///
+/// A plain capsule in Minimal. A style can lay a sheen over it, like a lit tube (Skeuomorphic),
+/// or let it give off a little light (Glass).
+struct NotchTrackFill: View {
+    @Environment(\.notchStyle) private var theme
+    let color: Color
+
+    var body: some View {
+        if theme.track.fillHighlight == nil, theme.track.fillGlow == nil {
+            Capsule().fill(color)
+        } else {
+            Capsule()
+                .fill(color)
+                .overlay {
+                    if let highlight = theme.track.fillHighlight {
+                        Capsule().fill(
+                            LinearGradient(colors: [highlight, .clear], startPoint: .top, endPoint: .center)
+                        )
+                    }
+                }
+                .notchShadow(theme.track.fillGlow.map { NotchShadow(color: color.opacity(0.7), radius: $0.radius, x: $0.x, y: $0.y) })
+        }
     }
 }

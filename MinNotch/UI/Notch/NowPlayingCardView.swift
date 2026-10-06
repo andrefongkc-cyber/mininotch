@@ -26,8 +26,10 @@ struct NowPlayingCardView: View {
         showingUpNext: Bool = false,
         showingLyricsSheet: Bool = false,
         showingOutputSheet: Bool = false,
-        outputDeviceCount: Int = 1
+        outputDeviceCount: Int = 1,
+        moduleGap: CGFloat = 0
     ) -> CGFloat {
+        let spacing = Self.spacing + moduleGap
         var height = headerHeight(style)
         if showingUpNext { height += spacing + upNextRowHeight }
         if showingOutputSheet {
@@ -58,21 +60,21 @@ struct NowPlayingCardView: View {
 
     var body: some View {
         if let track = controller.track {
-            VStack(alignment: .leading, spacing: Self.spacing) {
+            VStack(alignment: .leading, spacing: Self.spacing + surfaceTheme.moduleGap) {
                 switch settings.media.cardStyle {
-                case .classic: classicHeader(track)
-                case .compact: compactHeader(track)
+                case .classic: classicHeader(track).notchModule()
+                case .compact: compactHeader(track).notchModule()
                 case .fullArtwork: fullArtworkHeader(track)
                 }
                 if controller.showsUpNext {
                     upNextRow
                 }
                 if controller.showsOutputSheet {
-                    OutputSheetView()
+                    OutputSheetView().notchModule()
                 } else if controller.showsLyricsSheet, let lyrics = controller.lyrics {
-                    LyricsSheetView(lyrics: lyrics)
+                    LyricsSheetView(lyrics: lyrics).notchModule()
                 } else if settings.media.showLyrics {
-                    lyricStrip
+                    lyricStrip.notchModule()
                 }
             }
         } else {
@@ -346,8 +348,7 @@ struct NowPlayingCardView: View {
                 .foregroundStyle(isOpen ? settings.appearance.resolvedAccent : theme.ink.opacity(0.45))
                 .frame(width: 24, height: 22)
                 .background(
-                    RoundedRectangle(cornerRadius: 6, style: .continuous)
-                        .fill(theme.ink.opacity(isOpen ? 0.12 : 0))
+                    NotchElementView(.button, shape: .rounded(6), emphasis: isOpen ? 0.12 : 0)
                 )
                 .contentShape(Rectangle())
         }
@@ -482,8 +483,7 @@ struct NowPlayingCardView: View {
                 .foregroundStyle(isOpen ? settings.appearance.resolvedAccent : theme.ink.opacity(0.35))
                 .frame(width: 26, height: 24)
                 .background(
-                    RoundedRectangle(cornerRadius: 6, style: .continuous)
-                        .fill(theme.ink.opacity(isOpen ? 0.12 : 0))
+                    NotchElementView(.button, shape: .rounded(6), emphasis: isOpen ? 0.12 : 0)
                 )
                 .contentShape(Rectangle())
         }
@@ -521,8 +521,7 @@ struct NowPlayingCardView: View {
                 )
                 .frame(width: 26, height: 24)
                 .background(
-                    RoundedRectangle(cornerRadius: 6, style: .continuous)
-                        .fill(theme.ink.opacity(mode == .off ? 0 : 0.12))
+                    NotchElementView(.button, shape: .rounded(6), emphasis: mode == .off ? 0 : 0.12)
                 )
                 .contentShape(Rectangle())
         }
@@ -629,6 +628,14 @@ struct NowPlayingCardView: View {
             )
                 .foregroundStyle(foreground(for: control))
                 .frame(width: isPlayPause ? 30 : 26, height: 28)
+                .background {
+                    // A disc behind the actions, in a style that has one; shuffle, repeat and
+                    // favourite are states and stay bare, as their colour already says enough.
+                    if !Self.isStateControl(control) {
+                        NotchElementView(isPlayPause ? .primaryTransport : .transport, shape: .circle, emphasis: 0.08)
+                            .frame(width: isPlayPause ? 36 : 28, height: isPlayPause ? 36 : 28)
+                    }
+                }
                 .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
@@ -774,8 +781,7 @@ struct LyricsStripView: View {
                 .foregroundStyle(isOn ? settings.appearance.resolvedAccent : theme.ink.opacity(0.55))
                 .frame(width: 22, height: 20)
                 .background(
-                    RoundedRectangle(cornerRadius: 5, style: .continuous)
-                        .fill(theme.ink.opacity(isOn ? 0.14 : 0.08))
+                    NotchElementView(.button, shape: .rounded(5), emphasis: isOn ? 0.14 : 0.08)
                 )
                 .contentShape(Rectangle())
         }

@@ -149,9 +149,8 @@ struct HUDView: View {
     private var bar: some View {
         GeometryReader { proxy in
             ZStack(alignment: .leading) {
-                Capsule().fill(theme.ink.opacity(0.18))
-                Capsule()
-                    .fill(reading.isMuted ? theme.ink.opacity(0.4) : accent)
+                NotchElementView(.groove, shape: .capsule, emphasis: 0.18)
+                NotchTrackFill(color: reading.isMuted ? theme.ink.opacity(0.4) : accent)
                     .frame(width: proxy.size.width * clamped)
             }
         }

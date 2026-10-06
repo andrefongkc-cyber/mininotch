@@ -38,7 +38,8 @@ final class FloatingNowPlayingController {
             showingUpNext: environment.nowPlaying.showsUpNext,
             showingLyricsSheet: environment.nowPlaying.showsLyricsSheet,
             showingOutputSheet: environment.nowPlaying.showsOutputSheet,
-            outputDeviceCount: environment.audioOutputs.devices.count
+            outputDeviceCount: environment.audioOutputs.devices.count,
+            moduleGap: environment.notchStyle().moduleGap
         )
         return CGSize(width: Self.width, height: card + Self.topChrome + Self.bottomChrome)
     }

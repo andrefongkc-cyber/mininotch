@@ -125,8 +125,7 @@ struct OutputSheetView: View {
             .padding(.horizontal, 8)
             .frame(height: Self.rowHeight)
             .background(
-                RoundedRectangle(cornerRadius: 6, style: .continuous)
-                    .fill(theme.ink.opacity(isCurrent ? 0.08 : 0))
+                NotchElementView(.tile, shape: .rounded(6), emphasis: isCurrent ? 0.08 : 0)
             )
             .contentShape(Rectangle())
         }

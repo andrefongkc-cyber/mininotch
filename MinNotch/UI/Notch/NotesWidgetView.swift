@@ -45,8 +45,7 @@ struct NotesWidgetView: View {
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .background(
-                RoundedRectangle(cornerRadius: 8, style: .continuous)
-                    .fill(theme.ink.opacity(isFocused ? 0.1 : 0.06))
+                NotchElementView(.tile, shape: .rounded(8), emphasis: isFocused ? 0.1 : 0.06)
             )
             // Alongside the text view's own click, not instead of it, so the click still places
             // the cursor where it lands.

@@ -72,6 +72,9 @@ struct NotchStyle: Equatable {
     var track: NotchTrackStyle
     var artwork: NotchArtworkStyle
     var glow: NotchGlowStyle
+    /// Extra room between modules, and above the first, for a style that draws them. The panel
+    /// grows by it; Minimal has none, so its layout is exactly what it always was.
+    var moduleGap: CGFloat = 0
 
     /// This language's dark variant. The closed notch uses it on a Mac with a camera housing,
     /// over a black surface (`NotchRootView` covers the fill), because the housing is black
@@ -138,6 +141,14 @@ struct NotchShadow: Equatable {
 }
 
 extension View {
+    /// The style's module behind this content: a card for a group of related things. It reaches
+    /// `outset` beyond the content rather than padding it, so the content keeps its place and
+    /// the module sits in the room `NotchStyle.moduleGap` makes. Nothing at all in a style
+    /// without modules.
+    func notchModule(cornerRadius: CGFloat = 12, horizontal: CGFloat = 7, vertical: CGFloat = 4) -> some View {
+        background(NotchModuleBackground(cornerRadius: cornerRadius, horizontal: horizontal, vertical: vertical))
+    }
+
     /// A multicolour symbol in the style. Apple's weather symbols draw their clouds white, which
     /// vanish on a light surface, so a light style gives them a faint outline of its ink; a dark
     /// style draws them exactly as before.
@@ -218,6 +229,22 @@ struct NotchArtworkStyle: Equatable {
 struct NotchGlowStyle: Equatable {
     /// Multiplies Ambient Lighting's intensity. 1 leaves it as the user set it.
     var intensityScale: Double = 1
+}
+
+struct NotchModuleBackground: View {
+    @Environment(\.notchStyle) private var theme
+    let cornerRadius: CGFloat
+    let horizontal: CGFloat
+    let vertical: CGFloat
+
+    var body: some View {
+        if theme.module != nil {
+            NotchElementView(.module, shape: .rounded(cornerRadius + max(horizontal, vertical)), emphasis: 0.05)
+                .padding(.horizontal, -horizontal)
+                .padding(.vertical, -vertical)
+                .allowsHitTesting(false)
+        }
+    }
 }
 
 // MARK: Environment

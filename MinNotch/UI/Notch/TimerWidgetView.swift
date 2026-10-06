@@ -178,8 +178,7 @@ struct TimerWidgetView: View {
         .padding(.horizontal, 8)
         .padding(.vertical, 3)
         .background(
-            RoundedRectangle(cornerRadius: 7, style: .continuous)
-                .fill(theme.ink.opacity(isCustomFocused ? 0.14 : 0.08))
+            NotchElementView(.tile, shape: .rounded(7), emphasis: isCustomFocused ? 0.14 : 0.08)
         )
         .onTapGesture {
             // The panel is non-activating, so it has to be brought forward before a text
@@ -230,7 +229,7 @@ private struct Chip: View {
                 .padding(.horizontal, 9)
                 .padding(.vertical, 4)
                 .background(
-                    Capsule().fill(theme.ink.opacity(isActive ? 0.22 : (isHovering ? 0.18 : 0.11)))
+                    NotchElementView(.button, shape: .capsule, emphasis: isActive ? 0.22 : (isHovering ? 0.18 : 0.11))
                 )
                 .contentShape(Capsule())
         }
@@ -250,9 +249,8 @@ private struct ProgressBar: View {
     var body: some View {
         GeometryReader { proxy in
             ZStack(alignment: .leading) {
-                Capsule().fill(theme.ink.opacity(0.14))
-                Capsule()
-                    .fill(tint)
+                NotchElementView(.groove, shape: .capsule, emphasis: 0.14)
+                NotchTrackFill(color: tint)
                     .frame(width: max(0, min(1, progress)) * proxy.size.width)
             }
         }
@@ -279,8 +277,7 @@ private struct TimerButton: View {
                 .foregroundStyle(theme.ink.opacity(isEnabled ? 0.9 : 0.3))
                 .frame(width: 30, height: 24)
                 .background(
-                    RoundedRectangle(cornerRadius: 7, style: .continuous)
-                        .fill(theme.ink.opacity(isHovering && isEnabled ? 0.18 : 0.10))
+                    NotchElementView(.button, shape: .rounded(7), emphasis: isHovering && isEnabled ? 0.18 : 0.10)
                 )
                 .contentShape(Rectangle())
         }
