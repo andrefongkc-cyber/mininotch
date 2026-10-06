@@ -116,6 +116,7 @@ private final class LockScreenPanel: NSPanel {
 
 /// The HUD while there is a reading, else the song and its controls, else nothing.
 struct LockScreenView: View {
+    @Environment(\.notchStyle) private var theme
     let geometry: NotchGeometry
     let showsHUD: Bool
     let showsMedia: Bool
@@ -181,9 +182,19 @@ struct LockScreenView: View {
         width: CGFloat, height: CGFloat, bottomRadius: CGFloat,
         @ViewBuilder content: () -> Content
     ) -> some View {
-        ZStack(alignment: .top) {
-            Palette.notchFill
+        // Where the closed notch would be, so drawn the way it is: over a camera housing, black
+        // in the style's dark variant; on a display without one, in the full style.
+        let theme = environment.notchStyle()
+        let drawn = geometry.hasPhysicalNotch ? theme.darkVariant : theme
+        return ZStack(alignment: .top) {
+            NotchSurfaceView(
+                style: geometry.hasPhysicalNotch ? .housing : theme.surface,
+                isTranslucent: false,
+                edge: NotchShape(shoulderRadius: Metrics.notchShoulderRadius, bottomRadius: bottomRadius, closesTop: false)
+            )
             content()
+                .environment(\.notchStyle, drawn)
+                .environment(\.colorScheme, drawn.isDark ? .dark : .light)
         }
         .frame(width: width, height: height)
         .clipShape(NotchShape(shoulderRadius: Metrics.notchShoulderRadius, bottomRadius: bottomRadius))
@@ -192,6 +203,7 @@ struct LockScreenView: View {
 
 /// The song under the camera housing, laid out as the sneak peek is, with its three controls.
 private struct LockScreenMediaView: View {
+    @Environment(\.notchStyle) private var theme
     let geometry: NotchGeometry
     let track: NowPlayingTrack
 
@@ -209,11 +221,11 @@ private struct LockScreenMediaView: View {
                 VStack(alignment: .leading, spacing: 1) {
                     Text(track.title)
                         .font(.system(size: 13, weight: .semibold))
-                        .foregroundStyle(.white)
+                        .foregroundStyle(theme.ink)
                         .lineLimit(1)
                     Text(track.artist.isEmpty ? track.sourceAppName : track.artist)
                         .font(.system(size: 11))
-                        .foregroundStyle(.white.opacity(0.6))
+                        .foregroundStyle(theme.ink.opacity(0.6))
                         .lineLimit(1)
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
@@ -242,7 +254,7 @@ private struct LockScreenMediaView: View {
                 .clipShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
         } else {
             RoundedRectangle(cornerRadius: 6, style: .continuous)
-                .fill(Color.white.opacity(0.1))
+                .fill(theme.ink.opacity(0.1))
                 .frame(width: 30, height: 30)
         }
     }
@@ -252,7 +264,7 @@ private struct LockScreenMediaView: View {
             environment.nowPlaying.send(command)
         } label: {
             TransportSymbol.image(symbol, pointSize: 13, weight: .semibold)
-                .foregroundStyle(.white.opacity(0.9))
+                .foregroundStyle(theme.ink.opacity(0.9))
                 .frame(width: 28, height: 28)
                 .contentShape(Rectangle())
         }

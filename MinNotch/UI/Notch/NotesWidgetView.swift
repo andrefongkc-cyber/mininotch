@@ -5,9 +5,10 @@ import SwiftUI
 ///
 /// Typing needs the panel to take the keyboard, which it can (`NotchPanel.canBecomeKey`), and the
 /// panel must not close under someone mid-sentence, so focus holds it open the same way Calendar's
-/// Quick Add does (`isInteractionLocked`). The text view is forced dark, because the panel is black
-/// in both appearances and a light-mode caret would be black on black.
+/// Quick Add does (`isInteractionLocked`). The text view takes the Notch Style's appearance rather
+/// than the system's, or a light-mode caret would be black on a dark style's black.
 struct NotesWidgetView: View {
+    @Environment(\.notchStyle) private var theme
     @Environment(AppEnvironment.self) private var environment
     let viewModel: NotchViewModel
 
@@ -25,18 +26,18 @@ struct NotesWidgetView: View {
             ZStack(alignment: .topLeading) {
                 TextEditor(text: $notes.text)
                     .font(.system(size: 12))
-                    .foregroundStyle(.white.opacity(0.92))
+                    .foregroundStyle(theme.ink.opacity(0.92))
                     .scrollContentBackground(.hidden)
                     .scrollIndicators(.never)
                     .focused($isFocused)
-                    .environment(\.colorScheme, .dark)
+                    .environment(\.colorScheme, theme.isDark ? .dark : .light)
                     .padding(.horizontal, 6)
                     .padding(.vertical, 6)
 
                 if notes.text.isEmpty {
                     Text("Jot something down…")
                         .font(.system(size: 12))
-                        .foregroundStyle(.white.opacity(0.35))
+                        .foregroundStyle(theme.ink.opacity(0.35))
                         .padding(.leading, 11)
                         .padding(.top, 6)
                         .allowsHitTesting(false)
@@ -45,7 +46,7 @@ struct NotesWidgetView: View {
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .background(
                 RoundedRectangle(cornerRadius: 8, style: .continuous)
-                    .fill(Color.white.opacity(isFocused ? 0.1 : 0.06))
+                    .fill(theme.ink.opacity(isFocused ? 0.1 : 0.06))
             )
             // Alongside the text view's own click, not instead of it, so the click still places
             // the cursor where it lands.
@@ -74,7 +75,7 @@ struct NotesWidgetView: View {
             Text(summary)
                 .font(.system(size: 10))
                 .monospacedDigit()
-                .foregroundStyle(.white.opacity(0.4))
+                .foregroundStyle(theme.ink.opacity(0.4))
 
             Spacer(minLength: 0)
 
@@ -82,7 +83,7 @@ struct NotesWidgetView: View {
                 Button("Copy") { notes.copyAll() }
                     .buttonStyle(.plain)
                     .font(.system(size: 11))
-                    .foregroundStyle(.white.opacity(0.7))
+                    .foregroundStyle(theme.ink.opacity(0.7))
                     .help("Copy the whole note")
             }
         }

@@ -6,12 +6,12 @@ import SwiftUI
 /// Drawn inside the surface's single clip (`NotchRootView.content`), so its edges are that clip's
 /// edges and no second antialiased edge is laid over them. For Minimal Dark it is the black fill,
 /// or the black fill under a material for Translucent Panel, exactly as before styles existed.
-struct NotchSurfaceView: View {
+struct NotchSurfaceView<Edge: Shape>: View {
     let style: NotchSurfaceStyle
     /// Settings > Appearance > Translucent Panel, which only Minimal offers.
     let isTranslucent: Bool
-    /// The outline, open at the top, for a border.
-    let edge: NotchShape
+    /// The outline for a border: the notch's, open at the top, or a window's.
+    let edge: Edge
 
     var body: some View {
         if style == .housing {

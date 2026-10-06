@@ -39,6 +39,7 @@ enum VisualizerPulse {
 /// they strike on the beat rather than sliding. Without it they run on the shared pulse. A
 /// custom animated image replaces the bars entirely when one is chosen.
 struct VisualizerView: View {
+    @Environment(\.notchStyle) private var theme
     var palette: ArtworkPalette
     var isPlaying: Bool
     var customImagePath: String?

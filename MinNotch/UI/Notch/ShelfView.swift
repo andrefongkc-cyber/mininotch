@@ -4,6 +4,7 @@ import UniformTypeIdentifiers
 
 /// The Shelf widget: files parked on the notch, waiting to go somewhere else.
 struct ShelfView: View {
+    @Environment(\.notchStyle) private var theme
     @Environment(AppEnvironment.self) private var environment
     @Environment(SettingsStore.self) private var settings
 
@@ -58,10 +59,10 @@ struct ShelfView: View {
         HStack(spacing: 8) {
             Image(systemName: service.isDropTargeted ? "tray.and.arrow.down.fill" : "tray.and.arrow.down")
                 .font(.system(size: 17))
-                .foregroundStyle(service.isDropTargeted ? settings.appearance.resolvedAccent : .white.opacity(0.35))
+                .foregroundStyle(service.isDropTargeted ? settings.appearance.resolvedAccent : theme.ink.opacity(0.35))
             Text(service.isDropTargeted ? "Drop to hold" : "Drag files here to hold them, then drag them out where they need to go.")
                 .font(Typography.helper)
-                .foregroundStyle(.white.opacity(0.5))
+                .foregroundStyle(theme.ink.opacity(0.5))
                 .lineLimit(2)
         }
         .padding(.horizontal, 12)
@@ -69,7 +70,7 @@ struct ShelfView: View {
         .overlay(
             RoundedRectangle(cornerRadius: 10, style: .continuous)
                 .strokeBorder(
-                    service.isDropTargeted ? settings.appearance.resolvedAccent : Color.white.opacity(0.18),
+                    service.isDropTargeted ? settings.appearance.resolvedAccent : theme.ink.opacity(0.18),
                     style: StrokeStyle(lineWidth: service.isDropTargeted ? 1.5 : 1, dash: [4, 4])
                 )
         )
@@ -92,16 +93,16 @@ struct ShelfView: View {
                 .foregroundStyle(
                     service.isDropTargeted
                         ? settings.appearance.resolvedAccent
-                        : .white.opacity(0.35)
+                        : theme.ink.opacity(0.35)
                 )
 
             Text(service.isDropTargeted ? "Drop to hold" : "Shelf")
                 .font(Typography.bodyEmphasised)
-                .foregroundStyle(.white.opacity(0.75))
+                .foregroundStyle(theme.ink.opacity(0.75))
 
             Text("Drag files here to hold them, then drag them out wherever you need.")
                 .font(Typography.helper)
-                .foregroundStyle(.white.opacity(0.45))
+                .foregroundStyle(theme.ink.opacity(0.45))
                 .multilineTextAlignment(.center)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -111,7 +112,7 @@ struct ShelfView: View {
                 .strokeBorder(
                     service.isDropTargeted
                         ? settings.appearance.resolvedAccent
-                        : Color.white.opacity(0.18),
+                        : theme.ink.opacity(0.18),
                     style: StrokeStyle(lineWidth: service.isDropTargeted ? 1.5 : 1, dash: [4, 4])
                 )
         )
@@ -151,7 +152,7 @@ struct ShelfView: View {
 
             Text(item.name)
                 .font(.system(size: 10))
-                .foregroundStyle(.white.opacity(0.75))
+                .foregroundStyle(theme.ink.opacity(0.75))
                 .lineLimit(1)
                 .truncationMode(.middle)
                 .frame(width: 64)
@@ -160,7 +161,7 @@ struct ShelfView: View {
         .padding(.horizontal, 4)
         .background(
             RoundedRectangle(cornerRadius: 8, style: .continuous)
-                .fill(isSelected ? accent.opacity(0.22) : Color.white.opacity(0.07))
+                .fill(isSelected ? accent.opacity(0.22) : theme.ink.opacity(0.07))
         )
         .overlay(
             RoundedRectangle(cornerRadius: 8, style: .continuous)
@@ -211,12 +212,12 @@ struct ShelfView: View {
             VStack(spacing: 4) {
                 Image(systemName: "dot.radiowaves.up.forward")
                     .font(.system(size: 20, weight: .medium))
-                    .foregroundStyle(targeted ? accent : .white.opacity(toSend.isEmpty ? 0.35 : 0.8))
+                    .foregroundStyle(targeted ? accent : theme.ink.opacity(toSend.isEmpty ? 0.35 : 0.8))
                     .frame(width: 40, height: 40)
 
                 Text(service.selection.isEmpty ? "AirDrop" : "AirDrop \(service.selection.count)")
                     .font(.system(size: 10))
-                    .foregroundStyle(.white.opacity(0.75))
+                    .foregroundStyle(theme.ink.opacity(0.75))
                     .lineLimit(1)
                     .frame(width: 64)
             }
@@ -224,11 +225,11 @@ struct ShelfView: View {
             .padding(.horizontal, 4)
             .background(
                 RoundedRectangle(cornerRadius: 8, style: .continuous)
-                    .fill(targeted ? accent.opacity(0.22) : Color.white.opacity(0.04))
+                    .fill(targeted ? accent.opacity(0.22) : theme.ink.opacity(0.04))
             )
             .overlay(
                 RoundedRectangle(cornerRadius: 8, style: .continuous)
-                    .strokeBorder(targeted ? accent : Color.white.opacity(0.18), style: StrokeStyle(lineWidth: 1, dash: [3, 3]))
+                    .strokeBorder(targeted ? accent : theme.ink.opacity(0.18), style: StrokeStyle(lineWidth: 1, dash: [3, 3]))
             )
             .contentShape(Rectangle())
             .onTapGesture {
@@ -252,7 +253,7 @@ struct ShelfView: View {
         HStack {
             Text(footerText)
                 .font(.system(size: 10))
-                .foregroundStyle(.white.opacity(0.4))
+                .foregroundStyle(theme.ink.opacity(0.4))
 
             Spacer()
 
@@ -260,7 +261,7 @@ struct ShelfView: View {
                 Button("Clear") { service.clear() }
                     .buttonStyle(.plain)
                     .font(.system(size: 11))
-                    .foregroundStyle(.white.opacity(0.6))
+                    .foregroundStyle(theme.ink.opacity(0.6))
                     .help("Remove every file from the shelf")
             }
         }

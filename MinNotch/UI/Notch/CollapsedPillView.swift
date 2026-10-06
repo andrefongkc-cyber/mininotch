@@ -191,6 +191,7 @@ struct CollapsedPillContent: Equatable {
 /// only place content on that hardware is actually visible. A display with no physical notch
 /// is always extended, because it has nothing to hide behind.
 struct CollapsedPillView: View {
+    @Environment(\.notchStyle) private var theme
     let geometry: NotchGeometry
     let content: CollapsedPillContent
 
@@ -260,6 +261,7 @@ struct CollapsedPillView: View {
 /// Its own view so Settings > Layout can draw the same thing in its miniature of the pill,
 /// from the same live state, rather than a symbol that stands for it.
 struct PillIndicatorView: View {
+    @Environment(\.notchStyle) private var theme
     let indicator: PillIndicator
     let content: CollapsedPillContent
 
@@ -275,7 +277,7 @@ struct PillIndicatorView: View {
                     .clipShape(RoundedRectangle(cornerRadius: 4, style: .continuous))
                     .overlay(
                         RoundedRectangle(cornerRadius: 4, style: .continuous)
-                            .strokeBorder(Color.white.opacity(0.18), lineWidth: 0.5)
+                            .strokeBorder(theme.ink.opacity(0.18), lineWidth: 0.5)
                     )
             }
 
@@ -283,7 +285,7 @@ struct PillIndicatorView: View {
             if let songText = content.songText {
                 Text(songText)
                     .font(Font(CollapsedPillContent.songFont))
-                    .foregroundStyle(.white.opacity(0.92))
+                    .foregroundStyle(theme.ink.opacity(0.92))
                     .lineLimit(1)
                     .truncationMode(.tail)
                     .frame(width: content.songWidth, alignment: .leading)
@@ -300,7 +302,7 @@ struct PillIndicatorView: View {
                     if let detail = content.activityDetail {
                         Text(detail)
                             .font(Typography.timecode)
-                            .foregroundStyle(.white.opacity(0.92))
+                            .foregroundStyle(theme.ink.opacity(0.92))
                     }
                 }
             }
@@ -308,7 +310,7 @@ struct PillIndicatorView: View {
         case .playing:
             Image(systemName: "waveform")
                 .font(.system(size: 12, weight: .medium))
-                .foregroundStyle(.white.opacity(0.9))
+                .foregroundStyle(theme.ink.opacity(0.9))
                 .frame(width: CollapsedPillContent.glyphWidth)
 
         case .battery:
@@ -316,7 +318,7 @@ struct PillIndicatorView: View {
                 if content.showPercentage {
                     Text("\(content.battery.percentage)")
                         .font(Typography.timecode)
-                        .foregroundStyle(.white.opacity(0.92))
+                        .foregroundStyle(theme.ink.opacity(0.92))
                 }
                 Image(systemName: content.battery.symbolName)
                     .font(.system(size: 12, weight: .regular))
@@ -325,7 +327,7 @@ struct PillIndicatorView: View {
                             ? Color(nsColor: .systemGreen)
                             : (content.battery.percentage <= 10
                                 ? Color(nsColor: .systemRed)
-                                : .white.opacity(0.92))
+                                : theme.ink.opacity(0.92))
                     )
                     .symbolRenderingMode(.hierarchical)
                     .frame(width: CollapsedPillContent.batteryGlyphWidth)
@@ -342,7 +344,7 @@ struct PillIndicatorView: View {
                         .frame(width: CollapsedPillContent.glyphWidth)
                     Text(WeatherReport.degrees(weather.temperature))
                         .font(Typography.timecode)
-                        .foregroundStyle(.white.opacity(0.92))
+                        .foregroundStyle(theme.ink.opacity(0.92))
                 }
                 .accessibilityElement(children: .combine)
                 .accessibilityLabel("\(weather.condition.title), \(WeatherReport.degrees(weather.temperature))")

@@ -11,6 +11,7 @@ import SwiftUI
 /// only adds a strip of song information underneath. Nothing readable goes in the top band,
 /// for the same reason as the panel: on notched hardware it is behind the camera housing.
 struct SneakPeekView: View {
+    @Environment(\.notchStyle) private var theme
     let geometry: NotchGeometry
     let pillContent: CollapsedPillContent
     let track: NowPlayingTrack
@@ -41,11 +42,11 @@ struct SneakPeekView: View {
                 VStack(alignment: .leading, spacing: 1) {
                     Text(track.title)
                         .font(.system(size: 13, weight: .semibold))
-                        .foregroundStyle(.white)
+                        .foregroundStyle(theme.ink)
                         .lineLimit(1)
                     Text(track.artist.isEmpty ? track.sourceAppName : track.artist)
                         .font(.system(size: 11))
-                        .foregroundStyle(.white.opacity(0.6))
+                        .foregroundStyle(theme.ink.opacity(0.6))
                         .lineLimit(1)
                 }
 
@@ -72,12 +73,12 @@ struct SneakPeekView: View {
                 .clipShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
         } else {
             RoundedRectangle(cornerRadius: 6, style: .continuous)
-                .fill(Color.white.opacity(0.1))
+                .fill(theme.ink.opacity(0.1))
                 .frame(width: 30, height: 30)
                 .overlay(
                     Image(systemName: "music.note")
                         .font(.system(size: 12))
-                        .foregroundStyle(.white.opacity(0.5))
+                        .foregroundStyle(theme.ink.opacity(0.5))
                 )
         }
     }
@@ -89,6 +90,7 @@ struct SneakPeekView: View {
 /// reads on the peek's black ground whatever the sleeve looks like. The timeline pauses when
 /// playback does, and the peek itself is only on screen for a couple of seconds.
 struct PeekPlayingBars: View {
+    @Environment(\.notchStyle) private var theme
     let palette: ArtworkPalette
     let isPlaying: Bool
 

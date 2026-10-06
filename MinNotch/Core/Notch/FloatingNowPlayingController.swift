@@ -148,15 +148,27 @@ private struct FloatingNowPlayingView: View {
 
     @State private var isHovering = false
 
+    /// A window of its own, away from the camera housing, so always the full Notch Style.
+    private var theme: NotchStyle { environment.notchStyle() }
+    private static let cornerRadius: CGFloat = 14
+
     var body: some View {
         NowPlayingCardView()
             .padding(.horizontal, 14)
             .padding(.top, 26)
             .padding(.bottom, 12)
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
-            .background(Color.black)
+            .environment(\.notchStyle, theme)
+            .environment(\.colorScheme, theme.isDark ? .dark : .light)
+            .background(
+                NotchSurfaceView(
+                    style: theme.surface,
+                    isTranslucent: false,
+                    edge: RoundedRectangle(cornerRadius: Self.cornerRadius, style: .continuous)
+                )
+            )
             .overlay(alignment: .topLeading) { closeButton }
-            .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+            .clipShape(RoundedRectangle(cornerRadius: Self.cornerRadius, style: .continuous))
             .onHover { isHovering = $0 }
             .onChange(of: environment.nowPlaying.showsUpNext) { onLayoutChange() }
             .onChange(of: environment.nowPlaying.showsOutputSheet) { onLayoutChange() }
@@ -170,9 +182,9 @@ private struct FloatingNowPlayingView: View {
         Button(action: onClose) {
             Image(systemName: "xmark")
                 .font(.system(size: 9, weight: .bold))
-                .foregroundStyle(.white.opacity(0.9))
+                .foregroundStyle(theme.ink.opacity(0.9))
                 .frame(width: 14, height: 14)
-                .background(Circle().fill(Color.white.opacity(0.18)))
+                .background(Circle().fill(theme.ink.opacity(0.18)))
                 .contentShape(Circle())
         }
         .buttonStyle(.plain)

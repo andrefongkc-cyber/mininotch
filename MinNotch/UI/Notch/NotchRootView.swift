@@ -20,7 +20,7 @@ struct NotchRootView: View {
 
     /// The style for whatever is showing: the panel, or the closed notch, its HUD and its peek.
     private var contentTheme: NotchStyle {
-        isExpanded || !geometry.hasPhysicalNotch ? theme : theme.housing
+        isExpanded || !geometry.hasPhysicalNotch ? theme : theme.darkVariant
     }
 
     /// The brief drop below the pill on a track change. Separate from `isExpanded` because it
@@ -252,6 +252,7 @@ struct NotchRootView: View {
                         .padding(.bottom, Metrics.notchPanelPadding)
                 }
                 .environment(\.notchStyle, contentTheme)
+                .environment(\.colorScheme, contentTheme.isDark ? .dark : .light)
                 .transition(Self.contentTransition)
             } else if let reading = environment.hud.current {
                 // Before the peek: a volume change is something the user just did, and it
@@ -264,6 +265,7 @@ struct NotchRootView: View {
                     accent: settings.appearance.resolvedAccent
                 )
                 .environment(\.notchStyle, contentTheme)
+                .environment(\.colorScheme, contentTheme.isDark ? .dark : .light)
                 .transition(Self.contentTransition)
             } else if isPeeking, let track = environment.nowPlaying.track {
                 SneakPeekView(
@@ -274,14 +276,17 @@ struct NotchRootView: View {
                     palette: environment.nowPlaying.palette
                 )
                 .environment(\.notchStyle, contentTheme)
+                .environment(\.colorScheme, contentTheme.isDark ? .dark : .light)
                 .transition(Self.contentTransition)
             } else if let lyrics = closedLyrics {
                 ClosedLyricsView(geometry: geometry, pillContent: pillContent, lyrics: lyrics)
                     .environment(\.notchStyle, contentTheme)
+                .environment(\.colorScheme, contentTheme.isDark ? .dark : .light)
                     .transition(Self.contentTransition)
             } else {
                 CollapsedPillView(geometry: geometry, content: pillContent)
                     .environment(\.notchStyle, contentTheme)
+                .environment(\.colorScheme, contentTheme.isDark ? .dark : .light)
                     .transition(Self.contentTransition)
             }
         }

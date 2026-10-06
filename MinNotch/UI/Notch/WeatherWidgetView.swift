@@ -6,6 +6,7 @@ import SwiftUI
 /// palette, never a semantic label colour. When there is no forecast yet, the tab says why and,
 /// where it can, offers the one thing that fixes it.
 struct WeatherWidgetView: View {
+    @Environment(\.notchStyle) private var theme
     @Environment(AppEnvironment.self) private var environment
     @Environment(SettingsStore.self) private var settings
 
@@ -41,7 +42,7 @@ struct WeatherWidgetView: View {
                         )
                     }
                 }
-                Divider().overlay(Color.white.opacity(0.12))
+                Divider().overlay(theme.ink.opacity(0.12))
                 HStack(spacing: 0) {
                     ForEach(report.days) { day in
                         column(
@@ -64,17 +65,17 @@ struct WeatherWidgetView: View {
                     .font(.system(size: 28))
                 Text(WeatherReport.degrees(report.temperature))
                     .font(.system(size: 34, weight: .light).monospacedDigit())
-                    .foregroundStyle(.white)
+                    .foregroundStyle(theme.ink)
             }
             Text(report.condition.title)
                 .font(.system(size: 12, weight: .medium))
-                .foregroundStyle(.white.opacity(0.85))
+                .foregroundStyle(theme.ink.opacity(0.85))
             Text("H \(WeatherReport.degrees(report.high))  L \(WeatherReport.degrees(report.low))")
                 .font(.system(size: 11).monospacedDigit())
-                .foregroundStyle(.white.opacity(0.55))
+                .foregroundStyle(theme.ink.opacity(0.55))
             Label(report.placeName, systemImage: settings.weather.useCurrentLocation ? "location.fill" : "mappin")
                 .font(.system(size: 10))
-                .foregroundStyle(.white.opacity(0.45))
+                .foregroundStyle(theme.ink.opacity(0.45))
                 .lineLimit(1)
                 .padding(.top, 4)
         }
@@ -84,7 +85,7 @@ struct WeatherWidgetView: View {
         VStack(spacing: 3) {
             Text(label)
                 .font(.system(size: 9, weight: .medium))
-                .foregroundStyle(.white.opacity(0.5))
+                .foregroundStyle(theme.ink.opacity(0.5))
                 .lineLimit(1)
             Image(systemName: symbol)
                 .symbolRenderingMode(.multicolor)
@@ -92,7 +93,7 @@ struct WeatherWidgetView: View {
                 .frame(height: 16)
             Text(value)
                 .font(.system(size: 10, weight: .medium).monospacedDigit())
-                .foregroundStyle(.white.opacity(0.85))
+                .foregroundStyle(theme.ink.opacity(0.85))
                 .lineLimit(1)
                 .minimumScaleFactor(0.8)
         }
@@ -105,10 +106,10 @@ struct WeatherWidgetView: View {
         VStack(spacing: 8) {
             Image(systemName: "cloud.sun")
                 .font(.system(size: 24))
-                .foregroundStyle(.white.opacity(0.35))
+                .foregroundStyle(theme.ink.opacity(0.35))
             Text(service.status.message ?? "No forecast yet.")
                 .font(Typography.helper)
-                .foregroundStyle(.white.opacity(0.6))
+                .foregroundStyle(theme.ink.opacity(0.6))
                 .multilineTextAlignment(.center)
                 .fixedSize(horizontal: false, vertical: true)
             if service.status == .needsLocationAccess {

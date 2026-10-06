@@ -8,6 +8,7 @@ import UniformTypeIdentifiers
 /// for; the copy button beside it puts the link back on the pasteboard. Links come in by
 /// dragging a link or a text selection onto the panel, or with ⌘V or the Paste button.
 struct LinkShelfWidgetView: View {
+    @Environment(\.notchStyle) private var theme
     @Environment(AppEnvironment.self) private var environment
     @Environment(SettingsStore.self) private var settings
 
@@ -60,16 +61,16 @@ struct LinkShelfWidgetView: View {
         HStack(spacing: 8) {
             Image(systemName: service.isDropTargeted ? "link.badge.plus" : "link")
                 .font(.system(size: 15))
-                .foregroundStyle(service.isDropTargeted ? settings.appearance.resolvedAccent : .white.opacity(0.35))
+                .foregroundStyle(service.isDropTargeted ? settings.appearance.resolvedAccent : theme.ink.opacity(0.35))
             Text(service.isDropTargeted ? "Drop to keep the link" : "Drop a link here or press ⌘V. Click one to open it.")
                 .font(Typography.helper)
-                .foregroundStyle(.white.opacity(0.5))
+                .foregroundStyle(theme.ink.opacity(0.5))
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .overlay(
             RoundedRectangle(cornerRadius: 10, style: .continuous)
                 .strokeBorder(
-                    service.isDropTargeted ? settings.appearance.resolvedAccent : Color.white.opacity(0.18),
+                    service.isDropTargeted ? settings.appearance.resolvedAccent : theme.ink.opacity(0.18),
                     style: StrokeStyle(lineWidth: service.isDropTargeted ? 1.5 : 1, dash: [4, 4])
                 )
         )
@@ -80,7 +81,7 @@ struct LinkShelfWidgetView: View {
         HStack(spacing: 10) {
             Text(service.notice ?? (service.items.isEmpty ? "Links" : "\(service.items.count) \(service.items.count == 1 ? "link" : "links")"))
                 .font(.system(size: 10))
-                .foregroundStyle(.white.opacity(service.notice == nil ? 0.4 : 0.7))
+                .foregroundStyle(theme.ink.opacity(service.notice == nil ? 0.4 : 0.7))
                 .lineLimit(1)
 
             Spacer(minLength: 0)
@@ -89,7 +90,7 @@ struct LinkShelfWidgetView: View {
             Button("Paste") { onPaste?() }
                 .buttonStyle(.plain)
                 .font(.system(size: 11))
-                .foregroundStyle(.white.opacity(0.7))
+                .foregroundStyle(theme.ink.opacity(0.7))
                 .keyboardShortcut("v", modifiers: .command)
                 .help("Add the files or the link on the clipboard (⌘V)")
 
@@ -97,7 +98,7 @@ struct LinkShelfWidgetView: View {
                 Button("Clear") { service.clearAll() }
                     .buttonStyle(.plain)
                     .font(.system(size: 11))
-                    .foregroundStyle(.white.opacity(0.6))
+                    .foregroundStyle(theme.ink.opacity(0.6))
                     .help("Remove every link")
             }
         }
@@ -115,12 +116,12 @@ struct LinkShelfWidgetView: View {
         HStack(spacing: 8) {
             Text("Links")
                 .font(Typography.sectionHeader)
-                .foregroundStyle(.white.opacity(0.8))
+                .foregroundStyle(theme.ink.opacity(0.8))
 
             if let notice = service.notice {
                 Text(notice)
                     .font(Typography.helper)
-                    .foregroundStyle(.white.opacity(0.45))
+                    .foregroundStyle(theme.ink.opacity(0.45))
                     .transition(.opacity)
             }
 
@@ -130,7 +131,7 @@ struct LinkShelfWidgetView: View {
             Button("Paste") { paste() }
                 .buttonStyle(.plain)
                 .font(Typography.helper)
-                .foregroundStyle(.white.opacity(0.7))
+                .foregroundStyle(theme.ink.opacity(0.7))
                 .keyboardShortcut("v", modifiers: .command)
                 .help("Add the link on the clipboard (⌘V)")
 
@@ -138,7 +139,7 @@ struct LinkShelfWidgetView: View {
                 Button("Clear") { service.clearAll() }
                     .buttonStyle(.plain)
                     .font(Typography.helper)
-                    .foregroundStyle(.white.opacity(0.5))
+                    .foregroundStyle(theme.ink.opacity(0.5))
                     .help("Remove every link")
             }
         }
@@ -151,13 +152,13 @@ struct LinkShelfWidgetView: View {
         VStack(spacing: 6) {
             Image(systemName: service.isDropTargeted ? "link.badge.plus" : "link")
                 .font(.system(size: 22))
-                .foregroundStyle(service.isDropTargeted ? settings.appearance.resolvedAccent : .white.opacity(0.35))
+                .foregroundStyle(service.isDropTargeted ? settings.appearance.resolvedAccent : theme.ink.opacity(0.35))
             Text(service.isDropTargeted ? "Drop to keep it" : "Drop or paste a link")
                 .font(Typography.body)
-                .foregroundStyle(.white.opacity(0.7))
+                .foregroundStyle(theme.ink.opacity(0.7))
             Text("Drag a link or a selection of text here, or press ⌘V. Click a saved link to open it.")
                 .font(Typography.helper)
-                .foregroundStyle(.white.opacity(0.4))
+                .foregroundStyle(theme.ink.opacity(0.4))
                 .multilineTextAlignment(.center)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -165,7 +166,7 @@ struct LinkShelfWidgetView: View {
         .overlay(
             RoundedRectangle(cornerRadius: 10, style: .continuous)
                 .strokeBorder(
-                    service.isDropTargeted ? settings.appearance.resolvedAccent : Color.white.opacity(0.18),
+                    service.isDropTargeted ? settings.appearance.resolvedAccent : theme.ink.opacity(0.18),
                     style: StrokeStyle(lineWidth: service.isDropTargeted ? 1.5 : 1, dash: [4, 4])
                 )
         )
@@ -237,6 +238,7 @@ struct LinkShelfWidgetView: View {
 
 /// One saved link.
 private struct LinkRow: View {
+    @Environment(\.notchStyle) private var theme
     let item: LinkItem
     let icon: NSImage?
     let onOpen: () -> Void
@@ -253,11 +255,11 @@ private struct LinkRow: View {
             VStack(alignment: .leading, spacing: 1) {
                 Text(item.displayTitle)
                     .font(Typography.body)
-                    .foregroundStyle(.white.opacity(0.88))
+                    .foregroundStyle(theme.ink.opacity(0.88))
                     .lineLimit(1)
                 Text(item.url.absoluteString)
                     .font(Typography.helper)
-                    .foregroundStyle(.white.opacity(0.42))
+                    .foregroundStyle(theme.ink.opacity(0.42))
                     .lineLimit(1)
                     .truncationMode(.middle)
             }
@@ -267,7 +269,7 @@ private struct LinkRow: View {
             Button(action: copy) {
                 Image(systemName: didCopy ? "checkmark" : "doc.on.doc")
                     .font(.system(size: 10))
-                    .foregroundStyle(.white.opacity(didCopy ? 0.9 : 0.55))
+                    .foregroundStyle(theme.ink.opacity(didCopy ? 0.9 : 0.55))
                     .frame(width: 20, height: 20)
                     .contentShape(Rectangle())
             }
@@ -277,7 +279,7 @@ private struct LinkRow: View {
             Button(action: onRemove) {
                 Image(systemName: "xmark")
                     .font(.system(size: 9, weight: .semibold))
-                    .foregroundStyle(.white.opacity(isHovering ? 0.6 : 0.3))
+                    .foregroundStyle(theme.ink.opacity(isHovering ? 0.6 : 0.3))
                     .frame(width: 20, height: 20)
                     .contentShape(Rectangle())
             }
@@ -288,7 +290,7 @@ private struct LinkRow: View {
         .padding(.vertical, 5)
         .background(
             RoundedRectangle(cornerRadius: 6, style: .continuous)
-                .fill(Color.white.opacity(isHovering ? 0.10 : 0.05))
+                .fill(theme.ink.opacity(isHovering ? 0.10 : 0.05))
         )
         .contentShape(Rectangle())
         .onHover { isHovering = $0 }
@@ -317,7 +319,7 @@ private struct LinkRow: View {
         } else {
             Image(systemName: "globe")
                 .font(.system(size: 12))
-                .foregroundStyle(.white.opacity(0.45))
+                .foregroundStyle(theme.ink.opacity(0.45))
                 .frame(width: 16, height: 16)
         }
     }

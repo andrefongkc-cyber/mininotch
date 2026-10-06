@@ -3,6 +3,7 @@ import SwiftUI
 /// The System widget. Today it is the battery detail; CPU, memory, and network readouts
 /// join it here rather than getting their own tab.
 struct SystemWidgetView: View {
+    @Environment(\.notchStyle) private var theme
     @Environment(AppEnvironment.self) private var environment
     @Environment(SettingsStore.self) private var settings
 
@@ -37,12 +38,12 @@ struct SystemWidgetView: View {
             }
 
             if showsStats {
-                Divider().overlay(Color.white.opacity(0.12))
+                Divider().overlay(theme.ink.opacity(0.12))
                 statsRow
             }
 
             if !environment.bluetooth.devices.isEmpty {
-                Divider().overlay(Color.white.opacity(0.12))
+                Divider().overlay(theme.ink.opacity(0.12))
                 bluetoothRow
             }
 
@@ -72,17 +73,17 @@ struct SystemWidgetView: View {
                 HStack(spacing: 5) {
                     Image(systemName: device.symbolName)
                         .font(.system(size: 12))
-                        .foregroundStyle(.white.opacity(0.55))
+                        .foregroundStyle(theme.ink.opacity(0.55))
 
                     Text(device.name)
                         .font(.system(size: 11))
-                        .foregroundStyle(.white.opacity(0.7))
+                        .foregroundStyle(theme.ink.opacity(0.7))
                         .lineLimit(1)
 
                     Text("\(device.percentage)%")
                         .font(.system(size: 11, weight: .medium))
                         .monospacedDigit()
-                        .foregroundStyle(device.isLow ? Color(nsColor: .systemRed) : .white.opacity(0.9))
+                        .foregroundStyle(device.isLow ? Color(nsColor: .systemRed) : theme.ink.opacity(0.9))
 
                     if device.isCharging {
                         Image(systemName: "bolt.fill")
@@ -109,15 +110,15 @@ struct SystemWidgetView: View {
                 Image(systemName: status.symbolName)
                     .font(.system(size: 22))
                     .symbolRenderingMode(.hierarchical)
-                    .foregroundStyle(status.isCharging ? Color(nsColor: .systemGreen) : .white)
+                    .foregroundStyle(status.isCharging ? Color(nsColor: .systemGreen) : theme.ink)
 
                 VStack(alignment: .leading, spacing: 1) {
                     Text("\(status.percentage)%")
                         .font(.system(size: 17, weight: .semibold))
-                        .foregroundStyle(.white)
+                        .foregroundStyle(theme.ink)
                     Text(stateDescription)
                         .font(Typography.helper)
-                        .foregroundStyle(.white.opacity(0.55))
+                        .foregroundStyle(theme.ink.opacity(0.55))
                 }
 
                 Spacer()
@@ -127,7 +128,7 @@ struct SystemWidgetView: View {
                 if let temperature = environment.systemStats.stats.batteryTemperature, showsStats {
                     Label("Battery " + TemperatureFormat.string(celsius: temperature, fahrenheit: usesFahrenheit), systemImage: "thermometer.medium")
                         .font(.system(size: 11, weight: .medium).monospacedDigit())
-                        .foregroundStyle(.white.opacity(0.6))
+                        .foregroundStyle(theme.ink.opacity(0.6))
                         .help("Battery temperature")
                 }
 
@@ -144,7 +145,7 @@ struct SystemWidgetView: View {
             GeometryReader { proxy in
                 let fraction = min(max(Double(status.percentage) / 100, 0), 1)
                 ZStack(alignment: .leading) {
-                    Capsule().fill(Color.white.opacity(0.14))
+                    Capsule().fill(theme.ink.opacity(0.14))
                     Capsule()
                         .fill(status.tint)
                         .frame(width: proxy.size.width * fraction)
@@ -199,10 +200,10 @@ struct SystemWidgetView: View {
     private func powerFigure(_ label: String, _ value: String?, tint: Color? = nil) -> some View {
         HStack(spacing: 4) {
             Text(label)
-                .foregroundStyle(.white.opacity(0.45))
+                .foregroundStyle(theme.ink.opacity(0.45))
             Text(value ?? "–")
                 .fontWeight(.medium)
-                .foregroundStyle(tint ?? .white.opacity(0.9))
+                .foregroundStyle(tint ?? theme.ink.opacity(0.9))
                 .contentTransition(.numericText())
         }
         .font(.system(size: 11))
@@ -213,7 +214,7 @@ struct SystemWidgetView: View {
     /// The one-line answer to "is this charging well": the battery's share of what comes in,
     /// or what is wrong when the battery is not gaining.
     private var chargingSummary: (text: String, tint: Color) {
-        let quiet = Color.white.opacity(0.5)
+        let quiet = theme.ink.opacity(0.5)
         let warning = Color(nsColor: .systemOrange)
         guard let power else { return ("", quiet) }
         if let input = power.input, input < 1 { return ("Charger giving no power", warning) }
@@ -255,14 +256,14 @@ struct SystemWidgetView: View {
         HStack(spacing: 10) {
             Image(systemName: "powerplug")
                 .font(.system(size: 20))
-                .foregroundStyle(.white.opacity(0.5))
+                .foregroundStyle(theme.ink.opacity(0.5))
             VStack(alignment: .leading, spacing: 1) {
                 Text("No Battery")
                     .font(Typography.bodyEmphasised)
-                    .foregroundStyle(.white.opacity(0.8))
+                    .foregroundStyle(theme.ink.opacity(0.8))
                 Text("This Mac runs on wall power.")
                     .font(Typography.helper)
-                    .foregroundStyle(.white.opacity(0.5))
+                    .foregroundStyle(theme.ink.opacity(0.5))
             }
             Spacer()
         }
@@ -377,7 +378,7 @@ struct SystemWidgetView: View {
         VStack(spacing: 2) {
             Image(systemName: symbol)
                 .font(.system(size: 11))
-                .foregroundStyle(.white.opacity(0.45))
+                .foregroundStyle(theme.ink.opacity(0.45))
 
             // Every text that changes with the reading rolls its digits rather than cross-fading.
             // A cross-fade drew the old number and the new one on top of each other for a moment,
@@ -385,7 +386,7 @@ struct SystemWidgetView: View {
             Text(value)
                 .font(.system(size: 12, weight: .medium))
                 .monospacedDigit()
-                .foregroundStyle(.white.opacity(0.9))
+                .foregroundStyle(theme.ink.opacity(0.9))
                 .lineLimit(1)
                 .minimumScaleFactor(0.7)
                 .contentTransition(.numericText())
@@ -394,7 +395,7 @@ struct SystemWidgetView: View {
                 if let fraction {
                     GeometryReader { proxy in
                         ZStack(alignment: .leading) {
-                            Capsule().fill(Color.white.opacity(0.14))
+                            Capsule().fill(theme.ink.opacity(0.14))
                             Capsule()
                                 .fill(barTint ?? tint(for: fraction))
                                 .frame(width: proxy.size.width * min(max(fraction, 0), 1))
@@ -406,7 +407,7 @@ struct SystemWidgetView: View {
                     Text(secondaryText)
                         .font(.system(size: 9))
                         .monospacedDigit()
-                        .foregroundStyle(.white.opacity(0.4))
+                        .foregroundStyle(theme.ink.opacity(0.4))
                         .lineLimit(1)
                         .minimumScaleFactor(0.7)
                         .contentTransition(.numericText())
@@ -419,7 +420,7 @@ struct SystemWidgetView: View {
             Text(label)
                 .font(.system(size: 9))
                 .monospacedDigit()
-                .foregroundStyle(.white.opacity(0.4))
+                .foregroundStyle(theme.ink.opacity(0.4))
                 .lineLimit(1)
                 .minimumScaleFactor(0.8)
                 .contentTransition(.numericText())
@@ -455,6 +456,7 @@ struct SystemWidgetView: View {
 /// as a glitch. The service now samples in the background too, and the graph is drawn by time:
 /// newest at the right edge, five minutes ago at the left.
 struct StatChart: View {
+    @Environment(\.notchStyle) private var theme
     var values: [ChartPoint]
     var tint: Color
 
@@ -464,9 +466,9 @@ struct StatChart: View {
     var body: some View {
         ZStack {
             RoundedRectangle(cornerRadius: 4, style: .continuous)
-                .fill(Color.white.opacity(0.05))
+                .fill(theme.ink.opacity(0.05))
             Rectangle()
-                .fill(Color.white.opacity(0.06))
+                .fill(theme.ink.opacity(0.06))
                 .frame(height: 0.5)
             if values.count > 1 {
                 SparklineShape(points: values, closed: true)
@@ -538,6 +540,7 @@ struct SparklineShape: Shape {
 /// in white, the battery's in green, and what the charger could give but is not, empty. While
 /// the battery is helping instead, its part is orange, after what the charger covers.
 private struct PowerFlowBar: View {
+    @Environment(\.notchStyle) private var theme
     var power: ChargingPower?
     var adapterWatts: Int?
 
@@ -554,7 +557,7 @@ private struct PowerFlowBar: View {
                 Spacer(minLength: 0)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
-            .background(Color.white.opacity(0.12))
+            .background(theme.ink.opacity(0.12))
             .clipShape(Capsule())
         }
         .help(help)
@@ -566,11 +569,11 @@ private struct PowerFlowBar: View {
         let battery = power.battery ?? 0
         let all: [(watts: Double, tint: Color)] = power.isDraining
             ? [
-                (power.input ?? max(mac + battery, 0), Color.white.opacity(0.6)),
+                (power.input ?? max(mac + battery, 0), theme.ink.opacity(0.6)),
                 (-battery, Color(nsColor: .systemOrange)),
             ]
             : [
-                (mac, Color.white.opacity(0.6)),
+                (mac, theme.ink.opacity(0.6)),
                 (power.isCharging ? battery : 0, Color(nsColor: .systemGreen)),
             ]
         // An empty segment would still take a gap's width.

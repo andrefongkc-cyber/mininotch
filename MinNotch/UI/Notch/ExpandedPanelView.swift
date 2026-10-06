@@ -10,6 +10,7 @@ import SwiftUI
 /// Adding a V2 widget means adding a case to `NotchTab`, registering it in
 /// `NotchWidgetRegistry`, and adding one branch here.
 struct ExpandedPanelView: View {
+    @Environment(\.notchStyle) private var theme
     @Bindable var viewModel: NotchViewModel
 
     @Environment(AppEnvironment.self) private var environment
@@ -165,7 +166,7 @@ struct ExpandedPanelView: View {
                 if settings.battery.showPercentage {
                     Text("\(status.percentage)%")
                         .font(Typography.timecode)
-                        .foregroundStyle(.white.opacity(0.85))
+                        .foregroundStyle(theme.ink.opacity(0.85))
                 }
                 Image(systemName: status.symbolName)
                     .font(.system(size: 13))
@@ -187,6 +188,7 @@ struct ExpandedPanelView: View {
 /// appearances, and a hover fill rather than a border so the strip stays quiet until
 /// pointed at.
 struct NotchIconButton: View {
+    @Environment(\.notchStyle) private var theme
     var systemImage: String
     var help: String
     var accent: Color
@@ -205,7 +207,7 @@ struct NotchIconButton: View {
                 .foregroundStyle(foreground)
                 .background(
                     RoundedRectangle(cornerRadius: 6, style: .continuous)
-                        .fill(Color.white.opacity(backgroundOpacity))
+                        .fill(theme.ink.opacity(backgroundOpacity))
                 )
                 .contentShape(Rectangle())
         }
@@ -218,7 +220,7 @@ struct NotchIconButton: View {
 
     private var foreground: Color {
         if isActive { return accent }
-        return .white.opacity(isHovering ? 0.95 : 0.55)
+        return theme.ink.opacity(isHovering ? 0.95 : 0.55)
     }
 
     private var backgroundOpacity: Double {

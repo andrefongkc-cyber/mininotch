@@ -9,6 +9,7 @@ import SwiftUI
 /// Like every other collapsed-state layout, content goes in the flanks either side of the
 /// cutout, never in the middle where the camera housing is.
 struct HUDView: View {
+    @Environment(\.notchStyle) private var theme
     let reading: HUDReading
     let geometry: NotchGeometry
     let style: HUDStyle
@@ -94,7 +95,7 @@ struct HUDView: View {
             HStack(spacing: 8) {
                 ZStack {
                     Circle()
-                        .stroke(Color.white.opacity(0.18), lineWidth: 3)
+                        .stroke(theme.ink.opacity(0.18), lineWidth: 3)
                     Circle()
                         .trim(from: 0, to: clamped)
                         .stroke(accent, style: StrokeStyle(lineWidth: 3, lineCap: .round))
@@ -140,7 +141,7 @@ struct HUDView: View {
     private var icon: some View {
         Image(systemName: reading.symbolName)
             .font(.system(size: 13))
-            .foregroundStyle(.white.opacity(0.9))
+            .foregroundStyle(theme.ink.opacity(0.9))
             .frame(width: 18)
             .contentTransition(.symbolEffect(.replace))
     }
@@ -148,9 +149,9 @@ struct HUDView: View {
     private var bar: some View {
         GeometryReader { proxy in
             ZStack(alignment: .leading) {
-                Capsule().fill(Color.white.opacity(0.18))
+                Capsule().fill(theme.ink.opacity(0.18))
                 Capsule()
-                    .fill(reading.isMuted ? Color.white.opacity(0.4) : accent)
+                    .fill(reading.isMuted ? theme.ink.opacity(0.4) : accent)
                     .frame(width: proxy.size.width * clamped)
             }
         }
@@ -161,7 +162,7 @@ struct HUDView: View {
     private var valueLabel: some View {
         Text("\(reading.percentage)")
             .font(Typography.timecode)
-            .foregroundStyle(.white.opacity(0.85))
+            .foregroundStyle(theme.ink.opacity(0.85))
             .frame(width: 24, alignment: .trailing)
     }
 

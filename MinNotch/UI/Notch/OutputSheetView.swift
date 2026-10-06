@@ -7,6 +7,7 @@ import SwiftUI
 /// writes the system's own settings through `AudioOutputService`: picking a row is picking it in
 /// the Sound menu, and the bar is the system volume.
 struct OutputSheetView: View {
+    @Environment(\.notchStyle) private var theme
     @Environment(AppEnvironment.self) private var environment
     @Environment(SettingsStore.self) private var settings
 
@@ -56,7 +57,7 @@ struct OutputSheetView: View {
     private var volumeRow: some View {
         HStack(spacing: 8) {
             TransportSymbol.image(volumeSymbol, pointSize: 11, weight: .medium)
-                .foregroundStyle(.white.opacity(0.6))
+                .foregroundStyle(theme.ink.opacity(0.6))
                 .frame(width: 20)
 
             if let volume = service.volume {
@@ -72,7 +73,7 @@ struct OutputSheetView: View {
             } else {
                 Text("This output's volume is set on the device itself.")
                     .font(.system(size: 11))
-                    .foregroundStyle(.white.opacity(0.45))
+                    .foregroundStyle(theme.ink.opacity(0.45))
                     .frame(maxWidth: .infinity, alignment: .leading)
             }
 
@@ -80,9 +81,9 @@ struct OutputSheetView: View {
                 environment.nowPlaying.isShowingOutputSheet = false
             } label: {
                 TransportSymbol.image("xmark", pointSize: 9, weight: .bold)
-                    .foregroundStyle(.white.opacity(0.55))
+                    .foregroundStyle(theme.ink.opacity(0.55))
                     .frame(width: 22, height: 20)
-                    .background(RoundedRectangle(cornerRadius: 5, style: .continuous).fill(Color.white.opacity(0.08)))
+                    .background(RoundedRectangle(cornerRadius: 5, style: .continuous).fill(theme.ink.opacity(0.08)))
                     .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
@@ -105,12 +106,12 @@ struct OutputSheetView: View {
         } label: {
             HStack(spacing: 8) {
                 TransportSymbol.image(device.symbolName, pointSize: 12, weight: .medium)
-                    .foregroundStyle(isCurrent ? accent : Color.white.opacity(0.6))
+                    .foregroundStyle(isCurrent ? accent : theme.ink.opacity(0.6))
                     .frame(width: 20)
 
                 Text(device.name)
                     .font(.system(size: 12, weight: isCurrent ? .semibold : .regular))
-                    .foregroundStyle(.white.opacity(isCurrent ? 0.95 : 0.75))
+                    .foregroundStyle(theme.ink.opacity(isCurrent ? 0.95 : 0.75))
                     .lineLimit(1)
                     .truncationMode(.tail)
 
@@ -125,7 +126,7 @@ struct OutputSheetView: View {
             .frame(height: Self.rowHeight)
             .background(
                 RoundedRectangle(cornerRadius: 6, style: .continuous)
-                    .fill(Color.white.opacity(isCurrent ? 0.08 : 0))
+                    .fill(theme.ink.opacity(isCurrent ? 0.08 : 0))
             )
             .contentShape(Rectangle())
         }

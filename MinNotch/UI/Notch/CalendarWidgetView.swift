@@ -6,6 +6,7 @@ import SwiftUI
 /// The arrows move the grid a week or a month at a time, and clicking a day lists what is on
 /// it instead of what is coming up. Clicking the same day again, or Today, goes back.
 struct CalendarWidgetView: View {
+    @Environment(\.notchStyle) private var theme
     @Bindable var viewModel: NotchViewModel
 
     @Environment(AppEnvironment.self) private var environment
@@ -63,7 +64,7 @@ struct CalendarWidgetView: View {
         if service.hasAccess {
             VStack(alignment: .leading, spacing: 10) {
                 grid
-                Divider().overlay(Color.white.opacity(0.12))
+                Divider().overlay(theme.ink.opacity(0.12))
                 eventList
                 if showsQuickAdd { quickAddRow }
             }
@@ -95,7 +96,7 @@ struct CalendarWidgetView: View {
             HStack(spacing: 4) {
                 Text(monthTitle)
                     .font(Typography.bodyEmphasised)
-                    .foregroundStyle(.white)
+                    .foregroundStyle(theme.ink)
 
                 stepButton("chevron.left", help: mode == .week ? "Previous week" : "Previous month") {
                     step(by: -1)
@@ -113,7 +114,7 @@ struct CalendarWidgetView: View {
                         HStack(spacing: 4) {
                             if let selectedDay {
                                 Text(Self.selectedFormatter.string(from: selectedDay))
-                                    .foregroundStyle(.white.opacity(0.55))
+                                    .foregroundStyle(theme.ink.opacity(0.55))
                             }
                             Text("Today")
                                 .fontWeight(.semibold)
@@ -127,7 +128,7 @@ struct CalendarWidgetView: View {
                 } else {
                     Text(todayTitle)
                         .font(Typography.helper)
-                        .foregroundStyle(.white.opacity(0.55))
+                        .foregroundStyle(theme.ink.opacity(0.55))
                 }
             }
             .frame(height: 17)
@@ -136,7 +137,7 @@ struct CalendarWidgetView: View {
                 ForEach(Array(service.weekdaySymbols().enumerated()), id: \.offset) { _, symbol in
                     Text(symbol)
                         .font(.system(size: 9, weight: .semibold))
-                        .foregroundStyle(.white.opacity(0.4))
+                        .foregroundStyle(theme.ink.opacity(0.4))
                         .frame(maxWidth: .infinity)
                 }
             }
@@ -156,7 +157,7 @@ struct CalendarWidgetView: View {
         Button(action: action) {
             Image(systemName: symbol)
                 .font(.system(size: 10, weight: .semibold))
-                .foregroundStyle(.white.opacity(0.6))
+                .foregroundStyle(theme.ink.opacity(0.6))
                 .frame(width: 18, height: 17)
                 .contentShape(Rectangle())
         }
@@ -176,7 +177,7 @@ struct CalendarWidgetView: View {
                     .frame(width: 20, height: 18)
                     .background(
                         Circle()
-                            .fill(day.isToday ? accent : (day.isSelected ? Color.white.opacity(0.16) : .clear))
+                            .fill(day.isToday ? accent : (day.isSelected ? theme.ink.opacity(0.16) : .clear))
                             .frame(width: 20, height: 20)
                     )
                     .overlay(
@@ -186,7 +187,7 @@ struct CalendarWidgetView: View {
                     )
 
                 Circle()
-                    .fill(day.hasEvents ? Color.white.opacity(0.55) : .clear)
+                    .fill(day.hasEvents ? theme.ink.opacity(0.55) : .clear)
                     .frame(width: 3, height: 3)
             }
             .frame(maxWidth: .infinity)
@@ -197,8 +198,10 @@ struct CalendarWidgetView: View {
     }
 
     private func dayColor(_ day: CalendarDay) -> Color {
-        if day.isToday || day.isSelected { return .white }
-        return .white.opacity(day.isInDisplayedMonth ? 0.8 : 0.3)
+        // Today sits on the accent, which is solid in every style.
+        if day.isToday { return .white }
+        if day.isSelected { return theme.ink }
+        return theme.ink.opacity(day.isInDisplayedMonth ? 0.8 : 0.3)
     }
 
     /// The month on show. A week that crosses into the next month is named by the month most
@@ -263,7 +266,7 @@ struct CalendarWidgetView: View {
             if items.isEmpty {
                 Text(emptyMessage)
                     .font(Typography.helper)
-                    .foregroundStyle(.white.opacity(0.45))
+                    .foregroundStyle(theme.ink.opacity(0.45))
                     .frame(maxWidth: .infinity, alignment: .leading)
             } else {
                 ScrollView {
@@ -288,13 +291,13 @@ struct CalendarWidgetView: View {
             VStack(alignment: .leading, spacing: 1) {
                 Text(item.title)
                     .font(.system(size: 12, weight: .medium))
-                    .foregroundStyle(.white.opacity(item.isPast ? 0.45 : 0.92))
-                    .strikethrough(item.isCompleted ?? false, color: .white.opacity(0.5))
+                    .foregroundStyle(theme.ink.opacity(item.isPast ? 0.45 : 0.92))
+                    .strikethrough(item.isCompleted ?? false, color: theme.ink.opacity(0.5))
                     .lineLimit(1)
 
                 Text(subtitle(for: item))
                     .font(.system(size: 10))
-                    .foregroundStyle(.white.opacity(0.5))
+                    .foregroundStyle(theme.ink.opacity(0.5))
                     .lineLimit(1)
             }
 
@@ -309,7 +312,7 @@ struct CalendarWidgetView: View {
                         .foregroundStyle(
                             (item.isCompleted ?? false)
                                 ? settings.appearance.resolvedAccent
-                                : .white.opacity(0.4)
+                                : theme.ink.opacity(0.4)
                         )
                         .contentShape(Rectangle())
                 }
@@ -396,12 +399,12 @@ struct CalendarWidgetView: View {
         HStack(spacing: 8) {
             Image(systemName: quickAddKind.symbolName)
                 .font(.system(size: 12))
-                .foregroundStyle(.white.opacity(0.45))
+                .foregroundStyle(theme.ink.opacity(0.45))
 
             TextField(quickAddPlaceholder, text: $quickAddText)
                 .textFieldStyle(.plain)
                 .font(.system(size: 12))
-                .foregroundStyle(.white)
+                .foregroundStyle(theme.ink)
                 .focused($isQuickAddFocused)
                 .onSubmit(submitQuickAdd)
 
@@ -419,7 +422,7 @@ struct CalendarWidgetView: View {
         .frame(height: 24)
         .background(
             RoundedRectangle(cornerRadius: 7, style: .continuous)
-                .fill(Color.white.opacity(isQuickAddFocused ? 0.14 : 0.08))
+                .fill(theme.ink.opacity(isQuickAddFocused ? 0.14 : 0.08))
         )
         .contentShape(Rectangle())
         .onTapGesture {
@@ -458,17 +461,17 @@ struct CalendarWidgetView: View {
         VStack(spacing: 8) {
             Image(systemName: "calendar.badge.exclamationmark")
                 .font(.system(size: 24))
-                .foregroundStyle(.white.opacity(0.4))
+                .foregroundStyle(theme.ink.opacity(0.4))
 
             Text("Calendar Access Needed")
                 .font(Typography.bodyEmphasised)
-                .foregroundStyle(.white.opacity(0.8))
+                .foregroundStyle(theme.ink.opacity(0.8))
 
             Text(needsSystemSettings
                  ? "Turn MiniNotch on under Privacy & Security > Calendars."
                  : "MiniNotch reads your events to show what is coming up. Nothing leaves your Mac.")
                 .font(Typography.helper)
-                .foregroundStyle(.white.opacity(0.5))
+                .foregroundStyle(theme.ink.opacity(0.5))
                 .multilineTextAlignment(.center)
 
             Button(needsSystemSettings ? "Open Privacy Settings" : "Allow Access") {

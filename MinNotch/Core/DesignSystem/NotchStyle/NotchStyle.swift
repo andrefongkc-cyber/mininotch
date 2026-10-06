@@ -73,10 +73,11 @@ struct NotchStyle: Equatable {
     var artwork: NotchArtworkStyle
     var glow: NotchGlowStyle
 
-    /// The style the closed notch uses on a Mac with a camera housing: this language's dark
-    /// variant, over a black surface (`NotchRootView` covers the fill). The housing is black
-    /// hardware, and anything around it that is not black shows it up as a hole.
-    var housing: NotchStyle {
+    /// This language's dark variant. The closed notch uses it on a Mac with a camera housing,
+    /// over a black surface (`NotchRootView` covers the fill), because the housing is black
+    /// hardware and anything around it that is not black shows it up as a hole. Content laid
+    /// over something dark whatever the style, such as Full Artwork's blurred cover, uses it too.
+    var darkVariant: NotchStyle {
         NotchStyle.make(language, isDark: true)
     }
 
@@ -120,6 +121,13 @@ struct NotchBorder: Equatable {
     var top: Color
     var bottom: Color
     var width: CGFloat = 1
+
+    /// A plain colour when both ends match, so a hairline draws exactly as a coloured stroke.
+    var shapeStyle: AnyShapeStyle {
+        top == bottom
+            ? AnyShapeStyle(top)
+            : AnyShapeStyle(LinearGradient(colors: [top, bottom], startPoint: .top, endPoint: .bottom))
+    }
 }
 
 struct NotchShadow: Equatable {
@@ -127,6 +135,19 @@ struct NotchShadow: Equatable {
     var radius: CGFloat
     var x: CGFloat = 0
     var y: CGFloat = 0
+}
+
+extension View {
+    /// A style's shadow, or none: never a shadow at zero opacity, which still costs an offscreen
+    /// pass and leaves a fringe on a transparent window.
+    @ViewBuilder
+    func notchShadow(_ shadow: NotchShadow?) -> some View {
+        if let shadow {
+            self.shadow(color: shadow.color, radius: shadow.radius, x: shadow.x, y: shadow.y)
+        } else {
+            self
+        }
+    }
 }
 
 /// How a background element is drawn: a tile, a button, a module, a track, a transport disc.

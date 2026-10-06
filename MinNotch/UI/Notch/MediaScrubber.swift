@@ -7,6 +7,7 @@ import SwiftUI
 /// sources that cannot seek. It still behaves like a slider: click to jump, drag to scrub,
 /// and the value only commits when the drag ends.
 struct MediaScrubber: View {
+    @Environment(\.notchStyle) private var theme
     /// 0...1.
     var progress: Double
     var tint: Color
@@ -31,7 +32,7 @@ struct MediaScrubber: View {
 
             ZStack(alignment: .leading) {
                 Capsule()
-                    .fill(Color.white.opacity(0.18))
+                    .fill(theme.ink.opacity(0.18))
                     .frame(height: trackHeight)
 
                 Capsule()

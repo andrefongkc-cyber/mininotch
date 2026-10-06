@@ -12,6 +12,7 @@ import UniformTypeIdentifiers
 /// it. Each half is still its own feature with its own switch, and with one of them off the tab
 /// is that half alone, drawn as it always was.
 struct ShelfTabView: View {
+    @Environment(\.notchStyle) private var theme
     @Environment(AppEnvironment.self) private var environment
     @Environment(SettingsStore.self) private var settings
 
@@ -42,7 +43,7 @@ struct ShelfTabView: View {
             VStack(spacing: 0) {
                 ShelfView(isCombined: true)
                 Rectangle()
-                    .fill(Color.white.opacity(0.12))
+                    .fill(theme.ink.opacity(0.12))
                     .frame(height: 1)
                     .padding(.vertical, Self.dividerSpacing)
                 LinkShelfWidgetView(isCombined: true, onPaste: paste)

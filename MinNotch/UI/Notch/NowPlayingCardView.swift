@@ -2,10 +2,18 @@ import SwiftUI
 
 /// The Now Playing widget: artwork, metadata, scrubber, transport, and optional lyrics.
 struct NowPlayingCardView: View {
+    @Environment(\.notchStyle) private var surfaceTheme
     @Environment(AppEnvironment.self) private var environment
     @Environment(SettingsStore.self) private var settings
 
     private var controller: NowPlayingController { environment.nowPlaying }
+
+    /// The style the header draws in. Full Artwork lays it over the cover, blurred and darkened,
+    /// which is dark whatever the style, so there it takes the style's dark variant; everything
+    /// below the header sits on the surface and uses `surfaceTheme`.
+    private var theme: NotchStyle {
+        settings.media.cardStyle == .fullArtwork ? surfaceTheme.darkVariant : surfaceTheme
+    }
 
     /// Height this card needs, excluding the panel's own padding and top strip.
     ///
@@ -81,25 +89,25 @@ struct NowPlayingCardView: View {
         HStack(spacing: 6) {
             Text("UP NEXT")
                 .font(.system(size: 9, weight: .bold))
-                .foregroundStyle(.white.opacity(0.4))
+                .foregroundStyle(surfaceTheme.ink.opacity(0.4))
 
             switch controller.upNext {
             case .loaded(let items):
                 if let first = items.first {
                     Text(first.title)
                         .font(Typography.helper.weight(.medium))
-                        .foregroundStyle(.white.opacity(0.85))
+                        .foregroundStyle(surfaceTheme.ink.opacity(0.85))
                         .lineLimit(1)
                     if !first.artist.isEmpty {
                         Text(first.artist)
                             .font(Typography.helper)
-                            .foregroundStyle(.white.opacity(0.5))
+                            .foregroundStyle(surfaceTheme.ink.opacity(0.5))
                             .lineLimit(1)
                     }
                     if items.count > 1 {
                         Text("then \(items.dropFirst().map(\.title).joined(separator: ", "))")
                             .font(Typography.helper)
-                            .foregroundStyle(.white.opacity(0.35))
+                            .foregroundStyle(surfaceTheme.ink.opacity(0.35))
                             .lineLimit(1)
                             .truncationMode(.tail)
                     }
@@ -107,12 +115,12 @@ struct NowPlayingCardView: View {
             case .unavailable(let reason):
                 Text(reason)
                     .font(Typography.helper)
-                    .foregroundStyle(.white.opacity(0.4))
+                    .foregroundStyle(surfaceTheme.ink.opacity(0.4))
                     .lineLimit(1)
             case .idle:
                 Text("Reading the queue…")
                     .font(Typography.helper)
-                    .foregroundStyle(.white.opacity(0.3))
+                    .foregroundStyle(surfaceTheme.ink.opacity(0.3))
             }
 
             Spacer(minLength: 0)
@@ -136,7 +144,7 @@ struct NowPlayingCardView: View {
                     .fixedSize(horizontal: false, vertical: true)
                 Spacer(minLength: 0)
             }
-            .foregroundStyle(.white.opacity(0.42))
+            .foregroundStyle(surfaceTheme.ink.opacity(0.42))
             .frame(height: 40, alignment: .top)
         }
     }
@@ -196,6 +204,7 @@ struct NowPlayingCardView: View {
         }
         .padding(inset)
         .frame(height: height)
+        .environment(\.notchStyle, theme)
         .background {
             // An overlay on a plain colour, not a ZStack: a filled image is larger than the
             // space it is offered, and as a ZStack child it would size the background to
@@ -221,7 +230,7 @@ struct NowPlayingCardView: View {
 
     @ViewBuilder
     private func artwork(size: CGFloat) -> some View {
-        let corner: CGFloat = size < 70 ? 6 : 8
+        let corner: CGFloat = (size < 70 ? 6 : 8) * theme.artwork.cornerScale
         Group {
             if let image = controller.artwork {
                 Image(nsImage: image)
@@ -229,19 +238,21 @@ struct NowPlayingCardView: View {
                     .aspectRatio(contentMode: .fill)
             } else {
                 ZStack {
-                    Color.white.opacity(0.08)
+                    theme.ink.opacity(0.08)
                     Image(systemName: "music.note")
                         .font(.system(size: 22))
-                        .foregroundStyle(.white.opacity(0.4))
+                        .foregroundStyle(theme.ink.opacity(0.4))
                 }
             }
         }
         .frame(width: size, height: size)
         .clipShape(RoundedRectangle(cornerRadius: corner, style: .continuous))
-        .overlay(
-            RoundedRectangle(cornerRadius: corner, style: .continuous)
-                .strokeBorder(Color.white.opacity(0.12), lineWidth: 0.5)
-        )
+        .overlay {
+            if let border = theme.artwork.border {
+                RoundedRectangle(cornerRadius: corner, style: .continuous)
+                    .strokeBorder(border.shapeStyle, lineWidth: border.width)
+            }
+        }
         .overlay(alignment: .bottomLeading) {
             if settings.media.showVisualizer {
                 ZStack(alignment: .bottomLeading) {
@@ -287,7 +298,7 @@ struct NowPlayingCardView: View {
                     .accessibilityLabel("Playing in \(controller.track?.sourceAppName ?? "")")
             }
         }
-        .shadow(color: .black.opacity(0.3), radius: 6, y: 3)
+        .notchShadow(theme.artwork.shadow)
         .animation(Motion.content, value: controller.artwork)
     }
 
@@ -301,13 +312,13 @@ struct NowPlayingCardView: View {
             VStack(alignment: .leading, spacing: 2) {
                 Text(track.title)
                     .font(.system(size: titleSize, weight: .semibold))
-                    .foregroundStyle(.white)
+                    .foregroundStyle(theme.ink)
                     .lineLimit(1)
                     .truncationMode(.tail)
 
                 Text(track.artist.isEmpty ? track.sourceAppName : track.artist)
                     .font(.system(size: 12))
-                    .foregroundStyle(.white.opacity(0.6))
+                    .foregroundStyle(theme.ink.opacity(0.6))
                     .lineLimit(1)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
@@ -332,11 +343,11 @@ struct NowPlayingCardView: View {
             controller.isShowingOutputSheet.toggle()
         } label: {
             TransportSymbol.image("airplayaudio", pointSize: 12, weight: .medium)
-                .foregroundStyle(isOpen ? settings.appearance.resolvedAccent : Color.white.opacity(0.45))
+                .foregroundStyle(isOpen ? settings.appearance.resolvedAccent : theme.ink.opacity(0.45))
                 .frame(width: 24, height: 22)
                 .background(
                     RoundedRectangle(cornerRadius: 6, style: .continuous)
-                        .fill(Color.white.opacity(isOpen ? 0.12 : 0))
+                        .fill(theme.ink.opacity(isOpen ? 0.12 : 0))
                 )
                 .contentShape(Rectangle())
         }
@@ -371,7 +382,7 @@ struct NowPlayingCardView: View {
                         Text("-" + TimeFormat.string(from: max(track.duration - elapsed, 0)))
                     }
                     .font(Typography.timecode)
-                    .foregroundStyle(.white.opacity(0.5))
+                    .foregroundStyle(theme.ink.opacity(0.5))
                 }
             }
         }
@@ -403,7 +414,7 @@ struct NowPlayingCardView: View {
                 }
             }
             .font(Typography.timecode)
-            .foregroundStyle(.white.opacity(0.5))
+            .foregroundStyle(theme.ink.opacity(0.5))
         }
     }
 
@@ -411,7 +422,7 @@ struct NowPlayingCardView: View {
         switch settings.appearance.sliderColor {
         case .accent: return settings.appearance.resolvedAccent
         case .albumArt: return controller.palette.primary
-        case .monochrome: return .white.opacity(0.85)
+        case .monochrome: return theme.ink.opacity(0.85)
         }
     }
 
@@ -468,11 +479,11 @@ struct NowPlayingCardView: View {
         } label: {
             Image(systemName: isOpen ? "pip.exit" : "pip.enter")
                 .font(.system(size: 13, weight: .medium))
-                .foregroundStyle(isOpen ? settings.appearance.resolvedAccent : Color.white.opacity(0.35))
+                .foregroundStyle(isOpen ? settings.appearance.resolvedAccent : theme.ink.opacity(0.35))
                 .frame(width: 26, height: 24)
                 .background(
                     RoundedRectangle(cornerRadius: 6, style: .continuous)
-                        .fill(Color.white.opacity(isOpen ? 0.12 : 0))
+                        .fill(theme.ink.opacity(isOpen ? 0.12 : 0))
                 )
                 .contentShape(Rectangle())
         }
@@ -504,13 +515,13 @@ struct NowPlayingCardView: View {
                 .font(.system(size: 13, weight: .medium))
                 .foregroundStyle(
                     mode == .off
-                        ? Color.white.opacity(0.35)
+                        ? theme.ink.opacity(0.35)
                         : settings.appearance.resolvedAccent
                 )
                 .frame(width: 26, height: 24)
                 .background(
                     RoundedRectangle(cornerRadius: 6, style: .continuous)
-                        .fill(Color.white.opacity(mode == .off ? 0 : 0.12))
+                        .fill(theme.ink.opacity(mode == .off ? 0 : 0.12))
                 )
                 .contentShape(Rectangle())
         }
@@ -631,11 +642,11 @@ struct NowPlayingCardView: View {
         let accent = settings.appearance.resolvedAccent
         let track = controller.track
         switch control {
-        case .playPause: return .white
-        case .shuffle: return track?.isShuffling == true ? accent : .white.opacity(0.45)
-        case .repeatMode: return (track?.repeatMode ?? .off) != .off ? accent : .white.opacity(0.45)
-        case .favorite: return track?.isFavorite == true ? accent : .white.opacity(0.45)
-        case .previous, .next: return .white.opacity(0.8)
+        case .playPause: return theme.ink
+        case .shuffle: return track?.isShuffling == true ? accent : theme.ink.opacity(0.45)
+        case .repeatMode: return (track?.repeatMode ?? .off) != .off ? accent : theme.ink.opacity(0.45)
+        case .favorite: return track?.isFavorite == true ? accent : theme.ink.opacity(0.45)
+        case .previous, .next: return theme.ink.opacity(0.8)
         }
     }
 
@@ -670,13 +681,13 @@ struct NowPlayingCardView: View {
         VStack(spacing: 8) {
             Image(systemName: "music.note")
                 .font(.system(size: 26))
-                .foregroundStyle(.white.opacity(0.35))
+                .foregroundStyle(surfaceTheme.ink.opacity(0.35))
             Text("Nothing Playing")
                 .font(Typography.bodyEmphasised)
-                .foregroundStyle(.white.opacity(0.75))
+                .foregroundStyle(surfaceTheme.ink.opacity(0.75))
             Text(emptyStateHint)
                 .font(Typography.helper)
-                .foregroundStyle(.white.opacity(0.45))
+                .foregroundStyle(surfaceTheme.ink.opacity(0.45))
                 .multilineTextAlignment(.center)
         }
         .frame(maxWidth: .infinity, minHeight: Metrics.artworkSize)
@@ -698,6 +709,7 @@ struct NowPlayingCardView: View {
 /// where you are in the song; picking out the word tells you where you are in the line,
 /// which is what makes it readable while glancing rather than reading.
 struct LyricsStripView: View {
+    @Environment(\.notchStyle) private var theme
     let lyrics: Lyrics
 
     @Environment(AppEnvironment.self) private var environment
@@ -714,7 +726,7 @@ struct LyricsStripView: View {
 
             HStack(alignment: .top, spacing: 8) {
                 VStack(alignment: .leading, spacing: 3) {
-                    LyricsText.line(lyrics, at: index, time: elapsed)
+                    LyricsText.line(lyrics, at: index, time: elapsed, ink: theme.ink)
                         .font(.system(size: 12, weight: .medium))
                         .lineLimit(1)
                         .truncationMode(.tail)
@@ -722,7 +734,7 @@ struct LyricsStripView: View {
 
                     Text(nextLineText(after: index))
                         .font(.system(size: 11))
-                        .foregroundStyle(.white.opacity(0.4))
+                        .foregroundStyle(theme.ink.opacity(0.4))
                         .lineLimit(1)
                         .truncationMode(.tail)
                 }
@@ -731,7 +743,7 @@ struct LyricsStripView: View {
                 HStack(spacing: 6) {
                     closedLyricsButton
 
-                    LyricsSheetView.toggleButton(isOpen: false) {
+                    LyricsSheetView.toggleButton(isOpen: false, ink: theme.ink) {
                         environment.nowPlaying.isShowingLyricsSheet = true
                     }
                 }
@@ -758,11 +770,11 @@ struct LyricsStripView: View {
             // Through `TransportSymbol`, not `Image(systemName:)` with a font: drawn that way the
             // glyph came out plain white on and off alike, so the button never showed its state.
             TransportSymbol.image("text.below.photo", pointSize: 10, weight: .semibold)
-                .foregroundStyle(isOn ? settings.appearance.resolvedAccent : Color.white.opacity(0.55))
+                .foregroundStyle(isOn ? settings.appearance.resolvedAccent : theme.ink.opacity(0.55))
                 .frame(width: 22, height: 20)
                 .background(
                     RoundedRectangle(cornerRadius: 5, style: .continuous)
-                        .fill(Color.white.opacity(isOn ? 0.14 : 0.08))
+                        .fill(theme.ink.opacity(isOn ? 0.14 : 0.08))
                 )
                 .contentShape(Rectangle())
         }
@@ -785,34 +797,34 @@ struct LyricsStripView: View {
 enum LyricsText {
     /// Builds the line as one concatenated `Text` rather than a stack of word views, so it
     /// wraps, truncates, and kerns exactly as ordinary text does.
-    static func line(_ lyrics: Lyrics, at index: Int?, time: TimeInterval) -> Text {
+    static func line(_ lyrics: Lyrics, at index: Int?, time: TimeInterval, ink: Color) -> Text {
         guard let index, lyrics.lines.indices.contains(index) else {
-            return Text(lyrics.lines.first?.text ?? "").foregroundStyle(.white.opacity(0.85))
+            return Text(lyrics.lines.first?.text ?? "").foregroundStyle(ink.opacity(0.85))
         }
 
         let line = lyrics.lines[index]
         guard !line.words.isEmpty else {
-            return Text(line.text).foregroundStyle(.white.opacity(0.9))
+            return Text(line.text).foregroundStyle(ink.opacity(0.9))
         }
 
         var result = Text("")
         for (wordIndex, word) in line.words.enumerated() {
             if wordIndex > 0 { result = result + Text(" ") }
-            result = result + styled(word, at: time)
+            result = result + styled(word, at: time, ink: ink)
         }
         return result
     }
 
-    private static func styled(_ word: LyricWord, at time: TimeInterval) -> Text {
+    private static func styled(_ word: LyricWord, at time: TimeInterval, ink: Color) -> Text {
         if word.isCurrent(at: time) {
             return Text(word.text)
-                .foregroundStyle(.white)
+                .foregroundStyle(ink)
                 .fontWeight(.bold)
         }
         // Sung words stay legible so the line still reads as a sentence; upcoming ones
         // recede so the eye lands on the current word without hunting.
         let opacity = word.isSung(at: time) ? 0.85 : 0.38
-        return Text(word.text).foregroundStyle(.white.opacity(opacity))
+        return Text(word.text).foregroundStyle(ink.opacity(opacity))
     }
 }
 
@@ -823,6 +835,7 @@ enum LyricsText {
 /// readable and lines to come recede. Clicking a synced line seeks the song to it. Unsynced
 /// lyrics are simply listed, with nothing highlighted and nothing to click.
 struct LyricsSheetView: View {
+    @Environment(\.notchStyle) private var theme
     let lyrics: Lyrics
 
     @Environment(AppEnvironment.self) private var environment
@@ -878,7 +891,7 @@ struct LyricsSheetView: View {
         }
         .frame(height: Self.height)
         .overlay(alignment: .topTrailing) {
-            Self.toggleButton(isOpen: true) {
+            Self.toggleButton(isOpen: true, ink: theme.ink) {
                 environment.nowPlaying.isShowingLyricsSheet = false
             }
         }
@@ -891,8 +904,8 @@ struct LyricsSheetView: View {
         let isCurrent = index == current
         let isSung = current.map { index < $0 } ?? false
         let text: Text = isCurrent
-            ? LyricsText.line(lyrics, at: index, time: time)
-            : Text(line.text).foregroundStyle(.white.opacity(isSung ? 0.5 : 0.32))
+            ? LyricsText.line(lyrics, at: index, time: time, ink: theme.ink)
+            : Text(line.text).foregroundStyle(theme.ink.opacity(isSung ? 0.5 : 0.32))
 
         let label = text
             .font(.system(size: isCurrent ? 14 : 13, weight: isCurrent ? .semibold : .regular))
@@ -916,13 +929,13 @@ struct LyricsSheetView: View {
     }
 
     /// The expand button on the strip and the collapse button on the list.
-    static func toggleButton(isOpen: Bool, action: @escaping () -> Void) -> some View {
+    static func toggleButton(isOpen: Bool, ink: Color, action: @escaping () -> Void) -> some View {
         Button(action: action) {
             Image(systemName: isOpen ? "arrow.down.right.and.arrow.up.left" : "arrow.up.left.and.arrow.down.right")
                 .font(.system(size: 10, weight: .semibold))
-                .foregroundStyle(.white.opacity(0.55))
+                .foregroundStyle(ink.opacity(0.55))
                 .frame(width: 22, height: 20)
-                .background(RoundedRectangle(cornerRadius: 5, style: .continuous).fill(Color.white.opacity(0.08)))
+                .background(RoundedRectangle(cornerRadius: 5, style: .continuous).fill(ink.opacity(0.08)))
                 .contentShape(Rectangle())
         }
         .buttonStyle(.plain)

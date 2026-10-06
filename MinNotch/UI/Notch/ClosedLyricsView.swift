@@ -11,6 +11,7 @@ import SwiftUI
 /// Only synced lyrics are shown: an unsynced list has no idea which line is being sung, and a
 /// strip that sat on the first line for the whole song would be worse than none.
 struct ClosedLyricsView: View {
+    @Environment(\.notchStyle) private var theme
     let geometry: NotchGeometry
     let pillContent: CollapsedPillContent
     let lyrics: Lyrics
@@ -36,7 +37,7 @@ struct ClosedLyricsView: View {
                 let index = lyrics.index(at: time)
 
                 VStack(spacing: 2) {
-                    LyricsText.line(lyrics, at: index, time: time)
+                    LyricsText.line(lyrics, at: index, time: time, ink: theme.ink)
                         .font(.system(size: 13, weight: .semibold))
                         .lineLimit(1)
                         .truncationMode(.tail)
@@ -44,7 +45,7 @@ struct ClosedLyricsView: View {
 
                     Text(nextLine(after: index))
                         .font(.system(size: 10.5))
-                        .foregroundStyle(.white.opacity(0.4))
+                        .foregroundStyle(theme.ink.opacity(0.4))
                         .lineLimit(1)
                         .truncationMode(.tail)
                 }

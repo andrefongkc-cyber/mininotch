@@ -3,6 +3,7 @@ import SwiftUI
 
 /// The Timer widget: a countdown, and the Pomodoro cycle built on it.
 struct TimerWidgetView: View {
+    @Environment(\.notchStyle) private var theme
     @Environment(AppEnvironment.self) private var environment
     @Environment(SettingsStore.self) private var settings
 
@@ -43,12 +44,12 @@ struct TimerWidgetView: View {
 
                 Text(service.phase.title)
                     .font(Typography.sectionHeader)
-                    .foregroundStyle(.white.opacity(0.8))
+                    .foregroundStyle(theme.ink.opacity(0.8))
 
                 if service.phase.isPomodoro, service.completedIntervals > 0 {
                     Text("· \(service.completedIntervals) done")
                         .font(Typography.helper)
-                        .foregroundStyle(.white.opacity(0.45))
+                        .foregroundStyle(theme.ink.opacity(0.45))
                 }
 
                 Spacer(minLength: 0)
@@ -62,7 +63,7 @@ struct TimerWidgetView: View {
 
             Text(service.remainingText)
                 .font(.system(size: 38, weight: .medium).monospacedDigit())
-                .foregroundStyle(.white)
+                .foregroundStyle(theme.ink)
 
             // A plain stroked shape, not a `Canvas`: canvas output does not appear in an
             // AppKit layer capture, which is how this project reviews the notch.
@@ -107,7 +108,7 @@ struct TimerWidgetView: View {
 
                 Text(settings.timer.pomodoroPreset.summary(custom: settings.timer))
                     .font(Typography.helper)
-                    .foregroundStyle(.white.opacity(0.45))
+                    .foregroundStyle(theme.ink.opacity(0.45))
                     .lineLimit(1)
 
                 Spacer(minLength: 0)
@@ -148,7 +149,7 @@ struct TimerWidgetView: View {
         HStack(spacing: 6) {
             Text(title)
                 .font(Typography.helper)
-                .foregroundStyle(.white.opacity(0.4))
+                .foregroundStyle(theme.ink.opacity(0.4))
                 .frame(width: 62, alignment: .leading)
             content()
             Spacer(minLength: 0)
@@ -160,7 +161,7 @@ struct TimerWidgetView: View {
             TextField("00", text: $customMinutes)
                 .textFieldStyle(.plain)
                 .font(Typography.timecode)
-                .foregroundStyle(.white)
+                .foregroundStyle(theme.ink)
                 .multilineTextAlignment(.center)
                 .frame(width: 34)
                 .focused($isCustomFocused)
@@ -168,7 +169,7 @@ struct TimerWidgetView: View {
 
             Text("min")
                 .font(Typography.helper)
-                .foregroundStyle(.white.opacity(0.45))
+                .foregroundStyle(theme.ink.opacity(0.45))
 
             Chip(label: "Start", help: "Start a countdown of that many minutes", action: startCustom)
                 .disabled(parsedCustomMinutes == nil)
@@ -178,7 +179,7 @@ struct TimerWidgetView: View {
         .padding(.vertical, 3)
         .background(
             RoundedRectangle(cornerRadius: 7, style: .continuous)
-                .fill(Color.white.opacity(isCustomFocused ? 0.14 : 0.08))
+                .fill(theme.ink.opacity(isCustomFocused ? 0.14 : 0.08))
         )
         .onTapGesture {
             // The panel is non-activating, so it has to be brought forward before a text
@@ -213,6 +214,7 @@ struct TimerWidgetView: View {
 
 /// A small capsule button, the widget's unit of "one more option".
 private struct Chip: View {
+    @Environment(\.notchStyle) private var theme
     var label: String
     var help: String
     var isActive: Bool = false
@@ -224,11 +226,11 @@ private struct Chip: View {
         Button(action: action) {
             Text(label)
                 .font(Typography.helper)
-                .foregroundStyle(.white.opacity(isActive ? 1 : 0.85))
+                .foregroundStyle(theme.ink.opacity(isActive ? 1 : 0.85))
                 .padding(.horizontal, 9)
                 .padding(.vertical, 4)
                 .background(
-                    Capsule().fill(Color.white.opacity(isActive ? 0.22 : (isHovering ? 0.18 : 0.11)))
+                    Capsule().fill(theme.ink.opacity(isActive ? 0.22 : (isHovering ? 0.18 : 0.11)))
                 )
                 .contentShape(Capsule())
         }
@@ -241,13 +243,14 @@ private struct Chip: View {
 
 /// A rounded progress track. Explicit whites, because the notch is black in both appearances.
 private struct ProgressBar: View {
+    @Environment(\.notchStyle) private var theme
     var progress: Double
     var tint: Color
 
     var body: some View {
         GeometryReader { proxy in
             ZStack(alignment: .leading) {
-                Capsule().fill(Color.white.opacity(0.14))
+                Capsule().fill(theme.ink.opacity(0.14))
                 Capsule()
                     .fill(tint)
                     .frame(width: max(0, min(1, progress)) * proxy.size.width)
@@ -261,6 +264,7 @@ private struct ProgressBar: View {
 /// Not `.borderedProminent`: the notch panel is non-activating, so a system prominent style
 /// renders in its disabled grey exactly where it matters.
 private struct TimerButton: View {
+    @Environment(\.notchStyle) private var theme
     var systemImage: String
     var help: String
     var isEnabled: Bool = true
@@ -272,11 +276,11 @@ private struct TimerButton: View {
         Button(action: action) {
             Image(systemName: systemImage)
                 .font(.system(size: 12, weight: .medium))
-                .foregroundStyle(.white.opacity(isEnabled ? 0.9 : 0.3))
+                .foregroundStyle(theme.ink.opacity(isEnabled ? 0.9 : 0.3))
                 .frame(width: 30, height: 24)
                 .background(
                     RoundedRectangle(cornerRadius: 7, style: .continuous)
-                        .fill(Color.white.opacity(isHovering && isEnabled ? 0.18 : 0.10))
+                        .fill(theme.ink.opacity(isHovering && isEnabled ? 0.18 : 0.10))
                 )
                 .contentShape(Rectangle())
         }
