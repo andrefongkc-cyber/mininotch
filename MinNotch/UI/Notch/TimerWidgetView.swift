@@ -229,7 +229,8 @@ private struct Chip: View {
                 .padding(.horizontal, 9)
                 .padding(.vertical, 4)
                 .background(
-                    NotchElementView(.button, shape: .capsule, emphasis: isActive ? 0.22 : (isHovering ? 0.18 : 0.11))
+                    // Raised at rest and pressed in when chosen, in a style with depth; Minimal fills both.
+                    NotchElementView(isActive ? .button : .tile, shape: .capsule, emphasis: isActive ? 0.22 : (isHovering ? 0.18 : 0.11))
                 )
                 .contentShape(Capsule())
         }

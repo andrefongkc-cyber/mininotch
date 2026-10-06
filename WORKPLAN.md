@@ -1,6 +1,6 @@
 # MiniNotch workplan
 
-Status: doing the Notch Visual Style System, architecture proposed and awaiting the user's go-ahead (no code changed yet); next: baseline captures of Minimal Dark, then the refactor. 0.7 (Sparkle, rename, clipboard blur) is ready to release whenever asked.
+Status: the Notch Visual Style System is built and pushed, unreleased: all twelve styles, the picker, Minimal Dark proven unchanged; next: the user tries the styles (Settings > Appearance > Notch Style) and says what to change, then 0.7 ships it with Sparkle, the rename and the clipboard blur.
 
 Living document. Update the checkboxes as work lands. `CLAUDE.md` holds the architecture
 rules and the traps; this file holds the sequence.
@@ -62,7 +62,7 @@ files in `UI/Notch`, because the panel was always black; `Palette` is semantic c
 only. Notch components are reused in three other places: the music card in the floating window,
 `HUDView` on the lock screen, `PillIndicatorView` in the Layout miniature.
 
-Proposed architecture (awaiting the go-ahead):
+Architecture (approved 2026-10-05 with: a, Match System yes, keep Translucent Panel):
 - `AppearanceSettings.notchStyle`: a language and a variant, default Minimal Dark, so every saved
   settings file lands on today's look with no migration.
 - `NotchStyle`, a plain value resolved from that choice, holding the palette (surface tiers, text
@@ -80,27 +80,27 @@ Proposed architecture (awaiting the go-ahead):
 - Decisions asked of the user: the camera housing under light and lighter-dark styles on a notched
   Mac; Translucent Panel beside Glassmorphism; whether to offer Match System beside Dark and Light.
 
-- [ ] Style architecture
-- [ ] Minimal Dark
-- [ ] Minimal Light
-- [ ] Bento Dark
-- [ ] Bento Light
-- [ ] Glassmorphism Dark
-- [ ] Glassmorphism Light
-- [ ] Neumorphism Dark
-- [ ] Neumorphism Light
-- [ ] Claymorphism Dark
-- [ ] Claymorphism Light
-- [ ] Skeuomorphism Dark
-- [ ] Skeuomorphism Light
-- [ ] Style preview selector
-- [ ] Style persistence/migration
-- [ ] Closed notch testing
-- [ ] Open panel testing
-- [ ] HUD testing
-- [ ] Ambient lighting compatibility
-- [ ] External monitor testing
-- [ ] Final visual polish
+- [x] Style architecture: `NotchStyle` values in a catalogue, read from the environment; `NotchElementView`, `NotchTrackFill`, `notchModule`, `NotchSurfaceView`
+- [x] Minimal Dark: identical to the build before, every case of `Scripts/style-diff.sh` (bar deliberate symbol colour fixes)
+- [x] Minimal Light
+- [x] Bento Dark
+- [x] Bento Light
+- [x] Glassmorphism Dark (blur checked on screen once)
+- [x] Glassmorphism Light (blur checked on screen once)
+- [x] Neumorphism Dark
+- [x] Neumorphism Light
+- [x] Claymorphism Dark
+- [x] Claymorphism Light
+- [x] Skeuomorphism Dark
+- [x] Skeuomorphism Light
+- [~] Style preview selector: tiles drawn with the real parts and rendered with `--capture-styles`; the Settings window itself not yet seen
+- [x] Style persistence/migration: two lenient settings, default Minimal Dark
+- [x] Closed notch testing: pill, peek, HUD, built-in (black over the housing) and external
+- [x] Open panel testing: every tab in Minimal Light, the music card in all twelve, System, Calendar, Clipboard and Timer in Neumorphic Light and Skeuomorphic Dark
+- [x] HUD testing: the floating volume pill in all twelve; the lock screen draws as the closed notch does
+- [~] Ambient lighting compatibility: intensity scaled per style, checked with Glass; not every glow style against every notch style
+- [~] External monitor testing: `--virtual` captures only; a real external monitor by hand
+- [ ] Final visual polish: the user's review of each style on the real screen
 
 ## After 0.5 (2026-10-03)
 

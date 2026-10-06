@@ -175,7 +175,7 @@ extension NotchStyle {
                 surface: NotchSurfaceStyle(
                     base: Color(red: 0.07, green: 0.08, blue: 0.1),
                     gradient: [.white.opacity(0.07), .white.opacity(0.0)],
-                    glass: NotchGlass(material: .hudWindow, appearance: .darkAqua, tint: 0.5),
+                    glass: NotchGlass(material: .hudWindow, appearance: .darkAqua, tint: 0.36),
                     border: NotchBorder(top: .white.opacity(0.24), bottom: .white.opacity(0.08)),
                     shadow: NotchShadow(color: .black.opacity(0.35), radius: 14, y: 6)
                 ),
@@ -215,7 +215,7 @@ extension NotchStyle {
             surface: NotchSurfaceStyle(
                 base: .white,
                 gradient: [.white.opacity(0.3), .white.opacity(0.05)],
-                glass: NotchGlass(material: .popover, appearance: .aqua, tint: 0.4),
+                glass: NotchGlass(material: .popover, appearance: .aqua, tint: 0.28),
                 border: NotchBorder(top: .white.opacity(0.95), bottom: .black.opacity(0.12)),
                 shadow: NotchShadow(color: .black.opacity(0.18), radius: 14, y: 6),
                 vibrancyMaterial: .popover

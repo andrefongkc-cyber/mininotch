@@ -84,6 +84,8 @@ in the closed pill.
 
 Also:
 
+- **Notch Style**: six design languages, Minimal, Bento, Glass, Neumorphic, Clay and Skeuomorphic,
+  each dark or light or matching your Mac, in Settings > Appearance _(next)_.
 - **Keep the notch open** with ⌃⌥P, on whichever display it is on, while you work on another.
 - **Notes**: a scratchpad in its own tab, kept on your Mac between opens.
 - **Sound output**: switch between speakers, AirPods and displays, and set the volume, from

@@ -16,7 +16,7 @@ the only ones, and they are updated in place.
 ## Start here
 
 The app builds clean, runs, and is feature-complete for everything in `WORKPLAN.md` marked
-`[x]`. 168 Swift files, in Swift 6 language mode.
+`[x]`. 176 Swift files, in Swift 6 language mode.
 
 **It is signed, as of 2026-09-15, with the user's free personal team** (`CODE_SIGN_STYLE =
 Automatic`, an Apple Development certificate, no provisioning profile needed for a local Mac
@@ -64,6 +64,8 @@ Scripts/audit-search.sh   # every Settings row is in the search index, and nothi
 Scripts/release.sh        # Release build wrapped in dist/MiniNotch-<version>.dmg
 Scripts/release.sh --anonymous   # …re-signed ad-hoc, carrying no team or Apple ID
 Scripts/release-notes.sh  # the same release notes as Markdown, for the GitHub release
+Scripts/style-diff.sh <old MiniNotch.app>   # every capture of two builds compared pixel for pixel
+swift Scripts/contact-sheet.swift out.png <h> <w> "Label=a.png" ...  # captures side by side (compile it with swiftc first)
 swift Scripts/make-icon.swift art.png   # artwork into AppIcon.appiconset, in Apple's grid
 ```
 
@@ -81,6 +83,7 @@ MiniNotch --capture-notch out.png [--collapsed] [--tab system] [--glow bars|off]
                                  [--sample-shelf] [--output-sheet] [--sample-weather]
                                  [--sample-power] [--keep-open] [--hud-style floatingPill] [--no-media]
                                  [--sample-notes] [--blur-clipboard]
+                                 [--notch-style bento-light] [--builtin]
 MiniNotch --check-lyrics "Khalid" "8TEEN" 229                      # LRCLIBClient + LRCParser
 MiniNotch --check-lyric-sync [--out f]                             # matching lyrics to the audio, synthetic
 MiniNotch --check-lyric-sync --audio f.mp3 --lrc f.lrc --shifts 0,0.5 [--peaks]   # …and a real song, old method beside it
@@ -110,6 +113,7 @@ MiniNotch --check-keep-open                                        # Keep the No
 MiniNotch --check-notes                                            # the note is saved, read back, never overwritten by a capture
 MiniNotch --check-update --feed <url> [--out f]                   # a whole Sparkle update, test builds only (see Releases)
 MiniNotch --check-clipboard                                        # what the history records, and when it is blurred
+MiniNotch --capture-styles out.png                                 # every Notch Style's miniature, dark and light
 ```
 
 `--capture-notch` grew three options for the animated effects. `--glow off` disables the
@@ -439,10 +443,15 @@ Scripts/          build, run, preview
   its colour every time. Found by forcing `.red` and reading pixels off `--capture-notch`. The same thing
   hit the lyric strip's Show Lyrics When Closed button: its glyph came out pure white on and off
   alike until it went through `TransportSymbol.image` too. Any symbol whose colour says something,
-  on or off, playing or not, goes through `TransportSymbol.image`.
-- **The notch panel is always black in both appearances.** Never use a semantic label colour
-  (`Palette.primaryText`, `.labelColor`) for content drawn on it: it disappears in light
-  mode. Use explicit `.white` with opacity. `Palette` is for the Settings window.
+  on or off, playing or not, goes through `TransportSymbol.image`. A light Notch Style found more of
+  them, white on white: the System, Timer and Notes tab icons, the battery, the thermometer and the
+  effects button. The top bar's buttons now all go through it, and the battery through
+  `TransportSymbol.hierarchical`, which keeps its two-tone look in a colour.
+- **The notch draws in its Notch Style, never in the system appearance.** Never use a semantic
+  label colour (`Palette.primaryText`, `.labelColor`) for content drawn on it, and never a literal
+  `.white` either: text and glyphs are `theme.ink.opacity(x)` (`@Environment(\.notchStyle) private
+  var theme`), at the opacities they always had. White is only for things on the accent or on album
+  art, which are the same in every style. `Palette` is for the Settings window. See "Notch Styles".
 - **Transparent areas hit-test.** `Color.clear` receives clicks in SwiftUI. Everything around
   the notch surface must be `Spacer`, never a clear colour, or the window swallows clicks
   meant for the desktop.
@@ -824,6 +833,50 @@ takes the lyrics sheet's place, never both, and sizes to the outputs there are, 
 button reads the list before opening so the card is the right height on its first frame.
 `--check-audio-outputs` lists what the card would offer, read-only, and `--output-sheet` captures
 the card with the list open.
+
+**Notch Styles are data, drawn by one set of views.** Settings > Appearance > Notch Style picks a
+design language (Minimal, Bento, Glass, Neumorphic, Clay, Skeuomorphic) and Dark, Light or Match
+System (`AppearanceSettings.notchLanguage`, `notchVariant`, decoded leniently, so a file from before
+lands on Minimal Dark). `NotchStyle` is a plain value resolved from them (`AppEnvironment.notchStyle()`,
+with `SystemAppearance` for Match System) and read from the environment: `ink`, the surface, and a
+treatment per kind of element (tile, button, module, transport disc, groove, the accent fill, the
+artwork) plus the glow's strength and the room modules need. The twelve are functions in
+`NotchStyleCatalogue`. Views never ask which language is on: rows are `NotchElementView(.tile,
+emphasis: 0.05)`, a hover highlight `NotchElementView(.button, emphasis: isHovering ? 0.08 : 0)`, a
+bar's groove `.groove` and its fill `NotchTrackFill`, a group of content `.notchModule()`, where the
+emphasis is the white opacity the site always used. A plain element draws exactly that fill; a
+styled one reads it as how much to light up. Shadows and highlights are blurred shapes flattened with
+`drawingGroup` and given room, because a layer filter does not appear in `--capture-notch`.
+
+**Minimal Dark is the notch as it always was, and that is checked, not assumed.** Its catalogue entry
+holds the old literal values, and `Scripts/style-diff.sh <a build from before>` captures 25 still
+states and the Layout miniatures with both builds and compares every pixel (`png-diff.swift`). It
+found every refactor step identical; the only changes it ever showed were deliberate, the symbol
+colour fixes above. Keep a pre-change build to compare against before touching anything a style
+reads. Captures use `--builtin`, because which screen is "main" changes with whatever the user
+clicked, and one capture landing on a 1x external monitor fails the whole comparison.
+
+**Over a camera housing the closed notch stays black, in every style** (the user's choice, "a",
+2026-10-05). The housing is black hardware, so any surface that is not black shows it as a hole. On
+a notched Mac the closed notch, its HUD, peek and lyrics draw in the language's dark variant
+(`darkVariant`) over a black cover whose opacity rides the open spring, so the panel lightens as it
+grows; the open panel draws the housing as a black tab with the hardware's corners. On a display
+without a notch the whole style applies. Full Artwork's header also takes the dark variant, since it
+sits on the darkened cover. Minimal Dark's surface is already black and draws neither cover nor tab.
+
+**Modules make room for themselves, and only where a style has them.** A module reaches outside its
+content (`notchModule(horizontal:vertical:)`) instead of padding it, so content keeps its place, and
+`NotchStyle.moduleGap` adds the room: above the first module (`ExpandedPanelView`), between the music
+card's parts, and to the panel's height (`NotchRootView`, the floating window). Minimal's gap is 0.
+The floating volume pill holds its row in a module inset past the notch's shoulders.
+
+**Glass is a real behind-window material, which no capture can show.** `--capture-notch` draws the
+tint and edges only. Checked once on screen with `screencapture` (2026-10-05): the desktop blurs
+through, and the blur stays inside the rounded shape. Translucent Panel is Minimal's only; Glass is
+always see-through. `--capture-styles` renders every miniature for the picker, since the Settings
+window cannot be captured; `--notch-style <language>-<dark|light>` on the capture tools draws any
+style, and `Scripts/contact-sheet.swift` lays captures side by side. Light styles give multicolour
+weather symbols a faint outline (`notchMulticolorSymbol`), because their clouds are white.
 
 **Files and links share the Shelf tab.** The user asked for the Shelf (files, AirDrop) and Links
 (paste a link, copy it back) together, so `NotchTab.links` is a feature but no longer a tab:

@@ -127,8 +127,12 @@ struct HUDView: View {
                 bar
                 if showsNumericValue { valueLabel }
             }
-            .padding(.horizontal, 14)
+            // Further in when a module holds the row, so the module clears the notch's shoulders.
+            .padding(.horizontal, theme.module == nil ? 14 : 25)
             .frame(height: Self.pillHeight)
+            // A module inside the band, in a style that has them: the indicator as a little
+            // control plate of its own. Nothing in Minimal.
+            .notchModule(cornerRadius: 16, horizontal: -Metrics.notchShoulderRadius - 7, vertical: -5)
         }
         .frame(
             width: Self.width(for: geometry, style: .floatingPill),
