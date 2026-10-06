@@ -109,6 +109,8 @@ final class SystemStatsService {
     @ObservationIgnored private var timerInterval: TimeInterval = 0
     @ObservationIgnored private var observers = 0
     @ObservationIgnored private var lastTemperatureRead = Date.distantPast
+    /// Set by a capture's sample history, so a live reading never lands on top of it.
+    @ObservationIgnored private var holdsSample = false
 
     @ObservationIgnored private var previousCPUTicks: (busy: Double, total: Double)?
     @ObservationIgnored private var previousNetwork: (input: UInt64, output: UInt64, at: Date)?
@@ -185,6 +187,7 @@ final class SystemStatsService {
     }
 
     private func sample(force: Bool) {
+        if holdsSample { return }
         // Nothing in the background while the Mac is saving power. The deltas start again
         // afterwards rather than averaging across the gap, and the graph shows the gap.
         if !force, observers == 0, ProcessInfo.processInfo.isLowPowerModeEnabled {
@@ -438,6 +441,7 @@ extension SystemStatsService {
         self.stats = stats
         self.history = history
         isGPUAvailable = true
+        holdsSample = true
     }
 }
 #endif
