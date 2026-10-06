@@ -69,12 +69,15 @@ struct NotchStylePreview: View {
                     track
                         .padding(.top, 2)
                     transport
+                        .frame(maxWidth: .infinity)
                 }
+                .frame(maxWidth: .infinity, alignment: .leading)
             }
             .padding(5)
+            .frame(maxWidth: .infinity)
             .background(NotchElementView(.module, shape: .rounded(9), emphasis: 0.05))
         }
-        .padding(.horizontal, 8)
+        .padding(.horizontal, 10)
         .padding(.top, 2)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
     }
@@ -98,13 +101,14 @@ struct NotchStylePreview: View {
     }
 
     private var track: some View {
-        ZStack(alignment: .leading) {
-            NotchElementView(.groove, shape: .capsule, emphasis: 0.18)
-            Capsule()
-                .fill(accent)
-                .frame(width: 34)
+        GeometryReader { proxy in
+            ZStack(alignment: .leading) {
+                NotchElementView(.groove, shape: .capsule, emphasis: 0.18)
+                NotchTrackFill(color: accent)
+                    .frame(width: proxy.size.width * 0.4)
+            }
         }
-        .frame(width: 88, height: 3)
+        .frame(height: 3)
     }
 
     private var transport: some View {
@@ -113,7 +117,6 @@ struct NotchStylePreview: View {
             symbol("pause.fill", primary: true)
             symbol("forward.fill", primary: false)
         }
-        .padding(.leading, 12)
     }
 
     private func symbol(_ name: String, primary: Bool) -> some View {
@@ -126,3 +129,36 @@ struct NotchStylePreview: View {
             )
     }
 }
+
+/// The miniatures as pictures, rendered once each.
+///
+/// Settings shows six at a time, each a stack of blurred shadows flattened into layers of their
+/// own, and scrolling the pane redrew all of them every frame: the user saw the GPU climb whenever
+/// the top of Appearance moved. A picture costs nothing to scroll. Kept per style, variant, accent
+/// and scale, so changing any of them renders afresh, and a miniature drawn here is still drawn by
+/// `NotchStylePreview`, the same parts as the notch.
+@MainActor
+enum NotchStylePreviewCache {
+    /// Room around the miniature for its shadow, which a render would otherwise cut off.
+    static let margin = EdgeInsets(top: 0, leading: 14, bottom: 14, trailing: 14)
+
+    private static var images: [String: NSImage] = [:]
+
+    static func image(for style: NotchStyle, accent: Color, showsHousing: Bool, scale: CGFloat) -> NSImage? {
+        let resolved = NSColor(accent).usingColorSpace(.sRGB)
+        let accentKey = resolved.map { String(format: "%.3f,%.3f,%.3f", $0.redComponent, $0.greenComponent, $0.blueComponent) } ?? "?"
+        let key = "\(style.language.rawValue)|\(style.isDark)|\(accentKey)|\(showsHousing)|\(scale)"
+        if let cached = images[key] { return cached }
+
+        let renderer = ImageRenderer(
+            content: NotchStylePreview(style: style, accent: accent, showsHousing: showsHousing)
+                .padding(margin)
+        )
+        renderer.scale = scale
+        guard let image = renderer.nsImage else { return nil }
+        if images.count > 60 { images.removeAll() }
+        images[key] = image
+        return image
+    }
+}
+

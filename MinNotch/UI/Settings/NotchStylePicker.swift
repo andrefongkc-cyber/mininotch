@@ -10,6 +10,7 @@ import SwiftUI
 struct NotchStylePicker: View {
     @Environment(SettingsStore.self) private var settings
     @Environment(AppEnvironment.self) private var environment
+    @Environment(\.displayScale) private var displayScale
 
     var body: some View {
         @Bindable var settings = settings
@@ -26,7 +27,7 @@ struct NotchStylePicker: View {
 
             SettingsRow(
                 title: "Light or Dark",
-                subtitle: "Match System follows your Mac's appearance. Over the camera housing the closed notch stays black.",
+                subtitle: "Match System follows your Mac.",
                 systemImage: "circle.lefthalf.filled"
             ) {
                 Picker("", selection: $settings.appearance.notchVariant) {
@@ -62,16 +63,10 @@ struct NotchStylePicker: View {
         return Button {
             settings.appearance.notchLanguage = language
         } label: {
-            VStack(spacing: 7) {
-                NotchStylePreview(
-                    style: NotchStyle.make(language, isDark: isDark),
-                    accent: accent,
-                    showsHousing: hasHousing
-                )
-                .padding(.top, 0)
-                .padding(.bottom, 12)
-                .frame(maxWidth: .infinity)
-                .background(backdrop)
+            VStack(spacing: 4) {
+                preview(language, accent: accent)
+                    .frame(maxWidth: .infinity)
+                    .background(backdrop)
                 .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
                 .overlay(
                     RoundedRectangle(cornerRadius: 10, style: .continuous)
@@ -80,10 +75,17 @@ struct NotchStylePicker: View {
 
                 HStack(spacing: 6) {
                     Text(language.title)
-                        .font(Typography.body)
+                        .font(Typography.bodyEmphasised)
                         .foregroundStyle(isSelected ? Palette.primaryText : Palette.secondaryText)
                     if !isOffered { BadgeView(.comingSoon) }
                 }
+                .padding(.top, 3)
+
+                Text(language.blurb)
+                    .font(Typography.helper)
+                    .foregroundStyle(Palette.secondaryText)
+                    .multilineTextAlignment(.center)
+                    .fixedSize(horizontal: false, vertical: true)
             }
             .contentShape(Rectangle())
         }
@@ -92,6 +94,19 @@ struct NotchStylePicker: View {
         .opacity(isOffered ? 1 : 0.55)
         .accessibilityLabel("\(language.title) notch style")
         .accessibilityAddTraits(isSelected ? .isSelected : [])
+    }
+
+    /// The miniature as a picture: see `NotchStylePreviewCache` for why.
+    @ViewBuilder
+    private func preview(_ language: NotchDesignLanguage, accent: Color) -> some View {
+        let style = NotchStyle.make(language, isDark: isDark)
+        if let image = NotchStylePreviewCache.image(for: style, accent: accent, showsHousing: hasHousing, scale: displayScale) {
+            Image(nsImage: image)
+                .accessibilityHidden(true)
+        } else {
+            NotchStylePreview(style: style, accent: accent, showsHousing: hasHousing)
+                .padding(NotchStylePreviewCache.margin)
+        }
     }
 
     /// A stand-in desktop behind each miniature, mid-toned so a light surface and a dark one both

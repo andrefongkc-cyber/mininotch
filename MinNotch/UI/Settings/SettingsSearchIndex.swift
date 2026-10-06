@@ -31,7 +31,7 @@ enum SettingsSearchIndex {
         .init(tab: .general, section: "Tabs", title: "Remember Last Tab", subtitle: "Reopen on whichever widget you used last.", symbolName: "arrow.uturn.backward"),
         .init(tab: .general, section: "Tabs", title: "Default Tab", subtitle: "", symbolName: "square.grid.2x2"),
         .init(tab: .general, section: "Permissions", title: "Login Items", subtitle: "Review which apps macOS allows to start at login.", symbolName: "list.bullet.rectangle"),
-        .init(tab: .appearance, section: "Notch Style", title: "Light or Dark", subtitle: "Match System follows your Mac's appearance. Over the camera housing the closed notch stays black.", symbolName: "circle.lefthalf.filled"),
+        .init(tab: .appearance, section: "Notch Style", title: "Light or Dark", subtitle: "Match System follows your Mac.", symbolName: "circle.lefthalf.filled"),
         .init(tab: .appearance, section: "Accent", title: "Accent Color", subtitle: "Used for active and selected states only.", symbolName: "paintpalette"),
         .init(tab: .appearance, section: "Accent", title: "Custom Color", subtitle: "", symbolName: "eyedropper"),
         .init(tab: .appearance, section: "Accent", title: "Scrubber Color", subtitle: "What tints the Now Playing progress bar.", symbolName: "slider.horizontal.below.rectangle"),

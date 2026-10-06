@@ -7,6 +7,11 @@ import SwiftUI
 struct AmbientLightingCard: View {
     @Environment(SettingsStore.self) private var settings
     @Environment(AppEnvironment.self) private var environment
+    @Environment(\.controlActiveState) private var windowState
+
+    /// Whether the preview is in view in the pane's scroll view. It animates every frame while it
+    /// is, which is a waste with it scrolled away or the window behind another.
+    @State private var isPreviewOnScreen = true
 
     /// Recent taps of the Tap button, for tap tempo.
     @State private var taps: [Date] = []
@@ -258,7 +263,8 @@ struct AmbientLightingCard: View {
                 audio: environment.audioAnalyzer.current == nil ? nil : environment.audioAnalyzer,
                 tempo: environment.glowTempo(),
                 // Roughly the preview box; only used to cap the blur.
-                sizeHint: CGSize(width: 300, height: 50)
+                sizeHint: CGSize(width: 300, height: 50),
+                isPaused: !isPreviewOnScreen || windowState == .inactive
             )
             .padding(18)
 
@@ -269,6 +275,7 @@ struct AmbientLightingCard: View {
             }
         }
         .frame(height: 86)
+        .modifier(ScrollVisibility(isOnScreen: $isPreviewOnScreen))
         .opacity(glow.isEnabled ? 1 : 0.5)
         .padding(.horizontal, Metrics.cardHorizontalPadding)
         .padding(.vertical, 10)
@@ -370,3 +377,18 @@ private struct AudioLevelMeter: View {
         }
     }
 }
+
+/// Reports whether a view is in sight in its scroll view, on macOS 15 and later. Earlier systems
+/// have no way to ask, and the preview just keeps running there, as it always did.
+private struct ScrollVisibility: ViewModifier {
+    @Binding var isOnScreen: Bool
+
+    func body(content: Content) -> some View {
+        if #available(macOS 15.0, *) {
+            content.onScrollVisibilityChange(threshold: 0.05) { isOnScreen = $0 }
+        } else {
+            content
+        }
+    }
+}
+

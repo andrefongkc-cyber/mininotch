@@ -12,7 +12,7 @@ struct AppearanceSettingsView: View {
         ) {
             SettingsCard(
                 header: "Notch Style",
-                footer: "Every style has the same controls in the same places; only how they are drawn changes."
+                footer: "Every style has the same controls in the same places; only how they are drawn changes. On a Mac with a camera, the closed notch stays black in every style, so it disappears into the camera housing."
             ) {
                 NotchStylePicker()
             }

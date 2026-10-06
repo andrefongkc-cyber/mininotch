@@ -63,8 +63,10 @@ enum DebugWindowCapture {
             CalendarWidgetView.debugPick = Int(arguments[index + 1])
         }
 
-        // Effects are off by default, so a capture would not show them otherwise.
-        settings.media.showVisualizer = true
+        // Effects are off by default, so a capture would not show them otherwise. `--no-visualizer`
+        // and `--no-lyrics` leave each out, for measuring what playing costs piece by piece.
+        settings.media.showVisualizer = !arguments.contains("--no-visualizer")
+        if arguments.contains("--no-lyrics") { settings.media.showLyrics = false }
         settings.appearance.ambientGlow.isEnabled = true
         // Both widgets are off by default, so their tabs would not exist to capture.
         settings.advanced.clipboardHistoryEnabled = true

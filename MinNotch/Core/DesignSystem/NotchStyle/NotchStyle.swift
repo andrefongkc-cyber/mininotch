@@ -22,6 +22,18 @@ enum NotchDesignLanguage: String, Codable, CaseIterable, Identifiable {
         case .skeuomorphism: return "Skeuomorphic"
         }
     }
+
+    /// One line under the tile in Settings: what sets this language apart.
+    var blurb: String {
+        switch self {
+        case .minimal: return "Plain and quiet. The classic notch."
+        case .bento: return "Content in tidy rounded modules."
+        case .glass: return "Frosted glass with bright edges."
+        case .neumorphism: return "Soft shapes pressed from one material."
+        case .clay: return "Puffy, rounded and tactile."
+        case .skeuomorphism: return "Physical keys, bevels and grain."
+        }
+    }
 }
 
 /// Dark, light, or whichever macOS is using.

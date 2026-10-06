@@ -35,6 +35,8 @@ final class NotchViewModel {
     /// closes it on purpose (a swipe up, the shortcut that toggles it, a button that opens a
     /// window) also lets it go, so it can never be stuck open.
     private(set) var isKeptOpen = false
+    /// Until when a pointer leaving does not close the panel. See `holdOpen(for:)`.
+    @ObservationIgnored private var holdOpenUntil = Date.distantPast
 
     var selectedTab: NotchTab {
         didSet {
@@ -232,17 +234,24 @@ final class NotchViewModel {
         }
     }
 
+    /// Keeps the panel open for a moment whatever the pointer does, for a change the panel makes
+    /// to itself: a swipe to a shorter tab shrinks it out from under the pointer.
+    func holdOpen(for seconds: TimeInterval) {
+        holdOpenUntil = Date().addingTimeInterval(seconds)
+    }
+
     private func scheduleCloseIfNeeded() {
         guard !isInteractionLocked, !isKeptOpen else { return }
         guard settings.general.closeOnMouseExit, state == .expanded else { return }
         // A short grace period stops the panel snapping shut when the pointer crosses a
-        // gap between two subviews.
+        // gap between two subviews, and lasts until any hold is over.
+        let delay = max(0.25, holdOpenUntil.timeIntervalSinceNow)
         let work = DispatchWorkItem { [weak self] in
             guard let self, !self.isHovering, !self.isInteractionLocked, !self.isKeptOpen else { return }
             self.collapse()
         }
         hoverOpenWork = work
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.25, execute: work)
+        DispatchQueue.main.asyncAfter(deadline: .now() + delay, execute: work)
     }
 
     /// Click on the collapsed pill.

@@ -48,6 +48,9 @@ struct AmbientGlowView: View {
     /// timeline, so a glow waiting behind a closed notch all day is a still, transparent layer
     /// that costs nothing, not an animation running at zero opacity.
     var isVisible: Bool = true
+    /// Holds the glow still where it is, without hiding it: the Settings preview while it is
+    /// scrolled away or its window is in the background.
+    var isPaused: Bool = false
 
     /// The envelope, gain, and spring state for this glow.
     ///
@@ -59,7 +62,7 @@ struct AmbientGlowView: View {
     @State private var dynamics = GlowDynamics()
 
     var body: some View {
-        TimelineView(.animation(minimumInterval: frameInterval, paused: !isAnimating || !isVisible)) { context in
+        TimelineView(.animation(minimumInterval: frameInterval, paused: !isAnimating || !isVisible || isPaused)) { context in
             let input = makeInput(at: context.date)
             let segments = AmbientGlowStyleFactory.make(settings.style).segments(input: input)
 

@@ -255,6 +255,11 @@ struct NowPlayingCardView: View {
                     .strokeBorder(border.shapeStyle, lineWidth: border.width)
             }
         }
+        // On the cover alone, under the bars and the badge. Over them, the shadow was the shadow
+        // of something that changed twenty times a second, and was blurred afresh every time the
+        // bars moved: most of what playing cost the GPU. The cover is opaque and the bars sit
+        // inside it, so the silhouette, and the shadow, are the same either way.
+        .notchShadow(theme.artwork.shadow)
         .overlay(alignment: .bottomLeading) {
             if settings.media.showVisualizer {
                 ZStack(alignment: .bottomLeading) {
@@ -300,7 +305,6 @@ struct NowPlayingCardView: View {
                     .accessibilityLabel("Playing in \(controller.track?.sourceAppName ?? "")")
             }
         }
-        .notchShadow(theme.artwork.shadow)
         .animation(Motion.content, value: controller.artwork)
     }
 

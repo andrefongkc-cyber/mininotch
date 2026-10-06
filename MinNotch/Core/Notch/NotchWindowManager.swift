@@ -11,6 +11,7 @@ final class NotchWindowManager {
     private unowned let environment: AppEnvironment
     private var controllers: [CGDirectDisplayID: NotchWindowController] = [:]
     private var screenObserver: NSObjectProtocol?
+    private var spaceObserver: NSObjectProtocol?
     private var pointerMonitor: Any?
     private var lastPointerDisplay: CGDirectDisplayID?
 
@@ -33,12 +34,30 @@ final class NotchWindowManager {
             MainActor.assumeIsolated { self?.rebuild() }
         }
 
+        // Moving to another desktop puts an open panel away, unless it is being kept open. The
+        // panel stays on screen through the move, above everything, and anything animating in
+        // it (the visualizer, the lyrics, the glow) had macOS redraw the whole transition, and
+        // Mission Control, for every frame: the user saw the GPU climb.
+        spaceObserver = NSWorkspace.shared.notificationCenter.addObserver(
+            forName: NSWorkspace.activeSpaceDidChangeNotification,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            MainActor.assumeIsolated {
+                for viewModel in self?.allViewModels ?? [] where viewModel.state == .expanded && !viewModel.isKeptOpen {
+                    viewModel.collapse()
+                }
+            }
+        }
+
         startPointerTrackingIfNeeded()
     }
 
     func stop() {
         if let screenObserver { NotificationCenter.default.removeObserver(screenObserver) }
         screenObserver = nil
+        if let spaceObserver { NSWorkspace.shared.notificationCenter.removeObserver(spaceObserver) }
+        spaceObserver = nil
         stopPointerTracking()
         controllers.values.forEach { $0.hide() }
         controllers.removeAll()
@@ -216,6 +235,9 @@ final class NotchWindowManager {
             guard tabs.count > 1,
                   let index = tabs.firstIndex(of: viewModel.selectedTab) else { return }
             let next = (index + offset + tabs.count) % tabs.count
+            // The new tab can be shorter, which takes the panel out from under the pointer as it
+            // resizes; that read as the pointer leaving and closed it mid-swipe.
+            viewModel.holdOpen(for: 0.8)
             viewModel.selectedTab = tabs[next]
         }
     }
