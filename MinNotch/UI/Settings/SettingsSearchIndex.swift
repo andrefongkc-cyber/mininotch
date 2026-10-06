@@ -128,6 +128,7 @@ enum SettingsSearchIndex {
         .init(tab: .advanced, section: "Link Shelf", title: "Links Kept", subtitle: "The oldest link is dropped once the shelf is full.", symbolName: "list.bullet"),
         .init(tab: .advanced, section: "Clipboard", title: "Clipboard History", subtitle: "Remember what you copy and offer it back from the Clipboard tab.", symbolName: "doc.on.clipboard"),
         .init(tab: .advanced, section: "Clipboard", title: "Items Kept", subtitle: "The oldest is dropped once the history is full. Pinned items do not count towards this.", symbolName: "list.bullet"),
+        .init(tab: .advanced, section: "Clipboard", title: "Blur Until Unlocked", subtitle: "Blur what you copied until you unlock it with Touch ID or your password. It blurs again when the tab closes.", symbolName: "lock"),
         .init(tab: .advanced, section: "Size", title: "Height", subtitle: "Match the hardware cutout, or pin a fixed height everywhere.", symbolName: "arrow.up.and.down"),
         .init(tab: .advanced, section: "Size", title: "Virtual Notch Height", subtitle: "Used on displays with no physical notch.", symbolName: "ruler"),
         .init(tab: .advanced, section: "Size", title: "Virtual Notch Width", subtitle: "", symbolName: "ruler"),

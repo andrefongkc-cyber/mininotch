@@ -76,6 +76,10 @@ struct AdvancedSettings: Codable, Equatable {
     /// Unpinned items kept before the oldest is dropped. Pinned items are not counted.
     var clipboardHistoryLimit: Int = 20
 
+    /// Blur the Clipboard tab until Touch ID or the login password says it is the Mac's owner
+    /// looking, and blur it again when the tab closes.
+    var clipboardBlurUntilUnlocked: Bool = false
+
     /// Keep links on the notch, in the Shelf tab under the files.
     var linkShelfEnabled: Bool = false
 
@@ -145,6 +149,7 @@ struct AdvancedSettings: Codable, Equatable {
         hideVirtualNotchUntilHover = c.value(.hideVirtualNotchUntilHover, false)
         clipboardHistoryEnabled = c.value(.clipboardHistoryEnabled, false)
         clipboardHistoryLimit = c.value(.clipboardHistoryLimit, 20, in: 5...100)
+        clipboardBlurUntilUnlocked = c.value(.clipboardBlurUntilUnlocked, false)
         linkShelfEnabled = c.value(.linkShelfEnabled, false)
         linkShelfLimit = c.value(.linkShelfLimit, 25, in: 5...100)
         notesEnabled = c.value(.notesEnabled, true)

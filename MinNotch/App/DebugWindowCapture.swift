@@ -180,6 +180,8 @@ enum DebugWindowCapture {
         // Advanced > Hide Until Hovered, which only changes a virtual notch, so pair it with
         // `--virtual`. Set either way, so a capture does not inherit it from the real settings.
         settings.advanced.hideVirtualNotchUntilHover = arguments.contains("--hide-virtual")
+        // Advanced > Clipboard > Blur Until Unlocked, with `--tab clipboard`: the locked list.
+        settings.advanced.clipboardBlurUntilUnlocked = arguments.contains("--blur-clipboard")
         // Which states the glow shows in: `closed`, `open`, or `closed,open`. The glow behaves
         // differently when it is on for only one of them, so both cases have to be capturable.
         if let index = arguments.firstIndex(of: "--placements"), arguments.indices.contains(index + 1) {

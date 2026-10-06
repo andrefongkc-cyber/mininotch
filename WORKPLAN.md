@@ -1,6 +1,6 @@
 # MiniNotch workplan
 
-Status: Sparkle and the MiniNotch rename done and pushed, unreleased; next: 0.7 ships both (first version that updates itself), the user backs up the update key.
+Status: Clipboard > Blur Until Unlocked and the Passwords app skip done and pushed, unreleased; next: the user tries the Touch ID unlock by hand, then 0.7 ships it with Sparkle and the rename. The update key is backed up (the user's password manager, 2026-10-05).
 
 Living document. Update the checkboxes as work lands. `CLAUDE.md` holds the architecture
 rules and the traps; this file holds the sequence.
@@ -42,6 +42,11 @@ at last. Notarisation still needs a paid membership nobody is buying.
 
 ## After 0.5 (2026-10-03)
 
+- [x] Clipboard privacy (asked 2026-10-05): Advanced > Clipboard > Blur Until Unlocked blurs the
+      Clipboard tab until Touch ID or the login password, and blurs again when the tab closes, the
+      screen locks or the Mac sleeps. Copies made in Apple's Passwords app or Keychain Access (which
+      mark nothing private) are never recorded. `--check-clipboard` passes and `--blur-clipboard`
+      captures the locked tab; the Touch ID dialog itself needs trying by hand.
 - [x] Sparkle updates (2026-10-05): Sparkle 2.10 as a Swift package, an EdDSA key in the user's
       keychain (account `mininotch`), `appcast.xml` in the repo pointing at GitHub release DMGs,
       Check for Updates in the menu bar and Settings > About, and `Scripts/release.sh` signing each

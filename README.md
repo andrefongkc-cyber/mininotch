@@ -95,7 +95,8 @@ Also:
 - **Volume, brightness and keyboard backlight** shown at the notch, optionally instead of Apple's
   own overlay, which MiniNotch hides by taking those keys before macOS sees them (needs
   Accessibility). They also show over the lock screen, as does the song with its controls.
-- **Clipboard history** for text, links, colours, and images, held in memory only.
+- **Clipboard history** for text, links, colours, and images, held in memory only. Blur Until
+  Unlocked keeps it blurred until Touch ID or your password _(next)_.
 - **Floating Now Playing window** for a display with no notch worth looking at.
 - **Two-finger swipes** to change tab or open and close, with optional haptics.
 - **Drag-to-arrange layouts** for the transport controls, the closed pill's two sides, and the open
@@ -151,7 +152,7 @@ Source** to look up online sends the current title, artist, album and length to 
 **Weather** sends a location rounded to about a kilometre, or the city you chose, to
 `open-meteo.com`. Checking for updates fetches one small file from GitHub a day and sends nothing
 about your Mac; switch it off in Settings > About _(next)_. No accounts, no analytics, no telemetry. Clipboard history is never written to disk, and it skips
-anything an app marks as private. Audio becomes a handful of numbers per buffer and is discarded;
+anything an app marks as private, and anything copied in the Passwords app or Keychain Access _(next)_. Audio becomes a handful of numbers per buffer and is discarded;
 nothing is recorded.
 
 ## Building

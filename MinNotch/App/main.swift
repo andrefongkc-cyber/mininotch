@@ -37,6 +37,7 @@ if MainActor.assumeIsolated({ DebugPowerCheck.runIfRequested() }) { exit(0) }
 if MainActor.assumeIsolated({ DebugKeepOpenCheck.runIfRequested() }) { exit(0) }
 if MainActor.assumeIsolated({ DebugNotesCheck.runIfRequested() }) { exit(0) }
 if MainActor.assumeIsolated({ DebugUpdateCheck.runIfRequested() }) { exit(0) }
+if MainActor.assumeIsolated({ DebugClipboardCheck.runIfRequested() }) { exit(0) }
 #endif
 
 let application = NSApplication.shared

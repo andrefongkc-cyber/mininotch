@@ -25,6 +25,7 @@ enum DebugPermissionsCheck {
         report("is active:         \(app.isActive)")
         report("usage description: \(Bundle.main.object(forInfoDictionaryKey: "NSCalendarsFullAccessUsageDescription") != nil ? "present" : "MISSING")")
         report("calendar status:   \(describe(EKEventStore.authorizationStatus(for: .event)))")
+        report("owner check:       \(OwnerCheck.method) (Clipboard > Blur Until Unlocked)")
 
         guard shouldRequest else { exit(0) }
 

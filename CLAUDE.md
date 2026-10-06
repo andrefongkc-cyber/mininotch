@@ -16,7 +16,7 @@ the only ones, and they are updated in place.
 ## Start here
 
 The app builds clean, runs, and is feature-complete for everything in `WORKPLAN.md` marked
-`[x]`. 138 Swift files, in Swift 6 language mode.
+`[x]`. 168 Swift files, in Swift 6 language mode.
 
 **It is signed, as of 2026-09-15, with the user's free personal team** (`CODE_SIGN_STYLE =
 Automatic`, an Apple Development certificate, no provisioning profile needed for a local Mac
@@ -80,7 +80,7 @@ MiniNotch --capture-notch out.png [--collapsed] [--tab system] [--glow bars|off]
                                  [--lyrics-sheet] [--sample-stats] [--shadow] [--closed-lyrics]
                                  [--sample-shelf] [--output-sheet] [--sample-weather]
                                  [--sample-power] [--keep-open] [--hud-style floatingPill] [--no-media]
-                                 [--sample-notes]
+                                 [--sample-notes] [--blur-clipboard]
 MiniNotch --check-lyrics "Khalid" "8TEEN" 229                      # LRCLIBClient + LRCParser
 MiniNotch --check-lyric-sync [--out f]                             # matching lyrics to the audio, synthetic
 MiniNotch --check-lyric-sync --audio f.mp3 --lrc f.lrc --shifts 0,0.5 [--peaks]   # …and a real song, old method beside it
@@ -109,6 +109,7 @@ MiniNotch --check-power [seconds]                                  # charger in,
 MiniNotch --check-keep-open                                        # Keep the Notch Open: holds, lets go, pin, shortcut default
 MiniNotch --check-notes                                            # the note is saved, read back, never overwritten by a capture
 MiniNotch --check-update --feed <url> [--out f]                   # a whole Sparkle update, test builds only (see Releases)
+MiniNotch --check-clipboard                                        # what the history records, and when it is blurred
 ```
 
 `--capture-notch` grew three options for the animated effects. `--glow off` disables the
@@ -595,6 +596,7 @@ open -n -a <path to MiniNotch.app> --args --check-permissions --out /tmp/perm.lo
 | Notifications | `UNUserNotificationCenter` | First low-battery alert |
 | Downloads folder | Reading `~/Downloads` | Switching on Layout > Downloads |
 | Location | `CLLocationManager`, then Open-Meteo | Weather on with Use My Location; Allow in Weather, the Weather tab, or the tutorial |
+| Touch ID or password (not a permission) | LocalAuthentication `deviceOwnerAuthentication` | Unlock in the Clipboard tab, with Blur Until Unlocked on |
 
 None are requested at launch. The first-launch tutorial explains each one on its permissions
 page, only for features that were ticked, and offers an "Allow Now" button for Calendar and
@@ -1045,6 +1047,29 @@ rate from 1s to 0.25s while the widget is visible rather than gating the timer. 
 itself is one integer, `NSPasteboard.changeCount`, which is what makes that affordable. It
 never writes history to disk, and it skips anything marked with the `org.nspasteboard`
 concealed or transient types, which is how password managers ask not to be remembered.
+
+**Apple's Passwords app marks nothing, so its copies are skipped by who was in front.** The user
+found a password copied there in the history. The pasteboard does not record which app wrote to it,
+so each poll remembers every app that came to the front since the last one
+(`didActivateApplicationNotification`) plus the one in front now, and a change made while any of
+`ClipboardHistoryService.privateApps` (Passwords, its menu bar item, Keychain Access) was among them
+is never read, as Maccy does it. Copying in Passwords and switching away within the second is
+still caught; a copy elsewhere in a moment that also visited Passwords is lost, which is the
+right way round.
+
+**Blur Until Unlocked never draws the real text while locked.** Advanced > Clipboard > Blur Until
+Unlocked blurs the Clipboard tab until `OwnerCheck` (LocalAuthentication's
+`deviceOwnerAuthentication`: Touch ID, else the login password, or a Watch; no permission or
+entitlement), from the Unlock button or a click on a row, which then copies it. A locked row draws
+filler text as long as the real one, blurred, so a blur that fails to apply, an accessibility
+client, or a capture finds nothing; the swatch and the kind's icon stay. A plain `.blur` is a layer
+filter that `--capture-notch` does not draw, which is how this was found: the first capture showed
+the real text, sharp. The blur is baked in with `drawingGroup`, with padding so it fades inside
+the layer. `isRevealed` lives in the service and only `reveal()` sets it, ignored while no view of
+the tab is open; it clears when the last one closes (`endSampling`), when the screen locks, when
+the Mac sleeps, and when the setting is switched on. The panel is held open
+(`isInteractionLocked`) while the dialog is up. `--check-clipboard` runs the recording and the
+blur rules on a private pasteboard; the dialog itself can only be tried by hand.
 
 **The timer counts against a deadline, not down from a number.** A tick that is late, and
 every timer tick is late sometimes, would otherwise lose that time for good and a

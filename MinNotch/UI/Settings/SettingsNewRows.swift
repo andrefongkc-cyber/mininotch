@@ -53,6 +53,7 @@ enum SettingsNewRows {
         // 0.7
         "Check for Updates": "0.7",
         "Check Automatically": "0.7",
+        "Blur Until Unlocked": "0.7",
     ]
 
     static func isNew(_ title: String) -> Bool {

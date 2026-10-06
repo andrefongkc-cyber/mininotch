@@ -111,7 +111,7 @@ struct AdvancedSettingsView: View {
 
             SettingsCard(
                 header: "Clipboard",
-                footer: "History is kept in memory only and is never written to disk. Anything an app marks as private, which is what password managers do, is skipped."
+                footer: "History is kept in memory only and is never written to disk. Copies made in the Passwords app or Keychain Access are skipped, and so is anything an app marks as private, which is what other password managers do."
             ) {
                 SettingsRow(
                     title: "Clipboard History",
@@ -137,6 +137,17 @@ struct AdvancedSettingsView: View {
                         range: 5...100,
                         step: 5
                     ) { "\(Int($0))" }
+                }
+
+                SettingsDivider()
+
+                SettingsRow(
+                    title: "Blur Until Unlocked",
+                    subtitle: "Blur what you copied until you unlock it with Touch ID or your password. It blurs again when the tab closes.",
+                    systemImage: "lock",
+                    isEnabled: settings.advanced.clipboardHistoryEnabled
+                ) {
+                    SettingsToggle(isOn: $settings.advanced.clipboardBlurUntilUnlocked)
                 }
             }
 

@@ -44,7 +44,7 @@ struct ExpandedPanelView: View {
         case .shelf, .links:
             ShelfTabView()
         case .clipboard:
-            ClipboardWidgetView()
+            ClipboardWidgetView(viewModel: viewModel)
         case .timer:
             TimerWidgetView(viewModel: viewModel)
         case .weather:
