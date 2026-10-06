@@ -15,28 +15,31 @@ The app is well past V1. Everything originally scoped as V1 is built, and most o
 scoped as V2 is too: HUDs, the shelf, reminders, gestures, haptics, system stats, Bluetooth
 accessory charge, ambient lighting, clipboard history, a timer, a first-launch tutorial,
 Settings search, a link shelf, release notes, and as of 2026-09-22 the whole "gaps in what is
-built" list below. 133 Swift files in Swift 6 language mode, building with no warnings.
+built" list below. 168 Swift files in Swift 6 language mode, building with no warnings.
 Published at github.com/andrefongkc-cyber/mininotch.
 
 **The blocker is gone.** The app is signed with a free personal team as of 2026-09-15, so
 permissions should stop resetting on every build and the system audio permission is reachable
 at last. Notarisation still needs a paid membership nobody is buying.
 
-**Do these next, in this order:**
+**Do these next, in this order** (refreshed 2026-10-05):
 
-0. 0.4.0 shipped on 2026-09-24 at the user's request ("just release") before this was done. Watch
-   for reports, and the user tries 0.4 by hand: dragging in Settings > Layout, closed lyrics with a real song,
-   the shelf's multi-file drag and AirDrop, switching outputs with a second one connected, the
-   lock screen media controls (do they clear the lock screen clock?), the weather location
-   prompt, and a real meeting's countdown and Join.
-1. Answer the user on macOS 13 (Platforms below). They were asked and have not decided.
-2. A test target. Nothing is verified automatically across more than a hundred files, and the
-   Swift 6 migration is exactly the kind of change one would have caught.
-3. ~~Confirm a granted permission survives a rebuild~~ Done 2026-10-02 (Accessibility).
-4. Watch for reports against 0.3.0, released 2026-09-23. It shipped at the user's request
-   without these being tried by hand, so they are the first place to look: the drag-and-drop
-   in Settings > Layout, the calendar against a real calendar, repeat and favourite against a
-   playing track, downloads, a device connecting, and the album-art bars with real music.
+1. Release 0.7 when the user asks. It carries Sparkle (the first version that updates itself), the
+   MiniNotch rename, and Clipboard > Blur Until Unlocked with the Passwords app skip. Needs 0.7
+   notes in `ReleaseNotes.latest`, a new `id` and `MARKETING_VERSION`. Anyone on 0.6 or older
+   installs 0.7 by hand once. The update key is backed up in the user's password manager.
+2. The user tries by hand what tooling cannot: the Touch ID unlock in the Clipboard tab (does the
+   dialog come to the front?) and a password copied in Passwords staying out of the list; typing
+   in Notes; drops and paste in the combined Shelf tab; Keep Open on two displays; lyric timing
+   against real songs; the closed pill on the MacBook Pro. Still never tried from earlier releases:
+   dragging in Settings > Layout, closed lyrics with a real song, the shelf's multi-file drag and
+   AirDrop, switching outputs, lock screen media controls, the weather location prompt, a real
+   meeting's countdown and Join, the calendar against a real calendar, repeat and favourite,
+   downloads, and a device connecting.
+3. Answer the user on macOS 13 (Platforms below). They were asked and have not decided.
+4. A test target. Nothing is verified automatically across more than a hundred and sixty files.
+5. Up Next: there is no Apple API for it. A guess from the playlist's order, checked against what
+   actually plays next, was offered and not answered.
 
 ---
 
