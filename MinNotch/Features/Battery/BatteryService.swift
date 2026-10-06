@@ -32,14 +32,13 @@ struct BatteryStatus: Equatable {
     /// Colour for the glyph. Yellow in Low Power Mode and red when critical, matching the
     /// system menu bar item so the two never disagree.
     ///
-    /// The neutral case is white rather than a semantic label colour: this is only ever
-    /// drawn on the notch, which is black in both appearances, so a colour that flips with
-    /// the system appearance would disappear in light mode.
-    var tint: Color {
+    /// The neutral case is the Notch Style's ink, passed in, rather than a semantic label
+    /// colour: the notch draws in its style's colours whatever the system appearance is.
+    func tint(neutral: Color) -> Color {
         if isCharging || isPluggedIn { return Color(nsColor: .systemGreen) }
         if isLowPowerMode { return Color(nsColor: .systemYellow) }
         if percentage <= 10 { return Color(nsColor: .systemRed) }
-        return .white
+        return neutral
     }
 
     var timeRemainingDescription: String? {

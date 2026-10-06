@@ -320,17 +320,16 @@ struct PillIndicatorView: View {
                         .font(Typography.timecode)
                         .foregroundStyle(theme.ink.opacity(0.92))
                 }
-                Image(systemName: content.battery.symbolName)
-                    .font(.system(size: 12, weight: .regular))
-                    .foregroundStyle(
-                        content.battery.isCharging
-                            ? Color(nsColor: .systemGreen)
-                            : (content.battery.percentage <= 10
-                                ? Color(nsColor: .systemRed)
-                                : theme.ink.opacity(0.92))
-                    )
-                    .symbolRenderingMode(.hierarchical)
-                    .frame(width: CollapsedPillContent.batteryGlyphWidth)
+                TransportSymbol.hierarchical(
+                    content.battery.symbolName,
+                    pointSize: 12,
+                    color: content.battery.isCharging
+                        ? Color(nsColor: .systemGreen)
+                        : (content.battery.percentage <= 10
+                            ? Color(nsColor: .systemRed)
+                            : theme.ink.opacity(0.92))
+                )
+                .frame(width: CollapsedPillContent.batteryGlyphWidth)
             }
             .accessibilityElement(children: .combine)
             .accessibilityLabel("Battery \(content.battery.percentage) percent")

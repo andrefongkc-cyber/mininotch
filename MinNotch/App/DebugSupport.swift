@@ -11,6 +11,20 @@ import Foundation
 /// surviving the process.
 @MainActor
 enum DebugSupport {
+    /// `--notch-style <language>-<dark|light>` for the capture tools, or Minimal Dark.
+    static func applyNotchStyle(_ arguments: [String], to settings: SettingsStore) {
+        settings.appearance.notchLanguage = .minimal
+        settings.appearance.notchVariant = .dark
+        guard let index = arguments.firstIndex(of: "--notch-style"), arguments.indices.contains(index + 1) else { return }
+        let parts = arguments[index + 1].split(separator: "-").map(String.init)
+        if let language = parts.first.flatMap(NotchDesignLanguage.init(rawValue:)) {
+            settings.appearance.notchLanguage = language
+        }
+        if parts.count > 1, let variant = NotchStyleVariant(rawValue: parts[1]) {
+            settings.appearance.notchVariant = variant
+        }
+    }
+
     private static let suiteName = "com.minnotch.debug-tools"
 
     static func makeEnvironment() -> AppEnvironment {

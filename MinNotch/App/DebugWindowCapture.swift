@@ -191,6 +191,10 @@ enum DebugWindowCapture {
             if names.contains("open") { placements.insert(.expandedPanel) }
             settings.appearance.ambientGlow.placements = placements
         }
+        // `--notch-style bento-light` draws in that Notch Style: a language, a dash, and dark or
+        // light. Set either way, so a capture never inherits the real setting; Minimal Dark
+        // without it, which is what `Scripts/style-diff.sh` compares.
+        DebugSupport.applyNotchStyle(arguments, to: settings)
         // `--debug` also turns on the outline and the glow's level readout, which is the
         // only way to review the tuning overlay without changing the real configuration.
         settings.advanced.showDebugOverlay = arguments.contains("--debug")

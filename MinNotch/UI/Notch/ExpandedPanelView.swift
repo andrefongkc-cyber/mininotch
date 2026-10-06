@@ -168,10 +168,7 @@ struct ExpandedPanelView: View {
                         .font(Typography.timecode)
                         .foregroundStyle(theme.ink.opacity(0.85))
                 }
-                Image(systemName: status.symbolName)
-                    .font(.system(size: 13))
-                    .symbolRenderingMode(.hierarchical)
-                    .foregroundStyle(status.tint)
+                TransportSymbol.hierarchical(status.symbolName, pointSize: 13, color: status.tint(neutral: theme.ink))
                     // A fixed width, so `TopStripLayout` knows exactly how much room it takes.
                     .frame(width: TopStripLayout.batteryIconWidth)
             }
@@ -184,9 +181,9 @@ struct ExpandedPanelView: View {
 
 /// A compact icon button for the notch's top strip.
 ///
-/// Uses explicit whites rather than semantic colours because the notch is black in both
-/// appearances, and a hover fill rather than a border so the strip stays quiet until
-/// pointed at.
+/// Colours come from the Notch Style rather than semantic colours, because the notch draws in
+/// its style whatever the system appearance is, and a hover fill rather than a border keeps the
+/// strip quiet until pointed at.
 struct NotchIconButton: View {
     @Environment(\.notchStyle) private var theme
     var systemImage: String
@@ -201,8 +198,10 @@ struct NotchIconButton: View {
 
     var body: some View {
         Button(action: action) {
-            Image(systemName: systemImage)
-                .font(.system(size: 12, weight: .medium))
+            // Through `TransportSymbol`, whose colour always holds: several symbols here (the
+            // gauge, the timer, the note) drew white whatever they were given as system images,
+            // which only showed once a light Notch Style made white the wrong colour.
+            TransportSymbol.image(systemImage, pointSize: 12, weight: .medium)
                 .frame(width: width, height: 21)
                 .foregroundStyle(foreground)
                 .background(

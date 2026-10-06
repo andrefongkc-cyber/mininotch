@@ -511,8 +511,9 @@ struct NowPlayingCardView: View {
             }
             Haptics.perform(enabled: settings.advanced.hapticFeedbackEnabled, strength: settings.advanced.hapticStrength)
         } label: {
-            Image(systemName: mode.symbolName)
-                .font(.system(size: 13, weight: .medium))
+            // Through `TransportSymbol` because its colour says whether effects are on: drawn as
+            // `Image(systemName:)` with a font it came out white whatever it was given.
+            TransportSymbol.image(mode.symbolName, pointSize: 13)
                 .foregroundStyle(
                     mode == .off
                         ? theme.ink.opacity(0.35)
@@ -968,5 +969,22 @@ enum TransportSymbol {
         symbol.isTemplate = true
         cache[key] = symbol
         return Image(nsImage: symbol).renderingMode(.template)
+    }
+
+    /// The same, drawn hierarchically in one colour: the shape at full strength and its secondary
+    /// layers fainter, as `.symbolRenderingMode(.hierarchical)` would if it kept its colour here.
+    /// For the battery, whose white outline vanished on a light Notch Style.
+    static func hierarchical(_ name: String, pointSize: CGFloat, weight: NSFont.Weight = .regular, color: Color) -> Image {
+        let nsColor = NSColor(color)
+        let key = "\(name)|\(pointSize)|\(weight.rawValue)|\(nsColor)"
+        if let cached = cache[key] {
+            return Image(nsImage: cached)
+        }
+        let configuration = NSImage.SymbolConfiguration(pointSize: pointSize, weight: weight)
+            .applying(NSImage.SymbolConfiguration(hierarchicalColor: nsColor))
+        guard let symbol = NSImage(systemSymbolName: name, accessibilityDescription: nil)?
+            .withSymbolConfiguration(configuration) else { return Image(systemName: name) }
+        cache[key] = symbol
+        return Image(nsImage: symbol)
     }
 }

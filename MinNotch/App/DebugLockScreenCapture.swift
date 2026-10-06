@@ -20,6 +20,7 @@ enum DebugLockScreenCapture {
 
         let environment = DebugSupport.makeEnvironment()
         let settings = environment.settings
+        DebugSupport.applyNotchStyle(arguments, to: settings)
         environment.nowPlaying.applySample(settings: settings)
         let showsHUD = arguments.contains("--hud")
         if showsHUD {

@@ -107,10 +107,11 @@ struct SystemWidgetView: View {
     private var batteryDetail: some View {
         VStack(alignment: .leading, spacing: 8) {
             HStack(spacing: 10) {
-                Image(systemName: status.symbolName)
-                    .font(.system(size: 22))
-                    .symbolRenderingMode(.hierarchical)
-                    .foregroundStyle(status.isCharging ? Color(nsColor: .systemGreen) : theme.ink)
+                TransportSymbol.hierarchical(
+                    status.symbolName,
+                    pointSize: 22,
+                    color: status.isCharging ? Color(nsColor: .systemGreen) : theme.ink
+                )
 
                 VStack(alignment: .leading, spacing: 1) {
                     Text("\(status.percentage)%")
@@ -126,7 +127,13 @@ struct SystemWidgetView: View {
                 // Named, because a bare thermometer and a number here read as the chip's temperature
                 // further down, which is the question this answered when it had no label.
                 if let temperature = environment.systemStats.stats.batteryTemperature, showsStats {
-                    Label("Battery " + TemperatureFormat.string(celsius: temperature, fahrenheit: usesFahrenheit), systemImage: "thermometer.medium")
+                    Label {
+                        Text("Battery " + TemperatureFormat.string(celsius: temperature, fahrenheit: usesFahrenheit))
+                    } icon: {
+                        // Through `TransportSymbol`: as a plain system image it stayed white,
+                        // whatever colour it was given, and vanished on a light Notch Style.
+                        TransportSymbol.image("thermometer.medium", pointSize: 11, weight: .medium)
+                    }
                         .font(.system(size: 11, weight: .medium).monospacedDigit())
                         .foregroundStyle(theme.ink.opacity(0.6))
                         .help("Battery temperature")
@@ -147,7 +154,7 @@ struct SystemWidgetView: View {
                 ZStack(alignment: .leading) {
                     Capsule().fill(theme.ink.opacity(0.14))
                     Capsule()
-                        .fill(status.tint)
+                        .fill(status.tint(neutral: theme.ink))
                         .frame(width: proxy.size.width * fraction)
                 }
             }
