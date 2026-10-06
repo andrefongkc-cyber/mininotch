@@ -1,6 +1,6 @@
 # MiniNotch workplan
 
-Status: Liquid Glass is Apple's regular glass now, swipes work over the whole panel, Light or Dark says Auto; pushed, unreleased; next: the user tries them, then 0.7.
+Status: Glass Opacity 0 is frosted glass over anything (milky frost and a bright edge on regular Liquid Glass), swipes over the whole panel; pushed, unreleased; next: the user tries them, then 0.7.
 
 Living document. Update the checkboxes as work lands. `CLAUDE.md` holds the architecture
 rules and the traps; this file holds the sequence.
@@ -126,6 +126,9 @@ Architecture (approved 2026-10-05 with: a, Match System yes, keep Translucent Pa
 - [x] Liquid Glass "only sometimes", then "0 still doesn't look like liquid glass": clear glass was
       the wrong glass, invisible over plain or dark windows. Now Apple's regular glass, checked on
       screen over a test pattern (`--backdrop`) at 0, 0.5 and 1 in Minimal Dark and Clay Light.
+- [x] "At 0 it should look like proper frosted glass": dark regular glass over a dark window was a
+      smooth dark grey. A milky frost and a bright edge go on top at 0 and fade as the slider rises;
+      checked on screen over the user's dark windows and over the test pattern.
 - [x] Swipes over the whole panel, not just the top bar: a listen-only scroll tap, since scroll
       views took the gesture from the local monitor.
 - [x] Light or Dark wrapped a word to a line in the user's narrower window: "Match System" is "Auto".

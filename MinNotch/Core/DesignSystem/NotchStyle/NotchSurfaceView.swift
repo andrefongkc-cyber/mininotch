@@ -90,11 +90,32 @@ struct NotchSurfaceView<Edge: Shape>: View {
             // tried first: it is all but invisible, glass only where something bright and busy is
             // behind it, so over the user's dark chat window it looked like no glass at all, and
             // like a different setting every time the window behind changed.
-            style.base.opacity(amount * amount * 0.85)
-                .glassEffect(.regular.tint(amount > 0 ? style.base.opacity(amount) : nil), in: edge)
-                // Glass takes its appearance from its surroundings, which follow the system;
-                // a light style over a dark Mac drew dark glass under dark text.
-                .environment(\.colorScheme, style.isDark ? .dark : .light)
+            //
+            // Dark Liquid Glass over a dark window averages to a smooth dark grey, and its rim is
+            // faint, so at 0 the user saw something that did not read as glass at all. What makes
+            // frosted glass recognisable is put on top, and fades out as the slider rises: a
+            // milky frost, stronger on a light style, and a bright edge catching the light along
+            // the sides and bottom.
+            let clarity = 1 - amount
+            ZStack {
+                style.base.opacity(amount * amount * 0.85)
+                Color.white.opacity((style.isDark ? 0.13 : 0.32) * clarity)
+            }
+            .glassEffect(.regular.tint(amount > 0 ? style.base.opacity(amount) : nil), in: edge)
+            .overlay {
+                // Centred on the outline and clipped by the surface, so one point of it shows.
+                edge.stroke(
+                    LinearGradient(
+                        colors: [.white.opacity(0.1 + 0.45 * clarity), .white.opacity(0.04 + 0.12 * clarity)],
+                        startPoint: .top,
+                        endPoint: .bottom
+                    ),
+                    lineWidth: 2
+                )
+            }
+            // Glass takes its appearance from its surroundings, which follow the system; a light
+            // style over a dark Mac drew dark glass under dark text.
+            .environment(\.colorScheme, style.isDark ? .dark : .light)
         } else {
             style.base
         }
