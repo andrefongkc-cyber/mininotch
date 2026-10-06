@@ -1,6 +1,6 @@
 # MiniNotch workplan
 
-Status: Clipboard > Blur Until Unlocked and the Passwords app skip done and pushed, unreleased; next: the user tries the Touch ID unlock by hand, then 0.7 ships it with Sparkle and the rename. The update key is backed up (the user's password manager, 2026-10-05).
+Status: doing the Notch Visual Style System, architecture proposed and awaiting the user's go-ahead (no code changed yet); next: baseline captures of Minimal Dark, then the refactor. 0.7 (Sparkle, rename, clipboard blur) is ready to release whenever asked.
 
 Living document. Update the checkboxes as work lands. `CLAUDE.md` holds the architecture
 rules and the traps; this file holds the sequence.
@@ -42,6 +42,65 @@ at last. Notarisation still needs a paid membership nobody is buying.
    actually plays next, was offered and not answered.
 
 ---
+
+## Notch Visual Style System (asked 2026-10-05)
+
+Six design languages, Minimal, Bento, Glassmorphism, Neumorphism, Claymorphism and Skeuomorphism,
+each in Dark and Light, chosen in Settings > Appearance > Notch Style. The current look is Minimal
+Dark and must not change. The user's brief, in short: one set of components styled by a shared
+system, never a copy of the UI per style; the accent colour and every Ambient Lighting control keep
+working in every style; nothing functional changes (layout, drag and drop, lyrics, controls); the
+closed notch, open panel, music card, artwork, Live Activities, bars, controls, HUDs (lock screen
+too) and Settings previews all follow the style; restrained, no "six CSS filters" look; animations
+keep their logic. Each of the 12 is checked against closed, open, HUD, glow and external-monitor
+states.
+
+What the code is today: the surface is one fill in `NotchRootView.background` (black, or black under
+a `.hudWindow` material at 0.55 with Translucent Panel), an optional shadow layer, and the glow
+overlay. Everything drawn on it is about 200 literal `.white.opacity(x)` and `.black` across 21
+files in `UI/Notch`, because the panel was always black; `Palette` is semantic colours for Settings
+only. Notch components are reused in three other places: the music card in the floating window,
+`HUDView` on the lock screen, `PillIndicatorView` in the Layout miniature.
+
+Proposed architecture (awaiting the go-ahead):
+- `AppearanceSettings.notchStyle`: a language and a variant, default Minimal Dark, so every saved
+  settings file lands on today's look with no migration.
+- `NotchStyle`, a plain value resolved from that choice, holding the palette (surface tiers, text
+  tiers, separators, track, highlight and shadow colours) and the treatments: surface (fill, glass,
+  texture, border, outer shadow), elevation (raised, recessed), module (Bento's cards and each
+  language's equivalent), control, track, artwork, accent and glow. The twelve are entries in one
+  catalogue; a thirteenth is another entry.
+- Read from the environment (`\.notchStyle`), set at the four roots: the notch, the floating
+  window, the lock screen window, Settings previews.
+- Components that read it, used by every widget: text tiers in place of the literal whites, a module
+  container (nothing at all in Minimal), raised and recessed backgrounds, button styles, one track
+  view for every bar (scrubber, HUD, timer, battery, power).
+- Minimal Dark's catalogue entry holds today's literal values, and is proven unchanged by diffing
+  `--capture-notch` against a set of captures taken before the refactor.
+- Decisions asked of the user: the camera housing under light and lighter-dark styles on a notched
+  Mac; Translucent Panel beside Glassmorphism; whether to offer Match System beside Dark and Light.
+
+- [ ] Style architecture
+- [ ] Minimal Dark
+- [ ] Minimal Light
+- [ ] Bento Dark
+- [ ] Bento Light
+- [ ] Glassmorphism Dark
+- [ ] Glassmorphism Light
+- [ ] Neumorphism Dark
+- [ ] Neumorphism Light
+- [ ] Claymorphism Dark
+- [ ] Claymorphism Light
+- [ ] Skeuomorphism Dark
+- [ ] Skeuomorphism Light
+- [ ] Style preview selector
+- [ ] Style persistence/migration
+- [ ] Closed notch testing
+- [ ] Open panel testing
+- [ ] HUD testing
+- [ ] Ambient lighting compatibility
+- [ ] External monitor testing
+- [ ] Final visual polish
 
 ## After 0.5 (2026-10-03)
 
