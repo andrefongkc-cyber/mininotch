@@ -15,6 +15,8 @@ enum DebugSupport {
     static func applyNotchStyle(_ arguments: [String], to settings: SettingsStore) {
         settings.appearance.notchLanguage = .minimal
         settings.appearance.notchVariant = .dark
+        // `--liquid-glass` under whichever style. A capture cannot draw it; screenshot it instead.
+        settings.appearance.notchBackground = arguments.contains("--liquid-glass") ? .liquidGlass : .solid
         guard let index = arguments.firstIndex(of: "--notch-style"), arguments.indices.contains(index + 1) else { return }
         let parts = arguments[index + 1].split(separator: "-").map(String.init)
         if let language = parts.first.flatMap(NotchDesignLanguage.init(rawValue:)) {

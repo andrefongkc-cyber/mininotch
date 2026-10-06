@@ -164,7 +164,7 @@ struct NotchRootView: View {
     private var background: some View {
         let surface = NotchSurfaceView(
             style: theme.surface,
-            isTranslucent: settings.appearance.useVibrancy && theme.language == .minimal,
+            isTranslucent: settings.appearance.useVibrancy && theme.language == .minimal && !theme.surface.liquidGlass,
             edge: NotchShape(
                 shoulderRadius: shapeStyle.shoulderRadius,
                 bottomRadius: shapeStyle.bottomRadius,

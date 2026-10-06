@@ -83,7 +83,8 @@ MiniNotch --capture-notch out.png [--collapsed] [--tab system] [--glow bars|off]
                                  [--sample-shelf] [--output-sheet] [--sample-weather]
                                  [--sample-power] [--keep-open] [--hud-style floatingPill] [--no-media]
                                  [--sample-notes] [--blur-clipboard]
-                                 [--notch-style bento-light] [--builtin]
+                                 [--notch-style bento-light] [--liquid-glass] [--builtin]
+                                 [--no-visualizer] [--no-lyrics]
 MiniNotch --check-lyrics "Khalid" "8TEEN" 229                      # LRCLIBClient + LRCParser
 MiniNotch --check-lyric-sync [--out f]                             # matching lyrics to the audio, synthetic
 MiniNotch --check-lyric-sync --audio f.mp3 --lrc f.lrc --shifts 0,0.5 [--peaks]   # …and a real song, old method beside it
@@ -877,6 +878,37 @@ always see-through. `--capture-styles` renders every miniature for the picker, s
 window cannot be captured; `--notch-style <language>-<dark|light>` on the capture tools draws any
 style, and `Scripts/contact-sheet.swift` lays captures side by side. Light styles give multicolour
 weather symbols a faint outline (`notchMulticolorSymbol`), because their clouds are white.
+
+**Liquid Glass is a background under any style, macOS 26 only.** Settings > Appearance > Notch Style >
+Background (`AppearanceSettings.notchBackground`, Solid or Liquid Glass). `NotchStyle.resolve` sets
+`surface.liquidGlass` when it is chosen and `NotchBackground.isLiquidGlassSupported`; the surface is
+then SwiftUI's `glassEffect` in the notch's own outline, tinted towards the style's base, and the
+style's glass, grain and edge give way to it. Before macOS 26 the row is shown switched off with
+"Liquid Glass needs macOS 26 or later", and a saved Liquid Glass draws Solid. Glass takes its
+appearance from its surroundings, which follow the system, so the surface sets the style's
+colour scheme on it (`NotchSurfaceStyle.isDark`): a light style on a dark Mac drew dark glass under
+dark text. No capture can draw it; it was checked with `screencapture` on 2026-10-06.
+
+**What playing costs, and why the picker is pictures.** With nothing moving the open panel costs
+almost nothing; playing (the artwork's visualizer at 20 Hz, the lyric highlight at 10 Hz) redraws
+what sits over it. The album art's shadow used to sit over the visualizer, so it was blurred again on
+every tick; it now sits under it, which looks the same (the cover is opaque) and costs much less.
+Measured with `--capture-notch --hold 9` and the GPU's `Device Utilization %` from `ioreg -c
+IOAccelerator`, which is noisy with other apps running, so compare runs in alternation. The Notch
+Style tiles in Settings are rendered once each into a picture (`NotchStylePreviewCache`), because six
+live miniatures full of blurred layers made scrolling Appearance heavy, and the Ambient Lighting
+preview pauses scrolled away (macOS 15+) or with the window behind. An open panel closes when the
+desktop changes (`NSWorkspace.activeSpaceDidChangeNotification`), unless kept open: it sits above the
+transition and Mission Control, and anything animating in it had macOS redraw the lot every frame.
+There is no public signal for Mission Control itself.
+
+**Two-finger swipes read the fingers, not the content.** `NotchGestureMonitor` flips the deltas when
+`isDirectionInvertedFromDevice` says Natural Scrolling has, so the directions are the same with it
+off as with it on (they used to come out backwards with it off). Up and down over a scroll view with
+more in it than shows belong to the list (a hit test up to an `NSScrollView`): scrolling the clipboard
+used to close the notch. A mouse wheel has no phases, so a pause of 0.35 s starts a new gesture. A
+swipe to another tab holds the panel open for 0.8 s (`NotchViewModel.holdOpen`), since a shorter tab
+shrinks the panel out from under the pointer.
 
 **Files and links share the Shelf tab.** The user asked for the Shelf (files, AirDrop) and Links
 (paste a link, copy it back) together, so `NotchTab.links` is a feature but no longer a tab:

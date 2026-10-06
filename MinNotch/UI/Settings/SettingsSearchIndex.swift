@@ -32,6 +32,7 @@ enum SettingsSearchIndex {
         .init(tab: .general, section: "Tabs", title: "Default Tab", subtitle: "", symbolName: "square.grid.2x2"),
         .init(tab: .general, section: "Permissions", title: "Login Items", subtitle: "Review which apps macOS allows to start at login.", symbolName: "list.bullet.rectangle"),
         .init(tab: .appearance, section: "Notch Style", title: "Light or Dark", subtitle: "Match System follows your Mac.", symbolName: "circle.lefthalf.filled"),
+        .init(tab: .appearance, section: "Notch Style", title: "Background", subtitle: "Liquid Glass bends and blurs what is behind the notch.", symbolName: "drop"),
         .init(tab: .appearance, section: "Accent", title: "Accent Color", subtitle: "Used for active and selected states only.", symbolName: "paintpalette"),
         .init(tab: .appearance, section: "Accent", title: "Custom Color", subtitle: "", symbolName: "eyedropper"),
         .init(tab: .appearance, section: "Accent", title: "Scrubber Color", subtitle: "What tints the Now Playing progress bar.", symbolName: "slider.horizontal.below.rectangle"),
@@ -218,7 +219,7 @@ extension SettingsTab {
     var searchKeywords: [String] {
         switch self {
         case .general: return ["startup", "login", "hover", "click", "menu bar"]
-        case .appearance: return ["theme", "look", "colour", "color", "glow", "lighting", "width", "corner", "style", "notch style", "dark", "light", "minimal", "bento", "glass", "neumorphic", "clay", "skeuomorphic"]
+        case .appearance: return ["theme", "look", "colour", "color", "glow", "lighting", "width", "corner", "style", "notch style", "dark", "light", "minimal", "bento", "glass", "neumorphic", "clay", "skeuomorphic", "liquid glass", "liquid", "tahoe"]
         case .layout: return ["arrange", "rearrange", "reorder", "customise", "customize", "icons", "tabs", "toolbar",
                               "top bar", "pill", "indicators", "widgets", "buttons", "controls", "order"]
         case .media: return ["music", "spotify", "song", "track", "now playing", "lyrics", "controls"]

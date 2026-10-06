@@ -35,7 +35,9 @@ struct NotchSurfaceView<Edge: Shape>: View {
 
     private var styled: some View {
         ZStack {
-            if let glass = style.glass {
+            if style.liquidGlass, drawsMaterials {
+                liquidGlass
+            } else if let glass = style.glass {
                 if drawsMaterials {
                     VisualEffectView(material: glass.material, blendingMode: .behindWindow)
                         .environment(\.colorScheme, glass.appearance == .darkAqua ? .dark : .light)
@@ -53,12 +55,12 @@ struct NotchSurfaceView<Edge: Shape>: View {
             if !style.gradient.isEmpty {
                 LinearGradient(colors: style.gradient, startPoint: .top, endPoint: .bottom)
             }
-            if style.grain > 0 {
+            if style.grain > 0, !style.liquidGlass {
                 NotchGrain.image
                     .resizable(resizingMode: .tile)
                     .opacity(style.grain)
             }
-            if let border = style.border {
+            if let border = style.border, !style.liquidGlass {
                 // Centred on the outline and clipped by the surface, so half its width shows,
                 // inside the edge.
                 edge.stroke(
@@ -68,6 +70,21 @@ struct NotchSurfaceView<Edge: Shape>: View {
             }
         }
         .allowsHitTesting(false)
+    }
+
+    /// The macOS 26 material, in the outline, so its edge light follows the notch's shape as the
+    /// panel grows. A preview drawn offscreen cannot draw it and shows the style's own fill.
+    @ViewBuilder
+    private var liquidGlass: some View {
+        if #available(macOS 26.0, *) {
+            Color.clear
+                .glassEffect(.regular.tint(style.base.opacity(style.liquidTint)), in: edge)
+                // Glass takes its appearance from its surroundings, which follow the system;
+                // a light style over a dark Mac drew dark glass under dark text.
+                .environment(\.colorScheme, style.isDark ? .dark : .light)
+        } else {
+            style.base
+        }
     }
 }
 

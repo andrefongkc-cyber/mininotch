@@ -38,6 +38,30 @@ struct NotchStylePicker: View {
                 .pickerStyle(.segmented)
                 .fixedSize()
             }
+
+            SettingsDivider()
+
+            // Shown everywhere, switched off before macOS 26 with the reason, rather than hidden:
+            // someone reading about Liquid Glass should find out why they cannot have it.
+            SettingsRow(
+                title: "Background",
+                subtitle: NotchBackground.isLiquidGlassSupported
+                    ? "Liquid Glass bends and blurs what is behind the notch."
+                    : "Liquid Glass needs macOS 26 or later.",
+                systemImage: "drop",
+                isEnabled: NotchBackground.isLiquidGlassSupported
+            ) {
+                Picker("", selection: Binding(
+                    get: { NotchBackground.isLiquidGlassSupported ? settings.appearance.notchBackground : .solid },
+                    set: { settings.appearance.notchBackground = $0 }
+                )) {
+                    ForEach(NotchBackground.allCases) { background in
+                        Text(background.title).tag(background)
+                    }
+                }
+                .pickerStyle(.segmented)
+                .fixedSize()
+            }
         }
     }
 

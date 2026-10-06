@@ -8,14 +8,17 @@ import SwiftUI
 /// without running `Scripts/style-diff.sh` against a build from before the change.
 extension NotchStyle {
     static func make(_ language: NotchDesignLanguage, isDark: Bool) -> NotchStyle {
+        var style: NotchStyle
         switch language {
-        case .minimal: return minimal(isDark: isDark)
-        case .bento: return bento(isDark: isDark)
-        case .glass: return glass(isDark: isDark)
-        case .neumorphism: return neumorphism(isDark: isDark)
-        case .clay: return clay(isDark: isDark)
-        case .skeuomorphism: return skeuomorphism(isDark: isDark)
+        case .minimal: style = minimal(isDark: isDark)
+        case .bento: style = bento(isDark: isDark)
+        case .glass: style = glass(isDark: isDark)
+        case .neumorphism: style = neumorphism(isDark: isDark)
+        case .clay: style = clay(isDark: isDark)
+        case .skeuomorphism: style = skeuomorphism(isDark: isDark)
         }
+        style.surface.isDark = isDark
+        return style
     }
 
     /// Whether a language is finished enough to be offered in Settings.
@@ -32,7 +35,13 @@ extension NotchStyle {
         case .system: isDark = systemIsDark
         }
         let language = isOffered(settings.notchLanguage) ? settings.notchLanguage : .minimal
-        return make(language, isDark: isDark)
+        var style = make(language, isDark: isDark)
+        if settings.notchBackground == .liquidGlass, NotchBackground.isLiquidGlassSupported {
+            style.surface.liquidGlass = true
+            // Enough of the style's colour that text keeps its contrast over a busy desktop.
+            style.surface.liquidTint = isDark ? 0.45 : 0.32
+        }
+        return style
     }
 
     // MARK: Minimal

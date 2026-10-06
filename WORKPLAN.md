@@ -1,6 +1,6 @@
 # MiniNotch workplan
 
-Status: the Notch Visual Style System is built and pushed, unreleased: all twelve styles, the picker, Minimal Dark proven unchanged; next: the user tries the styles (Settings > Appearance > Notch Style) and says what to change, then 0.7 ships it with Sparkle, the rename and the clipboard blur.
+Status: Notch styles with a Liquid Glass background, Settings and swipe fixes, done and pushed, unreleased; next: the user tries them and reports, then 0.7. Before 1.0.0 the user plans to revamp every music animation, which is where the animated liquid background goes.
 
 Living document. Update the checkboxes as work lands. `CLAUDE.md` holds the architecture
 rules and the traps; this file holds the sequence.
@@ -101,6 +101,32 @@ Architecture (approved 2026-10-05 with: a, Match System yes, keep Translucent Pa
 - [~] Ambient lighting compatibility: intensity scaled per style, checked with Glass; not every glow style against every notch style
 - [~] External monitor testing: `--virtual` captures only; a real external monitor by hand
 - [ ] Final visual polish: the user's review of each style on the real screen
+- [x] Liquid Glass background (2026-10-06): Settings > Appearance > Notch Style > Background, Solid or
+      Liquid Glass, under any style and variant. macOS 26 only; earlier systems see the row switched
+      off with the reason. Checked on screen for four styles.
+- [x] Settings, from the user's screenshots: Light or Dark wrapped a letter at a time (shorter
+      subtitle, the rest in the card footer); the tiles' contents were off centre; a one-line blurb
+      under each style; scrolling Appearance was heavy on the GPU (tiles are pictures now, the glow
+      preview pauses).
+- [x] GPU while playing, and with Mission Control or a desktop switch over an open panel: the album
+      art's shadow no longer blurs again with every visualizer tick, and an open panel closes when
+      the desktop changes. Mission Control itself cannot be detected; the user should say whether
+      it still climbs.
+- [x] Two-finger swipes: direction with Natural Scrolling off, lists scroll instead of closing the
+      notch, a mouse wheel works more than once, a tab change cannot close the panel under the
+      pointer. The user called swipes "kinda buggy" without saying how; ask if it persists.
+
+### Before 1.0.0: music animations
+
+The user plans to revamp every music-playing animation before 1.0.0. Collected here:
+
+- [ ] **A liquid background that moves with the music** (asked 2026-10-06): the album art's colours
+      flowing slowly behind the open panel, like Apple Music's full-screen lyrics, driven by the
+      audio tap (or the tempo fallback), under any Notch Style, as another Background option beside
+      Solid and Liquid Glass. Still when paused, off in Low Power Mode, measured like the glow.
+      `MeshGradient` needs macOS 15.
+- [ ] The rest of the music animations, reviewed together: the visualizer bars on the artwork, the
+      closed pill's playing bars, the sneak peek, the glow's five styles, the lyric highlight.
 
 ## After 0.5 (2026-10-03)
 

@@ -70,6 +70,7 @@ struct AppearanceSettingsView: View {
                     subtitle: "Let the desktop tint the notch instead of filling it solid. Minimal only: Glass is see-through already, and the other styles are solid by design.",
                     systemImage: "square.stack.3d.up",
                     isEnabled: settings.appearance.notchLanguage == .minimal
+                        && (settings.appearance.notchBackground == .solid || !NotchBackground.isLiquidGlassSupported)
                 ) {
                     SettingsToggle(isOn: $settings.appearance.useVibrancy)
                 }

@@ -83,6 +83,9 @@ struct AppearanceSettings: Codable, Equatable {
     /// styles existed lands on it.
     var notchLanguage: NotchDesignLanguage = .minimal
     var notchVariant: NotchStyleVariant = .dark
+    /// Solid, or Liquid Glass under whichever style is chosen. Liquid Glass needs macOS 26; on an
+    /// earlier system the value is kept but drawn as Solid.
+    var notchBackground: NotchBackground = .solid
 
     init() {}
 
@@ -101,6 +104,7 @@ struct AppearanceSettings: Codable, Equatable {
         showPanelShadow = c.value(.showPanelShadow, false)
         notchLanguage = c.value(.notchLanguage, NotchDesignLanguage.minimal)
         notchVariant = c.value(.notchVariant, NotchStyleVariant.dark)
+        notchBackground = c.value(.notchBackground, NotchBackground.solid)
         ambientGlow = c.value(.ambientGlow, AmbientGlowSettings())
     }
 

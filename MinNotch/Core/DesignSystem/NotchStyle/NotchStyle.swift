@@ -36,6 +36,28 @@ enum NotchDesignLanguage: String, Codable, CaseIterable, Identifiable {
     }
 }
 
+/// What the notch's surface is made of, under any style: the style's own fill, or Liquid Glass.
+enum NotchBackground: String, Codable, CaseIterable, Identifiable {
+    case solid
+    case liquidGlass
+
+    var id: String { rawValue }
+
+    var title: String {
+        switch self {
+        case .solid: return "Solid"
+        case .liquidGlass: return "Liquid Glass"
+        }
+    }
+
+    /// Liquid Glass is the material macOS 26 introduced. Earlier systems have nothing to draw it
+    /// with, so the option is shown switched off there, with the reason.
+    static var isLiquidGlassSupported: Bool {
+        if #available(macOS 26.0, *) { return true }
+        return false
+    }
+}
+
 /// Dark, light, or whichever macOS is using.
 enum NotchStyleVariant: String, Codable, CaseIterable, Identifiable {
     case dark
@@ -119,6 +141,13 @@ struct NotchSurfaceStyle: Equatable {
     var shadow: NotchShadow?
     /// What Settings > Appearance > Translucent Panel lays over the base. Only Minimal offers it.
     var vibrancyMaterial: NSVisualEffectView.Material = .hudWindow
+    /// Settings > Appearance > Background > Liquid Glass, on macOS 26: the surface is Liquid
+    /// Glass tinted towards `base` by `liquidTint`, and the style's own glass, grain and edge
+    /// give way to it.
+    var liquidGlass = false
+    var liquidTint: Double = 0.4
+    /// Which appearance glass draws in: the style's variant, not the system's.
+    var isDark = true
 
     static let housing = NotchSurfaceStyle(base: .black)
 }
