@@ -82,9 +82,9 @@ for entry in "${CASES[@]}"; do
     name="${entry%%|*}"
     args="${entry#*|}"
     # shellcheck disable=SC2086
-    "$BASE_BIN" --capture-notch "$OUT/base/$name.png" $args >/dev/null 2>&1
+    "$BASE_BIN" --capture-notch "$OUT/base/$name.png" --builtin $args >/dev/null 2>&1
     # shellcheck disable=SC2086
-    "$CAND_BIN" --capture-notch "$OUT/cand/$name.png" $args >/dev/null 2>&1
+    "$CAND_BIN" --capture-notch "$OUT/cand/$name.png" --builtin $args >/dev/null 2>&1
     compare "$name"
 done
 

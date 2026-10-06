@@ -195,7 +195,10 @@ enum DebugWindowCapture {
         // only way to review the tuning overlay without changing the real configuration.
         settings.advanced.showDebugOverlay = arguments.contains("--debug")
 
-        guard let screen = NSScreen.main else {
+        // `--builtin` uses the Mac's own display whichever screen is in front, so a run of captures
+        // compared pixel for pixel cannot land on an external monitor halfway through.
+        let builtIn = arguments.contains("--builtin") ? NSScreen.screens.first(where: \.isBuiltIn) : nil
+        guard let screen = builtIn ?? NSScreen.main else {
             report("No screen"); exit(1)
         }
 
