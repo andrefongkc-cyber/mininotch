@@ -91,6 +91,14 @@ struct NotchElementView: View {
                     }
                 }
                 .padding(room)
+                // Only outside the element. Under a solid fill this changes nothing; under one
+                // that lets the glass through (Liquid Glass), a dark shadow seen through the
+                // element made it look dirty rather than raised.
+                .mask {
+                    Rectangle()
+                        .overlay(outline.padding(room).blendMode(.destinationOut))
+                        .compositingGroup()
+                }
                 .drawingGroup()
                 .padding(-room)
                 .allowsHitTesting(false)

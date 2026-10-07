@@ -1,6 +1,6 @@
 # MiniNotch workplan
 
-Status: Liquid Glass at 0 is now clear glass with an edge, a sheen and a light dim ("more glassy"); pushed, unreleased; next: the user tries it, then 0.7.
+Status: on Liquid Glass every style's panels let the glass through (Neumorphic showed almost none); pushed, unreleased; next: the user tries it, then 0.7.
 
 Living document. Update the checkboxes as work lands. `CLAUDE.md` holds the architecture
 rules and the traps; this file holds the sequence.
@@ -131,6 +131,8 @@ Architecture (approved 2026-10-05 with: a, Match System yes, keep Translucent Pa
       checked on screen over the user's dark windows and over the test pattern.
 - [x] "More glassy" (2026-10-07): four candidates compared on screen over dark and bright patterns;
       clear glass with a bright edge, a sheen and a light dim won. The frosted version read as plastic.
+- [x] "Neumorphic doesn't work with glass": its solid panels covered the glass. On Liquid Glass every
+      style's panels, tiles and buttons are glass too, by Glass Opacity; outer shadows only outside.
 - [x] Swipes over the whole panel, not just the top bar: a listen-only scroll tap, since scroll
       views took the gesture from the local monitor.
 - [x] Light or Dark wrapped a word to a line in the user's narrower window: "Match System" is "Auto".

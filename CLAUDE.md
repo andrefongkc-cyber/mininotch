@@ -893,7 +893,11 @@ rounds with the user: clear glass alone was all but invisible over a plain or da
 glass came out a smooth grey slab over dark windows; regular glass under a milky frost read as
 frosted plastic ("more glassy"). Four candidates were then compared on screen over a dark and a
 bright pattern, and this one showed the window behind through the glass, bent at the edge, with
-text legible. `--backdrop` puts a bright,
+text legible. A style's panels, tiles, buttons and grooves let the glass through too (`glazed`, from
+about 40% solid at 0 to solid at 1): solid panels sat on the glass as slabs, and Neumorphic, whose
+look is panels the colour of the surface, showed almost no glass at all. Their outer shadows are
+masked to outside the shape (`NotchElementView`), since a shadow seen through a glass panel looked
+like dirt rather than depth. `--backdrop` puts a bright,
 detailed test pattern behind the notch for judging glass on screen (`--dark-backdrop` a dark one,
 `--floating` the floating window too). Before looking at a screenshot of the real screen, check its
 corners are the pattern: one that shrank let the user's own windows into the shot. Before macOS 26 the row is shown switched off with

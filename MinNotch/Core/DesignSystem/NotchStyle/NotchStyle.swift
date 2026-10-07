@@ -245,6 +245,21 @@ struct NotchElementStyle: Equatable {
     var isPlain: Bool { border == nil && outer.isEmpty && inner.isEmpty }
 
     static let plain = NotchElementStyle()
+
+    /// The same element letting the glass under it through: its own fill at `alpha` of its
+    /// opacity, for Liquid Glass. A plain element's fill is ink at the call site's emphasis already.
+    func glazed(_ alpha: Double) -> NotchElementStyle {
+        var copy = self
+        switch fill {
+        case .ink:
+            break
+        case .color(let color, let lift):
+            copy.fill = .color(color.opacity(alpha), lift: lift)
+        case .gradient(let top, let bottom, let lift):
+            copy.fill = .gradient(top: top.opacity(alpha), bottom: bottom.opacity(alpha), lift: lift)
+        }
+        return copy
+    }
 }
 
 struct NotchTransportStyle: Equatable {

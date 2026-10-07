@@ -43,6 +43,18 @@ extension NotchStyle {
             // stronger in white.
             let opacity = min(max(settings.liquidGlassOpacity, 0), 1)
             style.surface.liquidTint = isDark ? opacity : opacity * 0.72
+            // A style's panels, tiles and buttons let the glass through as well, by the same
+            // setting: solid panels sat on the glass as slabs and covered most of it, which in
+            // Neumorphic, whose whole look is panels the colour of the surface, left almost no
+            // glass at all. At 0 they are about 40% solid, glass panels with the style's shading;
+            // at 1, solid again.
+            let alpha = 0.42 + 0.58 * opacity
+            style.tile = style.tile.glazed(alpha)
+            style.button = style.button.glazed(alpha)
+            style.module = style.module?.glazed(alpha)
+            style.transport.disc = style.transport.disc?.glazed(alpha)
+            style.transport.primaryDisc = style.transport.primaryDisc?.glazed(alpha)
+            style.track.groove = style.track.groove.glazed(alpha)
         }
         return style
     }
