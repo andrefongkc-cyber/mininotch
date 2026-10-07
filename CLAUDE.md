@@ -881,23 +881,19 @@ weather symbols a faint outline (`notchMulticolorSymbol`), because their clouds 
 
 **Liquid Glass is a background under any style, macOS 26 only.** Settings > Appearance > Notch Style >
 Background (`AppearanceSettings.notchBackground`, Solid or Liquid Glass). `NotchStyle.resolve` sets
-`surface.liquidGlass` when it is chosen and `NotchBackground.isLiquidGlassSupported`, and the style's
-glass, grain and edge give way to it. The body is what is behind the window, blurred only 6 points
-(`ClearGlassBackdrop`), under a 14 point rim of Apple's clear glass along the sides and bottom
-(`glassEffect` in `GlassRim`, the outline stroked), which bends what is behind it at the edge, plus a
-light dim (black 0.2 on a dark style, white 0.35 on a light one) so text stays legible, an edge light
-and a sheen. Glass Opacity (`liquidGlassOpacity`, 0 to 1, default 0.45, light styles take 0.72 of it)
-blurs the body more (to 24 points) and lays the style's base over it, to nearly the solid style at 1;
-the dim, rim and sheen fade as it rises. **Apple's glass frosts in proportion to its size**: at the
-panel's size it blurs by about fifty points, so over the user's dark window it was a grey slab
-whatever was laid on it, and that took five rounds to see ("more glassy" twice, "proper frosted glass"
-once). No public API sets a blur radius; `ClearGlassBackdrop` is `NSVisualEffectView` with its
-backdrop layer's `gaussianBlur` and `colorSaturate` filters set through Core Animation's public
-`filters.<name>.<key>` key paths and its tint layers hidden, each checked before it is touched, so a
-macOS laid out differently gets the plain HUD material. **Quit the running MiniNotch before judging
-glass on screen**: its open panel sits at the same level in the same place, and a test panel's clear
-body showed the real one's old frosted glass through it, which looked like the new glass not working.
-A style's panels, tiles, buttons and grooves let the glass through too (`glazed`, from
+`surface.liquidGlass` when it is chosen and `NotchBackground.isLiquidGlassSupported`; the surface is
+then SwiftUI's `glassEffect` in the notch's own outline, and the style's glass, grain and edge give
+way to it. It is Apple's *clear* glass, the see-through kind that bends what is behind it, with what
+makes glass read as glass laid on top: a bright edge along the sides and bottom, a sheen across the
+top, and a light dim (black 0.22 on a dark style, white 0.4 on a light one) so text stays legible
+over a busy desktop. Glass Opacity (`liquidGlassOpacity`, 0 to 1, default 0.45, light styles take
+0.72 of it) tints it towards the style's base and lays the base over it by the square of the
+amount, to nearly the solid style at 1; the dim, edge and sheen fade as it rises. It took four
+rounds with the user: clear glass alone was all but invisible over a plain or dark window; regular
+glass came out a smooth grey slab over dark windows; regular glass under a milky frost read as
+frosted plastic ("more glassy"). Four candidates were then compared on screen over a dark and a
+bright pattern, and this one showed the window behind through the glass, bent at the edge, with
+text legible. A style's panels, tiles, buttons and grooves let the glass through too (`glazed`, from
 about 40% solid at 0 to solid at 1): solid panels sat on the glass as slabs, and Neumorphic, whose
 look is panels the colour of the surface, showed almost no glass at all. Their outer shadows are
 masked to outside the shape (`NotchElementView`), since a shadow seen through a glass panel looked
@@ -909,6 +905,15 @@ corners are the pattern: one that shrank let the user's own windows into the sho
 appearance from its surroundings, which follow the system, so the surface sets the style's
 colour scheme on it (`NotchSurfaceStyle.isDark`): a light style on a dark Mac drew dark glass under
 dark text. No capture can draw it; it was checked with `screencapture` on 2026-10-06.
+
+**Tried and rejected on 2026-10-07: the desktop barely blurred.** After another "more glassy", the body
+became an `NSVisualEffectView` with its backdrop blur turned down to 6 points (its `gaussianBlur`
+filter, through `filters.<name>.<key>`) under a 14 point rim of Apple's glass. It was see-through
+and bent at the edge, and the user disliked it on sight ("I don't like this background") and asked
+for this one back; it was reverted. Do not offer it again. Two things learned on the way still hold:
+Apple's glass frosts with its size, about fifty points of blur at the panel's size, so no layer on
+top makes it clearer; and quit the running MiniNotch before judging glass on screen, because its
+open panel sits at the same level in the same place and shows through a test panel.
 
 **What playing costs, and why the picker is pictures.** With nothing moving the open panel costs
 almost nothing; playing (the artwork's visualizer at 20 Hz, the lyric highlight at 10 Hz) redraws
@@ -956,10 +961,10 @@ Control, and with Settings open on Appearance. Read `isRunning`; the glow and th
 `current` inside their own timelines. The capture tools never run the tap, which is why no capture
 measurement caught it. Settings' meter also listens only while in view in a window in front.
 
-**Liquid Glass shows what is behind it.** Over a dark window with small text (the user's chat) the
-notch looked nearly solid, and over a bright page see-through, which the user took for the glass
-switching on and off at random. It is not the app being active or not: `--capture-notch --activate`
-and `--key` drew the same.
+**Liquid Glass shows what is behind it.** With clear glass, over a dark window with small text (the
+user's chat) the notch looked nearly solid, and over a bright page see-through, which the user took
+for the glass switching on and off at random; regular glass reads as glass over both. It is not the
+app being active or not: `--capture-notch --activate` and `--key` drew the same.
 
 **Files and links share the Shelf tab.** The user asked for the Shelf (files, AirDrop) and Links
 (paste a link, copy it back) together, so `NotchTab.links` is a feature but no longer a tab:

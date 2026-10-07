@@ -72,90 +72,59 @@ struct NotchSurfaceView<Edge: Shape>: View {
         .allowsHitTesting(false)
     }
 
-    /// Liquid Glass, in the outline, so it follows the notch's shape as the panel grows. A preview
-    /// drawn offscreen cannot draw it and shows the style's own fill.
+    /// The macOS 26 material, in the outline, so its edge light follows the notch's shape as the
+    /// panel grows. A preview drawn offscreen cannot draw it and shows the style's own fill.
     @ViewBuilder
     private var liquidGlass: some View {
         if #available(macOS 26.0, *) {
-            current(amount: style.liquidTint, clarity: 1 - style.liquidTint)
+            let amount = style.liquidTint
+            // Apple's clear glass, the see-through kind that bends what is behind it, with what
+            // makes glass read as glass laid on top: a bright edge along the sides and bottom, a
+            // sheen across the top, and a light dim (or, on a light style, a light wash) so text
+            // stays legible over a busy desktop. Glass Opacity tints it towards the style and lays
+            // the style's colour over it, more and more towards the top of the slider, until it
+            // is nearly the solid style at 1; the dim, edge and sheen fade as it rises.
+            //
+            // The road here: clear glass alone was all but invisible over a plain or dark window;
+            // regular glass is frosted and over dark windows came out a smooth grey slab; regular
+            // glass under a milky frost read as frosted plastic, and the user asked for it "more
+            // glassy". Four ways were compared on screen over a dark and a bright test pattern
+            // (`--backdrop`, `--dark-backdrop`), and this one showed the window behind through
+            // the glass, bent at the edge, with text still legible.
+            current(amount: amount, clarity: clarity(amount))
         } else {
             style.base
         }
     }
 
-    /// What is behind, only lightly blurred, under a thick rim of Apple's glass that bends it at
-    /// the edge, with a light dim (or, on a light style, a light wash) so text stays legible.
-    /// Glass Opacity blurs it more and tints it towards the style, to nearly the solid style at 1;
-    /// the dim, rim light and sheen fade as it rises.
-    ///
-    /// The road here, five rounds with the user: Apple's clear glass alone was all but invisible
-    /// over a plain or dark window; its regular glass came out a smooth grey slab over dark ones;
-    /// regular glass under a milky frost read as frosted plastic; clear glass with an edge and a
-    /// sheen was still a grey slab over a dark window, because Apple's glass frosts in proportion
-    /// to its size and at the panel's size blurs by about fifty points. Compared on screen over a
-    /// dark and a bright test pattern, a six point blur under a fourteen point rim of Apple's glass
-    /// was the only one that showed the window behind as a window, through glass with a thickness
-    /// to it, with the notch's own text still legible.
+    private func clarity(_ amount: Double) -> Double { 1 - amount }
+
     @available(macOS 26.0, *)
     private func current(amount: Double, clarity: Double) -> some View {
         let dark = style.isDark
         return ZStack {
-            ClearGlassBackdrop(radius: 6 + 18 * amount)
-            style.base.opacity(amount * 0.95)
-            (dark ? Color.black.opacity(0.2 * clarity) : Color.white.opacity(0.35 * clarity))
-            // The rim: Apple's glass along the edge, inside it, where it bends what is behind.
-            Color.clear
-                .glassEffect(.clear, in: GlassRim(edge: edge, width: 14))
-                .opacity(0.4 + 0.6 * clarity)
+            style.base.opacity(amount * amount * 0.85)
+            (dark ? Color.black.opacity(0.22 * clarity) : Color.white.opacity(0.4 * clarity))
             LinearGradient(
-                stops: [.init(color: .white.opacity(0.12 * clarity), location: 0),
-                        .init(color: .white.opacity(0.03 * clarity), location: 0.4),
+                stops: [.init(color: .white.opacity(0.16 * clarity), location: 0),
+                        .init(color: .white.opacity(0.04 * clarity), location: 0.35),
                         .init(color: .clear, location: 0.6)],
                 startPoint: .topLeading,
                 endPoint: .bottomTrailing
             )
-            GlassEdgeLight(edge: edge, strength: 0.25 + 0.55 * clarity)
+        }
+        .glassEffect(.clear.tint(amount > 0 ? style.base.opacity(amount) : nil), in: edge)
+        .overlay {
+            // Centred on the outline and clipped by the surface, so half its width shows.
+            edge.stroke(
+                LinearGradient(colors: [.white.opacity(0.15 + 0.6 * clarity), .white.opacity(0.05 + 0.18 * clarity)],
+                               startPoint: .top, endPoint: .bottom),
+                lineWidth: 3
+            )
         }
         // Glass takes its appearance from its surroundings, which follow the system; a light
         // style over a dark Mac drew dark glass under dark text.
         .environment(\.colorScheme, dark ? .dark : .light)
-    }
-}
-
-/// A band along the outline, as wide as `width` either side of it; the surface's clip keeps the
-/// inner half. The notch's outline is open at the top, so the band runs down the sides and along
-/// the bottom, never across the top edge at the screen's.
-private struct GlassRim<Edge: Shape>: Shape {
-    let edge: Edge
-    let width: CGFloat
-
-    func path(in rect: CGRect) -> Path {
-        edge.path(in: rect).strokedPath(StrokeStyle(lineWidth: width * 2, lineJoin: .round))
-    }
-}
-
-/// Light caught by the edge of a sheet of glass: a bright line where the curve faces the light,
-/// dimmer between, and a soft glow just inside it that gives the sheet a thickness.
-private struct GlassEdgeLight<Edge: Shape>: View {
-    let edge: Edge
-    let strength: Double
-
-    var body: some View {
-        ZStack {
-            edge.stroke(
-                AngularGradient(
-                    stops: [0.9, 0.15, 0.55, 0.15, 0.9, 0.15, 0.55, 0.15, 0.9].enumerated().map {
-                        .init(color: .white.opacity($0.element * strength), location: Double($0.offset) / 8)
-                    },
-                    center: .center,
-                    angle: .degrees(-30)
-                ),
-                lineWidth: 2.5
-            )
-            edge.stroke(.white.opacity(0.22 * strength), lineWidth: 14)
-                .blur(radius: 7)
-        }
-        .allowsHitTesting(false)
     }
 }
 
