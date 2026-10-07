@@ -323,7 +323,15 @@ enum DebugWindowCapture {
             hold = seconds
             report("Holding the panel for \(seconds)s before capturing")
         }
-        if let midway {
+        if let midway, let i = arguments.firstIndex(of: "--swipe-to"), arguments.indices.contains(i + 1),
+           let target = NotchTab(rawValue: arguments[i + 1]) {
+            // Settle open on `--tab`, then change tab the way a two-finger swipe does and capture
+            // partway: the panel should already be on its way to the new tab's height.
+            viewModel.expand()
+            RunLoop.main.run(until: Date().addingTimeInterval(1.2))
+            viewModel.swipe(to: target)
+            RunLoop.main.run(until: Date().addingTimeInterval(midway))
+        } else if let midway {
             // Settle collapsed, then expand and capture partway through the spring.
             RunLoop.main.run(until: Date().addingTimeInterval(1.0))
             withAnimation(Motion.notch) { viewModel.expand() }

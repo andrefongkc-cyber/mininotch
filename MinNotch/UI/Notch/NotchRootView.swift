@@ -88,6 +88,7 @@ struct NotchRootView: View {
             content
         }
         .frame(width: surfaceWidth, height: surfaceHeight)
+        .background(alignment: .top) { swipeCatcher }
         .background(panelShadow)
         // No `GeometryReader` here. It aligns its content top-leading, and the glow's layer
         // is deliberately larger than the outline it traces, so the whole thing was pushed
@@ -202,6 +203,19 @@ struct NotchRootView: View {
         }
         .clipShape(shape)
         .opacity(isHiddenAtRest ? 0 : 1)
+    }
+
+    /// After a swipe to a shorter tab, the room the panel had, kept for as long as the pointer
+    /// rests where the swipe left it (`NotchViewModel.swipeCatchHeight`, zero otherwise).
+    ///
+    /// The window passes events through wherever it draws nothing, so with the panel shrunk the
+    /// next swipe's scrolling went to the window behind: a browser there took a sideways swipe
+    /// as Back. A fill too faint to see (one step of alpha in 255) keeps those events in this
+    /// window, and it hit-tests nothing in SwiftUI, so it is not a hover or a click.
+    private var swipeCatcher: some View {
+        Color.black.opacity(viewModel.swipeCatchHeight > 0 ? 0.005 : 0)
+            .frame(width: surfaceWidth, height: viewModel.swipeCatchHeight)
+            .allowsHitTesting(false)
     }
 
     /// The open panel's shadow, as a layer of its own behind the surface.
@@ -552,9 +566,7 @@ struct NotchRootView: View {
         height += ExpandedPanelView.topStripHeight(for: geometry)
         // The room a style with modules leaves above the first (`ExpandedPanelView`).
         height += theme.moduleGap / 2
-        // At least the height it had while tabs are being swiped through; see
-        // `NotchViewModel.swipeHeightFloor`. Zero otherwise.
-        return min(max(height + Metrics.notchPanelPadding, viewModel.swipeHeightFloor), geometry.expandedSize.height)
+        return min(height + Metrics.notchPanelPadding, geometry.expandedSize.height)
     }
 }
 

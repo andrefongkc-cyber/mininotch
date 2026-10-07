@@ -27,12 +27,22 @@ struct ExpandedPanelView: View {
         VStack(spacing: 0) {
             topStrip
 
+            // A new tab and the panel's new height arrive together, on the surface's spring. The
+            // old tab goes quickly rather than on that spring: left to fade for the half second
+            // the box takes, its text lay over the new tab's.
             widget
+                .id(viewModel.selectedTab)
+                .transition(Self.tabChange)
                 .padding(.top, theme.moduleGap / 2)
                 .padding(.horizontal, Metrics.notchPanelPadding + Metrics.notchShoulderRadius)
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         }
     }
+
+    private static let tabChange = AnyTransition.asymmetric(
+        insertion: .opacity.animation(.easeOut(duration: 0.2).delay(0.04)),
+        removal: .opacity.animation(.easeOut(duration: 0.08))
+    )
 
     @ViewBuilder
     private var widget: some View {

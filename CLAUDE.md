@@ -84,7 +84,7 @@ MiniNotch --capture-notch out.png [--collapsed] [--tab system] [--glow bars|off]
                                  [--sample-power] [--keep-open] [--hud-style floatingPill] [--no-media]
                                  [--sample-notes] [--blur-clipboard]
                                  [--notch-style bento-light] [--liquid-glass] [--builtin]
-                                 [--no-visualizer] [--no-lyrics]
+                                 [--no-visualizer] [--no-lyrics] [--swipe-to notes --midway 0.15]
 MiniNotch --check-lyrics "Khalid" "8TEEN" 229                      # LRCLIBClient + LRCParser
 MiniNotch --check-lyric-sync [--out f]                             # matching lyrics to the audio, synthetic
 MiniNotch --check-lyric-sync --audio f.mp3 --lrc f.lrc --shifts 0,0.5 [--peaks]   # …and a real song, old method beside it
@@ -933,9 +933,16 @@ more in it than shows belong to the list (a hit test up to an `NSScrollView`): s
 used to close the notch. A mouse wheel has no phases, so a pause of 0.35 s starts a new gesture.
 Momentum (the coast after the fingers lift) counts towards the swipe it belongs to, which still fires
 once: a quick flick does most of its travel there, and ignoring it dropped flicks. A gesture is over
-only when the next begins. A swipe to another tab holds the panel open for 0.8 s
-(`NotchViewModel.holdOpen`) and at least the height it had (`swipeHeightFloor`), since a shorter tab
-shrank the panel out from under the fingers and the next swipe went to whatever was behind it.
+only when the next begins. A swipe to another tab (`NotchViewModel.swipe(to:)`) changes the height at
+once, with the content: it used to hold the old height for 0.8 s so a run of swipes stayed under the
+fingers, and the user saw every resize trail its tab ("queuing"). Two fingers do not move the pointer,
+so after a swipe to a shorter tab it rests below the panel over nothing. Until it moves
+(`swipeAnchor`, checked every 0.1 s) it still counts as over the panel (`isHeldBySwipe`: swipes go
+there, it does not close), and `NotchRootView.swipeCatcher` fills the old height at alpha 1/255,
+invisible, because the window passes events through where it draws nothing and the next swipe's
+scrolling would reach the window behind (a browser takes a sideways one as Back). The old tab fades
+out in 0.08 s (`ExpandedPanelView.tabChange`); on the box's spring its text lay over the new tab's.
+`--capture-notch --tab shelf --swipe-to notes --midway 0.15` captures a swipe partway.
 
 **Never read `AudioAnalyzer.current` in a view's body.** It changes with every audio buffer, about
 ninety times a second. `NotchRootView` and the Ambient Lighting card read it to decide whether to

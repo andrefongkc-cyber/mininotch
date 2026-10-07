@@ -1,6 +1,6 @@
 # MiniNotch workplan
 
-Status: on Liquid Glass every style's panels let the glass through (Neumorphic showed almost none); pushed, unreleased; next: the user tries it, then 0.7.
+Status: swiping between tabs resizes the panel with the content (the 0.8 s height hold made it lag behind); next: the user tries it, then 0.7.
 
 Living document. Update the checkboxes as work lands. `CLAUDE.md` holds the architecture
 rules and the traps; this file holds the sequence.
@@ -123,6 +123,10 @@ Architecture (approved 2026-10-05 with: a, Match System yes, keep Translucent Pa
 - [x] Clay: chosen chips and tabs are pressed in; they looked like every other chip.
 - [x] Left and right swipes, reported again: flicks count their momentum, and the panel keeps its
       height while tabs are swiped through. Ask what still misbehaves, if anything.
+- [x] Swiping between tabs resized the panel 0.8 s after the content changed ("queuing", Shelf to
+      Notes). The height now changes with the content, the old tab fades out fast, and a pointer
+      left below a shrunk panel still counts as over it until it moves. The real swipe, and that a
+      browser behind no longer takes the second swipe, can only be tried by hand.
 - [x] Liquid Glass "only sometimes", then "0 still doesn't look like liquid glass": clear glass was
       the wrong glass, invisible over plain or dark windows. Now Apple's regular glass, checked on
       screen over a test pattern (`--backdrop`) at 0, 0.5 and 1 in Minimal Dark and Clay Light.

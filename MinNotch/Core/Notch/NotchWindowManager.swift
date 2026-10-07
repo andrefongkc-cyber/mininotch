@@ -21,9 +21,10 @@ final class NotchWindowManager {
 
     var allViewModels: [NotchViewModel] { controllers.values.map(\.viewModel) }
 
-    /// The panel the pointer is over, open or closed, for two-finger swipes.
+    /// The panel the pointer is over, open or closed, for two-finger swipes, or the one a swipe
+    /// last shrank out from under a pointer that has not moved since.
     func hoveredPanel() -> NotchPanel? {
-        controllers.values.first { $0.viewModel.isHovering }?.window
+        controllers.values.first { $0.viewModel.isHovering || $0.viewModel.isHeldBySwipe }?.window
     }
 
     // MARK: Lifecycle
@@ -241,10 +242,8 @@ final class NotchWindowManager {
                   let index = tabs.firstIndex(of: viewModel.selectedTab) else { return }
             let next = (index + offset + tabs.count) % tabs.count
             // The new tab can be shorter, which takes the panel out from under the pointer as it
-            // resizes; that read as the pointer leaving and closed it mid-swipe.
-            viewModel.holdOpen(for: 0.8)
-            viewModel.holdHeightForSwipe(for: 0.8)
-            viewModel.selectedTab = tabs[next]
+            // resizes; `swipe(to:)` keeps that from reading as the pointer leaving.
+            viewModel.swipe(to: tabs[next])
         }
     }
 

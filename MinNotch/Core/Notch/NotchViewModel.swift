@@ -148,7 +148,7 @@ final class NotchViewModel {
     func collapse() {
         cancelPendingWork()
         isKeptOpen = false
-        releaseSwipeHeight()
+        releaseSwipeAnchor()
         guard state != .collapsed else { return }
         setState(.collapsed)
     }
@@ -241,29 +241,60 @@ final class NotchViewModel {
         holdOpenUntil = Date().addingTimeInterval(seconds)
     }
 
-    /// The least height the open panel keeps while tabs are being swiped through. A shorter tab
-    /// used to shrink the panel at once, out from under the fingers, so the next swipe went to
-    /// whatever was behind it; held at the height it had, the panel stays under them for the
-    /// whole run, then settles to the tab's own height once the swiping stops.
-    private(set) var swipeHeightFloor: CGFloat = 0
-    /// The open panel's height as last drawn, kept by `NotchRootView` for the floor above.
-    @ObservationIgnored var lastPanelHeight: CGFloat = 0
-    @ObservationIgnored private var swipeHeightRelease: DispatchWorkItem?
-
-    func holdHeightForSwipe(for seconds: TimeInterval) {
-        swipeHeightFloor = max(swipeHeightFloor, lastPanelHeight)
-        swipeHeightRelease?.cancel()
-        let work = DispatchWorkItem { [weak self] in
-            MainActor.assumeIsolated { self?.releaseSwipeHeight() }
+    /// Changes tab for a two-finger swipe. The panel takes the new tab's height straight away,
+    /// on the same spring as the content, and stays the pointer's panel for as long as the
+    /// pointer has not moved (`swipeAnchor`), even where a shorter tab has left it over nothing.
+    ///
+    /// It used to keep the height it had for 0.8 s instead, so a run of swipes stayed under the
+    /// fingers, but that made every resize trail the content it was for: the user saw the panel
+    /// swap from the Shelf to Notes and only then shrink, "queuing".
+    func swipe(to tab: NotchTab) {
+        holdOpen(for: 0.8)
+        guard state == .expanded else {
+            selectedTab = tab
+            return
         }
-        swipeHeightRelease = work
-        DispatchQueue.main.asyncAfter(deadline: .now() + seconds, execute: work)
+        // The tallest the panel was in this run of swipes, so a second swipe from a short tab
+        // is still caught where the first one started.
+        swipeCatchHeight = max(swipeCatchHeight, lastPanelHeight)
+        swipeAnchor = NSEvent.mouseLocation
+        selectedTab = tab
+        swipeWatch?.invalidate()
+        swipeWatch = Timer.onMain(every: 0.1) { [weak self] in self?.checkSwipeAnchor() }
     }
 
-    private func releaseSwipeHeight() {
-        swipeHeightRelease?.cancel()
-        swipeHeightRelease = nil
-        if swipeHeightFloor != 0 { swipeHeightFloor = 0 }
+    /// Where the pointer was at the last swipe that changed tab, while it has not moved since.
+    /// Two fingers on a trackpad do not move the pointer, so after a swipe to a shorter tab it
+    /// sits below the panel over nothing; until it moves, it still counts as over the panel, so
+    /// the next swipe changes tab again and the panel does not close.
+    @ObservationIgnored private var swipeAnchor: CGPoint?
+    @ObservationIgnored private var swipeWatch: Timer?
+    /// How tall the panel's catch area stays while the pointer rests after a swipe
+    /// (`NotchRootView.swipeCatcher`). Zero otherwise.
+    private(set) var swipeCatchHeight: CGFloat = 0
+    /// The open panel's height as last drawn, kept by `NotchRootView` for the catch area.
+    @ObservationIgnored var lastPanelHeight: CGFloat = 0
+
+    /// Whether the pointer is resting where it was at the last tab swipe, on an open panel.
+    var isHeldBySwipe: Bool { swipeAnchor != nil && state == .expanded }
+
+    private func checkSwipeAnchor() {
+        guard let anchor = swipeAnchor, state == .expanded else {
+            releaseSwipeAnchor()
+            return
+        }
+        let pointer = NSEvent.mouseLocation
+        guard hypot(pointer.x - anchor.x, pointer.y - anchor.y) > 2 else { return }
+        releaseSwipeAnchor()
+        // Moved off the panel while it was held: the same as the pointer leaving.
+        if !isHovering { scheduleCloseIfNeeded() }
+    }
+
+    private func releaseSwipeAnchor() {
+        swipeWatch?.invalidate()
+        swipeWatch = nil
+        swipeAnchor = nil
+        if swipeCatchHeight != 0 { swipeCatchHeight = 0 }
     }
 
     private func scheduleCloseIfNeeded() {
@@ -273,7 +304,8 @@ final class NotchViewModel {
         // gap between two subviews, and lasts until any hold is over.
         let delay = max(0.25, holdOpenUntil.timeIntervalSinceNow)
         let work = DispatchWorkItem { [weak self] in
-            guard let self, !self.isHovering, !self.isInteractionLocked, !self.isKeptOpen else { return }
+            guard let self, !self.isHovering, !self.isInteractionLocked, !self.isKeptOpen,
+                  !self.isHeldBySwipe else { return }
             self.collapse()
         }
         hoverOpenWork = work
