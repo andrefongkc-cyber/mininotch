@@ -77,48 +77,54 @@ struct NotchSurfaceView<Edge: Shape>: View {
     @ViewBuilder
     private var liquidGlass: some View {
         if #available(macOS 26.0, *) {
-            // Clear glass, the see-through kind, tinted by Glass Opacity, with the style's colour
-            // laid over it more and more towards the top of the slider: at 0 the desktop shows
-            // through with only the lensing at the edges, at 1 it is close to the solid style.
-            // Regular glass is already frosted and its tint never covers, so a slider over it
-            // barely moved anything.
             let amount = style.liquidTint
-            // Regular glass, Apple's own: a frosted body that bends what is behind it, so it reads
-            // as glass over a dark window as much as a bright one, and text on it stays legible.
-            // Glass Opacity lays the style's colour over it, more and more towards the top of the
-            // slider, from the glass alone at 0 to nearly the solid style at 1. Clear glass was
-            // tried first: it is all but invisible, glass only where something bright and busy is
-            // behind it, so over the user's dark chat window it looked like no glass at all, and
-            // like a different setting every time the window behind changed.
+            // Apple's clear glass, the see-through kind that bends what is behind it, with what
+            // makes glass read as glass laid on top: a bright edge along the sides and bottom, a
+            // sheen across the top, and a light dim (or, on a light style, a light wash) so text
+            // stays legible over a busy desktop. Glass Opacity tints it towards the style and lays
+            // the style's colour over it, more and more towards the top of the slider, until it
+            // is nearly the solid style at 1; the dim, edge and sheen fade as it rises.
             //
-            // Dark Liquid Glass over a dark window averages to a smooth dark grey, and its rim is
-            // faint, so at 0 the user saw something that did not read as glass at all. What makes
-            // frosted glass recognisable is put on top, and fades out as the slider rises: a
-            // milky frost, stronger on a light style, and a bright edge catching the light along
-            // the sides and bottom.
-            let clarity = 1 - amount
-            ZStack {
-                style.base.opacity(amount * amount * 0.85)
-                Color.white.opacity((style.isDark ? 0.13 : 0.32) * clarity)
-            }
-            .glassEffect(.regular.tint(amount > 0 ? style.base.opacity(amount) : nil), in: edge)
-            .overlay {
-                // Centred on the outline and clipped by the surface, so one point of it shows.
-                edge.stroke(
-                    LinearGradient(
-                        colors: [.white.opacity(0.1 + 0.45 * clarity), .white.opacity(0.04 + 0.12 * clarity)],
-                        startPoint: .top,
-                        endPoint: .bottom
-                    ),
-                    lineWidth: 2
-                )
-            }
-            // Glass takes its appearance from its surroundings, which follow the system; a light
-            // style over a dark Mac drew dark glass under dark text.
-            .environment(\.colorScheme, style.isDark ? .dark : .light)
+            // The road here: clear glass alone was all but invisible over a plain or dark window;
+            // regular glass is frosted and over dark windows came out a smooth grey slab; regular
+            // glass under a milky frost read as frosted plastic, and the user asked for it "more
+            // glassy". Four ways were compared on screen over a dark and a bright test pattern
+            // (`--backdrop`, `--dark-backdrop`), and this one showed the window behind through
+            // the glass, bent at the edge, with text still legible.
+            current(amount: amount, clarity: clarity(amount))
         } else {
             style.base
         }
+    }
+
+    private func clarity(_ amount: Double) -> Double { 1 - amount }
+
+    @available(macOS 26.0, *)
+    private func current(amount: Double, clarity: Double) -> some View {
+        let dark = style.isDark
+        return ZStack {
+            style.base.opacity(amount * amount * 0.85)
+            (dark ? Color.black.opacity(0.22 * clarity) : Color.white.opacity(0.4 * clarity))
+            LinearGradient(
+                stops: [.init(color: .white.opacity(0.16 * clarity), location: 0),
+                        .init(color: .white.opacity(0.04 * clarity), location: 0.35),
+                        .init(color: .clear, location: 0.6)],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+        }
+        .glassEffect(.clear.tint(amount > 0 ? style.base.opacity(amount) : nil), in: edge)
+        .overlay {
+            // Centred on the outline and clipped by the surface, so half its width shows.
+            edge.stroke(
+                LinearGradient(colors: [.white.opacity(0.15 + 0.6 * clarity), .white.opacity(0.05 + 0.18 * clarity)],
+                               startPoint: .top, endPoint: .bottom),
+                lineWidth: 3
+            )
+        }
+        // Glass takes its appearance from its surroundings, which follow the system; a light
+        // style over a dark Mac drew dark glass under dark text.
+        .environment(\.colorScheme, dark ? .dark : .light)
     }
 }
 

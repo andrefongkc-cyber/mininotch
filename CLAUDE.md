@@ -883,17 +883,20 @@ weather symbols a faint outline (`notchMulticolorSymbol`), because their clouds 
 Background (`AppearanceSettings.notchBackground`, Solid or Liquid Glass). `NotchStyle.resolve` sets
 `surface.liquidGlass` when it is chosen and `NotchBackground.isLiquidGlassSupported`; the surface is
 then SwiftUI's `glassEffect` in the notch's own outline, and the style's glass, grain and edge give
-way to it. It is Apple's *regular* glass, the frosted kind Control Center uses, and Glass Opacity
-(`liquidGlassOpacity`, 0 to 1, default 0.45, light styles take 0.72 of it) tints it towards the
-style's base and lays the base over it by the square of the amount, from the glass alone at 0 to
-nearly the solid style at 1. Over it, fading out as the slider rises, go the two things that make
-frosted glass recognisable: a milky white frost (0.13 on a dark style, 0.32 on a light one) and a
-bright edge along the sides and bottom. Dark Liquid Glass alone over a dark window averaged to a
-smooth dark grey with a faint rim, and the user, at 0, saw nothing that read as glass. *Clear* glass
-was tried before that and dropped: it is all but invisible, glass
-only where something bright and busy is behind it, so over a dark window it looked like no glass at
-all and like a different setting whenever the window behind changed. `--backdrop` puts a bright,
-detailed test pattern behind the notch for judging glass on screen. Before macOS 26 the row is shown switched off with
+way to it. It is Apple's *clear* glass, the see-through kind that bends what is behind it, with what
+makes glass read as glass laid on top: a bright edge along the sides and bottom, a sheen across the
+top, and a light dim (black 0.22 on a dark style, white 0.4 on a light one) so text stays legible
+over a busy desktop. Glass Opacity (`liquidGlassOpacity`, 0 to 1, default 0.45, light styles take
+0.72 of it) tints it towards the style's base and lays the base over it by the square of the
+amount, to nearly the solid style at 1; the dim, edge and sheen fade as it rises. It took four
+rounds with the user: clear glass alone was all but invisible over a plain or dark window; regular
+glass came out a smooth grey slab over dark windows; regular glass under a milky frost read as
+frosted plastic ("more glassy"). Four candidates were then compared on screen over a dark and a
+bright pattern, and this one showed the window behind through the glass, bent at the edge, with
+text legible. `--backdrop` puts a bright,
+detailed test pattern behind the notch for judging glass on screen (`--dark-backdrop` a dark one,
+`--floating` the floating window too). Before looking at a screenshot of the real screen, check its
+corners are the pattern: one that shrank let the user's own windows into the shot. Before macOS 26 the row is shown switched off with
 "Liquid Glass needs macOS 26 or later", and a saved Liquid Glass draws Solid. Glass takes its
 appearance from its surroundings, which follow the system, so the surface sets the style's
 colour scheme on it (`NotchSurfaceStyle.isDark`): a light style on a dark Mac drew dark glass under
