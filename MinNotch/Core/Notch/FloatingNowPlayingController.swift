@@ -44,6 +44,13 @@ final class FloatingNowPlayingController {
         return CGSize(width: Self.width, height: card + Self.topChrome + Self.bottomChrome)
     }
 
+    #if DEBUG
+    /// Puts the window at a given place, for `--capture-notch --floating`.
+    func debugMove(to origin: CGPoint) {
+        panel?.setFrameOrigin(origin)
+    }
+    #endif
+
     init(environment: AppEnvironment) {
         self.environment = environment
     }

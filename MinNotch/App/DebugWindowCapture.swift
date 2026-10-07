@@ -266,12 +266,29 @@ enum DebugWindowCapture {
         if arguments.contains("--backdrop") {
             let window = NSWindow(contentRect: geometry.windowFrame, styleMask: [.borderless], backing: .buffered, defer: false)
             window.level = .floating
-            window.contentView = NSHostingView(rootView: GlassBackdrop())
+            let hosting = NSHostingView(rootView: GlassBackdrop(isDark: arguments.contains("--dark-backdrop")))
+            // No sizing from the content: a pattern whose ideal size is small shrank the window to
+            // it, and a screenshot meant to show only the pattern showed whatever was behind.
+            hosting.sizingOptions = []
+            window.contentView = hosting
             window.setFrame(geometry.windowFrame, display: true)
             window.orderFrontRegardless()
+            // Printed, so a script can refuse to take a screenshot unless the pattern covers it.
+            print("backdrop \(Int(window.frame.minX)) \(Int(window.frame.width)) \(Int(window.frame.height))")
+            fflush(stdout)
             backdrop = window
         }
         _ = backdrop
+        // `--floating`: the floating Now Playing window too, over the left of the notch's area
+        // (and the backdrop, with `--backdrop`), for checking how it draws a Notch Style.
+        var floating: FloatingNowPlayingController?
+        if arguments.contains("--floating") {
+            let controller = FloatingNowPlayingController(environment: environment)
+            controller.show()
+            controller.debugMove(to: CGPoint(x: geometry.windowFrame.minX + 10, y: geometry.windowFrame.maxY - 380))
+            floating = controller
+        }
+        _ = floating
 
         let panel = NotchPanel(contentRect: geometry.windowFrame)
         let hosting = NSHostingView(
@@ -353,7 +370,32 @@ enum DebugWindowCapture {
 }
 /// Stripes of colour under large and small text, behind the notch for `--backdrop`.
 private struct GlassBackdrop: View {
+    /// `--dark-backdrop`: dark greys with a few lighter shapes, like a dark Settings window, which
+    /// is what glass is hardest to see over.
+    var isDark = false
+
     var body: some View {
+        if isDark { dark } else { stripes }
+    }
+
+    private var dark: some View {
+        ZStack(alignment: .topLeading) {
+            Color(white: 0.12)
+            ForEach(0..<6, id: \.self) { index in
+                RoundedRectangle(cornerRadius: 10)
+                    .fill(Color(white: 0.2))
+                    .overlay(RoundedRectangle(cornerRadius: 10).strokeBorder(Color(white: 0.3)))
+                    .frame(width: 150, height: 70)
+                    .offset(x: CGFloat(index % 3) * 170 + 20, y: CGFloat(index / 3) * 90 + 60)
+            }
+            Text("Settings-like text 0123456789")
+                .font(.system(size: 16))
+                .foregroundStyle(Color(white: 0.85))
+                .offset(x: 30, y: 250)
+        }
+    }
+
+    private var stripes: some View {
         VStack(spacing: 0) {
             ForEach(0..<12, id: \.self) { row in
                 HStack {
