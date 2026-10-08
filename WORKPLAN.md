@@ -1,6 +1,6 @@
 # MiniNotch workplan
 
-Status: Liquid Glass is back to clear glass with an edge and sheen (the barely blurred version was rejected); pushed, unreleased; next: the user tries it, then 0.7.
+Status: Liquid Glass stays see-through (its blur set from Glass Opacity, since Apple's frosts once the app has been active); pushed, unreleased; next: the user tries it, then 0.7.
 
 Living document. Update the checkboxes as work lands. `CLAUDE.md` holds the architecture
 rules and the traps; this file holds the sequence.
@@ -137,6 +137,9 @@ Architecture (approved 2026-10-05 with: a, Match System yes, keep Translucent Pa
       clear glass with a bright edge, a sheen and a light dim won. The frosted version read as plastic.
 - [x] "Make it more glassy" again (2026-10-07): tried the desktop barely blurred under a rim of
       Apple's glass; the user disliked it and it was reverted to clear glass with an edge and sheen.
+- [x] Liquid Glass "good now but not good earlier": Apple's glass frosts for good once the app has
+      been active (Settings, Touch ID, a lock). Glass Opacity now sets the blur itself, from almost
+      none at 0; checked in the running app after making it active, over bright and dark windows.
 - [x] "Neumorphic doesn't work with glass": its solid panels covered the glass. On Liquid Glass every
       style's panels, tiles and buttons are glass too, by Glass Opacity; outer shadows only outside.
 - [x] Swipes over the whole panel, not just the top bar: a listen-only scroll tap, since scroll

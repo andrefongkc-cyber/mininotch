@@ -85,6 +85,7 @@ MiniNotch --capture-notch out.png [--collapsed] [--tab system] [--glow bars|off]
                                  [--sample-notes] [--blur-clipboard]
                                  [--notch-style bento-light] [--liquid-glass] [--builtin]
                                  [--no-visualizer] [--no-lyrics] [--swipe-to notes --midway 0.15]
+                                 [--live grow|reopen|swipe --hold 7 [--was-active]]
 MiniNotch --check-lyrics "Khalid" "8TEEN" 229                      # LRCLIBClient + LRCParser
 MiniNotch --check-lyric-sync [--out f]                             # matching lyrics to the audio, synthetic
 MiniNotch --check-lyric-sync --audio f.mp3 --lrc f.lrc --shifts 0,0.5 [--peaks]   # …and a real song, old method beside it
@@ -961,10 +962,25 @@ Control, and with Settings open on Appearance. Read `isRunning`; the glow and th
 `current` inside their own timelines. The capture tools never run the tap, which is why no capture
 measurement caught it. Settings' meter also listens only while in view in a window in front.
 
-**Liquid Glass shows what is behind it.** With clear glass, over a dark window with small text (the
-user's chat) the notch looked nearly solid, and over a bright page see-through, which the user took
-for the glass switching on and off at random; regular glass reads as glass over both. It is not the
-app being active or not: `--capture-notch --activate` and `--key` drew the same.
+**Liquid Glass frosts once the app has ever been active, so Glass Opacity sets its blur.** The user
+saw the same setting two ways, see-through ("good now") and a heavy grey frost ("not good earlier").
+SwiftUI's glass is a backdrop layer with a `glassBackground` filter whose `inputBlurRadius` is 10 at
+the notch's size; in a process that has never been the active app the blur is not applied, and once
+anything activates it (Settings, typing a note, Touch ID, a permission prompt, locking and unlocking
+the Mac) every glass in the process frosts until relaunch, new windows and remade glass included. An
+earlier note here said being active made no difference; that came from the capture tool, below.
+`GlassClarity` sets the radius instead, `0.5 + 9.5 × amount` (Glass Opacity, as tinted), through the
+public `filters.glassBackground.inputBlurRadius` key path on any layer that carries that filter, and
+again whenever the app or window changes state, the Mac wakes or unlocks, since SwiftUI writes the
+filter again then. On a macOS that draws glass differently it touches nothing and Apple's frost shows.
+Over a dark window with small text glass shows less than over a bright page; that is glass, not a bug.
+
+**Glass is only judged on screen, in a real run loop.** `--capture-notch` with `--midway` or
+`--swipe-to` turns the run loop by hand, and under that every glass came out frosted; hours went into
+causes that were the tool. `--live grow|reopen|swipe [--was-active]` does the same steps inside
+`NSApp.run()`, and `--was-active` reproduces the trigger. To look at the running app itself (DEBUG),
+post the distributed notification `com.minnotch.debug.panel` with `activate`, `open` (on the Timer
+tab, nothing personal) or `close`, behind a test pattern of your own, and check the shot's corners.
 
 **Files and links share the Shelf tab.** The user asked for the Shelf (files, AirDrop) and Links
 (paste a link, copy it back) together, so `NotchTab.links` is a feature but no longer a tab:

@@ -323,7 +323,36 @@ enum DebugWindowCapture {
             hold = seconds
             report("Holding the panel for \(seconds)s before capturing")
         }
-        if let midway, let i = arguments.firstIndex(of: "--swipe-to"), arguments.indices.contains(i + 1),
+        if let i = arguments.firstIndex(of: "--live"), arguments.indices.contains(i + 1) {
+            // Opening, reopening or swiping, timed inside a real `NSApplication` run loop. The
+            // hand-turned loop the other options use drew Liquid Glass frosted every time, which
+            // sent one investigation the wrong way for hours. `--was-active` makes this the active
+            // app and hands focus back first, which is what frosts glass in the running app.
+            let after = { (seconds: Double, step: @escaping @MainActor () -> Void) in
+                DispatchQueue.main.asyncAfter(deadline: .now() + seconds) { MainActor.assumeIsolated { step() } }
+            }
+            if arguments.contains("--was-active") {
+                after(0.1) { NSApplication.shared.activate(ignoringOtherApps: true) }
+                after(0.6) { NSApplication.shared.deactivate() }
+            }
+            switch arguments[i + 1] {
+            case "grow":
+                after(1.0) { withAnimation(Motion.notch) { viewModel.expand() } }
+            case "reopen":
+                after(1.2) { withAnimation(Motion.notch) { viewModel.collapse() } }
+                after(2.4) { withAnimation(Motion.notch) { viewModel.expand() } }
+            case "swipe":
+                let target = arguments.firstIndex(of: "--swipe-to").flatMap { arguments.indices.contains($0 + 1) ? NotchTab(rawValue: arguments[$0 + 1]) : nil }
+                after(1.2) { viewModel.swipe(to: target ?? .clipboard) }
+            default:
+                break
+            }
+            Timer.scheduledTimer(withTimeInterval: hold, repeats: false) { _ in
+                MainActor.assumeIsolated { writeCapture(of: hosting, to: path) }
+            }
+            NSApplication.shared.setActivationPolicy(.accessory)
+            NSApplication.shared.run()
+        } else if let midway, let i = arguments.firstIndex(of: "--swipe-to"), arguments.indices.contains(i + 1),
            let target = NotchTab(rawValue: arguments[i + 1]) {
             // Settle open on `--tab`, then change tab the way a two-finger swipe does and capture
             // partway: the panel should already be on its way to the new tab's height.

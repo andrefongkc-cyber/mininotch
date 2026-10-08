@@ -85,12 +85,10 @@ struct NotchSurfaceView<Edge: Shape>: View {
             // the style's colour over it, more and more towards the top of the slider, until it
             // is nearly the solid style at 1; the dim, edge and sheen fade as it rises.
             //
-            // The road here: clear glass alone was all but invisible over a plain or dark window;
-            // regular glass is frosted and over dark windows came out a smooth grey slab; regular
-            // glass under a milky frost read as frosted plastic, and the user asked for it "more
-            // glassy". Four ways were compared on screen over a dark and a bright test pattern
-            // (`--backdrop`, `--dark-backdrop`), and this one showed the window behind through
-            // the glass, bent at the edge, with text still legible.
+            // The road here: regular glass is frosted and over dark windows came out a smooth grey
+            // slab; regular glass under a milky frost read as frosted plastic. Clear glass was the
+            // one the user liked, but only some of the time, because its blur came and went with
+            // whether the app had ever been active (`GlassClarity`); Glass Opacity now sets it.
             current(amount: amount, clarity: clarity(amount))
         } else {
             style.base
@@ -114,6 +112,9 @@ struct NotchSurfaceView<Edge: Shape>: View {
             )
         }
         .glassEffect(.clear.tint(amount > 0 ? style.base.opacity(amount) : nil), in: edge)
+        // How much the glass blurs what is behind it: see-through at 0, Apple's own heavy frost
+        // at 1. Left to Apple it changed under the user, see `GlassClarity`.
+        .background(GlassClarity(blurRadius: 0.5 + 9.5 * amount))
         .overlay {
             // Centred on the outline and clipped by the surface, so half its width shows.
             edge.stroke(

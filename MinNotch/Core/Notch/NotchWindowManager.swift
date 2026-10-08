@@ -1,4 +1,5 @@
 import AppKit
+import SwiftUI
 
 /// Creates and tears down notch surfaces as displays come and go.
 ///
@@ -57,7 +58,39 @@ final class NotchWindowManager {
         }
 
         startPointerTrackingIfNeeded()
+
+        #if DEBUG
+        // `com.minnotch.debug.panel` with "open" or "close" opens every panel on the Timer tab,
+        // which shows nothing personal, or closes it: how Liquid Glass was checked in the running
+        // app, which no capture tool reproduces, from a helper that puts a pattern behind it.
+        // "activate" makes this the active app and hands focus back, which frosted the glass.
+        debugPanelObserver = DistributedNotificationCenter.default().addObserver(
+            forName: Notification.Name("com.minnotch.debug.panel"),
+            object: nil,
+            queue: .main
+        ) { [weak self] note in
+            let action = note.object as? String
+            let open = action == "open"
+            MainActor.assumeIsolated {
+                if action == "activate" {
+                    NSApp.activate(ignoringOtherApps: true)
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { NSApp.deactivate() }
+                    return
+                }
+                for viewModel in self?.allViewModels ?? [] {
+                    if open { viewModel.selectedTab = .timer }
+                    withAnimation(Motion.notch) {
+                        open ? viewModel.setKeptOpen(true) : viewModel.collapse()
+                    }
+                }
+            }
+        }
+        #endif
     }
+
+    #if DEBUG
+    private var debugPanelObserver: NSObjectProtocol?
+    #endif
 
     func stop() {
         if let screenObserver { NotificationCenter.default.removeObserver(screenObserver) }
