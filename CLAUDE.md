@@ -668,10 +668,11 @@ defaulting on only under `#if DEBUG`) for checking both at a glance. Review it w
 draw `ScrollView` content.
 
 `CFBundleVersion` is `$(MARKETING_VERSION)`, not a build number: Sparkle decides what is newer from
-it, and the build number had been 1 for every release. `ReleaseNotes.latest` is 0.6.0 and `MARKETING_VERSION` matches. 0.6.0 was released on 2026-10-05
-as the GitHub release `v0.6.0`, signed with the personal team like 0.2.0 to 0.5.0, at the user's
-request ("release 0.6"). The next shared build needs new notes, a new `id`, and a
-version bump. When the README describes something on
+it, and the build number had been 1 for every release. `ReleaseNotes.latest` is 0.7.0 and `MARKETING_VERSION` matches. 0.7.0 was released on 2026-10-08
+as the GitHub release `v0.7.0`, signed with the personal team like 0.2.0 to 0.6.0, at the user's
+request ("release on git"), and entered in `appcast.xml`: it is the first release with Sparkle, so the
+next one is the first that installed copies will find on their own. The next shared build needs new
+notes, a new `id`, and a version bump. When the README describes something on
 `main` that no download has yet, mark it _(next)_ and take the markers out at release.
 
 **Settings says what is new.** `SettingsNewRows` maps row titles to the release that brought them,

@@ -1,6 +1,6 @@
 # MiniNotch workplan
 
-Status: Liquid Glass stays see-through (its blur set from Glass Opacity, since Apple's frosts once the app has been active); pushed, unreleased; next: the user tries it, then 0.7.
+Status: 0.7.0 released (2026-10-08, GitHub v0.7.0, in appcast.xml; first release with Sparkle); next: the user's feedback on 0.7, then the open items below.
 
 Living document. Update the checkboxes as work lands. `CLAUDE.md` holds the architecture
 rules and the traps; this file holds the sequence.
@@ -24,10 +24,9 @@ at last. Notarisation still needs a paid membership nobody is buying.
 
 **Do these next, in this order** (refreshed 2026-10-05):
 
-1. Release 0.7 when the user asks. It carries Sparkle (the first version that updates itself), the
-   MiniNotch rename, and Clipboard > Blur Until Unlocked with the Passwords app skip. Needs 0.7
-   notes in `ReleaseNotes.latest`, a new `id` and `MARKETING_VERSION`. Anyone on 0.6 or older
-   installs 0.7 by hand once. The update key is backed up in the user's password manager.
+1. Done: 0.7.0 released 2026-10-08. The next release is the first that installed copies find by
+   themselves; when it is made, check that a 0.7.0 copy offers it (Settings > About > Check for
+   Updates). The update key is backed up in the user's password manager.
 2. The user tries by hand what tooling cannot: the Touch ID unlock in the Clipboard tab (does the
    dialog come to the front?) and a password copied in Passwords staying out of the list; typing
    in Notes; drops and paste in the combined Shelf tab; Keep Open on two displays; lyric timing
@@ -174,6 +173,10 @@ The user plans to revamp every music-playing animation before 1.0.0. Collected h
 - [x] Renamed to MiniNotch (2026-10-05), "app name only": the product, everything on screen, the
       DMGs, every GitHub release's title, text and DMG name, the README and these notes. The bundle
       id, Xcode project and source folder stay MinNotch; see CLAUDE.md. Accessibility stayed granted.
+
+- [x] 0.7.0 released on 2026-10-08 as GitHub release `v0.7.0`, signed with the personal team, and
+      entered in `appcast.xml`: Notch Styles, Liquid Glass, Sparkle updates, the private clipboard,
+      swipe and performance fixes.
 
 - [x] 0.6.0 released on 2026-10-05 as GitHub release `v0.6.0`, signed with the personal team like
       0.2.0 to 0.5.0: the Notes tab and the pill flank fix.

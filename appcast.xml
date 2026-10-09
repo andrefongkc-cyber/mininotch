@@ -5,5 +5,25 @@
     <link>https://github.com/andrefongkc-cyber/mininotch</link>
     <description>MiniNotch updates</description>
     <language>en</language>
+    <item>
+      <title>MiniNotch 0.7.0</title>
+      <pubDate>Fri, 09 Oct 2026 01:43:46 GMT</pubDate>
+      <sparkle:version>0.7.0</sparkle:version>
+      <sparkle:shortVersionString>0.7.0</sparkle:shortVersionString>
+      <sparkle:minimumSystemVersion>14.4</sparkle:minimumSystemVersion>
+      <description><![CDATA[<h3>New</h3>
+<ul>
+<li><b>Notch Styles</b>: Six looks for the notch: Minimal, Bento, Glass, Neumorphic, Clay and Skeuomorphic, each in dark, light, or Auto to follow your Mac. Minimal Dark is the notch you know. <i>Settings &gt; Appearance &gt; Notch Style.</i></li>
+<li><b>Liquid Glass</b>: Any style can sit on Apple&#x27;s Liquid Glass, see-through and bending what is behind the notch. Glass Opacity sets how clear it is, from glass to nearly solid. Needs macOS 26. <i>Settings &gt; Appearance &gt; Notch Style &gt; Background.</i></li>
+<li><b>Automatic Updates</b>: MiniNotch now checks for a new version once a day and asks before installing it. This is the last version you have to download by hand. <i>Check now from the menu bar icon, or switch it off in Settings &gt; About.</i></li>
+<li><b>Private Clipboard</b>: The Clipboard tab stays blurred until you unlock it with Touch ID or your password, and blurs again when it closes. Anything copied in the Passwords app or Keychain Access is never kept. <i>On by default. Switch it off in Settings &gt; Advanced &gt; Blur Until Unlocked.</i></li>
+</ul>
+<h3>Improved</h3>
+<ul>
+<li><b>Smoother Swipes</b>: Two-finger swipes work anywhere on the open notch, quick flicks count, the direction is right with Natural Scrolling off, and the notch resizes along with the tab you swipe to.</li>
+<li><b>Lighter While Playing</b>: Much less work for your Mac while music plays, which you would have felt in Mission Control and with Settings open. The open notch also closes when you switch desktops.</li>
+</ul>]]></description>
+      <enclosure url="https://github.com/andrefongkc-cyber/mininotch/releases/download/v0.7.0/MiniNotch-0.7.0.dmg" sparkle:edSignature="tH7wrTtqWoDeYWCTyyIgDSs+BUZ1ZfPuMlsX8EQaFr1f1dVAuhgS3nUQdwnV/Ml+cdWsJrbVC2P/jIHh7xRpAQ==" length="7706556" type="application/x-apple-diskimage"/>
+    </item>
   </channel>
 </rss>
