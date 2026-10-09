@@ -1229,6 +1229,13 @@ connection callbacks would mean the Bluetooth permission for something the user 
 just matched has usually not published it yet. The iterator has to be drained once when it is
 armed, or everything already connected arrives as news at launch.
 
+**A lyric search takes a length within 5 seconds, or failing that a synced sheet within 15.**
+`LRCLIBClient.fetchBestTextFromSearch` used to take only the 5-second matches, so a song whose
+streaming copy is a different master never had lyrics: Spotify's "I Want You Back" is 170 seconds
+and LRCLIB's are 177 to 180, and the miss was then cached for three days (2026-10-08, found by
+hashing the cache key against candidate lengths). The close match still wins whenever there is one,
+and the wide tier only takes synced sheets.
+
 **Clicking a lyric line seeks by lyric time, not by track time.** The strip's clock is
 `elapsed + offset + audio correction - latency`, so seeking to a line's timestamp directly would
 land that far from the line. `seek(toLyricsTime:)` takes the difference between the two clocks
