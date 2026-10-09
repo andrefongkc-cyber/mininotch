@@ -79,17 +79,32 @@ struct LockScreenPlayerView: View {
                 }
             }
         case .playerRight:
-            HStack(spacing: metrics.gap) {
+            // Mirrored: the lyrics end just short of the middle, the player sits in the right half.
+            HStack(spacing: 0) {
                 if showsLyrics {
                     LockScreenLyricsColumn(track: track, alignment: showsPlayer ? .trailing : .center, height: metrics.columnHeight, fontSize: metrics.lyricFontSize)
+                        .padding(.leading, metrics.outerMargin)
+                        .padding(.trailing, showsPlayer ? metrics.lyricsInset : metrics.outerMargin)
+                        .frame(width: showsPlayer ? metrics.halfWidth : metrics.halfWidth * 2)
                 }
-                if showsPlayer { LockScreenPlayerColumn(track: track, metrics: metrics) }
+                if showsPlayer {
+                    LockScreenPlayerColumn(track: track, metrics: metrics)
+                        .frame(width: showsLyrics ? metrics.halfWidth : metrics.halfWidth * 2)
+                }
             }
         case .playerLeft, .underNotch:
-            HStack(spacing: metrics.gap) {
-                if showsPlayer { LockScreenPlayerColumn(track: track, metrics: metrics) }
+            // The player in the middle of the left half, the lyrics from just past the middle of
+            // the screen to the right margin.
+            HStack(spacing: 0) {
+                if showsPlayer {
+                    LockScreenPlayerColumn(track: track, metrics: metrics)
+                        .frame(width: showsLyrics ? metrics.halfWidth : metrics.halfWidth * 2)
+                }
                 if showsLyrics {
                     LockScreenLyricsColumn(track: track, alignment: showsPlayer ? .leading : .center, height: metrics.columnHeight, fontSize: metrics.lyricFontSize)
+                        .padding(.leading, showsPlayer ? metrics.lyricsInset : metrics.outerMargin)
+                        .padding(.trailing, metrics.outerMargin)
+                        .frame(width: showsPlayer ? metrics.halfWidth : metrics.halfWidth * 2)
                 }
             }
         }
@@ -140,8 +155,9 @@ struct LockScreenPlayerView: View {
 
 /// Sizes for the player, worked out once from the screen, so the window and the view agree.
 ///
-/// The side by side layouts span the screen: the cover and controls at the left margin and the
-/// lyrics filling the rest, to the right margin. Everything scales with the display.
+/// The side by side layouts span the screen in two halves: the cover and controls centred in one,
+/// and the lyrics in the other, starting just past the middle of the screen and running to the
+/// margin. Everything scales with the display.
 struct LockScreenPlayerMetrics {
     let layout: LockScreenMediaLayout
     /// The cover's side, which is also the controls card's width. Over a quarter of the
@@ -149,8 +165,12 @@ struct LockScreenPlayerMetrics {
     /// the password field on a 13-inch one.
     let artworkSide: CGFloat
     let lyricsWidth: CGFloat
-    /// Between the player and the lyrics, side by side.
-    let gap: CGFloat
+    /// Half the content's width, side by side: the player's half and the lyrics' half.
+    let halfWidth: CGFloat
+    /// From the middle of the screen to the lyrics.
+    let lyricsInset: CGFloat
+    /// From the content's outer edge to the lyrics, so they stop short of the screen's edge.
+    let outerMargin: CGFloat
     /// The line being sung. The others are drawn at `LockScreenLyricsColumn.dimScale` of it.
     let lyricFontSize: CGFloat
 
@@ -166,16 +186,17 @@ struct LockScreenPlayerMetrics {
         self.layout = layout
         let width = screen.frame.width
         let side = min(max(screen.frame.height * 0.28, 220), 340).rounded()
-        // From the screen's edges to the cover on one side and the lyrics on the other.
-        let margin = (width * 0.07).rounded()
-        gap = (width * 0.05).rounded()
+        // The window is the screen's width; the spill is inside it.
+        halfWidth = ((width - Self.backgroundSpill * 2) / 2).rounded(.down)
+        lyricsInset = (width * 0.02).rounded()
+        outerMargin = max((width * 0.06).rounded() - Self.backgroundSpill, 0)
         switch layout {
         case .stacked:
             artworkSide = (side * 0.85).rounded()
             lyricsWidth = min(width * 0.6, 900).rounded()
         case .playerLeft, .playerRight, .underNotch:
             artworkSide = side
-            lyricsWidth = width - margin * 2 - side - gap
+            lyricsWidth = halfWidth - lyricsInset - outerMargin
         }
         lyricFontSize = min(max(screen.frame.height * 0.042, 32), 48).rounded()
     }
@@ -193,7 +214,7 @@ struct LockScreenPlayerMetrics {
                 height: columnHeight + Self.stackedGap + stackedLyricsHeight + spill
             )
         case .playerLeft, .playerRight, .underNotch:
-            return CGSize(width: artworkSide + gap + lyricsWidth + spill, height: columnHeight + spill)
+            return CGSize(width: halfWidth * 2 + spill, height: columnHeight + spill)
         }
     }
 
