@@ -295,7 +295,7 @@ struct MediaSettingsView: View {
 
                 SettingsRow(
                     title: "Show Player",
-                    subtitle: "The cover, title, scrubber and controls, on a card.",
+                    subtitle: "The cover, with the title, scrubber and controls on a card under it.",
                     systemImage: "play.square",
                     // The last part showing cannot be switched off, or there is nothing to draw.
                     isEnabled: playerLayoutEnabled && settings.media.lockScreenShowsLyrics

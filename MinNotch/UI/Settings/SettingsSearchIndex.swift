@@ -74,7 +74,7 @@ enum SettingsSearchIndex {
         .init(tab: .media, section: "Display", title: "Refresh Interval", subtitle: "How often the position is re-read. Track changes update instantly regardless.", symbolName: "arrow.clockwise"),
         .init(tab: .media, section: "Lock Screen", title: "Song on the Lock Screen", subtitle: "What is playing, with its controls, while your Mac is locked.", symbolName: "lock.display"),
         .init(tab: .media, section: "Lock Screen", title: "Lock Screen Layout", subtitle: "A player in the middle of the lock screen, below the clock, or a small strip under the notch.", symbolName: "rectangle.split.2x1"),
-        .init(tab: .media, section: "Lock Screen", title: "Show Player", subtitle: "The cover, title, scrubber and controls, on a card.", symbolName: "play.square"),
+        .init(tab: .media, section: "Lock Screen", title: "Show Player", subtitle: "The cover, with the title, scrubber and controls on a card under it.", symbolName: "play.square"),
         .init(tab: .media, section: "Lock Screen", title: "Show Synced Lyrics", subtitle: "The line being sung, large, with the lines around it. Click a line to play from it.", symbolName: "quote.bubble"),
         .init(tab: .media, section: "Lock Screen", title: "Lock Screen Background", subtitle: "A wash of colour from the cover, or the cover itself blurred, behind the player.", symbolName: "circle.lefthalf.filled"),
         .init(tab: .media, section: "Lock Screen", title: "Background Strength", subtitle: "", symbolName: "slider.horizontal.3"),

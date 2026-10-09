@@ -273,7 +273,7 @@ struct MediaSettings: Codable, Equatable {
     /// Synced lyrics beside or under the card. Player layouts only. Loads lyrics even with
     /// Show Lyrics off, since the notch and the lock screen are separate choices.
     var lockScreenShowsLyrics: Bool = true
-    var lockScreenBackground: LockScreenBackground = .glow
+    var lockScreenBackground: LockScreenBackground = .none
     /// How strongly the background shows, from a hint to full.
     var lockScreenBackgroundStrength: Double = 0.7
     static let lockScreenBackgroundStrengthRange: ClosedRange<Double> = 0.2...1
@@ -330,7 +330,7 @@ struct MediaSettings: Codable, Equatable {
         lockScreenLayout = c.value(.lockScreenLayout, LockScreenMediaLayout.playerLeft)
         lockScreenShowsPlayer = c.value(.lockScreenShowsPlayer, true)
         lockScreenShowsLyrics = c.value(.lockScreenShowsLyrics, true)
-        lockScreenBackground = c.value(.lockScreenBackground, LockScreenBackground.glow)
+        lockScreenBackground = c.value(.lockScreenBackground, LockScreenBackground.none)
         lockScreenBackgroundStrength = c.value(.lockScreenBackgroundStrength, 0.7, in: Self.lockScreenBackgroundStrengthRange)
         // Both parts off would leave nothing to draw.
         if !lockScreenShowsPlayer && !lockScreenShowsLyrics { lockScreenShowsPlayer = true }

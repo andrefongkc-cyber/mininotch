@@ -66,7 +66,7 @@ enum DebugLockScreenCapture {
             return arguments[index + 1]
         }
         settings.media.lockScreenLayout = value(after: "--lock-layout").flatMap(LockScreenMediaLayout.init(rawValue:)) ?? .playerLeft
-        settings.media.lockScreenBackground = value(after: "--lock-background").flatMap(LockScreenBackground.init(rawValue:)) ?? .glow
+        settings.media.lockScreenBackground = value(after: "--lock-background").flatMap(LockScreenBackground.init(rawValue:)) ?? .none
         settings.media.lockScreenShowsLyrics = !arguments.contains("--no-lock-lyrics")
         settings.media.lockScreenShowsPlayer = !arguments.contains("--no-lock-card")
         settings.media.showLyrics = true

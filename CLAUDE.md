@@ -782,8 +782,12 @@ means `--check-lock-screen` can no longer prove anything there; only locking can
 **The lock screen player is a second window, in the middle of the screen.** Asked for on 2026-10-08
 after Canopy's: Settings > Media > Lock Screen > Lock Screen Layout picks Under the Notch (the strip
 above, unchanged) or one of three player layouts, which `LockScreenPlayerView` draws in a window of
-its own, adopted into the same space: a card with the cover, scrubber and controls, the synced lyrics
-beside or under it, and a colour glow or the blurred cover behind. The HUD keeps the small window at
+its own, adopted into the same space: the cover on its own with a separate controls card under it
+(the user asked for the two apart), the synced lyrics beside or under them with no box, sliding so the
+line being sung stays at a fixed height and fading out towards the top and bottom, and optionally a
+colour glow or the blurred cover behind (None by default, at the user's request). The lyric list is
+slid by the current line's measured top (`onGeometryChange` per line); a custom alignment guide was
+tried first and every line's explicit guide threw the whole list off screen. The HUD keeps the small window at
 the top either way. The player draws in white over the wallpaper, as the lock screen clock does, not
 in the Notch Style, because it is not on the notch. `LockScreenPlayerMetrics` sizes it from the
 screen (the cover is a fifth of its height) and `windowFrame` centres it 56% of the way down, which
