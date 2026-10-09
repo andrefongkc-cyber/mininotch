@@ -87,7 +87,29 @@ struct NotchGeometry: Equatable {
             showsDebug: settings.advanced.showDebugButtons,
             cutoutWidth: cutoutWidth
         )
-        return max(CGFloat(settings.appearance.expandedWidth), minimum)
+        let preferred: CGFloat
+        switch settings.appearance.panelSize {
+        case .custom:
+            preferred = CGFloat(settings.appearance.expandedWidth)
+        case .fitTopBar:
+            // The width the bar needs with its buttons at full size, so the panel narrows as tabs
+            // are switched off and only tightens the buttons when it is already at the floor.
+            preferred = max(
+                TopStripLayout.minimumPanelWidth(
+                    leading: settings.appearance.topStripLeading,
+                    trailing: settings.appearance.topStripTrailing,
+                    availableTabs: NotchWidgetRegistry.shownTabs(settings),
+                    showPercentage: settings.battery.showPercentage,
+                    showsDebug: settings.advanced.showDebugButtons,
+                    cutoutWidth: cutoutWidth,
+                    buttonWidth: TopStripLayout.buttonWidths[0]
+                ),
+                PanelSize.fitFloor
+            )
+        case .small, .medium, .large:
+            preferred = CGFloat(settings.appearance.panelSize.presetWidth ?? settings.appearance.expandedWidth)
+        }
+        return max(preferred, minimum)
     }
 
     /// Measures the hardware notch, or returns nil when the display has none.

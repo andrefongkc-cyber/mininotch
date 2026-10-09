@@ -64,6 +64,7 @@ enum SettingsNewRows {
         "Show Synced Lyrics": "0.8",
         "Lock Screen Background": "0.8",
         "Background Strength": "0.8",
+        "Size": "0.8",
     ]
 
     static func isNew(_ title: String) -> Bool {

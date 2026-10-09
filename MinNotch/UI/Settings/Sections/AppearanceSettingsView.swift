@@ -88,9 +88,24 @@ struct AppearanceSettingsView: View {
 
             SettingsCard(header: "Panel Size") {
                 SettingsRow(
+                    title: "Size",
+                    subtitle: "Fit to Top Bar gets narrower the fewer tabs your top bar has. The panel never goes narrower than its top bar needs.",
+                    systemImage: "rectangle.expand.vertical"
+                ) {
+                    InlinePicker(selection: $settings.appearance.panelSize) {
+                        ForEach(PanelSize.allCases) { size in
+                            Text(size.title).tag(size)
+                        }
+                    }
+                }
+
+                SettingsDivider()
+
+                SettingsRow(
                     title: "Width",
-                    subtitle: "How wide the panel grows when it opens.",
-                    systemImage: "arrow.left.and.right"
+                    subtitle: "How wide the panel grows when it opens, with Size set to Custom.",
+                    systemImage: "arrow.left.and.right",
+                    isEnabled: settings.appearance.panelSize == .custom
                 ) {
                     ValueSlider(
                         value: $settings.appearance.expandedWidth,

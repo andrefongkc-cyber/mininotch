@@ -34,6 +34,43 @@ enum SliderColorStyle: String, Codable, CaseIterable, Identifiable {
     }
 }
 
+/// How wide the open panel is. See `NotchGeometry.panelWidth`.
+enum PanelSize: String, Codable, CaseIterable, Identifiable {
+    /// As narrow as the top bar allows with its buttons at full size: fewer tabs, a narrower
+    /// panel.
+    case fitTopBar
+    case small
+    case medium
+    case large
+    /// Settings > Appearance > Panel Size > Width.
+    case custom
+
+    var id: String { rawValue }
+
+    var title: String {
+        switch self {
+        case .fitTopBar: return "Fit to Top Bar"
+        case .small: return "Small"
+        case .medium: return "Medium"
+        case .large: return "Large"
+        case .custom: return "Custom"
+        }
+    }
+
+    /// The preset's width in points, for the presets that have one.
+    var presetWidth: Double? {
+        switch self {
+        case .small: return 440
+        case .medium: return 520
+        case .large: return 640
+        case .fitTopBar, .custom: return nil
+        }
+    }
+
+    /// The narrowest Fit to Top Bar goes, so a short bar still leaves the widgets room.
+    static let fitFloor: CGFloat = 400
+}
+
 /// Settings > Appearance.
 struct AppearanceSettings: Codable, Equatable {
     var accentMode: AccentMode = .system
@@ -58,6 +95,10 @@ struct AppearanceSettings: Codable, Equatable {
     /// Wide and short rather than narrow and tall: the panel's top strip has to fit controls
     /// either side of the notch cutout, and a wide panel keeps the track title on one line.
     var expandedWidth: Double = 560
+
+    /// A preset for the panel's width, or Custom for `expandedWidth`. Never narrower than the top
+    /// bar needs at its tightest (`TopStripLayout.minimumPanelWidth`), whatever is picked.
+    var panelSize: PanelSize = .custom
 
     /// What sits either side of the cutout in the open panel's top bar, in order.
     ///
@@ -101,6 +142,7 @@ struct AppearanceSettings: Codable, Equatable {
         sliderColor = c.value(.sliderColor, SliderColorStyle.accent)
         panelCornerRadius = c.value(.panelCornerRadius, Double(Metrics.notchPanelCornerRadius), in: 8...32)
         expandedWidth = c.value(.expandedWidth, 560, in: 460...820)
+        panelSize = c.value(.panelSize, PanelSize.custom)
         topStripTrailing = c.value(.topStripTrailing, TopStripItem.defaultTrailing)
         // A file from before the tabs could be arranged has no leading list, and every tab
         // then sits on the left, which is exactly where they were.

@@ -322,6 +322,12 @@ Scripts/          build, run, preview
   to right as drawn. It used to walk `availableTabs`, the registry's fixed order, so after a tab
   was moved the swipe skipped it and came back to it out of place. `--check-tab-order` rearranges
   the bar and compares.
+- **The panel's width is a preset or the slider, never below what the top bar needs.** Appearance >
+Panel Size > Size (`PanelSize`, 2026-10-08): Fit to Top Bar is `minimumPanelWidth` at the full
+28-point buttons (floor 400), so switching tabs off narrows the panel; Small, Medium and Large are
+440, 520 and 640; Custom is the Width slider. `NotchGeometry.panelWidth` takes the larger of that and
+the tightest-button minimum, as before. `cutoutClearance` went from 6 to 12 at the user's request
+(icons "too close to the actual notch"), which widens every minimum by 12.
 - **Nothing may hardcode which indicator is the wide one.** `flankWidth` sums whatever the
   user assigned to each side, in their order, with the same spacings the view lays out, and
   takes the larger of the two. It used to know that artwork was 18 points and battery was
