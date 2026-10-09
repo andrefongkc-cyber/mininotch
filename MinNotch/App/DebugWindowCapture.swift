@@ -116,6 +116,8 @@ enum DebugWindowCapture {
            arguments.indices.contains(index + 1),
            let width = Double(arguments[index + 1]) {
             settings.appearance.expandedWidth = width
+            // The slider only counts with Size on Custom.
+            settings.appearance.panelSize = .custom
         }
         // Puts the given items on the right of the notch, e.g. `--right timer,settings,battery`.
         if let index = arguments.firstIndex(of: "--right"),

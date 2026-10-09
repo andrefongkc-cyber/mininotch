@@ -327,7 +327,12 @@ Panel Size > Size (`PanelSize`, 2026-10-08): Fit to Top Bar is `minimumPanelWidt
 28-point buttons (floor 400), so switching tabs off narrows the panel; Small, Medium and Large are
 440, 520 and 640; Custom is the Width slider. `NotchGeometry.panelWidth` takes the larger of that and
 the tightest-button minimum, as before. `cutoutClearance` went from 6 to 12 at the user's request
-(icons "too close to the actual notch"), which widens every minimum by 12.
+(icons "too close to the actual notch"), which widens every minimum by 12. The open panel's text
+and controls follow its width: `ExpandedPanelView.contentScale` (width / 560, 0.85 to 1.1) goes into
+the environment as `notchContentScale`, and the Now Playing card scales its title, artist and
+transport by it. The card's title is 13 points (was 15) and the transport starts at the left under it,
+with pop-out and effects at the right of the same row, both at the user's request. `--capture-notch
+--width` sets Size to Custom, or it is ignored.
 - **Nothing may hardcode which indicator is the wide one.** `flankWidth` sums whatever the
   user assigned to each side, in their order, with the same spacings the view lays out, and
   takes the larger of the two. It used to know that artwork was 18 points and battery was

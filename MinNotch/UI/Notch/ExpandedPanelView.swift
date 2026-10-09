@@ -37,6 +37,14 @@ struct ExpandedPanelView: View {
                 .padding(.horizontal, Metrics.notchPanelPadding + Metrics.notchShoulderRadius)
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         }
+        .environment(\.notchContentScale, Self.contentScale(panelWidth: viewModel.expandedPanelWidth))
+    }
+
+    /// Text and controls scale with the panel: a narrow panel (Settings > Appearance > Panel
+    /// Size) at full size crowded them, and a wide one left them small. 560 points, the old
+    /// default width, is full size.
+    static func contentScale(panelWidth: CGFloat) -> CGFloat {
+        min(max(panelWidth / 560, 0.85), 1.1)
     }
 
     private static let tabChange = AnyTransition.asymmetric(
