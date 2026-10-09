@@ -70,6 +70,10 @@ struct AdvancedSettings: Codable, Equatable {
     /// still shows, because it answers something the user just did.
     var hideVirtualNotchUntilHover: Bool = false
 
+    /// Give the notch a window server space of its own, so swiping between desktops leaves it
+    /// over the camera rather than sliding it out and back. See `NotchSpace`.
+    var keepNotchStillBetweenDesktops: Bool = true
+
     /// Remember what has been copied, and offer it back from the Clipboard tab.
     var clipboardHistoryEnabled: Bool = false
 
@@ -148,6 +152,7 @@ struct AdvancedSettings: Codable, Equatable {
         notchHeightMode = c.value(.notchHeightMode, NotchHeightMode.matchPhysical)
         nonNotchDefaultTab = c.value(.nonNotchDefaultTab, NotchTab.timer)
         hideVirtualNotchUntilHover = c.value(.hideVirtualNotchUntilHover, false)
+        keepNotchStillBetweenDesktops = c.value(.keepNotchStillBetweenDesktops, true)
         clipboardHistoryEnabled = c.value(.clipboardHistoryEnabled, false)
         clipboardHistoryLimit = c.value(.clipboardHistoryLimit, 20, in: 5...100)
         clipboardBlurUntilUnlocked = c.value(.clipboardBlurUntilUnlocked, true)

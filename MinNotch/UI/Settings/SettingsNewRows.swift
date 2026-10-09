@@ -65,6 +65,7 @@ enum SettingsNewRows {
         "Lock Screen Background": "0.8",
         "Background Strength": "0.8",
         "Size": "0.8",
+        "Keep the Notch Still Between Desktops": "0.8",
     ]
 
     static func isNew(_ title: String) -> Bool {

@@ -326,8 +326,9 @@ Scripts/          build, run, preview
 Panel Size > Size (`PanelSize`, 2026-10-08): Fit to Top Bar is `minimumPanelWidth` at the full
 28-point buttons (floor 400), so switching tabs off narrows the panel; Small, Medium and Large are
 440, 520 and 640; Custom is the Width slider. `NotchGeometry.panelWidth` takes the larger of that and
-the tightest-button minimum, as before. `cutoutClearance` went from 6 to 12 at the user's request
-(icons "too close to the actual notch"), which widens every minimum by 12. The open panel's text
+the tightest-button minimum, as before. For icons "too close to the actual notch", `cutoutClearance`
+went to 12 and back to 6 at the user's request; instead the top strip is `topStripDrop` (8) taller
+than the cutout, so its icons sit 4 points lower, under the housing's rounded corners. The open panel's text
 and controls follow its width: `ExpandedPanelView.contentScale` (width / 560, 0.85 to 1.1) goes into
 the environment as `notchContentScale`, and the Now Playing card scales its title, artist and
 transport by it. The card's title is 13 points (was 15) and the transport starts at the left under it,
@@ -789,6 +790,17 @@ number each run and `SLSCopySpacesForWindows` an empty list for every window, wh
 `adopt` used to require zero and so threw the window away on every lock; it now logs the status and
 carries on (found 2026-10-08 on 27.0.1, matching github.com/tgtools123/NUEM/issues/6). That also
 means `--check-lock-screen` can no longer prove anything there; only locking can.
+
+**The notch has a window server space of its own, so a desktop swipe does not move it.** On macOS
+27 a `canJoinAllSpaces` + `stationary` window still slid out and back with every swipe between
+desktops; the user's screen recording (2026-10-08) showed the black pill travel half the screen while
+the camera housing stayed put. `NotchSpace` makes a space at absolute level 99 and adds each notch
+window to it after `orderFrontRegardless` (`NotchWindowController.show`), as Boring Notch does with
+its `NotchSpaceManager`. Boring Notch uses the highest level there is, which draws over the lock
+screen; 99 is above the desktops and below Setup Assistant (100), password prompts (200) and the lock
+screen (300), so the notch with its clipboard and notes never shows over a locked Mac. Advanced >
+Keep the Notch Still Between Desktops (on) switches it; changing it rebuilds every surface, because a
+window cannot reliably be taken back out of the space. Only seen working by the user swiping.
 
 **The lock screen player is a second window, in the middle of the screen.** Asked for on 2026-10-08
 after Canopy's: Settings > Media > Lock Screen > Lock Screen Layout picks Under the Notch (the strip

@@ -62,6 +62,19 @@ struct AdvancedSettingsView: View {
                 ) {
                     SettingsToggle(isOn: $settings.advanced.hideVirtualNotchUntilHover)
                 }
+
+                SettingsDivider()
+
+                SettingsRow(
+                    title: "Keep the Notch Still Between Desktops",
+                    subtitle: NotchSpace.shared.isAvailable
+                        ? "Without it the notch slides away and back when you swipe between desktops. Uses a private part of macOS, so a future version may stop it working."
+                        : "Not available on this version of macOS.",
+                    systemImage: "rectangle.on.rectangle.slash",
+                    isEnabled: NotchSpace.shared.isAvailable
+                ) {
+                    SettingsToggle(isOn: $settings.advanced.keepNotchStillBetweenDesktops)
+                }
             }
 
             SettingsCard(

@@ -19,9 +19,16 @@ struct ExpandedPanelView: View {
     private var geometry: NotchGeometry { viewModel.geometry }
 
     /// Height of the band that has to stay clear of readable content.
+    ///
+    /// A little taller than the cutout, so the top bar's icons, centred in it, sit lower than
+    /// the housing's rounded bottom corners. Exactly the cutout's height, the icons beside it
+    /// read as clipped by the notch (the user, 2026-10-08).
     static func topStripHeight(for geometry: NotchGeometry) -> CGFloat {
-        geometry.collapsedSize.height
+        geometry.collapsedSize.height + topStripDrop
     }
+
+    /// How much taller than the cutout the top strip is: the icons sit half of this lower.
+    static let topStripDrop: CGFloat = 8
 
     var body: some View {
         VStack(spacing: 0) {

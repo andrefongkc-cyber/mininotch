@@ -36,8 +36,7 @@ struct TopStripLayout: Equatable {
     static let batteryIconWidth: CGFloat = 25
     static let batteryLabelSpacing: CGFloat = 4
     /// Gap kept between the items and the cutout, so nothing sits flush against the housing.
-    /// Was 6, which the user found "too close to the actual notch".
-    static let cutoutClearance: CGFloat = 12
+    static let cutoutClearance: CGFloat = 6
     /// Inset from the panel's outer edge, clear of the shoulder fillets.
     static var outerInset: CGFloat { Metrics.topStripPadding + Metrics.notchShoulderRadius }
 
