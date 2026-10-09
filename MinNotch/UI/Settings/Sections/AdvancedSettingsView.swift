@@ -65,37 +65,6 @@ struct AdvancedSettingsView: View {
             }
 
             SettingsCard(
-                header: "Link Shelf",
-                footer: "Each link's title and icon are read from the site itself when you add it, which means a request to that site. Links are kept between launches."
-            ) {
-                SettingsRow(
-                    title: "Link Shelf",
-                    subtitle: "Keep links on the notch, in the Shelf tab under any files. Opening one uses your default browser.",
-                    systemImage: "link"
-                ) {
-                    SettingsToggle(isOn: $settings.advanced.linkShelfEnabled)
-                }
-
-                SettingsDivider()
-
-                SettingsRow(
-                    title: "Links Kept",
-                    subtitle: "The oldest link is dropped once the shelf is full.",
-                    systemImage: "list.bullet",
-                    isEnabled: settings.advanced.linkShelfEnabled
-                ) {
-                    ValueSlider(
-                        value: Binding(
-                            get: { Double(settings.advanced.linkShelfLimit) },
-                            set: { settings.advanced.linkShelfLimit = Int($0) }
-                        ),
-                        range: 5...100,
-                        step: 5
-                    ) { "\(Int($0))" }
-                }
-            }
-
-            SettingsCard(
                 header: "Notes",
                 footer: "Saved as you type, in Library > Application Support > MiniNotch > Notes.txt, and never sent anywhere."
             ) {
