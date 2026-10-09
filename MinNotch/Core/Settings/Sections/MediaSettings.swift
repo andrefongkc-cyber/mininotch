@@ -167,6 +167,51 @@ enum MediaEffectsMode: Equatable {
     }
 }
 
+/// How the song is laid out on the lock screen. See `LockScreenPlayerView`.
+enum LockScreenMediaLayout: String, Codable, CaseIterable, Identifiable {
+    /// The small strip under the notch, with previous, play and next. What 0.4 to 0.7 drew.
+    case underNotch
+    /// A player card on the left and the lyrics beside it, as Canopy lays it out.
+    case playerLeft
+    /// The same, mirrored: lyrics on the left, the card on the right.
+    case playerRight
+    /// The card in the middle, with the line being sung under it.
+    case stacked
+
+    var id: String { rawValue }
+
+    var title: String {
+        switch self {
+        case .underNotch: return "Under the Notch"
+        case .playerLeft: return "Player, Then Lyrics"
+        case .playerRight: return "Lyrics, Then Player"
+        case .stacked: return "Stacked"
+        }
+    }
+
+    /// True for the layouts drawn by the large player rather than the notch strip.
+    var isPlayer: Bool { self != .underNotch }
+}
+
+/// What is drawn behind the lock screen player.
+enum LockScreenBackground: String, Codable, CaseIterable, Identifiable {
+    case none
+    /// A soft wash in the cover's colours.
+    case glow
+    /// The cover itself, enlarged and blurred.
+    case artwork
+
+    var id: String { rawValue }
+
+    var title: String {
+        switch self {
+        case .none: return "None"
+        case .glow: return "Colour Glow"
+        case .artwork: return "Blurred Artwork"
+        }
+    }
+}
+
 /// Settings > Media.
 struct MediaSettings: Codable, Equatable {
     var enabled: Bool = true
@@ -219,8 +264,24 @@ struct MediaSettings: Codable, Equatable {
 
     /// Brief Dynamic-Island-style expand-and-collapse when the track changes.
     var sneakPeekOnTrackChange: Bool = true
-    /// The song and its controls at the top of the lock screen. See `LockScreenController`.
+    /// The song and its controls on the lock screen. See `LockScreenController`.
     var showOnLockScreen: Bool = true
+    /// Where on the lock screen, and in what arrangement.
+    var lockScreenLayout: LockScreenMediaLayout = .playerLeft
+    /// The card with the cover, title, scrubber and controls. Player layouts only.
+    var lockScreenShowsPlayer: Bool = true
+    /// Synced lyrics beside or under the card. Player layouts only. Loads lyrics even with
+    /// Show Lyrics off, since the notch and the lock screen are separate choices.
+    var lockScreenShowsLyrics: Bool = true
+    var lockScreenBackground: LockScreenBackground = .glow
+    /// How strongly the background shows, from a hint to full.
+    var lockScreenBackgroundStrength: Double = 0.7
+    static let lockScreenBackgroundStrengthRange: ClosedRange<Double> = 0.2...1
+
+    /// True when the lock screen player is set to draw lyrics, so they have to be loaded.
+    var wantsLockScreenLyrics: Bool {
+        showOnLockScreen && lockScreenLayout.isPlayer && lockScreenShowsLyrics
+    }
 
     /// A button on the Now Playing card that lists the Mac's sound outputs and sets the volume.
     var showOutputButton: Bool = true
@@ -266,6 +327,13 @@ struct MediaSettings: Codable, Equatable {
         showLyricsWhenClosed = c.value(.showLyricsWhenClosed, false)
         showOutputButton = c.value(.showOutputButton, true)
         showOnLockScreen = c.value(.showOnLockScreen, true)
+        lockScreenLayout = c.value(.lockScreenLayout, LockScreenMediaLayout.playerLeft)
+        lockScreenShowsPlayer = c.value(.lockScreenShowsPlayer, true)
+        lockScreenShowsLyrics = c.value(.lockScreenShowsLyrics, true)
+        lockScreenBackground = c.value(.lockScreenBackground, LockScreenBackground.glow)
+        lockScreenBackgroundStrength = c.value(.lockScreenBackgroundStrength, 0.7, in: Self.lockScreenBackgroundStrengthRange)
+        // Both parts off would leave nothing to draw.
+        if !lockScreenShowsPlayer && !lockScreenShowsLyrics { lockScreenShowsPlayer = true }
         showUpNext = c.value(.showUpNext, true)
         showVisualizer = c.value(.showVisualizer, false)
         customVisualizerPath = c.value(.customVisualizerPath, nil as String?)

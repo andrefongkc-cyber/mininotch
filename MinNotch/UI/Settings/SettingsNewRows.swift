@@ -36,7 +36,6 @@ enum SettingsNewRows {
         "Upcoming Meetings": "0.4",
         "Minutes Before": "0.4",
         "Show Output Button": "0.4",
-        "Controls on the Lock Screen": "0.4",
         "Show Weather": "0.4",
         "Temperature Units": "0.4",
         "Use My Location": "0.4",
@@ -57,6 +56,14 @@ enum SettingsNewRows {
         "Light or Dark": "0.7",
         "Background": "0.7",
         "Glass Opacity": "0.7",
+
+        // 0.8
+        "Song on the Lock Screen": "0.8",
+        "Lock Screen Layout": "0.8",
+        "Show Player": "0.8",
+        "Show Synced Lyrics": "0.8",
+        "Lock Screen Background": "0.8",
+        "Background Strength": "0.8",
     ]
 
     static func isNew(_ title: String) -> Bool {

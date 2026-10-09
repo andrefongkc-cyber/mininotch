@@ -213,19 +213,6 @@ struct MediaSettingsView: View {
                 SettingsDivider()
 
                 SettingsRow(
-                    title: "Controls on the Lock Screen",
-                    subtitle: LockScreenSpace.shared.isAvailable
-                        ? "The song, with previous, play and next, at the top of the lock screen. Uses a private part of macOS, so a future version may stop it working."
-                        : "Not available on this version of macOS.",
-                    systemImage: "lock.display",
-                    isEnabled: settings.media.enabled && LockScreenSpace.shared.isAvailable
-                ) {
-                    SettingsToggle(isOn: $settings.media.showOnLockScreen)
-                }
-
-                SettingsDivider()
-
-                SettingsRow(
                     title: "Show Output Button",
                     subtitle: "A button beside the song's title that lists your speakers, headphones and displays, and sets the volume. AirPlay shows as one entry; pick its receivers in Control Center.",
                     systemImage: "airplayaudio",
@@ -273,6 +260,93 @@ struct MediaSettingsView: View {
             }
 
             SettingsCard(
+                header: "Lock Screen",
+                footer: LockScreenSpace.shared.isAvailable
+                    ? "Drawn over the lock screen through a private part of macOS, so a future version may stop it working. Lock your Mac to see it."
+                    : "Not available on this version of macOS."
+            ) {
+                SettingsRow(
+                    title: "Song on the Lock Screen",
+                    subtitle: "What is playing, with its controls, while your Mac is locked.",
+                    systemImage: "lock.display",
+                    isEnabled: settings.media.enabled && LockScreenSpace.shared.isAvailable
+                ) {
+                    SettingsToggle(isOn: lockScreenBinding($settings.media.showOnLockScreen))
+                }
+
+                SettingsDivider()
+
+                SettingsRow(
+                    title: "Lock Screen Layout",
+                    subtitle: settings.media.lockScreenLayout.isPlayer
+                        ? "A player in the middle of the lock screen, below the clock."
+                        : "A small strip under the notch with previous, play and next.",
+                    systemImage: "rectangle.split.2x1",
+                    isEnabled: lockScreenEnabled
+                ) {
+                    InlinePicker(selection: lockScreenBinding($settings.media.lockScreenLayout)) {
+                        ForEach(LockScreenMediaLayout.allCases) { layout in
+                            Text(layout.title).tag(layout)
+                        }
+                    }
+                }
+
+                SettingsDivider()
+
+                SettingsRow(
+                    title: "Show Player",
+                    subtitle: "The cover, title, scrubber and controls, on a card.",
+                    systemImage: "play.square",
+                    // The last part showing cannot be switched off, or there is nothing to draw.
+                    isEnabled: playerLayoutEnabled && settings.media.lockScreenShowsLyrics
+                ) {
+                    SettingsToggle(isOn: $settings.media.lockScreenShowsPlayer)
+                }
+
+                SettingsDivider()
+
+                SettingsRow(
+                    title: "Show Synced Lyrics",
+                    subtitle: settings.media.lyricsSource.usesNetwork
+                        ? "The line being sung, large, with the lines around it. Click a line to play from it. Songs without lyrics show their title instead."
+                        : "The line being sung, large, with the lines around it. Most songs need Lyrics Source set to Look Up Online, above.",
+                    systemImage: "quote.bubble",
+                    isEnabled: playerLayoutEnabled && settings.media.lockScreenShowsPlayer
+                ) {
+                    SettingsToggle(isOn: lockScreenBinding($settings.media.lockScreenShowsLyrics))
+                }
+
+                SettingsDivider()
+
+                SettingsRow(
+                    title: "Lock Screen Background",
+                    subtitle: "A wash of colour from the cover, or the cover itself blurred, behind the player.",
+                    systemImage: "circle.lefthalf.filled",
+                    isEnabled: playerLayoutEnabled
+                ) {
+                    InlinePicker(selection: $settings.media.lockScreenBackground) {
+                        ForEach(LockScreenBackground.allCases) { background in
+                            Text(background.title).tag(background)
+                        }
+                    }
+                }
+
+                SettingsDivider()
+
+                SettingsRow(
+                    title: "Background Strength",
+                    systemImage: "slider.horizontal.3",
+                    isEnabled: playerLayoutEnabled && settings.media.lockScreenBackground != .none
+                ) {
+                    ValueSlider(
+                        value: $settings.media.lockScreenBackgroundStrength,
+                        range: MediaSettings.lockScreenBackgroundStrengthRange,
+                        step: 0.1
+                    ) { "\(Int(($0 * 100).rounded()))%" }
+                }
+            }
+
+            SettingsCard(
                 header: "Visualizer",
                 footer: "The bars are an animation rather than an analysis of the audio. Ambient Lighting, in Appearance, can follow the real beat. The Now Playing card has one button that cycles the two effects."
             ) {
@@ -288,6 +362,29 @@ struct MediaSettingsView: View {
             }
 
         }
+    }
+
+    private var lockScreenEnabled: Bool {
+        settings.media.enabled && LockScreenSpace.shared.isAvailable && settings.media.showOnLockScreen
+    }
+
+    private var playerLayoutEnabled: Bool {
+        lockScreenEnabled && settings.media.lockScreenLayout.isPlayer
+    }
+
+    /// Writes through, then loads lyrics if the lock screen has just started wanting them, since
+    /// lyrics are otherwise only looked up when a song starts.
+    private func lockScreenBinding<Value>(_ binding: Binding<Value>) -> Binding<Value> {
+        Binding(
+            get: { binding.wrappedValue },
+            set: { newValue in
+                let wanted = settings.media.wantsLockScreenLyrics
+                binding.wrappedValue = newValue
+                if !wanted, settings.media.wantsLockScreenLyrics {
+                    environment.nowPlaying.reloadLyricsIfNeeded()
+                }
+            }
+        )
     }
 
     /// Says whether the compensation is actually doing anything, since it depends on the

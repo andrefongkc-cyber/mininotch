@@ -1,6 +1,6 @@
 # MiniNotch workplan
 
-Status: 0.7.0 released (2026-10-08, GitHub v0.7.0, in appcast.xml; first release with Sparkle); next: the user's feedback on 0.7, then the open items below.
+Status: lock screen player built on branch feature/lockscreen-player, type-checked and rendered with --capture-lock-screen --player, not yet built in Xcode or seen on a locked Mac; next: the user's feedback on 0.7, then the open items below.
 
 Living document. Update the checkboxes as work lands. `CLAUDE.md` holds the architecture
 rules and the traps; this file holds the sequence.
@@ -266,6 +266,7 @@ Sparkle was asked about and deferred ("not now"); it is free (MIT) and needs no 
 - [x] Shelf: select and drag several files at once; AirDrop from the shelf. Dragging and the AirDrop picker need trying by hand.
 - [x] Audio output switcher and volume on the Now Playing card. Switching needs trying with a second output connected.
 - [x] Media controls on the lock screen, beside the HUD that is already there. Needs a locked Mac to see: check it clears the lock screen clock.
+- [~] Lock screen player (asked 2026-10-08, after Canopy): a card with the cover, scrubber and controls, synced lyrics beside it, and a glow or blurred cover behind, each switchable in Settings > Media > Lock Screen, with four layouts (Under the Notch keeps the old strip). Written on a Mac with no Xcode: type-checked with swiftc and rendered with `--capture-lock-screen --player`, never built by Xcode. Needs a locked Mac to see: that it clears the clock and the password field, and that the controls and a click on a lyric work.
 - [x] Weather: location or a typed city, Open-Meteo, a tab and a pill indicator. The location prompt needs trying by hand.
 
 ## 0.3 feedback (2026-09-23)

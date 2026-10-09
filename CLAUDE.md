@@ -104,6 +104,8 @@ MiniNotch --check-links "<url or text>" ...                        # link shelf:
 MiniNotch --check-downloads [--out f]                              # download activities, in a scratch folder
 MiniNotch --check-lock-screen                                      # the SkyLight calls behind the lock screen HUD
 MiniNotch --capture-lock-screen out.png [--hud]                    # what the lock screen window draws
+MiniNotch --capture-lock-screen out.png --player [--lock-layout playerRight|stacked]
+                                 [--lock-background none|glow|artwork] [--no-lock-lyrics] [--no-lock-card]
 MiniNotch --check-meeting-links                                    # which invitation links count as a meeting
 MiniNotch --check-audio-outputs                                    # the outputs the card would offer
 MiniNotch --check-weather London | 51.5 -0.13 [--fahrenheit]       # a real forecast, parsed
@@ -771,6 +773,23 @@ its own, not the notch's, so the private calls can never leave the real notch in
 should not be in. `--check-lock-screen` proves the calls resolve and a moved window stays on
 screen, and the user confirmed on 2026-09-24 that the HUD really does draw over a locked Mac.
 Private API, so it cannot ship in an App Store build.
+
+**The lock screen player is a second window, in the middle of the screen.** Asked for on 2026-10-08
+after Canopy's: Settings > Media > Lock Screen > Lock Screen Layout picks Under the Notch (the strip
+above, unchanged) or one of three player layouts, which `LockScreenPlayerView` draws in a window of
+its own, adopted into the same space: a card with the cover, scrubber and controls, the synced lyrics
+beside or under it, and a colour glow or the blurred cover behind. The HUD keeps the small window at
+the top either way. The player draws in white over the wallpaper, as the lock screen clock does, not
+in the Notch Style, because it is not on the notch. `LockScreenPlayerMetrics` sizes it from the
+screen (the cover is a fifth of its height) and `windowFrame` centres it 56% of the way down, which
+should clear the clock and the password field; only a locked Mac can confirm that. The background
+is inset by `backgroundSpill` so its blur fades out inside the window, for the reason under "A
+blurred layer needs room outside itself". The card and the lyrics each have a switch, and the last
+one on cannot be switched off (both off is also repaired on decode), so it never draws nothing.
+Lyrics load when the lock screen wants them even with the notch's Show Lyrics off
+(`MediaSettings.wantsLockScreenLyrics`, read by `loadLyrics`); because lyrics are otherwise only
+looked up when a song starts, switching it on reloads them, and so does locking with none loaded.
+A song without synced lyrics shows its title large in the lyric column instead of an error.
 
 **An `if` in a modifier is two different views.** `PanelShadow` applied `.shadow` only while
 open, through an `if`, and that gave the whole surface a new identity when the notch opened: the
