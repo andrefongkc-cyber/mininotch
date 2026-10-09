@@ -5,15 +5,18 @@ import SwiftUI
 /// playing with its controls.
 ///
 /// While the screen is locked, a small window at the top of the built-in display draws the HUD
-/// while there is a reading, and otherwise the song, as the sneak peek lays it out, with
-/// previous, play or pause, and next. Each has its own switch: Settings > HUDs > Show on the Lock
-/// Screen, and Settings > Media > Controls on the Lock Screen. The window exists only between lock
-/// and unlock, can never become key, and lives in `LockScreenSpace`, the private window server
-/// space drawn above the lock screen. Its own window rather than the notch's, so the private API
-/// only ever touches a window that is thrown away on unlock and cannot strand the real notch in a
-/// space it should not be in.
+/// while there is a reading. The song goes in one of two places, by Settings > Media > Lock
+/// Screen > Layout: Under the Notch puts it in that same small window when there is no HUD, as
+/// the sneak peek lays it out, with previous, play or pause, and next; the other layouts give it
+/// a second, larger window in the middle of the screen, `LockScreenPlayerView`, with the cover,
+/// lyrics and a background. Each has its own switch: Settings > HUDs > Show on the Lock Screen,
+/// and Settings > Media > Lock Screen > Show on the Lock Screen. The windows exist only between
+/// lock and unlock, can never become key, and live in `LockScreenSpace`, the private window
+/// server space drawn above the lock screen. Windows of their own rather than the notch's, so the
+/// private API only ever touches windows that are thrown away on unlock and cannot strand the
+/// real notch in a space it should not be in.
 ///
-/// It takes clicks only while the song's controls are on screen. The HUD is only looked at, and a
+/// Each takes clicks only while the song's controls are on screen. The HUD is only looked at, and a
 /// window at the top of the lock screen that swallowed clicks for nothing would be a trap.
 ///
 /// Nothing here changes what the HUD reacts to. Volume arrives from Core Audio whether or not the
@@ -21,7 +24,7 @@ import SwiftUI
 @MainActor
 final class LockScreenController {
     private weak var environment: AppEnvironment?
-    private var panel: NSPanel?
+    private var panels: [NSPanel] = []
     private var observers: [NSObjectProtocol] = []
 
     init(environment: AppEnvironment) {
@@ -59,19 +62,53 @@ final class LockScreenController {
         return settings.media.enabled && settings.media.showOnLockScreen
     }
 
+    /// The song in the large player rather than under the notch.
+    private var wantsPlayer: Bool {
+        wantsMedia && (environment?.settings.media.lockScreenLayout.isPlayer ?? false)
+    }
+
     private func screenLocked() {
-        guard panel == nil, wantsHUD || wantsMedia, isAvailable, let environment else { return }
+        guard panels.isEmpty, wantsHUD || wantsMedia, isAvailable, let environment else { return }
         guard let screen = NSScreen.screens.first(where: \.isBuiltIn) ?? NSScreen.main else { return }
 
-        let geometry = NotchGeometry.make(for: screen, settings: environment.settings)
-        let size = LockScreenView.windowSize(for: geometry)
-        let frame = CGRect(
-            x: screen.frame.midX - size.width / 2,
-            y: screen.frame.maxY - size.height,
-            width: size.width,
-            height: size.height
-        )
+        if wantsHUD || (wantsMedia && !wantsPlayer) {
+            let geometry = NotchGeometry.make(for: screen, settings: environment.settings)
+            let size = LockScreenView.windowSize(for: geometry)
+            let frame = CGRect(
+                x: screen.frame.midX - size.width / 2,
+                y: screen.frame.maxY - size.height,
+                width: size.width,
+                height: size.height
+            )
+            present(frame: frame) { panel in
+                LockScreenView(
+                    geometry: geometry,
+                    showsHUD: wantsHUD,
+                    showsMedia: wantsMedia && !wantsPlayer,
+                    onInteractiveChange: { [weak panel] interactive in panel?.ignoresMouseEvents = !interactive }
+                )
+            }
+        }
 
+        if wantsPlayer {
+            let layout = environment.settings.media.lockScreenLayout
+            // Lyrics load only when something wants them, and nothing did before the lock if
+            // the notch's own Show Lyrics is off.
+            if environment.settings.media.wantsLockScreenLyrics, environment.nowPlaying.lyricsStatus == .idle {
+                environment.nowPlaying.reloadLyricsIfNeeded()
+            }
+            present(frame: LockScreenPlayerView.windowFrame(on: screen, layout: layout)) { panel in
+                LockScreenPlayerView(
+                    metrics: LockScreenPlayerMetrics(screen: screen, layout: layout),
+                    onInteractiveChange: { [weak panel] interactive in panel?.ignoresMouseEvents = !interactive }
+                )
+            }
+        }
+    }
+
+    /// Makes one window at `frame`, draws `content` in it, and moves it above the lock screen.
+    private func present<Content: View>(frame: CGRect, content: (NSPanel) -> Content) {
+        guard let environment else { return }
         let panel = LockScreenPanel(contentRect: frame, styleMask: [.borderless, .nonactivatingPanel], backing: .buffered, defer: false)
         panel.isOpaque = false
         panel.backgroundColor = .clear
@@ -81,14 +118,9 @@ final class LockScreenController {
         panel.level = .screenSaver
         panel.collectionBehavior = [.stationary, .ignoresCycle, .fullScreenAuxiliary]
         panel.contentView = NSHostingView(
-            rootView: LockScreenView(
-                geometry: geometry,
-                showsHUD: wantsHUD,
-                showsMedia: wantsMedia,
-                onInteractiveChange: { [weak panel] interactive in panel?.ignoresMouseEvents = !interactive }
-            )
-            .environment(environment)
-            .environment(environment.settings)
+            rootView: content(panel)
+                .environment(environment)
+                .environment(environment.settings)
         )
         panel.orderFrontRegardless()
 
@@ -97,12 +129,12 @@ final class LockScreenController {
             panel.close()
             return
         }
-        self.panel = panel
+        panels.append(panel)
     }
 
     private func screenUnlocked() {
-        panel?.close()
-        panel = nil
+        panels.forEach { $0.close() }
+        panels.removeAll()
     }
 }
 

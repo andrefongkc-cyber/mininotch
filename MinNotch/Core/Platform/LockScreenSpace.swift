@@ -78,6 +78,7 @@ final class LockScreenSpace {
                 return false
             }
             _ = functions.setAbsoluteLevel(connection, created, Self.aboveLockScreenLevel)
+            // Ignored for the reason under the move below: macOS 27 answers non-zero regardless.
             _ = functions.showSpaces(connection, [NSNumber(value: created)] as CFArray)
             space = created
         }
@@ -85,7 +86,17 @@ final class LockScreenSpace {
         guard let space else { return false }
         // 7 is every kind of space the window might already be on, so it leaves them all and
         // exists only in this one.
+        //
+        // The status is logged, not trusted. On macOS 27 this call, `SLSShowSpaces` and
+        // `SLSCopySpacesForWindows` all answer with what look like undefined values (a different
+        // large number each run, an empty list for every window) while the move itself works, so
+        // requiring zero threw away a window that would have shown. Seen by NUEM, another lock
+        // screen app: github.com/tgtools123/NUEM/issues/6. A move that really failed leaves the
+        // window in an ordinary space, where the lock screen hides it until unlock closes it.
         let status = functions.addWindows(connection, space, [NSNumber(value: window.windowNumber)] as CFArray, 7)
-        return status == 0
+        if status != 0 {
+            AppLog.app.info("SkyLight answered \(status) moving a window above the lock screen; macOS 27 answers non-zero even when it works")
+        }
+        return true
     }
 }

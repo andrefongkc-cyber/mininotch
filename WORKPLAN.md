@@ -1,6 +1,6 @@
 # MiniNotch workplan
 
-Status: 0.7.0 released (2026-10-08, GitHub v0.7.0, in appcast.xml; first release with Sparkle); next: the user's feedback on 0.7, then the open items below.
+Status: lock screen player, notch space, panel sizes and the lyric length fix done on branch feature/lockscreen-player, confirmed by the user on a locked Mac (macOS 27.0.1) and in a PR for Andre; next: review of that PR, then the user's feedback on 0.7 and the open items below.
 
 Living document. Update the checkboxes as work lands. `CLAUDE.md` holds the architecture
 rules and the traps; this file holds the sequence.
@@ -266,6 +266,11 @@ Sparkle was asked about and deferred ("not now"); it is free (MIT) and needs no 
 - [x] Shelf: select and drag several files at once; AirDrop from the shelf. Dragging and the AirDrop picker need trying by hand.
 - [x] Audio output switcher and volume on the Now Playing card. Switching needs trying with a second output connected.
 - [x] Media controls on the lock screen, beside the HUD that is already there. Needs a locked Mac to see: check it clears the lock screen clock.
+- [x] Lock screen player (asked 2026-10-08, after Canopy): the cover on its own with a controls card under it in one half of the screen, big synced lyrics from the middle to the edge in the other, sliding and fading at the top and bottom, optional glow or blurred cover behind; layouts and parts in Settings > Media > Lock Screen (Under the Notch keeps the old strip). Seen working on a locked Mac by the user on 2026-10-08, after `LockScreenSpace` stopped trusting macOS 27's return values.
+- [x] Notch in its own space (`NotchSpace`), so swiping between desktops leaves it over the camera; Advanced > Keep the Notch Still Between Desktops. Confirmed by the user, 2026-10-08.
+- [x] Panel Size presets with Fit to Top Bar, Now Playing text and transport scaled to the panel width, smaller title, transport from the left, top bar icons lower. Built and captured; the user saw them.
+- [x] Default Tab applies on every open with Remember Last Tab off.
+- [x] Lyric search takes a synced sheet within 15 s when none is within 5 s (Spotify's lengths differ from LRCLIB's). Confirmed by the user.
 - [x] Weather: location or a typed city, Open-Meteo, a tab and a pill indicator. The location prompt needs trying by hand.
 
 ## 0.3 feedback (2026-09-23)

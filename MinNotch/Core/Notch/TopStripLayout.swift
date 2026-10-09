@@ -173,7 +173,7 @@ struct TopStripLayout: Equatable {
 
     // MARK: Panel width
 
-    /// The narrowest panel that fits every item at the tightest button width.
+    /// The narrowest panel that fits every item at `buttonWidth`, the tightest by default.
     ///
     /// Assumes the battery is showing whenever it is placed, because geometry is worked out from
     /// settings alone and a panel a little wider than needed costs nothing.
@@ -183,7 +183,8 @@ struct TopStripLayout: Equatable {
         availableTabs: [NotchTab],
         showPercentage: Bool,
         showsDebug: Bool,
-        cutoutWidth: CGFloat
+        cutoutWidth: CGFloat,
+        buttonWidth: CGFloat? = nil
     ) -> CGFloat {
         // Room for Keep Open too, which appears by itself while the panel is kept open: geometry
         // is worked out from settings alone, and cannot know whether it is.
@@ -198,7 +199,7 @@ struct TopStripLayout: Equatable {
         let sequence = resolved.leading + resolved.trailing
         guard !sequence.isEmpty else { return 0 }
 
-        let tightest = buttonWidths.last ?? 21
+        let tightest = buttonWidth ?? buttonWidths.last ?? 21
         let battery = batteryWidth(showPercentage: showPercentage)
         let widthOf: (TopStripItem) -> CGFloat = { $0 == .battery ? battery : tightest }
 

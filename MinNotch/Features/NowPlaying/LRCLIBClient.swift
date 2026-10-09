@@ -45,6 +45,12 @@ final class LRCLIBClient: Sendable {
     /// A remix, a live take, or a radio edit carries the same title and artist and completely
     /// different timings, so accepting one produces lyrics that look right and scroll wrong.
     private static let durationTolerance: TimeInterval = 5
+    /// How far a search result's length may be from the track's when nothing is within
+    /// `durationTolerance`. Spotify's "I Want You Back" is 170 seconds and every copy on LRCLIB
+    /// is 177 to 180, so the song never had lyrics: a different length is usually a longer fade
+    /// or a different master, with the words where they were. Timing Offset and Fix Timing
+    /// Automatically are there for the rest.
+    private static let wideDurationTolerance: TimeInterval = 15
 
     /// Looks up `track`. The completion runs on the main queue, with nil for any failure,
     /// which is deliberately indistinguishable from "no lyrics exist": the caller shows the
@@ -181,12 +187,17 @@ final class LRCLIBClient: Sendable {
                     guard let duration = candidate.duration else { return nil }
                     return (candidate, abs(duration - targetDuration))
                 }
-                .filter { $0.1 <= Self.durationTolerance }
+                .filter { $0.1 <= Self.wideDurationTolerance }
                 .sorted { $0.1 < $1.1 }
 
             // Better no lyrics than the wrong cut's. An unsynced sheet from a remix looks
-            // fine and scrolls wrong, which is harder to notice than nothing at all.
-            let text = ranked.lazy.compactMap { Self.text(from: $0.0) }.first
+            // fine and scrolls wrong, which is harder to notice than nothing at all. So the
+            // closest within the tight tolerance wins, and only when there is none does a
+            // synced sheet within the wide one count: a remix or a live take is usually much
+            // further off than fifteen seconds, and an unsynced sheet is never taken from there.
+            let close = ranked.lazy.filter { $0.1 <= Self.durationTolerance }.compactMap { Self.text(from: $0.0) }.first
+            let near = ranked.lazy.filter { $0.0.syncedLyrics?.isEmpty == false }.compactMap { Self.text(from: $0.0) }.first
+            let text = close ?? near
             DispatchQueue.main.async { completion(text.map(SearchOutcome.found) ?? .noneFound) }
         }
     }

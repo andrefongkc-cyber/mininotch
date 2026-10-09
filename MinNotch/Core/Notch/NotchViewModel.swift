@@ -42,6 +42,9 @@ final class NotchViewModel {
         didSet {
             // Links lives in the Shelf tab now; asking for it opens that.
             if selectedTab == .links { selectedTab = .shelf }
+            // Anything that picks a tab while the panel is closed (a drag opening the Shelf, the
+            // Notes shortcut) is choosing what to open on, so the default does not override it.
+            if !isApplyingDefaultTab { returnsToDefaultTab = false }
             guard oldValue != selectedTab else { return }
             // Only the real notch writes the remembered tab. `lastTab` is one value shared
             // by every surface, so a virtual notch on a second monitor writing to it would
@@ -50,11 +53,18 @@ final class NotchViewModel {
             if geometry.hasPhysicalNotch {
                 settings.general.lastTab = selectedTab
             }
+            // Going back to the default happens as the panel opens, which already ticks.
+            guard !isApplyingDefaultTab else { return }
             Haptics.perform(enabled: settings.advanced.hapticFeedbackEnabled, strength: settings.advanced.hapticStrength)
         }
     }
 
     @ObservationIgnored private let settings: SettingsStore
+    /// Set when the panel closes with Remember Last Tab off, so the next open goes back to the
+    /// Default Tab. Without it, Default Tab only chose the tab at launch and the panel then
+    /// reopened on whatever was used last, which is what Remember Last Tab off says it will not do.
+    @ObservationIgnored private var returnsToDefaultTab = false
+    @ObservationIgnored private var isApplyingDefaultTab = false
     @ObservationIgnored private var hoverOpenWork: DispatchWorkItem?
     @ObservationIgnored private var peekCollapseWork: DispatchWorkItem?
 
@@ -142,6 +152,7 @@ final class NotchViewModel {
     func expand() {
         cancelPendingWork()
         guard state != .expanded else { return }
+        applyDefaultTabIfNeeded()
         setState(.expanded)
     }
 
@@ -151,6 +162,20 @@ final class NotchViewModel {
         releaseSwipeAnchor()
         guard state != .collapsed else { return }
         setState(.collapsed)
+        // The real notch only: a display without one never remembers and has its own default.
+        returnsToDefaultTab = geometry.hasPhysicalNotch && !settings.general.rememberLastTab
+    }
+
+    /// Settings > General > Tabs: with Remember Last Tab off, every open starts on Default Tab,
+    /// unless something chose a tab since the panel closed.
+    private func applyDefaultTabIfNeeded() {
+        guard returnsToDefaultTab else { return }
+        returnsToDefaultTab = false
+        let tab = settings.general.defaultTab
+        guard availableTabs.contains(tab) else { return }
+        isApplyingDefaultTab = true
+        selectedTab = tab
+        isApplyingDefaultTab = false
     }
 
     /// Opens and holds the panel, or lets it go. Letting go closes it unless the pointer is

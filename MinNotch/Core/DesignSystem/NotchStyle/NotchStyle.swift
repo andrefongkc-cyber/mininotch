@@ -311,7 +311,19 @@ private struct NotchStyleKey: EnvironmentKey {
     static let defaultValue = NotchStyle.make(.minimal, isDark: true)
 }
 
+private struct NotchContentScaleKey: EnvironmentKey {
+    static let defaultValue: CGFloat = 1
+}
+
 extension EnvironmentValues {
+    /// How much the open panel's text and controls are scaled for its width, 1 at the old
+    /// default of 560 points. Set by `ExpandedPanelView` from the panel's width; read by the
+    /// Now Playing card for its title and transport. See `ExpandedPanelView.contentScale`.
+    var notchContentScale: CGFloat {
+        get { self[NotchContentScaleKey.self] }
+        set { self[NotchContentScaleKey.self] = newValue }
+    }
+
     /// The style notch components draw in. Minimal Dark unless a root says otherwise.
     var notchStyle: NotchStyle {
         get { self[NotchStyleKey.self] }

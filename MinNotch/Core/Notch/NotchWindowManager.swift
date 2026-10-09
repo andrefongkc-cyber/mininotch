@@ -15,6 +15,8 @@ final class NotchWindowManager {
     private var spaceObserver: NSObjectProtocol?
     private var pointerMonitor: Any?
     private var lastPointerDisplay: CGDirectDisplayID?
+    /// Keep the Notch Still Between Desktops as the surfaces were built with it.
+    private var lastPinned: Bool?
 
     init(environment: AppEnvironment) {
         self.environment = environment
@@ -106,6 +108,17 @@ final class NotchWindowManager {
     func rebuild() {
         let targets = targetScreens()
         let wantedIDs = Set(targets.map(NotchGeometry.displayID(of:)))
+
+        // A window cannot be taken back out of the notch's space reliably, so switching Keep the
+        // Notch Still Between Desktops either way starts every surface again, in or out of it.
+        let pinned = environment.settings.advanced.keepNotchStillBetweenDesktops
+        if pinned != lastPinned {
+            if lastPinned != nil {
+                controllers.values.forEach { $0.hide() }
+                controllers.removeAll()
+            }
+            lastPinned = pinned
+        }
 
         for (id, controller) in controllers where !wantedIDs.contains(id) {
             controller.hide()

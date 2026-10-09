@@ -367,7 +367,10 @@ final class NowPlayingController {
     private static let artworkRetryLimit = 4
 
     private func loadLyrics(for snapshot: NowPlayingTrack) {
-        guard let settings, settings.media.showLyrics, FeatureFlag.lyrics.isEnabled else {
+        // The lock screen player draws lyrics of its own, so it can want them with the notch's
+        // Show Lyrics off.
+        guard let settings, settings.media.showLyrics || settings.media.wantsLockScreenLyrics,
+              FeatureFlag.lyrics.isEnabled else {
             lyrics = nil
             lyricsStatus = .idle
             return

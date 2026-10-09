@@ -5,6 +5,7 @@ struct NowPlayingCardView: View {
     @Environment(\.notchStyle) private var surfaceTheme
     @Environment(AppEnvironment.self) private var environment
     @Environment(SettingsStore.self) private var settings
+    @Environment(\.notchContentScale) private var scale
 
     private var controller: NowPlayingController { environment.nowPlaying }
 
@@ -313,17 +314,18 @@ struct NowPlayingCardView: View {
         controller.track?.sourceBundleIdentifier.flatMap(AppIconCache.icon(forBundleIdentifier:))
     }
 
-    private func metadata(_ track: NowPlayingTrack, titleSize: CGFloat = 15) -> some View {
+    /// The title was 15 points; the user found it too big beside the cover.
+    private func metadata(_ track: NowPlayingTrack, titleSize: CGFloat = 13) -> some View {
         HStack(alignment: .top, spacing: 6) {
             VStack(alignment: .leading, spacing: 2) {
                 Text(track.title)
-                    .font(.system(size: titleSize, weight: .semibold))
+                    .font(.system(size: titleSize * scale, weight: .semibold))
                     .foregroundStyle(theme.ink)
                     .lineLimit(1)
                     .truncationMode(.tail)
 
                 Text(track.artist.isEmpty ? track.sourceAppName : track.artist)
-                    .font(.system(size: 12))
+                    .font(.system(size: 11 * scale))
                     .foregroundStyle(theme.ink.opacity(0.6))
                     .lineLimit(1)
             }
@@ -450,23 +452,20 @@ struct NowPlayingCardView: View {
         }
     }
 
+    /// The transport from the left, under the title, and pop-out and effects at the right.
+    /// It used to be centred between padding the width of those two buttons, which put it well
+    /// right of the title; the user wanted it "more towards the left". In the same row, not
+    /// overlaid, so the two can never run into each other.
     private var controls: some View {
-        HStack(spacing: 14) {
-            Spacer(minLength: 0)
-            transportButtons(spacing: 14)
-            Spacer(minLength: 0)
+        HStack(spacing: 0) {
+            transportButtons(spacing: 12 * scale)
+                // The buttons' frames are wider than their glyphs; this lines the first glyph
+                // up with the title rather than its frame.
+                .padding(.leading, -4)
+            Spacer(minLength: 8)
+            trailingCluster
         }
-        // Room on both sides for the pop-out and effects buttons, so the transport stays
-        // centred and can never run underneath them. With shuffle in the row as well it
-        // otherwise touched them in the narrower floating window.
-        .padding(.horizontal, Self.trailingClusterWidth)
-        // Overlaid rather than placed in the row, so adding them does not shift the transport
-        // buttons off centre.
-        .overlay(alignment: .trailing) { trailingCluster }
     }
-
-    /// Two 26-point buttons and the gap between them.
-    private static let trailingClusterWidth: CGFloat = 58
 
     /// Pops this card out into the floating window, or puts it away again.
     ///
@@ -628,16 +627,17 @@ struct NowPlayingCardView: View {
         } label: {
             TransportSymbol.image(
                 symbolName(for: control, isPlaying: isPlaying),
-                pointSize: isPlayPause ? 24 : (Self.isStateControl(control) ? 14 : 17)
+                pointSize: (isPlayPause ? 24 : (Self.isStateControl(control) ? 14 : 17)) * scale
             )
                 .foregroundStyle(foreground(for: control))
-                .frame(width: isPlayPause ? 30 : 26, height: 28)
+                .frame(width: (isPlayPause ? 30 : 26) * scale, height: 28)
                 .background {
                     // A disc behind the actions, in a style that has one; shuffle, repeat and
                     // favourite are states and stay bare, as their colour already says enough.
                     if !Self.isStateControl(control) {
+                        let disc = (isPlayPause ? 36 : 28) * scale
                         NotchElementView(isPlayPause ? .primaryTransport : .transport, shape: .circle, emphasis: 0.08)
-                            .frame(width: isPlayPause ? 36 : 28, height: isPlayPause ? 36 : 28)
+                            .frame(width: disc, height: disc)
                     }
                 }
                 .contentShape(Rectangle())

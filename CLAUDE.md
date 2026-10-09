@@ -104,6 +104,8 @@ MiniNotch --check-links "<url or text>" ...                        # link shelf:
 MiniNotch --check-downloads [--out f]                              # download activities, in a scratch folder
 MiniNotch --check-lock-screen                                      # the SkyLight calls behind the lock screen HUD
 MiniNotch --capture-lock-screen out.png [--hud]                    # what the lock screen window draws
+MiniNotch --capture-lock-screen out.png --player [--lock-layout playerRight|stacked]
+                                 [--lock-background none|glow|artwork] [--no-lock-lyrics] [--no-lock-card]
 MiniNotch --check-meeting-links                                    # which invitation links count as a meeting
 MiniNotch --check-audio-outputs                                    # the outputs the card would offer
 MiniNotch --check-weather London | 51.5 -0.13 [--fahrenheit]       # a real forecast, parsed
@@ -320,6 +322,18 @@ Scripts/          build, run, preview
   to right as drawn. It used to walk `availableTabs`, the registry's fixed order, so after a tab
   was moved the swipe skipped it and came back to it out of place. `--check-tab-order` rearranges
   the bar and compares.
+- **The panel's width is a preset or the slider, never below what the top bar needs.** Appearance >
+Panel Size > Size (`PanelSize`, 2026-10-08): Fit to Top Bar is `minimumPanelWidth` at the full
+28-point buttons (floor 400), so switching tabs off narrows the panel; Small, Medium and Large are
+440, 520 and 640; Custom is the Width slider. `NotchGeometry.panelWidth` takes the larger of that and
+the tightest-button minimum, as before. For icons "too close to the actual notch", `cutoutClearance`
+went to 12 and back to 6 at the user's request; instead the top strip is `topStripDrop` (8) taller
+than the cutout, so its icons sit 4 points lower, under the housing's rounded corners. The open panel's text
+and controls follow its width: `ExpandedPanelView.contentScale` (width / 560, 0.85 to 1.1) goes into
+the environment as `notchContentScale`, and the Now Playing card scales its title, artist and
+transport by it. The card's title is 13 points (was 15) and the transport starts at the left under it,
+with pop-out and effects at the right of the same row, both at the user's request. `--capture-notch
+--width` sets Size to Custom, or it is ignored.
 - **Nothing may hardcode which indicator is the wide one.** `flankWidth` sums whatever the
   user assigned to each side, in their order, with the same spacings the view lays out, and
   takes the larger of the two. It used to know that artwork was 18 points and battery was
@@ -770,7 +784,51 @@ would be a trap. HUDs and media each have their own switch. It is a window of
 its own, not the notch's, so the private calls can never leave the real notch in a space it
 should not be in. `--check-lock-screen` proves the calls resolve and a moved window stays on
 screen, and the user confirmed on 2026-09-24 that the HUD really does draw over a locked Mac.
-Private API, so it cannot ship in an App Store build.
+Private API, so it cannot ship in an App Store build. **On macOS 27 the calls' return values
+mean nothing**: `SLSShowSpaces` and `SLSSpaceAddWindowsAndRemoveFromSpaces` answer a different large
+number each run and `SLSCopySpacesForWindows` an empty list for every window, while the move works.
+`adopt` used to require zero and so threw the window away on every lock; it now logs the status and
+carries on (found 2026-10-08 on 27.0.1, matching github.com/tgtools123/NUEM/issues/6). That also
+means `--check-lock-screen` can no longer prove anything there; only locking can.
+
+**The notch has a window server space of its own, so a desktop swipe does not move it.** On macOS
+27 a `canJoinAllSpaces` + `stationary` window still slid out and back with every swipe between
+desktops; the user's screen recording (2026-10-08) showed the black pill travel half the screen while
+the camera housing stayed put. `NotchSpace` makes a space at absolute level 99 and adds each notch
+window to it after `orderFrontRegardless` (`NotchWindowController.show`), as Boring Notch does with
+its `NotchSpaceManager`. Boring Notch uses the highest level there is, which draws over the lock
+screen; 99 is above the desktops and below Setup Assistant (100), password prompts (200) and the lock
+screen (300), so the notch with its clipboard and notes never shows over a locked Mac. Advanced >
+Keep the Notch Still Between Desktops (on) switches it; changing it rebuilds every surface, because a
+window cannot reliably be taken back out of the space. Only seen working by the user swiping.
+
+**The lock screen player is a second window, in the middle of the screen.** Asked for on 2026-10-08
+after Canopy's: Settings > Media > Lock Screen > Lock Screen Layout picks Under the Notch (the strip
+above, unchanged) or one of three player layouts, which `LockScreenPlayerView` draws in a window of
+its own, adopted into the same space: the cover on its own with a separate controls card under it
+(the user asked for the two apart), the synced lyrics beside or under them with no box, sliding so the
+line being sung stays at a fixed height and fading out towards the top and bottom, and optionally a
+colour glow or the blurred cover behind (None by default, at the user's request). The lyric list is a
+`ScrollView` scrolled to the current line (`scrollTo(_:anchor:)`), with the pointer's scrolling off.
+Two other ways were tried and must not come back: a custom alignment guide on every line threw the
+whole list off screen, and sliding the list by each line's measured top (`onGeometryChange`) fed back
+into its own layout, so SwiftUI logged "Geometry action is cycling between duplicate values" every
+few seconds and the lock screen froze (reported as a crash, 2026-10-08). `--capture-lock-screen
+--player` draws a real window for this reason (`ImageRenderer` draws a `ScrollView` empty); give it
+`--hold 8` and grep the log for "cycling" to check. The side by side layouts span the screen: the
+cover (28% of the screen's height) at a 7% margin, the lyrics to the other margin, the current line
+4.2% of the screen's height. The HUD keeps the small window at
+the top either way. The player draws in white over the wallpaper, as the lock screen clock does, not
+in the Notch Style, because it is not on the notch. `LockScreenPlayerMetrics` sizes it from the
+screen (the cover is a fifth of its height) and `windowFrame` centres it 56% of the way down, which
+should clear the clock and the password field; only a locked Mac can confirm that. The background
+is inset by `backgroundSpill` so its blur fades out inside the window, for the reason under "A
+blurred layer needs room outside itself". The card and the lyrics each have a switch, and the last
+one on cannot be switched off (both off is also repaired on decode), so it never draws nothing.
+Lyrics load when the lock screen wants them even with the notch's Show Lyrics off
+(`MediaSettings.wantsLockScreenLyrics`, read by `loadLyrics`); because lyrics are otherwise only
+looked up when a song starts, switching it on reloads them, and so does locking with none loaded.
+A song without synced lyrics shows its title large in the lyric column instead of an error.
 
 **An `if` in a modifier is two different views.** `PanelShadow` applied `.shadow` only while
 open, through an `if`, and that gave the whole surface a new identity when the notch opened: the
@@ -801,6 +859,13 @@ and only their blur's tail reached the screen: one point outside the housing, al
 sides against 197 below. `NotchRootView.glowShape` traces the housing in that one case, and the
 two now measure 209 and 200. Capture with `--collapsed --placements closed,open` and read alpha
 just outside `x = 494` and below `y = 63` to check it.
+
+**Default Tab applies on every open, not only at launch.** With General > Tabs > Remember Last Tab
+off, `NotchViewModel.collapse()` marks the next open to go back to Default Tab, and `expand()` does it
+before the state changes. Anything that sets a tab while the panel is closed (a drag opening the
+Shelf, the Notes shortcut, the timer's URL) clears the mark, because those callers set the tab and
+then expand. It used to choose the tab only in `init`, so the panel reopened on whatever was used
+last whichever way the switch was set. The real notch only; a virtual one keeps its own default.
 
 **The song is not a live activity.** It used to be presented as one, the lowest priority, which
 put the artist in the Live Activity slot with no choice of title and never took it down again, so
@@ -1163,6 +1228,13 @@ connection callbacks would mean the Bluetooth permission for something the user 
 "a device appeared" for free, and the charge is read two seconds later because a service that has
 just matched has usually not published it yet. The iterator has to be drained once when it is
 armed, or everything already connected arrives as news at launch.
+
+**A lyric search takes a length within 5 seconds, or failing that a synced sheet within 15.**
+`LRCLIBClient.fetchBestTextFromSearch` used to take only the 5-second matches, so a song whose
+streaming copy is a different master never had lyrics: Spotify's "I Want You Back" is 170 seconds
+and LRCLIB's are 177 to 180, and the miss was then cached for three days (2026-10-08, found by
+hashing the cache key against candidate lengths). The close match still wins whenever there is one,
+and the wide tier only takes synced sheets.
 
 **Clicking a lyric line seeks by lyric time, not by track time.** The strip's clock is
 `elapsed + offset + audio correction - latency`, so seeking to a line's timestamp directly would

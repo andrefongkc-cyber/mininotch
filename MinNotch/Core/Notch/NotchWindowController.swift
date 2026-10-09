@@ -41,6 +41,10 @@ final class NotchWindowController {
 
     func show() {
         panel.orderFrontRegardless()
+        // After ordering front, which is when the window gets its number.
+        if environment.settings.advanced.keepNotchStillBetweenDesktops {
+            NotchSpace.shared.pin(panel)
+        }
     }
 
     func hide() {
