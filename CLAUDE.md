@@ -785,9 +785,16 @@ above, unchanged) or one of three player layouts, which `LockScreenPlayerView` d
 its own, adopted into the same space: the cover on its own with a separate controls card under it
 (the user asked for the two apart), the synced lyrics beside or under them with no box, sliding so the
 line being sung stays at a fixed height and fading out towards the top and bottom, and optionally a
-colour glow or the blurred cover behind (None by default, at the user's request). The lyric list is
-slid by the current line's measured top (`onGeometryChange` per line); a custom alignment guide was
-tried first and every line's explicit guide threw the whole list off screen. The HUD keeps the small window at
+colour glow or the blurred cover behind (None by default, at the user's request). The lyric list is a
+`ScrollView` scrolled to the current line (`scrollTo(_:anchor:)`), with the pointer's scrolling off.
+Two other ways were tried and must not come back: a custom alignment guide on every line threw the
+whole list off screen, and sliding the list by each line's measured top (`onGeometryChange`) fed back
+into its own layout, so SwiftUI logged "Geometry action is cycling between duplicate values" every
+few seconds and the lock screen froze (reported as a crash, 2026-10-08). `--capture-lock-screen
+--player` draws a real window for this reason (`ImageRenderer` draws a `ScrollView` empty); give it
+`--hold 8` and grep the log for "cycling" to check. The side by side layouts span the screen: the
+cover (28% of the screen's height) at a 7% margin, the lyrics to the other margin, the current line
+4.2% of the screen's height. The HUD keeps the small window at
 the top either way. The player draws in white over the wallpaper, as the lock screen clock does, not
 in the Notch Style, because it is not on the notch. `LockScreenPlayerMetrics` sizes it from the
 screen (the cover is a fifth of its height) and `windowFrame` centres it 56% of the way down, which
@@ -829,6 +836,13 @@ and only their blur's tail reached the screen: one point outside the housing, al
 sides against 197 below. `NotchRootView.glowShape` traces the housing in that one case, and the
 two now measure 209 and 200. Capture with `--collapsed --placements closed,open` and read alpha
 just outside `x = 494` and below `y = 63` to check it.
+
+**Default Tab applies on every open, not only at launch.** With General > Tabs > Remember Last Tab
+off, `NotchViewModel.collapse()` marks the next open to go back to Default Tab, and `expand()` does it
+before the state changes. Anything that sets a tab while the panel is closed (a drag opening the
+Shelf, the Notes shortcut, the timer's URL) clears the mark, because those callers set the tab and
+then expand. It used to choose the tab only in `init`, so the panel reopened on whatever was used
+last whichever way the switch was set. The real notch only; a virtual one keeps its own default.
 
 **The song is not a live activity.** It used to be presented as one, the lowest priority, which
 put the artist in the Live Activity slot with no choice of title and never took it down again, so

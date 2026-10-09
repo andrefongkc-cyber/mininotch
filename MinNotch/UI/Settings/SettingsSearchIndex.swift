@@ -29,7 +29,7 @@ enum SettingsSearchIndex {
         .init(tab: .general, section: "Opening the Notch", title: "Open on Click", subtitle: "Click the pill to expand it.", symbolName: "hand.tap"),
         .init(tab: .general, section: "Opening the Notch", title: "Close When the Pointer Leaves", subtitle: "", symbolName: "arrow.up.left.and.arrow.down.right"),
         .init(tab: .general, section: "Tabs", title: "Remember Last Tab", subtitle: "Reopen on whichever widget you used last.", symbolName: "arrow.uturn.backward"),
-        .init(tab: .general, section: "Tabs", title: "Default Tab", subtitle: "", symbolName: "square.grid.2x2"),
+        .init(tab: .general, section: "Tabs", title: "Default Tab", subtitle: "What the notch opens on every time, with Remember Last Tab off.", symbolName: "square.grid.2x2"),
         .init(tab: .general, section: "Permissions", title: "Login Items", subtitle: "Review which apps macOS allows to start at login.", symbolName: "list.bullet.rectangle"),
         .init(tab: .appearance, section: "Notch Style", title: "Light or Dark", subtitle: "Auto follows your Mac's appearance.", symbolName: "circle.lefthalf.filled"),
         .init(tab: .appearance, section: "Notch Style", title: "Background", subtitle: "Liquid Glass bends and blurs what is behind the notch.", symbolName: "drop"),

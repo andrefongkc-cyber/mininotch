@@ -34,7 +34,7 @@ struct LockScreenPlayerView: View {
         let metrics = LockScreenPlayerMetrics(screen: screen, layout: layout)
         let size = metrics.windowSize
         let frame = screen.frame
-        let centreFromTop = frame.height * 0.56
+        let centreFromTop = frame.height * 0.54
         return CGRect(
             x: frame.midX - size.width / 2,
             y: frame.maxY - centreFromTop - size.height / 2,
@@ -72,23 +72,24 @@ struct LockScreenPlayerView: View {
                         track: track,
                         alignment: .center,
                         height: showsPlayer ? metrics.stackedLyricsHeight : metrics.columnHeight,
+                        fontSize: metrics.lyricFontSize,
                         anchor: showsPlayer ? 0.3 : 0.42
                     )
                     .frame(width: metrics.lyricsWidth)
                 }
             }
         case .playerRight:
-            HStack(spacing: LockScreenPlayerMetrics.sideGap) {
+            HStack(spacing: metrics.gap) {
                 if showsLyrics {
-                    LockScreenLyricsColumn(track: track, alignment: showsPlayer ? .trailing : .center, height: metrics.columnHeight)
+                    LockScreenLyricsColumn(track: track, alignment: showsPlayer ? .trailing : .center, height: metrics.columnHeight, fontSize: metrics.lyricFontSize)
                 }
                 if showsPlayer { LockScreenPlayerColumn(track: track, metrics: metrics) }
             }
         case .playerLeft, .underNotch:
-            HStack(spacing: LockScreenPlayerMetrics.sideGap) {
+            HStack(spacing: metrics.gap) {
                 if showsPlayer { LockScreenPlayerColumn(track: track, metrics: metrics) }
                 if showsLyrics {
-                    LockScreenLyricsColumn(track: track, alignment: showsPlayer ? .leading : .center, height: metrics.columnHeight)
+                    LockScreenLyricsColumn(track: track, alignment: showsPlayer ? .leading : .center, height: metrics.columnHeight, fontSize: metrics.lyricFontSize)
                 }
             }
         }
@@ -138,33 +139,50 @@ struct LockScreenPlayerView: View {
 }
 
 /// Sizes for the player, worked out once from the screen, so the window and the view agree.
+///
+/// The side by side layouts span the screen: the cover and controls at the left margin and the
+/// lyrics filling the rest, to the right margin. Everything scales with the display.
 struct LockScreenPlayerMetrics {
     let layout: LockScreenMediaLayout
-    /// The cover's side, which is also the controls card's width. A fifth of the screen's
-    /// height, so the player scales with the display and still clears the clock and the
-    /// password field on a 13-inch one.
+    /// The cover's side, which is also the controls card's width. Over a quarter of the
+    /// screen's height, so the player scales with the display and still clears the clock and
+    /// the password field on a 13-inch one.
     let artworkSide: CGFloat
     let lyricsWidth: CGFloat
+    /// Between the player and the lyrics, side by side.
+    let gap: CGFloat
+    /// The line being sung. The others are drawn at `LockScreenLyricsColumn.dimScale` of it.
+    let lyricFontSize: CGFloat
 
     /// Room around the content for the background's blur to fade out in.
-    static let backgroundSpill: CGFloat = 60
+    static let backgroundSpill: CGFloat = 50
     /// Between the cover and the controls card under it.
-    static let artworkGap: CGFloat = 12
+    static let artworkGap: CGFloat = 14
     /// The controls card: title, artist, scrubber, times and the three buttons.
-    static let controlsHeight: CGFloat = 132
-    static let sideGap: CGFloat = 48
-    static let stackedGap: CGFloat = 20
+    static let controlsHeight: CGFloat = 164
+    static let stackedGap: CGFloat = 24
 
     init(screen: NSScreen, layout: LockScreenMediaLayout) {
         self.layout = layout
-        let side = min(max(screen.frame.height * 0.2, 170), 240)
-        artworkSide = layout == .stacked ? (side * 0.85).rounded() : side.rounded()
-        lyricsWidth = min(max(screen.frame.width * 0.32, 340), 520).rounded()
+        let width = screen.frame.width
+        let side = min(max(screen.frame.height * 0.28, 220), 340).rounded()
+        // From the screen's edges to the cover on one side and the lyrics on the other.
+        let margin = (width * 0.07).rounded()
+        gap = (width * 0.05).rounded()
+        switch layout {
+        case .stacked:
+            artworkSide = (side * 0.85).rounded()
+            lyricsWidth = min(width * 0.6, 900).rounded()
+        case .playerLeft, .playerRight, .underNotch:
+            artworkSide = side
+            lyricsWidth = width - margin * 2 - side - gap
+        }
+        lyricFontSize = min(max(screen.frame.height * 0.042, 32), 48).rounded()
     }
 
     var columnHeight: CGFloat { artworkSide + Self.artworkGap + Self.controlsHeight }
     /// The line being sung and about one either side of it.
-    var stackedLyricsHeight: CGFloat { 140 }
+    var stackedLyricsHeight: CGFloat { lyricFontSize * 4.5 }
 
     var windowSize: CGSize {
         let spill = Self.backgroundSpill * 2
@@ -175,9 +193,10 @@ struct LockScreenPlayerMetrics {
                 height: columnHeight + Self.stackedGap + stackedLyricsHeight + spill
             )
         case .playerLeft, .playerRight, .underNotch:
-            return CGSize(width: artworkSide + Self.sideGap + lyricsWidth + spill, height: columnHeight + spill)
+            return CGSize(width: artworkSide + gap + lyricsWidth + spill, height: columnHeight + spill)
         }
     }
+
 }
 
 /// The cover on its own, and under it a separate card with the song, the scrubber and previous,
@@ -203,7 +222,7 @@ private struct LockScreenPlayerColumn: View {
 
     @ViewBuilder
     private var artwork: some View {
-        let shape = RoundedRectangle(cornerRadius: 18, style: .continuous)
+        let shape = RoundedRectangle(cornerRadius: 22, style: .continuous)
         Group {
             if let image = controller.artwork {
                 Image(nsImage: image)
@@ -227,14 +246,14 @@ private struct LockScreenPlayerColumn: View {
     private var controls: some View {
         VStack(alignment: .leading, spacing: 0) {
             Text(track.title)
-                .font(.system(size: 14, weight: .semibold))
+                .font(.system(size: 17, weight: .semibold))
                 .foregroundStyle(.white)
                 .lineLimit(1)
             Text(track.artist.isEmpty ? track.sourceAppName : track.artist)
-                .font(.system(size: 12))
+                .font(.system(size: 14))
                 .foregroundStyle(.white.opacity(0.6))
                 .lineLimit(1)
-                .padding(.bottom, 8)
+                .padding(.bottom, 10)
 
             TimelineView(.periodic(from: .now, by: 0.5)) { context in
                 let elapsed = controller.elapsed(at: context.date)
@@ -252,7 +271,7 @@ private struct LockScreenPlayerColumn: View {
                             Spacer(minLength: 0)
                             Text("-" + TimeFormat.string(from: max(track.duration - elapsed, 0)))
                         }
-                        .font(.system(size: 10, weight: .medium).monospacedDigit())
+                        .font(.system(size: 11, weight: .medium).monospacedDigit())
                         .foregroundStyle(.white.opacity(0.5))
                     }
                 }
@@ -262,18 +281,18 @@ private struct LockScreenPlayerColumn: View {
 
             HStack(spacing: 0) {
                 Spacer(minLength: 0)
-                control("backward.fill", label: "Previous", size: 17, .previousTrack)
+                control("backward.fill", label: "Previous", size: 21, .previousTrack)
                 Spacer(minLength: 0)
-                control(track.isPlaying ? "pause.fill" : "play.fill", label: track.isPlaying ? "Pause" : "Play", size: 22, .playPause)
+                control(track.isPlaying ? "pause.fill" : "play.fill", label: track.isPlaying ? "Pause" : "Play", size: 28, .playPause)
                 Spacer(minLength: 0)
-                control("forward.fill", label: "Next", size: 17, .nextTrack)
+                control("forward.fill", label: "Next", size: 21, .nextTrack)
                 Spacer(minLength: 0)
             }
         }
-        .padding(14)
+        .padding(18)
         .frame(width: metrics.artworkSide, height: LockScreenPlayerMetrics.controlsHeight)
         .background {
-            let shape = RoundedRectangle(cornerRadius: 18, style: .continuous)
+            let shape = RoundedRectangle(cornerRadius: 22, style: .continuous)
             ZStack {
                 shape.fill(Color.black.opacity(0.38))
                 if settings.media.tintFromArtwork {
@@ -290,7 +309,7 @@ private struct LockScreenPlayerColumn: View {
         } label: {
             TransportSymbol.image(symbol, pointSize: size, weight: .semibold)
                 .foregroundStyle(.white.opacity(0.92))
-                .frame(width: 40, height: 34)
+                .frame(width: 48, height: 40)
                 .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
@@ -298,9 +317,14 @@ private struct LockScreenPlayerColumn: View {
     }
 }
 
-/// The lyrics, with the line being sung large and bright at a fixed height and the rest dimmed,
-/// sliding up as the song goes and fading out towards the top and bottom edges, with no box
+/// The lyrics, large, with the line being sung bright at a fixed height and the rest dimmed,
+/// scrolling up as the song goes and fading out towards the top and bottom edges, with no box
 /// around them. Clicking a line plays from it, when the player can seek.
+///
+/// It is a real `ScrollView` scrolled to the current line, rather than a list slid by an offset
+/// measured from its own lines: that measurement fed back into the layout it measured, and
+/// SwiftUI logged "Geometry action is cycling between duplicate values" every few seconds while
+/// the lock screen froze. Scrolling is switched off for the pointer; only the song moves it.
 ///
 /// Without synced lyrics, it shows the song's title and artist large instead, so the column is
 /// never an empty space or an error on someone's lock screen.
@@ -308,19 +332,16 @@ private struct LockScreenLyricsColumn: View {
     let track: NowPlayingTrack
     let alignment: HorizontalAlignment
     let height: CGFloat
+    let fontSize: CGFloat
     /// How far down the column the line being sung sits, as a fraction of its height.
-    var anchor: CGFloat = 0.42
+    var anchor: CGFloat = 0.4
+
+    /// Lines other than the current one, relative to it.
+    static let dimScale: CGFloat = 0.78
 
     @Environment(AppEnvironment.self) private var environment
-    /// Where each laid-out line's top sits in the list, measured, since lines wrap to different
-    /// heights. The list is slid by the current line's entry.
-    @State private var lineTops: [UUID: CGFloat] = [:]
 
     private var controller: NowPlayingController { environment.nowPlaying }
-
-    /// Lines either side of the current one that are laid out at all. Enough to fill the column
-    /// at any anchor; anything further away is past the fade anyway.
-    private static let reach = 8
 
     private var textAlignment: TextAlignment {
         switch alignment {
@@ -349,16 +370,15 @@ private struct LockScreenLyricsColumn: View {
     var body: some View {
         if let lyrics = controller.lyrics, lyrics.isSynced {
             TimelineView(.periodic(from: .now, by: 0.2)) { context in
-                lines(lyrics, current: lyrics.index(at: controller.lyricsTime(at: context.date)))
+                list(lyrics, current: lyrics.index(at: controller.lyricsTime(at: context.date)))
             }
             .frame(maxWidth: .infinity, minHeight: height, maxHeight: height)
-            .clipped()
             .mask {
                 LinearGradient(
                     stops: [
                         .init(color: .clear, location: 0),
-                        .init(color: .black, location: anchor * 0.75),
-                        .init(color: .black, location: anchor + 0.2),
+                        .init(color: .black, location: anchor * 0.7),
+                        .init(color: .black, location: anchor + 0.22),
                         .init(color: .clear, location: 1),
                     ],
                     startPoint: .top,
@@ -371,48 +391,48 @@ private struct LockScreenLyricsColumn: View {
         }
     }
 
-    /// Every line near the current one, in one column slid so the current line's top sits at
-    /// `anchor`. Before the first line is sung, the first line takes that place.
-    private func lines(_ lyrics: Lyrics, current: Int?) -> some View {
-        let focus = current ?? 0
-        let start = max(focus - Self.reach, 0)
-        let end = min(focus + Self.reach + 1, lyrics.lines.count)
-        let shown = start < end ? Array(lyrics.lines[start..<end].enumerated()) : []
-        let focusTop = lyrics.lines.indices.contains(focus) ? lineTops[lyrics.lines[focus].id] ?? 0 : 0
-
-        return VStack(alignment: alignment, spacing: 14) {
-            ForEach(shown, id: \.element.id) { offset, line in
-                let index = start + offset
-                lyricLine(line, isCurrent: index == current, isPast: current.map { index < $0 } ?? false)
-                    .onGeometryChange(for: CGFloat.self) { proxy in
-                        proxy.frame(in: .named(Self.listSpace)).minY
-                    } action: { top in
-                        lineTops[line.id] = top
+    /// Every line, scrolled so the current one sits at `anchor`. Before the first line is sung,
+    /// the first line takes that place. Padded top and bottom by the column's height, so the
+    /// first and last lines can reach it too.
+    private func list(_ lyrics: Lyrics, current: Int?) -> some View {
+        let focus = lyrics.lines.indices.contains(current ?? 0) ? lyrics.lines[current ?? 0].id : nil
+        return ScrollViewReader { reader in
+            ScrollView(.vertical, showsIndicators: false) {
+                VStack(alignment: alignment, spacing: fontSize * 0.45) {
+                    ForEach(Array(lyrics.lines.enumerated()), id: \.element.id) { index, line in
+                        lyricLine(line, isCurrent: index == current, isPast: current.map { index < $0 } ?? false)
+                            .id(line.id)
                     }
+                }
+                .padding(.vertical, height)
+            }
+            .scrollDisabled(true)
+            .onAppear {
+                if let focus { reader.scrollTo(focus, anchor: UnitPoint(x: 0, y: anchor)) }
+            }
+            .onChange(of: focus) { _, focus in
+                guard let focus else { return }
+                withAnimation(.spring(response: 0.6, dampingFraction: 0.86)) {
+                    reader.scrollTo(focus, anchor: UnitPoint(x: 0, y: anchor))
+                }
             }
         }
-        .coordinateSpace(.named(Self.listSpace))
-        .offset(y: height * anchor - focusTop)
-        .frame(maxWidth: .infinity, minHeight: height, maxHeight: height, alignment: .top)
-        .animation(.spring(response: 0.55, dampingFraction: 0.86), value: focusTop)
-        .animation(.spring(response: 0.55, dampingFraction: 0.86), value: current)
+        .animation(.spring(response: 0.5, dampingFraction: 0.86), value: current)
         .accessibilityElement(children: .combine)
         .accessibilityLabel("Lyrics")
     }
 
-    private static let listSpace = "lockScreenLyrics"
-
     private func lyricLine(_ line: LyricLine, isCurrent: Bool, isPast: Bool) -> some View {
         Text(line.text.isEmpty ? "♪" : line.text)
-            .font(.system(size: 26, weight: .bold))
+            .font(.system(size: fontSize, weight: .bold))
             .foregroundStyle(.white.opacity(isCurrent ? 1 : isPast ? 0.3 : 0.45))
             .multilineTextAlignment(textAlignment)
             .lineLimit(3)
             .fixedSize(horizontal: false, vertical: true)
             .frame(maxWidth: .infinity, alignment: frameAlignment)
             // Scaled rather than set in a smaller font, so a line growing into the current one
-            // animates instead of jumping, and every line takes the same room.
-            .scaleEffect(isCurrent ? 1 : 0.84, anchor: scaleAnchor)
+            // animates instead of jumping.
+            .scaleEffect(isCurrent ? 1 : Self.dimScale, anchor: scaleAnchor)
             .contentShape(Rectangle())
             .onTapGesture {
                 guard controller.canSeek, let timestamp = line.timestamp else { return }
@@ -421,12 +441,12 @@ private struct LockScreenLyricsColumn: View {
     }
 
     private var songTitle: some View {
-        VStack(alignment: alignment, spacing: 6) {
+        VStack(alignment: alignment, spacing: 8) {
             Text(track.title)
-                .font(.system(size: 30, weight: .bold))
+                .font(.system(size: fontSize * 1.1, weight: .bold))
                 .foregroundStyle(.white)
             Text(track.artist.isEmpty ? track.sourceAppName : track.artist)
-                .font(.system(size: 20, weight: .semibold))
+                .font(.system(size: fontSize * 0.7, weight: .semibold))
                 .foregroundStyle(.white.opacity(0.55))
         }
         .multilineTextAlignment(textAlignment)

@@ -92,6 +92,7 @@ struct GeneralSettingsView: View {
 
                 SettingsRow(
                     title: "Default Tab",
+                    subtitle: "What the notch opens on every time, with Remember Last Tab off.",
                     systemImage: "square.grid.2x2",
                     isEnabled: !settings.general.rememberLastTab
                 ) {
