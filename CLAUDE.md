@@ -772,7 +772,12 @@ would be a trap. HUDs and media each have their own switch. It is a window of
 its own, not the notch's, so the private calls can never leave the real notch in a space it
 should not be in. `--check-lock-screen` proves the calls resolve and a moved window stays on
 screen, and the user confirmed on 2026-09-24 that the HUD really does draw over a locked Mac.
-Private API, so it cannot ship in an App Store build.
+Private API, so it cannot ship in an App Store build. **On macOS 27 the calls' return values
+mean nothing**: `SLSShowSpaces` and `SLSSpaceAddWindowsAndRemoveFromSpaces` answer a different large
+number each run and `SLSCopySpacesForWindows` an empty list for every window, while the move works.
+`adopt` used to require zero and so threw the window away on every lock; it now logs the status and
+carries on (found 2026-10-08 on 27.0.1, matching github.com/tgtools123/NUEM/issues/6). That also
+means `--check-lock-screen` can no longer prove anything there; only locking can.
 
 **The lock screen player is a second window, in the middle of the screen.** Asked for on 2026-10-08
 after Canopy's: Settings > Media > Lock Screen > Lock Screen Layout picks Under the Notch (the strip
