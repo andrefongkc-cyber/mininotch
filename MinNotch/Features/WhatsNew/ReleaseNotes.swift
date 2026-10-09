@@ -27,23 +27,47 @@ struct ReleaseNotes {
     var removed: [ReleaseNote]
 
     static let latest = ReleaseNotes(
-        id: "0.6.0",
-        version: "0.6",
+        id: "0.7.0",
+        version: "0.7",
         added: [
             ReleaseNote(
-                symbol: "note.text",
-                title: "Notes",
-                detail: "A scratchpad in its own tab. Type straight into the notch, and it is kept on your Mac between opens, with a word count and a button to copy it all.",
-                howTo: "The Notes tab. Switch it off in Settings > Advanced > Show Notes, or give it a shortcut in Settings > Shortcuts > Open Notes."
-            )
+                symbol: "paintpalette",
+                title: "Notch Styles",
+                detail: "Six looks for the notch: Minimal, Bento, Glass, Neumorphic, Clay and Skeuomorphic, each in dark, light, or Auto to follow your Mac. Minimal Dark is the notch you know.",
+                howTo: "Settings > Appearance > Notch Style."
+            ),
+            ReleaseNote(
+                symbol: "drop",
+                title: "Liquid Glass",
+                detail: "Any style can sit on Apple's Liquid Glass, see-through and bending what is behind the notch. Glass Opacity sets how clear it is, from glass to nearly solid. Needs macOS 26.",
+                howTo: "Settings > Appearance > Notch Style > Background."
+            ),
+            ReleaseNote(
+                symbol: "arrow.down.circle",
+                title: "Automatic Updates",
+                detail: "MiniNotch now checks for a new version once a day and asks before installing it. This is the last version you have to download by hand.",
+                howTo: "Check now from the menu bar icon, or switch it off in Settings > About."
+            ),
+            ReleaseNote(
+                symbol: "lock",
+                title: "Private Clipboard",
+                detail: "The Clipboard tab stays blurred until you unlock it with Touch ID or your password, and blurs again when it closes. Anything copied in the Passwords app or Keychain Access is never kept.",
+                howTo: "On by default. Switch it off in Settings > Advanced > Blur Until Unlocked."
+            ),
         ],
         improved: [
             ReleaseNote(
-                symbol: "battery.100percent",
-                title: "Nothing Hidden Behind the Camera",
-                detail: "With nothing playing, the closed notch's battery could slide partly behind the camera on some Macs. It now stays beside it.",
+                symbol: "hand.draw",
+                title: "Smoother Swipes",
+                detail: "Two-finger swipes work anywhere on the open notch, quick flicks count, the direction is right with Natural Scrolling off, and the notch resizes along with the tab you swipe to.",
                 howTo: nil
-            )
+            ),
+            ReleaseNote(
+                symbol: "gauge.with.dots.needle.33percent",
+                title: "Lighter While Playing",
+                detail: "Much less work for your Mac while music plays, which you would have felt in Mission Control and with Settings open. The open notch also closes when you switch desktops.",
+                howTo: nil
+            ),
         ],
         removed: []
     )

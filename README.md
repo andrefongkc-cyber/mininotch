@@ -10,7 +10,7 @@ stats, a file shelf, saved links, a timer.
 
 ## Download
 
-[**MiniNotch 0.6.0**](https://github.com/andrefongkc-cyber/mininotch/releases/latest) — open the
+[**MiniNotch 0.7.0**](https://github.com/andrefongkc-cyber/mininotch/releases/latest) — open the
 DMG, drag MiniNotch to Applications. It runs in the background: no Dock icon and nothing in ⌘-Tab,
 just the notch and an optional menu bar icon. Quit it from that icon or from Settings > About.
 
@@ -19,7 +19,7 @@ does not have. Open **System Settings > Privacy & Security**, scroll down, and c
 Anyway**.
 
 From 0.7 on, MiniNotch keeps itself up to date: it checks for a new version once a day and asks
-before installing it, or check yourself from the menu bar icon _(next)_. Earlier versions have to be
+before installing it, or check yourself from the menu bar icon. Earlier versions have to be
 updated by hand once, to 0.7.
 
 Requires macOS 14.4 or later, Apple silicon or Intel; on anything older, macOS refuses to open
@@ -86,7 +86,7 @@ Also:
 
 - **Notch Style**: six design languages, Minimal, Bento, Glass, Neumorphic, Clay and Skeuomorphic,
   each dark or light or matching your Mac, and any of them on Liquid Glass, as see-through as you like, on macOS 26, in
-  Settings > Appearance _(next)_.
+  Settings > Appearance.
 - **Keep the notch open** with ⌃⌥P, on whichever display it is on, while you work on another.
 - **Notes**: a scratchpad in its own tab, kept on your Mac between opens.
 - **Sound output**: switch between speakers, AirPods and displays, and set the volume, from
@@ -99,7 +99,7 @@ Also:
   own overlay, which MiniNotch hides by taking those keys before macOS sees them (needs
   Accessibility). They also show over the lock screen, as does the song with its controls.
 - **Clipboard history** for text, links, colours, and images, held in memory only. Blur Until
-  Unlocked keeps it blurred until Touch ID or your password _(next)_.
+  Unlocked keeps it blurred until Touch ID or your password.
 - **Floating Now Playing window** for a display with no notch worth looking at.
 - **Two-finger swipes** to change tab or open and close, with optional haptics.
 - **Drag-to-arrange layouts** for the transport controls, the closed pill's two sides, and the open
@@ -154,8 +154,8 @@ Everything stays on your Mac, with two exceptions, both off by default: setting 
 Source** to look up online sends the current title, artist, album and length to `lrclib.net`, and
 **Weather** sends a location rounded to about a kilometre, or the city you chose, to
 `open-meteo.com`. Checking for updates fetches one small file from GitHub a day and sends nothing
-about your Mac; switch it off in Settings > About _(next)_. No accounts, no analytics, no telemetry. Clipboard history is never written to disk, and it skips
-anything an app marks as private, and anything copied in the Passwords app or Keychain Access _(next)_. Audio becomes a handful of numbers per buffer and is discarded;
+about your Mac; switch it off in Settings > About. No accounts, no analytics, no telemetry. Clipboard history is never written to disk, and it skips
+anything an app marks as private, and anything copied in the Passwords app or Keychain Access. Audio becomes a handful of numbers per buffer and is discarded;
 nothing is recorded.
 
 ## Building
