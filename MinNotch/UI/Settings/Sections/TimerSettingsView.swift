@@ -13,7 +13,7 @@ struct TimerSettingsView: View {
     var body: some View {
         @Bindable var settings = settings
 
-        SettingsPane(
+        TabSettingsSection(
             title: "Timer",
             subtitle: "A countdown in the notch, and the Pomodoro cycle built on top of it."
         ) {

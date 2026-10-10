@@ -9,7 +9,7 @@ struct ShelfSettingsView: View {
     var body: some View {
         @Bindable var settings = settings
 
-        SettingsPane(
+        TabSettingsSection(
             title: "Shelf",
             subtitle: "A drop zone in the notch for files on their way somewhere else."
         ) {

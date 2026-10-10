@@ -26,7 +26,7 @@ enum WeatherUnits: String, Codable, CaseIterable, Identifiable {
     }
 }
 
-/// Settings > Weather.
+/// Settings > Tabs > Weather.
 ///
 /// Off by default, because it sends a location to a web service. The location is this Mac's,
 /// through Location Services, unless a city has been chosen instead, which needs no permission.

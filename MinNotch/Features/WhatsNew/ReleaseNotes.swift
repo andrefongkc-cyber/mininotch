@@ -52,7 +52,7 @@ struct ReleaseNotes {
                 symbol: "lock",
                 title: "Private Clipboard",
                 detail: "The Clipboard tab stays blurred until you unlock it with Touch ID or your password, and blurs again when it closes. Anything copied in the Passwords app or Keychain Access is never kept.",
-                howTo: "On by default. Switch it off in Settings > Advanced > Blur Until Unlocked."
+                howTo: "On by default. Switch it off in Settings > Tabs > Clipboard."
             ),
         ],
         improved: [

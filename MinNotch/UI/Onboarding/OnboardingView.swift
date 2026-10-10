@@ -527,7 +527,7 @@ private struct PermissionsPage: View {
                 permission(
                     symbol: "location.fill", tint: .systemCyan,
                     title: "Location",
-                    detail: "For the weather where you are, rounded to about a kilometre. Or type a city in Settings > Weather and skip this."
+                    detail: "For the weather where you are, rounded to about a kilometre. Or type a city in Settings > Tabs > Weather and skip this."
                 ) { locationAction }
 
                 permission(

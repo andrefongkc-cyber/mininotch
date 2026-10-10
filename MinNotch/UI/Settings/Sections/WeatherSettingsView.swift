@@ -1,7 +1,7 @@
 import CoreLocation
 import SwiftUI
 
-/// Settings > Weather.
+/// Settings > Tabs > Weather.
 ///
 /// Where the forecast is for, and in what. The location is the Mac's own, through Location
 /// Services, unless a city is chosen here, which needs no permission at all. Either way the
@@ -18,7 +18,7 @@ struct WeatherSettingsView: View {
         @Bindable var settings = settings
         let enabled = settings.weather.enabled
 
-        SettingsPane(
+        TabSettingsSection(
             title: "Weather",
             subtitle: "The forecast in its own tab, and the temperature in the closed pill if you place it there in Layout."
         ) {

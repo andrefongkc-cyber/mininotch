@@ -31,9 +31,9 @@ final class WeatherService {
             case .off, .ready: return nil
             case .locating: return "Finding where you are…"
             case .loading: return "Loading the forecast…"
-            case .needsLocationAccess: return "Allow MiniNotch to use your location, or choose a city in Settings > Weather."
+            case .needsLocationAccess: return "Allow MiniNotch to use your location, or choose a city in Settings > Tabs > Weather."
             case .locationUnavailable(let reason), .failed(let reason): return reason
-            case .needsCity: return "Choose a city in Settings > Weather."
+            case .needsCity: return "Choose a city in Settings > Tabs > Weather."
             }
         }
     }
@@ -110,7 +110,7 @@ final class WeatherService {
         }
 
         guard CLLocationManager.locationServicesEnabled() else {
-            status = .locationUnavailable("Location Services is off for this Mac. Turn it on in Privacy & Security, or choose a city in Settings > Weather.")
+            status = .locationUnavailable("Location Services is off for this Mac. Turn it on in Privacy & Security, or choose a city in Settings > Tabs > Weather.")
             return
         }
         switch locator.authorization {
@@ -118,7 +118,7 @@ final class WeatherService {
             status = .needsLocationAccess
             return
         case .denied, .restricted:
-            status = .locationUnavailable("MiniNotch is not allowed to use your location. Allow it in Privacy & Security > Location Services, or choose a city in Settings > Weather.")
+            status = .locationUnavailable("MiniNotch is not allowed to use your location. Allow it in Privacy & Security > Location Services, or choose a city in Settings > Tabs > Weather.")
             return
         default:
             break

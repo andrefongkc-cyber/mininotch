@@ -141,7 +141,7 @@ final class TemperatureSensors: @unchecked Sendable {
     }
 }
 
-/// Degrees for display, in the units chosen in Settings > Weather, with the unit said.
+/// Degrees for display, in the units chosen in Settings > Tabs > Weather, with the unit said.
 ///
 /// The forecast leaves the unit off, as the Weather app does, but a chip at "138°" looks broken
 /// to anyone used to the Celsius every other monitoring tool shows; "138°F" does not.
