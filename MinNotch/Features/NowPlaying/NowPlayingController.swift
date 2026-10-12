@@ -379,6 +379,13 @@ final class NowPlayingController {
         }
 
         let key = snapshot.artworkKey
+        // Read from the tab title alone, so no length to match and no clock to follow.
+        if snapshot.sourceKind == .chromeSpotify, !snapshot.hasDuration {
+            lyrics = nil
+            lyricsStatus = .needsChromeJavaScript
+            loadedLyricsKey = nil
+            return
+        }
         guard loadedLyricsKey != key else { return }
         loadedLyricsKey = key
         lyrics = nil
@@ -568,6 +575,9 @@ final class NowPlayingController {
     /// Whether a control is backed by a real command for the active source. The card leaves
     /// out anything that is not, rather than drawing a button that does nothing.
     func supports(_ control: MediaControl) -> Bool {
+        // Spotify in Chrome read from the tab title only: Chrome is not letting MiniNotch into
+        // the page, so no button could reach Spotify's.
+        if track?.sourceKind == .chromeSpotify, track?.hasDuration == false { return false }
         let scriptable = track?.sourceKind == .appleMusic || track?.sourceKind == .spotify
             || track?.sourceKind == .chromeSpotify
         switch control {

@@ -192,6 +192,8 @@ enum LyricsStatus: Equatable {
     case noneStoredLocally
     /// Looked online and found nothing.
     case notFound
+    /// Spotify in Chrome without page access: no time to match lyrics against.
+    case needsChromeJavaScript
 
     var message: String? {
         switch self {
@@ -199,6 +201,8 @@ enum LyricsStatus: Equatable {
         case .searching: return "Looking for lyrics…"
         case .noneStoredLocally: return "No lyrics stored for this track. Turn on Look Up Online in Settings > Media."
         case .notFound: return "No lyrics found for this track."
+        case .needsChromeJavaScript:
+            return "For the cover, time and lyrics, turn on View > Developer > Allow JavaScript from Apple Events in Chrome."
         }
     }
 }
