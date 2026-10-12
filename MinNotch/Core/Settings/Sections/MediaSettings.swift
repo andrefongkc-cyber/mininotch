@@ -7,6 +7,8 @@ enum MediaSourceKind: String, Codable, CaseIterable, Identifiable {
     case appleMusic
     case spotify
     case vlc
+    /// Spotify's web player (open.spotify.com) in a Google Chrome tab.
+    case chromeSpotify
     /// The system-wide Now Playing information, which covers browsers and any other app.
     case system
 
@@ -18,6 +20,7 @@ enum MediaSourceKind: String, Codable, CaseIterable, Identifiable {
         case .appleMusic: return "Apple Music"
         case .spotify: return "Spotify"
         case .vlc: return "VLC"
+        case .chromeSpotify: return "Spotify in Chrome"
         case .system: return "System Now Playing"
         }
     }
@@ -28,6 +31,7 @@ enum MediaSourceKind: String, Codable, CaseIterable, Identifiable {
         case .appleMusic: return "music.note"
         case .spotify: return "music.note.list"
         case .vlc: return "play.rectangle"
+        case .chromeSpotify: return "globe"
         case .system: return "waveform"
         }
     }

@@ -80,6 +80,7 @@ final class NowPlayingController {
     @ObservationIgnored private let appleMusic = AppleScriptMediaSource(descriptor: .appleMusic)
     @ObservationIgnored private let spotify = AppleScriptMediaSource(descriptor: .spotify)
     @ObservationIgnored private let vlc = AppleScriptMediaSource(descriptor: .vlc)
+    @ObservationIgnored private let chromeSpotify = ChromeSpotifySource()
     @ObservationIgnored private let system = SystemNowPlayingSource()
     @ObservationIgnored private let lyricsProviders: [LyricsProviding] = [AppleMusicLyricsProvider()]
 
@@ -199,9 +200,10 @@ final class NowPlayingController {
         case .appleMusic: return [appleMusic]
         case .spotify: return [spotify]
         case .vlc: return [vlc]
+        case .chromeSpotify: return [chromeSpotify]
         case .system: return [system]
         case .auto:
-            var sources: [MediaSource] = [appleMusic, spotify, vlc, system]
+            var sources: [MediaSource] = [appleMusic, spotify, vlc, chromeSpotify, system]
             if let stickySource, let index = sources.firstIndex(where: { $0.kind == stickySource }) {
                 let sticky = sources.remove(at: index)
                 sources.insert(sticky, at: 0)
@@ -567,6 +569,7 @@ final class NowPlayingController {
     /// out anything that is not, rather than drawing a button that does nothing.
     func supports(_ control: MediaControl) -> Bool {
         let scriptable = track?.sourceKind == .appleMusic || track?.sourceKind == .spotify
+            || track?.sourceKind == .chromeSpotify
         switch control {
         case .shuffle, .repeatMode:
             // Only the scriptable players have these to change; MediaRemote clients do not.
@@ -584,6 +587,7 @@ final class NowPlayingController {
         case .appleMusic: return appleMusic
         case .spotify: return spotify
         case .vlc: return vlc
+        case .chromeSpotify: return chromeSpotify
         case .system, .auto: return system
         }
     }

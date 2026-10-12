@@ -21,6 +21,11 @@ final class AppleScriptRunner: @unchecked Sendable {
     private var cache: [String: NSAppleScript] = [:]
     /// Set once the user has denied Apple Events, so we stop re-prompting on every poll.
     private(set) var isAuthorizationDenied = false
+    /// Apps refused separately (`run(_:scope:)`), so saying no to one browser never stops
+    /// Music and Spotify, which share the flag above.
+    private var deniedScopes: Set<String> = []
+
+    func isDenied(scope: String) -> Bool { deniedScopes.contains(scope) }
 
     private init() {}
 
@@ -32,9 +37,13 @@ final class AppleScriptRunner: @unchecked Sendable {
     ///
     /// Must be called on `queue`.
     @discardableResult
-    func run(_ source: String) -> NSAppleEventDescriptor? {
+    func run(_ source: String, scope: String? = nil) -> NSAppleEventDescriptor? {
         dispatchPrecondition(condition: .onQueue(queue))
-        guard !isAuthorizationDenied else { return nil }
+        if let scope {
+            guard !deniedScopes.contains(scope) else { return nil }
+        } else {
+            guard !isAuthorizationDenied else { return nil }
+        }
 
         let script: NSAppleScript
         if let cached = cache[source] {
@@ -51,7 +60,10 @@ final class AppleScriptRunner: @unchecked Sendable {
         if let error {
             let code = error[NSAppleScript.errorNumber] as? Int ?? 0
             // -1743 is "not authorised to send Apple events"; -600 is "app isn't running".
-            if code == -1743 {
+            if code == -1743, let scope {
+                deniedScopes.insert(scope)
+                AppLog.media.error("Apple Events permission denied for \(scope, privacy: .public)")
+            } else if code == -1743 {
                 isAuthorizationDenied = true
                 AppLog.media.error("Apple Events permission denied; media control is unavailable")
             } else if code != -600 {
@@ -71,5 +83,6 @@ final class AppleScriptRunner: @unchecked Sendable {
     /// Re-arms after the user grants permission in System Settings.
     func resetAuthorizationState() {
         isAuthorizationDenied = false
+        deniedScopes.removeAll()
     }
 }

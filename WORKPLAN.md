@@ -174,6 +174,8 @@ The user plans to revamp every music-playing animation before 1.0.0. Collected h
       DMGs, every GitHub release's title, text and DMG name, the README and these notes. The bundle
       id, Xcode project and source folder stay MinNotch; see CLAUDE.md. Accessibility stayed granted.
 
+- [~] Now Playing from Spotify's web player in Chrome (2026-10-12): built, compiles, untried against
+      the real page. Needs Chrome's Allow JavaScript from Apple Events for controls and artwork.
 - [x] Settings: one Tabs pane (2026-10-09) holds every tab's settings, a section each: Shelf (with
       Link Shelf), Timer, Weather, Notes, Clipboard, System. The Shelf, Timer and Weather panes are
       gone and the three cards left Advanced. Unreleased.

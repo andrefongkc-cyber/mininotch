@@ -28,7 +28,7 @@ stay out of sight until the pointer reaches the top middle of the screen.
 
 ## What it does
 
-**Now Playing** for Apple Music, Spotify, VLC, and a system-wide fallback for other apps. Album
+**Now Playing** for Apple Music, Spotify, VLC, Spotify's web player in Google Chrome _(next)_, and a system-wide fallback for other apps. Album
 art, a scrubber you can drag to seek, transport controls with shuffle, repeat and favourite, three
 card styles, and synced lyrics that highlight the word being sung, with a full scrolling list you
 can click to jump to a line. With the system audio permission, lyrics that run early or late are

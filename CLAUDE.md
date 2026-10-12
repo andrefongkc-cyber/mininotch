@@ -1236,6 +1236,15 @@ and LRCLIB's are 177 to 180, and the miss was then cached for three days (2026-1
 hashing the cache key against candidate lengths). The close match still wins whenever there is one,
 and the wide tier only takes synced sheets.
 
+**Spotify in Chrome is a tab found by URL, read through JavaScript when Chrome allows it.**
+`ChromeSpotifySource` (2026-10-12, `MediaSourceKind.chromeSpotify`, in Automatic after VLC) asks Chrome
+for the first tab on open.spotify.com. With View > Developer > Allow JavaScript from Apple Events on,
+it reads `navigator.mediaSession` and Spotify's `data-testid` time labels and clicks Spotify's own
+buttons; without it, only the tab title ("Song • Artist") and no controls. No seek (the page's
+slider ignores a value set from outside). Chrome is its own Automation permission, and a refusal is
+kept per app (`AppleScriptRunner.run(_:scope:)`) so it never turns off Music and Spotify. Never run
+against Spotify's page yet: the script compiles against Chrome's dictionary, and that is all.
+
 **Clicking a lyric line seeks by lyric time, not by track time.** The strip's clock is
 `elapsed + offset + audio correction - latency`, so seeking to a line's timestamp directly would
 land that far from the line. `seek(toLyricsTime:)` takes the difference between the two clocks

@@ -64,7 +64,7 @@
 	<key>NSRemindersFullAccessUsageDescription</key>
 	<string>MiniNotch shows your reminders in the notch.</string>
 	<key>NSAppleEventsUsageDescription</key>
-	<string>MiniNotch controls Music and Spotify so it can show and control what you are listening to.</string>
+	<string>MiniNotch controls Music, Spotify and Spotify in Chrome so it can show and control what you are listening to.</string>
 
 	<!-- Location, only while Weather is on with Use My Location, for the forecast. Rounded to
 	     about a kilometre before it leaves the Mac. -->
