@@ -452,18 +452,32 @@ struct NowPlayingCardView: View {
         }
     }
 
-    /// The transport from the left, under the title, and pop-out and effects at the right.
-    /// It used to be centred between padding the width of those two buttons, which put it well
-    /// right of the title; the user wanted it "more towards the left". In the same row, not
-    /// overlaid, so the two can never run into each other.
+    /// The transport centred under the scrubber, with pop-out and effects at the right. An
+    /// invisible copy of those two on the left balances them, so play sits in the middle and
+    /// the row can never run into itself. Tate had moved it to the left; the user wanted the
+    /// play button "in the center" (2026-10-12).
     private var controls: some View {
-        HStack(spacing: 0) {
-            transportButtons(spacing: 12 * scale)
-                // The buttons' frames are wider than their glyphs; this lines the first glyph
-                // up with the title rather than its frame.
-                .padding(.leading, -4)
-            Spacer(minLength: 8)
-            trailingCluster
+        let shown = settings.media.controlOrder.filter { controller.supports($0) }
+        let split = shown.firstIndex(of: .playPause)
+        let before = split.map { Array(shown[..<$0]) } ?? shown
+        let after = split.map { Array(shown[($0 + 1)...]) } ?? []
+        let spacing = 12 * scale
+        // Two halves of equal width either side of play, so play is the exact centre whatever
+        // stands beside it (shuffle on one side and not the other used to push it off).
+        return HStack(spacing: spacing) {
+            HStack(spacing: spacing) {
+                trailingCluster.hidden().accessibilityHidden(true)
+                Spacer(minLength: 0)
+                ForEach(before) { transportButton($0) }
+            }
+            .frame(maxWidth: .infinity)
+            if split != nil { transportButton(.playPause) }
+            HStack(spacing: spacing) {
+                ForEach(after) { transportButton($0) }
+                Spacer(minLength: 0)
+                trailingCluster
+            }
+            .frame(maxWidth: .infinity)
         }
     }
 
