@@ -1,6 +1,6 @@
 # MiniNotch workplan
 
-Status: lock screen player, notch space, panel sizes and the lyric length fix done on branch feature/lockscreen-player, confirmed by the user on a locked Mac (macOS 27.0.1) and in a PR for Andre; next: review of that PR, then the user's feedback on 0.7 and the open items below.
+Status: 0.7.1 released (2026-10-12, first update delivered through Sparkle); next: check a 0.7.0 copy offers it, then the user's feedback.
 
 Living document. Update the checkboxes as work lands. `CLAUDE.md` holds the architecture
 rules and the traps; this file holds the sequence.
@@ -174,7 +174,7 @@ The user plans to revamp every music-playing animation before 1.0.0. Collected h
       DMGs, every GitHub release's title, text and DMG name, the README and these notes. The bundle
       id, Xcode project and source folder stay MinNotch; see CLAUDE.md. Accessibility stayed granted.
 
-- [~] Now Playing from Spotify's web player in Chrome (2026-10-12): built, compiles, untried against
+- [x] Now Playing from Spotify's web player in Chrome (released in 0.7.1; the user saw it work in title-only mode) (2026-10-12): built, compiles, untried against
       the real page. Needs Chrome's Allow JavaScript from Apple Events for controls and artwork.
 - [x] Settings: one Tabs pane (2026-10-09) holds every tab's settings, a section each: Shelf (with
       Link Shelf), Timer, Weather, Notes, Clipboard, System. The Shelf, Timer and Weather panes are

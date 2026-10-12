@@ -10,7 +10,7 @@ stats, a file shelf, saved links, a timer.
 
 ## Download
 
-[**MiniNotch 0.7.0**](https://github.com/andrefongkc-cyber/mininotch/releases/latest) — open the
+[**MiniNotch 0.7.1**](https://github.com/andrefongkc-cyber/mininotch/releases/latest) — open the
 DMG, drag MiniNotch to Applications. It runs in the background: no Dock icon and nothing in ⌘-Tab,
 just the notch and an optional menu bar icon. Quit it from that icon or from Settings > About.
 
@@ -28,7 +28,7 @@ stay out of sight until the pointer reaches the top middle of the screen.
 
 ## What it does
 
-**Now Playing** for Apple Music, Spotify, VLC, Spotify's web player in Google Chrome _(next)_, and a system-wide fallback for other apps. Album
+**Now Playing** for Apple Music, Spotify, VLC, Spotify's web player in Google Chrome, and a system-wide fallback for other apps. Album
 art, a scrubber you can drag to seek, transport controls with shuffle, repeat and favourite, three
 card styles, and synced lyrics that highlight the word being sung, with a full scrolling list you
 can click to jump to a line. With the system audio permission, lyrics that run early or late are
@@ -81,6 +81,11 @@ no account.
 in the closed pill.
 
 ![The timer tab](Docs/images/timer.png)
+
+**Spotify in Google Chrome:** Now Playing finds open.spotify.com in Chrome by itself and shows the
+song. For the album cover, the time, working buttons and lyrics, turn on **View > Developer > Allow
+JavaScript from Apple Events** in Chrome once; MiniNotch then reads the player page and presses
+Spotify's own buttons. macOS also asks once whether MiniNotch may control Chrome.
 
 Also:
 

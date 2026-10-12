@@ -57,6 +57,15 @@ enum SettingsNewRows {
         "Background": "0.7",
         "Glass Opacity": "0.7",
 
+        // 0.7.1
+        "Lock Screen Layout": "0.7.1",
+        "Lock Screen Background": "0.7.1",
+        "Background Strength": "0.7.1",
+        "Show Player": "0.7.1",
+        "Show Synced Lyrics": "0.7.1",
+        "Size": "0.7.1",
+        "Keep the Notch Still Between Desktops": "0.7.1",
+
         // 0.8
         "Song on the Lock Screen": "0.8",
         "Lock Screen Layout": "0.8",

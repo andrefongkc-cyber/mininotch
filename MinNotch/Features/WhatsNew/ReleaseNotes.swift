@@ -27,45 +27,45 @@ struct ReleaseNotes {
     var removed: [ReleaseNote]
 
     static let latest = ReleaseNotes(
-        id: "0.7.0",
-        version: "0.7",
+        id: "0.7.1",
+        version: "0.7.1",
         added: [
             ReleaseNote(
-                symbol: "paintpalette",
-                title: "Notch Styles",
-                detail: "Six looks for the notch: Minimal, Bento, Glass, Neumorphic, Clay and Skeuomorphic, each in dark, light, or Auto to follow your Mac. Minimal Dark is the notch you know.",
-                howTo: "Settings > Appearance > Notch Style."
+                symbol: "lock.rectangle.stack",
+                title: "Lock Screen Player",
+                detail: "While your Mac is locked, what is playing shows in the middle of the screen: the cover, its controls, and the synced lyrics sliding along with the song.",
+                howTo: "Settings > Media > Lock Screen. Pick a layout, or keep the small strip under the notch."
             ),
             ReleaseNote(
-                symbol: "drop",
-                title: "Liquid Glass",
-                detail: "Any style can sit on Apple's Liquid Glass, see-through and bending what is behind the notch. Glass Opacity sets how clear it is, from glass to nearly solid. Needs macOS 26.",
-                howTo: "Settings > Appearance > Notch Style > Background."
+                symbol: "globe",
+                title: "Spotify in Chrome",
+                detail: "Now Playing picks up Spotify's web player in Google Chrome. For the cover, the time, the buttons and lyrics, Chrome has to allow it once.",
+                howTo: "In Chrome: View > Developer > Allow JavaScript from Apple Events."
             ),
             ReleaseNote(
-                symbol: "arrow.down.circle",
-                title: "Automatic Updates",
-                detail: "MiniNotch now checks for a new version once a day and asks before installing it. This is the last version you have to download by hand.",
-                howTo: "Check now from the menu bar icon, or switch it off in Settings > About."
-            ),
-            ReleaseNote(
-                symbol: "lock",
-                title: "Private Clipboard",
-                detail: "The Clipboard tab stays blurred until you unlock it with Touch ID or your password, and blurs again when it closes. Anything copied in the Passwords app or Keychain Access is never kept.",
-                howTo: "On by default. Switch it off in Settings > Tabs > Clipboard."
+                symbol: "arrow.left.and.right",
+                title: "Panel Size",
+                detail: "Small, Medium, Large, a width of your own, or Fit to Top Bar, which narrows the panel when you have fewer tabs. The music card's text and controls scale with it.",
+                howTo: "Settings > Appearance > Panel Size."
             ),
         ],
         improved: [
             ReleaseNote(
-                symbol: "hand.draw",
-                title: "Smoother Swipes",
-                detail: "Two-finger swipes work anywhere on the open notch, quick flicks count, the direction is right with Natural Scrolling off, and the notch resizes along with the tab you swipe to.",
+                symbol: "square.stack.3d.up",
+                title: "One Place for Every Tab",
+                detail: "Settings has a Tabs pane with the Shelf, links, Timer, Weather, Notes, Clipboard and System settings together.",
+                howTo: "Settings > Tabs."
+            ),
+            ReleaseNote(
+                symbol: "play.circle",
+                title: "Tidier Music Card",
+                detail: "Play sits in the middle of the controls, the title is a little smaller, and lyrics are found for more songs whose length differs slightly.",
                 howTo: nil
             ),
             ReleaseNote(
-                symbol: "gauge.with.dots.needle.33percent",
-                title: "Lighter While Playing",
-                detail: "Much less work for your Mac while music plays, which you would have felt in Mission Control and with Settings open. The open notch also closes when you switch desktops.",
+                symbol: "rectangle.on.rectangle",
+                title: "Steadier Notch",
+                detail: "The notch stays put when you swipe between desktops, the top bar's icons clear the camera, and Default Tab applies every time the notch opens.",
                 howTo: nil
             ),
         ],
