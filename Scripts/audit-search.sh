@@ -29,6 +29,14 @@ print(f"rows in panes: {len(rows)}   in index: {len(indexed)}")
 # Every row SettingsNewRows badges as new must still exist, or a rename quietly drops its badge.
 new_rows = open('MinNotch/UI/Settings/SettingsNewRows.swift').read()
 badged = set(re.findall(r'^\s*"((?:[^"\\]|\\.)*)": "[0-9.]+",', new_rows, re.M))
+# A title listed twice is a dictionary literal with a repeated key, which traps at run time the
+# first time Settings opens. 0.7.1 shipped like that.
+listed = re.findall(r'^\s*"((?:[^"\\]|\\.)*)": "[0-9.]+",', new_rows, re.M)
+repeated = sorted({t for t in listed if listed.count(t) > 1})
+if repeated:
+    print("listed more than once in SettingsNewRows (crashes Settings):")
+    for t in repeated: print("  " + t)
+    sys.exit(1)
 unknown = sorted(badged - rows)
 if unknown:
     print("in SettingsNewRows but not a row in any pane:")

@@ -10,7 +10,9 @@ import Foundation
 /// that every title here is still a real row: a renamed row would otherwise quietly lose its
 /// badge.
 ///
-/// When a release adds or renames a row, add it here under that release.
+/// When a release adds or renames a row, add it here under that release, once: a title listed
+/// twice crashes the app as soon as Settings opens (a Swift dictionary literal with a repeated
+/// key traps), which is what 0.7.1 shipped with. `Scripts/audit-search.sh` refuses duplicates.
 enum SettingsNewRows {
     static let introduced: [String: String] = [
         // 0.3
@@ -65,16 +67,7 @@ enum SettingsNewRows {
         "Show Synced Lyrics": "0.7.1",
         "Size": "0.7.1",
         "Keep the Notch Still Between Desktops": "0.7.1",
-
-        // 0.8
-        "Song on the Lock Screen": "0.8",
-        "Lock Screen Layout": "0.8",
-        "Show Player": "0.8",
-        "Show Synced Lyrics": "0.8",
-        "Lock Screen Background": "0.8",
-        "Background Strength": "0.8",
-        "Size": "0.8",
-        "Keep the Notch Still Between Desktops": "0.8",
+        "Song on the Lock Screen": "0.7.1",
     ]
 
     static func isNew(_ title: String) -> Bool {
