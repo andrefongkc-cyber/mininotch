@@ -84,6 +84,25 @@ struct AboutSettingsView: View {
                 SettingsDivider()
 
                 SettingsRow(
+                    title: "New Versions",
+                    subtitle: updates.installsAutomatically
+                        ? "Installed without asking, once the notch is closed and no timer is running. What's New then lists what changed."
+                        : "A window asks first, listing what is new, with Install, Remind Me Later and Skip.",
+                    systemImage: "arrow.down.app",
+                    isEnabled: updates.isAvailable && updates.checksAutomatically
+                ) {
+                    Picker("", selection: $updates.installsAutomatically) {
+                        Text("Ask First").tag(false)
+                        Text("Install Automatically").tag(true)
+                    }
+                    .labelsHidden()
+                    .pickerStyle(.menu)
+                    .fixedSize()
+                }
+
+                SettingsDivider()
+
+                SettingsRow(
                     title: "How Often",
                     subtitle: "How long between checks. Every 3 hours unless you change it.",
                     systemImage: "timer",

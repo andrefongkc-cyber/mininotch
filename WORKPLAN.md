@@ -1,6 +1,6 @@
 # MiniNotch workplan
 
-Status: releasing 0.7.3 (Timer tab: stopwatch, pop-out, Focus; swipe fix); next: the user's feedback.
+Status: About > New Versions (Ask First or Install Automatically) on main, unreleased; next: the user tries it, and at the next release add "New Versions" to SettingsNewRows.
 
 Living document. Update the checkboxes as work lands. `CLAUDE.md` holds the architecture
 rules and the traps; this file holds the sequence.
@@ -180,6 +180,9 @@ The user plans to revamp every music-playing animation before 1.0.0. Collected h
       pop-out window; Focus Timer restarts the interval on switching apps (`--check-focus` passes).
       The window and the guard against real app switches are untried by hand. Add "Focus Timer" to
       SettingsNewRows at the next release.
+- [x] Settings > About > New Versions (2026-10-14): Ask First shows Sparkle's window with the new
+      version's notes; Install Automatically downloads quietly and installs once the notch is closed
+      and no timer runs. Untried end to end (the update check tool does not go through it).
 - [x] "Clean up the timer tab, it's messy" (2026-10-14): one header in every state (Timer | Stopwatch,
       Focus, pop-out), idle as two rows, Pomodoro and Countdown, fitting narrow panels. Focus now
       starts the stopwatch over too (`--check-focus` covers it).

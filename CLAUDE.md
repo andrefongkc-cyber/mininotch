@@ -728,6 +728,16 @@ made first, before the rename, and never used for anything; it can be deleted. S
 the new app's code signature to match the installed one's, so `--anonymous` and team-signed releases
 cannot update each other: pick one and keep it (the user has always chosen the team).
 
+**About > New Versions picks Ask First (the default) or Install Automatically** (2026-10-14,
+`UpdateService.installsAutomatically`, Sparkle's `automaticallyDownloadsUpdates`, kept by Sparkle in
+the defaults). Ask First is Sparkle's own window, which lists the feed entry's release notes with
+Install, Remind Me Later and Skip. Install Automatically downloads in the background; Sparkle would
+then install only when MiniNotch quits, which for a background app can be days, so the
+`willInstallUpdateOnQuit` delegate method keeps the immediate install block and calls it as soon as
+`isBusy` says nothing would be lost (the notch closed, no timer or stopwatch running, since neither
+survives a relaunch), checking each minute. The What's New window then shows what changed. Never run
+end to end: `--check-update` drives Sparkle with a driver of its own, not `UpdateService`.
+
 `UpdateService` starts only in a release build, because a development copy shares the bundle
 identifier and would offer to replace itself with the last release. A scheduled check that finds
 something activates the app so the window is in front (`supportsGentleScheduledUpdateReminders`).

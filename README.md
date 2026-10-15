@@ -19,7 +19,7 @@ does not have. Open **System Settings > Privacy & Security**, scroll down, and c
 Anyway**.
 
 From 0.7 on, MiniNotch keeps itself up to date: it checks for a new version every three hours (or as often as you set in Settings > About > How Often) and asks
-before installing it, or check yourself from the menu bar icon. Earlier versions have to be
+before installing it, or installs on its own if you set Settings > About > New Versions to Install Automatically _(next)_; check yourself from the menu bar icon. Earlier versions have to be
 updated by hand once, to 0.7.
 
 Requires macOS 14.4 or later, Apple silicon or Intel; on anything older, macOS refuses to open

@@ -57,16 +57,34 @@ final class UpdateService: NSObject {
         (7 * 86400, "Every Week"),
     ]
 
+    /// Settings > About > New Versions: install a new version without asking, or ask first with a
+    /// window listing what is new (Sparkle's own, showing the release notes from the feed). Sparkle
+    /// keeps it in the defaults (`SUAutomaticallyUpdate`).
+    var installsAutomatically = false {
+        didSet {
+            if let updater = controller?.updater, updater.automaticallyDownloadsUpdates != installsAutomatically {
+                updater.automaticallyDownloadsUpdates = installsAutomatically
+            }
+        }
+    }
+
+    /// Whether relaunching now would interrupt something: the notch open, a timer or the stopwatch
+    /// running, none of which survives a restart. `AppEnvironment` answers it.
+    @ObservationIgnored var isBusy: (() -> Bool)?
+
     @ObservationIgnored private var controller: SPUStandardUpdaterController?
+    @ObservationIgnored private var pendingInstall: (() -> Void)?
+    @ObservationIgnored private var installRetry: Timer?
 
     func start() {
         #if DEBUG
         isAvailable = false
         #else
-        let controller = SPUStandardUpdaterController(startingUpdater: true, updaterDelegate: nil, userDriverDelegate: self)
+        let controller = SPUStandardUpdaterController(startingUpdater: true, updaterDelegate: self, userDriverDelegate: self)
         self.controller = controller
         checksAutomatically = controller.updater.automaticallyChecksForUpdates
         checkInterval = controller.updater.updateCheckInterval
+        installsAutomatically = controller.updater.automaticallyDownloadsUpdates
         isAvailable = true
         #endif
     }
@@ -77,6 +95,31 @@ final class UpdateService: NSObject {
         // The answer is a window, and an app without a Dock icon is never in front on its own.
         NSApp.activate(ignoringOtherApps: true)
         controller.checkForUpdates(nil)
+    }
+}
+
+extension UpdateService: SPUUpdaterDelegate {
+    /// With Install Automatically on, Sparkle has downloaded the update and would install it when
+    /// MiniNotch quits, which for an app in the background can be days. This installs and relaunches
+    /// as soon as nothing would be interrupted, checking again each minute until then; the What's New
+    /// window then says what changed.
+    func updater(_ updater: SPUUpdater, willInstallUpdateOnQuit item: SUAppcastItem, immediateInstallationBlock immediateInstallHandler: @escaping () -> Void) -> Bool {
+        guard installsAutomatically else { return false }
+        pendingInstall = immediateInstallHandler
+        installWhenIdle()
+        return true
+    }
+
+    private func installWhenIdle() {
+        installRetry?.invalidate()
+        installRetry = nil
+        guard let install = pendingInstall else { return }
+        if isBusy?() == true {
+            installRetry = Timer.onMain(every: 60) { [weak self] in self?.installWhenIdle() }
+            return
+        }
+        pendingInstall = nil
+        install()
     }
 }
 

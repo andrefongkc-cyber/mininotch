@@ -134,6 +134,11 @@ final class AppEnvironment {
         notes.load()
         systemAppearance.start()
         // Checks every three hours (Settings > About > How Often) in a release copy; does nothing in a Debug build.
+        updates.isBusy = { [weak self] in
+            guard let self else { return false }
+            return self.notchWindows.allViewModels.contains { $0.state == .expanded }
+                || self.timer.isActive || self.stopwatch.isRunning
+        }
         updates.start()
         timer.start(settings: settings)
 
