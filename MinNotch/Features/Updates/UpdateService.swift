@@ -11,7 +11,8 @@ import Sparkle
 ///
 /// Sparkle does its own networking, the one exception to `BoundedHTTPClient`: it fetches the feed
 /// and the DMG over HTTPS and refuses anything its signature check does not pass. With checking
-/// on, that is one small file from GitHub every four hours; nothing about the Mac or its user is sent.
+/// on, that is one small file from GitHub every three hours, or as often as Settings > About > How
+/// Often says; nothing about the Mac or its user is sent.
 ///
 /// Not started in a Debug build. A development copy shares the bundle identifier with the real
 /// app, so it would otherwise offer to replace itself with the last release. `--check-update` runs
@@ -25,12 +26,42 @@ final class UpdateService: NSObject {
     /// Sparkle's own preference, which it keeps in the defaults, mirrored so Settings redraws.
     var checksAutomatically = false {
         didSet {
-            guard let updater = controller?.updater, updater.automaticallyChecksForUpdates != checksAutomatically else { return }
-            updater.automaticallyChecksForUpdates = checksAutomatically
+            if let updater = controller?.updater, updater.automaticallyChecksForUpdates != checksAutomatically {
+                updater.automaticallyChecksForUpdates = checksAutomatically
+            }
+            scheduleExtraChecks()
         }
     }
 
+    /// Seconds between scheduled checks: Settings > About > How Often. Sparkle keeps it in the
+    /// defaults (`SUScheduledCheckInterval`, whose default in `Config/Info.plist` is three hours).
+    var checkInterval: TimeInterval = UpdateService.defaultInterval {
+        didSet {
+            if let updater = controller?.updater, updater.updateCheckInterval != checkInterval {
+                updater.updateCheckInterval = checkInterval
+            }
+            scheduleExtraChecks()
+        }
+    }
+
+    static let defaultInterval: TimeInterval = 3 * 3600
+
+    /// From half an hour to a week, as the user asked.
+    static let intervalChoices: [(seconds: TimeInterval, title: String)] = [
+        (1800, "Every 30 Minutes"),
+        (3600, "Every Hour"),
+        (3 * 3600, "Every 3 Hours"),
+        (6 * 3600, "Every 6 Hours"),
+        (12 * 3600, "Every 12 Hours"),
+        (86400, "Every Day"),
+        (3 * 86400, "Every 3 Days"),
+        (7 * 86400, "Every Week"),
+    ]
+
     @ObservationIgnored private var controller: SPUStandardUpdaterController?
+    /// Sparkle will not schedule checks less than an hour apart, so for half an hour this checks
+    /// on the half hour itself, the same way Sparkle's own schedule does, in the background.
+    @ObservationIgnored private var extraChecks: Timer?
 
     func start() {
         #if DEBUG
@@ -39,8 +70,18 @@ final class UpdateService: NSObject {
         let controller = SPUStandardUpdaterController(startingUpdater: true, updaterDelegate: nil, userDriverDelegate: self)
         self.controller = controller
         checksAutomatically = controller.updater.automaticallyChecksForUpdates
+        checkInterval = controller.updater.updateCheckInterval
         isAvailable = true
         #endif
+    }
+
+    private func scheduleExtraChecks() {
+        extraChecks?.invalidate()
+        extraChecks = nil
+        guard let controller, checksAutomatically, checkInterval < 3600 else { return }
+        extraChecks = Timer.onMain(every: checkInterval) { [weak controller] in
+            controller?.updater.checkForUpdatesInBackground()
+        }
     }
 
     /// Checks now and shows the result, whatever it is, including that there is nothing new.

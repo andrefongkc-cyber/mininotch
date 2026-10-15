@@ -68,6 +68,7 @@ enum SettingsNewRows {
         "Size": "0.7.2",
         "Keep the Notch Still Between Desktops": "0.7.2",
         "Song on the Lock Screen": "0.7.2",
+        "How Often": "0.7.2",
     ]
 
     static func isNew(_ title: String) -> Bool {

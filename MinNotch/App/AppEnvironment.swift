@@ -121,7 +121,7 @@ final class AppEnvironment {
         linkShelf.start(settings: settings)
         notes.load()
         systemAppearance.start()
-        // Checks every four hours in a release copy; does nothing in a Debug build.
+        // Checks every three hours (Settings > About > How Often) in a release copy; does nothing in a Debug build.
         updates.start()
         timer.start(settings: settings)
 

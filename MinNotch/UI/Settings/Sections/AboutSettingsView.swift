@@ -74,11 +74,37 @@ struct AboutSettingsView: View {
 
                 SettingsRow(
                     title: "Check Automatically",
-                    subtitle: "Every four hours. When there is a new version, it asks before installing.",
+                    subtitle: "When there is a new version, it asks before installing.",
                     systemImage: "clock.arrow.circlepath",
                     isEnabled: updates.isAvailable
                 ) {
                     SettingsToggle(isOn: $updates.checksAutomatically)
+                }
+
+                SettingsDivider()
+
+                SettingsRow(
+                    title: "How Often",
+                    subtitle: "How long between checks. Every 3 hours unless you change it.",
+                    systemImage: "timer",
+                    isEnabled: updates.isAvailable && updates.checksAutomatically
+                ) {
+                    Picker("", selection: Binding(
+                        // The nearest choice, in case the stored value is not one of them.
+                        get: {
+                            UpdateService.intervalChoices.min {
+                                abs($0.seconds - updates.checkInterval) < abs($1.seconds - updates.checkInterval)
+                            }?.seconds ?? UpdateService.defaultInterval
+                        },
+                        set: { updates.checkInterval = $0 }
+                    )) {
+                        ForEach(UpdateService.intervalChoices, id: \.seconds) { choice in
+                            Text(choice.title).tag(choice.seconds)
+                        }
+                    }
+                    .labelsHidden()
+                    .pickerStyle(.menu)
+                    .fixedSize()
                 }
             }
 

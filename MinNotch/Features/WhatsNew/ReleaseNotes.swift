@@ -53,8 +53,8 @@ struct ReleaseNotes {
             ReleaseNote(
                 symbol: "wrench.and.screwdriver",
                 title: "Settings Opens Again",
-                detail: "0.7.1 closed as soon as Settings was opened. Fixed, and MiniNotch now checks for updates every four hours instead of once a day.",
-                howTo: nil
+                detail: "0.7.1 closed as soon as Settings was opened; fixed. MiniNotch also checks for updates every 3 hours now, or as often as you like, from every 30 minutes to once a week.",
+                howTo: "Settings > About > How Often."
             ),
             ReleaseNote(
                 symbol: "square.stack.3d.up",
