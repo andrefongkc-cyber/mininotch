@@ -27,51 +27,39 @@ struct ReleaseNotes {
     var removed: [ReleaseNote]
 
     static let latest = ReleaseNotes(
-        id: "0.7.2",
-        version: "0.7.2",
+        id: "0.7.3",
+        version: "0.7.3",
         added: [
             ReleaseNote(
-                symbol: "lock.rectangle.stack",
-                title: "Lock Screen Player",
-                detail: "While your Mac is locked, what is playing shows in the middle of the screen: the cover, its controls, and the synced lyrics sliding along with the song.",
-                howTo: "Settings > Media > Lock Screen. Pick a layout, or keep the small strip under the notch."
+                symbol: "stopwatch",
+                title: "Stopwatch",
+                detail: "The Timer tab is now a timer or a stopwatch, with laps. Switch between them at the top of the tab.",
+                howTo: "The Timer tab: Timer | Stopwatch, top left."
             ),
             ReleaseNote(
-                symbol: "globe",
-                title: "Spotify in Chrome",
-                detail: "Now Playing picks up Spotify's web player in Google Chrome. For the cover, the time, the buttons and lyrics, Chrome has to allow it once.",
-                howTo: "In Chrome: View > Developer > Allow JavaScript from Apple Events."
+                symbol: "pip.enter",
+                title: "Pop-Out Timer",
+                detail: "Float the timer or stopwatch in a small window above your other apps, and put it back when you are done.",
+                howTo: "The Timer tab's pop-out button, top right."
             ),
             ReleaseNote(
-                symbol: "arrow.left.and.right",
-                title: "Panel Size",
-                detail: "Small, Medium, Large, a width of your own, or Fit to Top Bar, which narrows the panel when you have fewer tabs. The music card's text and controls scale with it.",
-                howTo: "Settings > Appearance > Panel Size."
+                symbol: "scope",
+                title: "Focus",
+                detail: "Turn on Focus and the timer pops out when it starts. Switch to another app while a countdown, a Pomodoro focus interval or the stopwatch runs, and it starts over. Breaks and pauses do not count.",
+                howTo: "Focus at the top of the Timer tab, or Settings > Tabs > Timer > Focus Timer."
             ),
         ],
         improved: [
             ReleaseNote(
-                symbol: "wrench.and.screwdriver",
-                title: "Settings Opens Again",
-                detail: "0.7.1 closed as soon as Settings was opened; fixed. MiniNotch also checks for updates every 3 hours now, or as often as you like, from every hour to once a week.",
-                howTo: "Settings > About > How Often."
-            ),
-            ReleaseNote(
-                symbol: "square.stack.3d.up",
-                title: "One Place for Every Tab",
-                detail: "Settings has a Tabs pane with the Shelf, links, Timer, Weather, Notes, Clipboard and System settings together.",
-                howTo: "Settings > Tabs."
-            ),
-            ReleaseNote(
-                symbol: "play.circle",
-                title: "Tidier Music Card",
-                detail: "Play sits in the middle of the controls, the title is a little smaller, and lyrics are found for more songs whose length differs slightly.",
+                symbol: "timer",
+                title: "Tidier Timer Tab",
+                detail: "Choose a Pomodoro rhythm, then press Start: picking a rhythm no longer starts it. Quick countdowns and your own length sit on one row below.",
                 howTo: nil
             ),
             ReleaseNote(
-                symbol: "rectangle.on.rectangle",
-                title: "Steadier Notch",
-                detail: "The notch stays put when you swipe between desktops, the top bar's icons clear the camera, and Default Tab applies every time the notch opens.",
+                symbol: "hand.draw",
+                title: "Scrolling Stays Put",
+                detail: "Scrolling the Clipboard list or Notes no longer closes the notch, however short they are.",
                 howTo: nil
             ),
         ],

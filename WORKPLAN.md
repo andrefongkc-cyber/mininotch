@@ -1,6 +1,6 @@
 # MiniNotch workplan
 
-Status: Timer tab tidied (one header, two rows) and Focus covers the stopwatch, on main; unreleased; next: the user tries it, then a release with SettingsNewRows for Focus Timer.
+Status: releasing 0.7.3 (Timer tab: stopwatch, pop-out, Focus; swipe fix); next: the user's feedback.
 
 Living document. Update the checkboxes as work lands. `CLAUDE.md` holds the architecture
 rules and the traps; this file holds the sequence.

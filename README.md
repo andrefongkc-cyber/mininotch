@@ -10,7 +10,7 @@ stats, a file shelf, saved links, a timer.
 
 ## Download
 
-[**MiniNotch 0.7.2**](https://github.com/andrefongkc-cyber/mininotch/releases/latest) — open the
+[**MiniNotch 0.7.3**](https://github.com/andrefongkc-cyber/mininotch/releases/latest) — open the
 DMG, drag MiniNotch to Applications. It runs in the background: no Dock icon and nothing in ⌘-Tab,
 just the notch and an optional menu bar icon. Quit it from that icon or from Settings > About.
 
@@ -77,7 +77,7 @@ no account.
 
 ![The weather tab](Docs/images/weather.png)
 
-**Timer and Pomodoro**, four rhythms, quick countdowns, and a custom length, plus a stopwatch with laps, a pop-out timer window, and Focus, which starts the countdown, Pomodoro interval or stopwatch over if you switch to another app _(next)_. A running timer shows
+**Timer and Pomodoro**, four rhythms, quick countdowns, and a custom length, plus a stopwatch with laps, a pop-out timer window, and Focus, which starts the countdown, Pomodoro interval or stopwatch over if you switch to another app. A running timer shows
 in the closed pill.
 
 ![The timer tab](Docs/images/timer.png)
