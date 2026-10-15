@@ -6,6 +6,27 @@
     <description>MiniNotch updates</description>
     <language>en</language>
     <item>
+      <title>MiniNotch 0.7.2</title>
+      <pubDate>Thu, 15 Oct 2026 04:09:28 GMT</pubDate>
+      <sparkle:version>0.7.2</sparkle:version>
+      <sparkle:shortVersionString>0.7.2</sparkle:shortVersionString>
+      <sparkle:minimumSystemVersion>14.4</sparkle:minimumSystemVersion>
+      <description><![CDATA[<h3>New</h3>
+<ul>
+<li><b>Lock Screen Player</b>: While your Mac is locked, what is playing shows in the middle of the screen: the cover, its controls, and the synced lyrics sliding along with the song. <i>Settings &gt; Media &gt; Lock Screen. Pick a layout, or keep the small strip under the notch.</i></li>
+<li><b>Spotify in Chrome</b>: Now Playing picks up Spotify&#x27;s web player in Google Chrome. For the cover, the time, the buttons and lyrics, Chrome has to allow it once. <i>In Chrome: View &gt; Developer &gt; Allow JavaScript from Apple Events.</i></li>
+<li><b>Panel Size</b>: Small, Medium, Large, a width of your own, or Fit to Top Bar, which narrows the panel when you have fewer tabs. The music card&#x27;s text and controls scale with it. <i>Settings &gt; Appearance &gt; Panel Size.</i></li>
+</ul>
+<h3>Improved</h3>
+<ul>
+<li><b>Settings Opens Again</b>: 0.7.1 closed as soon as Settings was opened; fixed. MiniNotch also checks for updates every 3 hours now, or as often as you like, from every hour to once a week. <i>Settings &gt; About &gt; How Often.</i></li>
+<li><b>One Place for Every Tab</b>: Settings has a Tabs pane with the Shelf, links, Timer, Weather, Notes, Clipboard and System settings together. <i>Settings &gt; Tabs.</i></li>
+<li><b>Tidier Music Card</b>: Play sits in the middle of the controls, the title is a little smaller, and lyrics are found for more songs whose length differs slightly.</li>
+<li><b>Steadier Notch</b>: The notch stays put when you swipe between desktops, the top bar&#x27;s icons clear the camera, and Default Tab applies every time the notch opens.</li>
+</ul>]]></description>
+      <enclosure url="https://github.com/andrefongkc-cyber/mininotch/releases/download/v0.7.2/MiniNotch-0.7.2.dmg" sparkle:edSignature="Sjg2/1Q5L67UdAhLIEmT9vC7kbhxWpgLC3mfPUIkSYIuyTpuHlWTsFiUzOGk38Tb/hpTGGik+e8DIZJS6/67CA==" length="7974476" type="application/x-apple-diskimage"/>
+    </item>
+    <item>
       <title>MiniNotch 0.7.1</title>
       <pubDate>Mon, 12 Oct 2026 18:21:19 GMT</pubDate>
       <sparkle:version>0.7.1</sparkle:version>
