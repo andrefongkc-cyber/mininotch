@@ -29,7 +29,6 @@ final class UpdateService: NSObject {
             if let updater = controller?.updater, updater.automaticallyChecksForUpdates != checksAutomatically {
                 updater.automaticallyChecksForUpdates = checksAutomatically
             }
-            scheduleExtraChecks()
         }
     }
 
@@ -40,15 +39,15 @@ final class UpdateService: NSObject {
             if let updater = controller?.updater, updater.updateCheckInterval != checkInterval {
                 updater.updateCheckInterval = checkInterval
             }
-            scheduleExtraChecks()
         }
     }
 
     static let defaultInterval: TimeInterval = 3 * 3600
 
-    /// From half an hour to a week, as the user asked.
+    /// From an hour to a week. The user asked for half an hour at the short end, but Sparkle will
+    /// not schedule checks less than an hour apart, and the user chose an hour over a timer of
+    /// MiniNotch's own.
     static let intervalChoices: [(seconds: TimeInterval, title: String)] = [
-        (1800, "Every 30 Minutes"),
         (3600, "Every Hour"),
         (3 * 3600, "Every 3 Hours"),
         (6 * 3600, "Every 6 Hours"),
@@ -59,9 +58,6 @@ final class UpdateService: NSObject {
     ]
 
     @ObservationIgnored private var controller: SPUStandardUpdaterController?
-    /// Sparkle will not schedule checks less than an hour apart, so for half an hour this checks
-    /// on the half hour itself, the same way Sparkle's own schedule does, in the background.
-    @ObservationIgnored private var extraChecks: Timer?
 
     func start() {
         #if DEBUG
@@ -73,15 +69,6 @@ final class UpdateService: NSObject {
         checkInterval = controller.updater.updateCheckInterval
         isAvailable = true
         #endif
-    }
-
-    private func scheduleExtraChecks() {
-        extraChecks?.invalidate()
-        extraChecks = nil
-        guard let controller, checksAutomatically, checkInterval < 3600 else { return }
-        extraChecks = Timer.onMain(every: checkInterval) { [weak controller] in
-            controller?.updater.checkForUpdatesInBackground()
-        }
     }
 
     /// Checks now and shows the result, whatever it is, including that there is nothing new.
