@@ -1,8 +1,8 @@
 #if DEBUG
 import AppKit
 
-/// Checks Focus Timer: switching to another app restarts the interval, switching back to the one
-/// it started in, or to MiniNotch, does not, and nothing restarts once it is let go.
+/// Checks Focus Timer: switching to another app restarts the interval or the stopwatch, switching
+/// back to the one it started in, or to MiniNotch, does not, and nothing restarts once let go.
 ///
 /// Run with `MiniNotch --check-focus`. App switches are posted as the workspace notifications
 /// macOS sends, naming apps that are running (Finder, the Dock), so nothing on screen changes.
@@ -64,6 +64,20 @@ enum DebugFocusCheck {
 
         focus.clear()
         check(focus.focusAppName == nil && focus.restarts == 0, "stopping the timer forgets the app")
+
+        // The stopwatch: switching starts it from zero, still running.
+        let stopwatch = Stopwatch()
+        focus.onLeave = { if stopwatch.isRunning { stopwatch.restart() } }
+        switchTo(finder)
+        stopwatch.toggle()
+        focus.arm()
+        wait(1.2)
+        stopwatch.lap()
+        switchTo(finder)
+        check(stopwatch.elapsed() > 1, "the stopwatch keeps counting in its own app (\(Stopwatch.format(stopwatch.elapsed())))")
+        switchTo(dock)
+        check(stopwatch.elapsed() < 0.3 && stopwatch.isRunning && stopwatch.laps.isEmpty,
+              "switching apps starts the stopwatch from zero, running, laps cleared (\(Stopwatch.format(stopwatch.elapsed())))")
 
         print(failures == 0 ? "\nall passed" : "\n\(failures) failed")
         exit(failures == 0 ? 0 : 1)

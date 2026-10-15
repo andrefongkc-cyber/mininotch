@@ -1,8 +1,8 @@
 import AppKit
 import Observation
 
-/// Settings > Tabs > Timer > Focus Timer: while a countdown or a Pomodoro focus interval runs,
-/// switching to any app but the one it started in restarts the interval (`onLeave`).
+/// Settings > Tabs > Timer > Focus Timer: while a countdown, a Pomodoro focus interval or the
+/// stopwatch runs, switching to any app but the one it started in starts it over (`onLeave`).
 ///
 /// It watches `didActivateApplicationNotification`, which needs no permission. MiniNotch itself
 /// never counts: the notch and the timer window do not activate it, and typing a custom length

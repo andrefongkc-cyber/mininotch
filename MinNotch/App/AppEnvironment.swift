@@ -88,8 +88,13 @@ final class AppEnvironment {
             self?.syncTimerActivity()
             self?.syncFocusGuard()
         }
+        stopwatch.onChange = { [weak self] in
+            self?.syncFocusGuard()
+        }
         focusGuard.onLeave = { [weak self] in
-            self?.timer.restartInterval()
+            guard let self else { return }
+            if self.isTimerWatched { self.timer.restartInterval() }
+            if self.stopwatch.isRunning { self.stopwatch.restart() }
         }
         timer.onCompletion = { [weak self] phase in
             self?.postTimerNotification(for: phase)
@@ -507,18 +512,22 @@ final class AppEnvironment {
         notchWindows.peekAll(duration: settings.media.sneakPeekDuration)
     }
 
-    /// Focus Timer: watching while a countdown or a focus interval runs, popping the timer out
-    /// when one starts, and letting go when the timer stops.
+    /// Whether Focus holds the timer to its app: a countdown or a focus interval, running.
+    private var isTimerWatched: Bool {
+        timer.state == .running && (timer.phase == .work || timer.phase == .countdown)
+    }
+
+    /// Focus: watching while a countdown, a focus interval or the stopwatch runs, popping the
+    /// timer out the first time one starts, and letting go when everything has stopped.
     private func syncFocusGuard() {
-        guard settings.timer.focusMode, timer.isActive else {
+        guard settings.timer.focusMode, timer.isActive || stopwatch.hasTime else {
             focusGuard.clear()
             return
         }
-        let watched = timer.state == .running && (timer.phase == .work || timer.phase == .countdown)
-        if watched {
+        if isTimerWatched || stopwatch.isRunning {
             if !focusGuard.hasPoppedOut {
                 focusGuard.hasPoppedOut = true
-                stopwatch.mode = .timer
+                if isTimerWatched, !stopwatch.isRunning { stopwatch.mode = .timer }
                 stopwatch.isPoppedOut = true
                 floatingTimer.sync()
             }

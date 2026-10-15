@@ -20,6 +20,9 @@ final class Stopwatch {
     /// Lap times, each the total at the moment Lap was pressed, newest first.
     private(set) var laps: [TimeInterval] = []
 
+    /// Raised when it starts, stops or resets, for Focus (`AppEnvironment.syncFocusGuard`).
+    @ObservationIgnored var onChange: (() -> Void)?
+
     var isRunning: Bool { startedAt != nil }
     var hasTime: Bool { isRunning || accumulated > 0 }
 
@@ -34,6 +37,7 @@ final class Stopwatch {
         } else {
             startedAt = .now
         }
+        onChange?()
     }
 
     func lap() {
@@ -45,6 +49,15 @@ final class Stopwatch {
         startedAt = nil
         accumulated = 0
         laps = []
+        onChange?()
+    }
+
+    /// From zero again, still running, for Focus.
+    func restart() {
+        accumulated = 0
+        laps = []
+        startedAt = .now
+        onChange?()
     }
 
     /// "1:02.34" under an hour, "1:02:03" over.

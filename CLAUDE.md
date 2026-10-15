@@ -1314,15 +1314,19 @@ the Mac sleeps, and when the setting is switched on. The panel is held open
 blur rules on a private pasteboard; the dialog itself can only be tried by hand.
 
 **The Timer tab is a timer or a stopwatch, and can float in a window of its own** (2026-10-14).
-`AppEnvironment.stopwatch` (`Stopwatch`) holds the stopwatch, which half the tab shows (Timer and
-Stopwatch chips at its top right) and whether it is popped out, so the notch and
+Every state has one header: a Timer | Stopwatch switch (`ModePicker`) on the left, Focus and the
+pop-out button on the right; idle, two rows under it, Pomodoro (rhythm chips, Start, the rhythm's
+summary) and Countdown (quick lengths, then a field), each a `ViewThatFits` that drops the row label
+or some lengths on a narrow panel. It replaced a crowded first row the user called messy.
+`AppEnvironment.stopwatch` (`Stopwatch`) holds the stopwatch, which half the tab shows and whether it
+is popped out, so the notch and
 `FloatingTimerController`'s window (the same `TimerWidgetView`, `isFloating`) agree. The Rhythm
 chips only choose what Start Pomodoro runs: they used to start it as well, and the user wanted to
 choose without starting. A chip that is on reads in the accent, bolder; the fill alone did not show
-it. **Focus Timer** (Tabs > Timer, and a chip in the tab, `TimerSettings.focusMode`): when a
-countdown or focus interval starts the timer pops out once, and while it runs `FocusGuard` restarts
-the interval (`TimerService.restartInterval`) whenever an app other than the one it started in comes
-to the front (`didActivateApplicationNotification`, no permission). MiniNotch itself never counts
+it. **Focus Timer** (Tabs > Timer, and Focus in the tab's header, `TimerSettings.focusMode`): when a
+countdown, focus interval or the stopwatch starts, the timer pops out once, and while one runs
+`FocusGuard` starts it over (`TimerService.restartInterval`, `Stopwatch.restart`, from zero with laps
+cleared) whenever an app other than the one it started in comes to the front (`didActivateApplicationNotification`, no permission). MiniNotch itself never counts
 (by process, or by bundle identifier, since a tool run from a shell has no process identifier of its
 own); breaks and pauses are let go. The user picked "switching apps" as what counts as leaving.
 `--check-focus` posts the switches; `--capture-notch --stopwatch`, `--focus` and `--floating-timer`

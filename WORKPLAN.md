@@ -1,6 +1,6 @@
 # MiniNotch workplan
 
-Status: timer tab work done on main (stopwatch, pop-out, rhythm chips select only, Focus Timer), swipes over Clipboard and Notes fixed; unreleased; next: the user tries them, then a release with SettingsNewRows for Focus Timer.
+Status: Timer tab tidied (one header, two rows) and Focus covers the stopwatch, on main; unreleased; next: the user tries it, then a release with SettingsNewRows for Focus Timer.
 
 Living document. Update the checkboxes as work lands. `CLAUDE.md` holds the architecture
 rules and the traps; this file holds the sequence.
@@ -180,6 +180,9 @@ The user plans to revamp every music-playing animation before 1.0.0. Collected h
       pop-out window; Focus Timer restarts the interval on switching apps (`--check-focus` passes).
       The window and the guard against real app switches are untried by hand. Add "Focus Timer" to
       SettingsNewRows at the next release.
+- [x] "Clean up the timer tab, it's messy" (2026-10-14): one header in every state (Timer | Stopwatch,
+      Focus, pop-out), idle as two rows, Pomodoro and Countdown, fitting narrow panels. Focus now
+      starts the stopwatch over too (`--check-focus` covers it).
 - [x] Swiping over a short Clipboard list or a fitting Notes page closed the notch: any list or text
       area now owns vertical swipes.
 - [x] Settings: one Tabs pane (2026-10-09) holds every tab's settings, a section each: Shelf (with

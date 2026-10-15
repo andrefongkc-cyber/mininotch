@@ -56,7 +56,7 @@ struct TimerSettingsView: View {
 
                 SettingsRow(
                     title: "Focus Timer",
-                    subtitle: "Pops the timer out when it starts, and starts the interval over if you switch to another app while it runs. Breaks and pauses do not count.",
+                    subtitle: "Pops the timer out when it starts, and starts the countdown, focus interval or stopwatch over if you switch to another app while it runs. Breaks and pauses do not count.",
                     systemImage: "scope",
                     isEnabled: settings.timer.enabled
                 ) {
