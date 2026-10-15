@@ -186,8 +186,10 @@ final class NotchGestureMonitor {
         DispatchQueue.main.async { callback?(direction) }
     }
 
-    /// Whether the pointer is over a scroll view with more in it than shows, which SwiftUI's
-    /// `ScrollView` is on the Mac.
+    /// Whether the pointer is over a list or a text area (SwiftUI's `ScrollView` and
+    /// `TextEditor` are both an `NSScrollView` on the Mac), whether or not it has more in it than
+    /// shows. It used to need more than shows, so over a short Clipboard list or a Notes page
+    /// that fitted, scrolling down (fingers moving up) closed the notch, as the user reported.
     private static func isOverScrollableList(_ event: NSEvent, in window: NSWindow) -> Bool {
         guard let content = window.contentView else { return false }
         // From the pointer, not the event: an event from the tap belongs to no window, so its
@@ -195,9 +197,7 @@ final class NotchGestureMonitor {
         let point = content.convert(window.convertPoint(fromScreen: NSEvent.mouseLocation), from: nil)
         var view = content.hitTest(point)
         while let current = view {
-            if let scroll = current as? NSScrollView,
-               let document = scroll.documentView,
-               document.frame.height > scroll.contentView.bounds.height + 1 {
+            if current is NSScrollView || current is NSTextView {
                 return true
             }
             view = current.superview

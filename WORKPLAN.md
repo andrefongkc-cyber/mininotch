@@ -1,6 +1,6 @@
 # MiniNotch workplan
 
-Status: 0.7.2 released (fix for 0.7.1's Settings crash, updates every 4 h); next: timer tab work (stopwatch, pop-out, rhythm chips select only, focus timer that restarts on switching apps) and swipe-down over Clipboard and Notes closing the notch.
+Status: timer tab work done on main (stopwatch, pop-out, rhythm chips select only, Focus Timer), swipes over Clipboard and Notes fixed; unreleased; next: the user tries them, then a release with SettingsNewRows for Focus Timer.
 
 Living document. Update the checkboxes as work lands. `CLAUDE.md` holds the architecture
 rules and the traps; this file holds the sequence.
@@ -176,6 +176,12 @@ The user plans to revamp every music-playing animation before 1.0.0. Collected h
 
 - [x] Now Playing from Spotify's web player in Chrome (released in 0.7.1; the user saw it work in title-only mode) (2026-10-12): built, compiles, untried against
       the real page. Needs Chrome's Allow JavaScript from Apple Events for controls and artwork.
+- [x] Timer tab (2026-10-14): Rhythm chips choose without starting; Timer | Stopwatch halves; a
+      pop-out window; Focus Timer restarts the interval on switching apps (`--check-focus` passes).
+      The window and the guard against real app switches are untried by hand. Add "Focus Timer" to
+      SettingsNewRows at the next release.
+- [x] Swiping over a short Clipboard list or a fitting Notes page closed the notch: any list or text
+      area now owns vertical swipes.
 - [x] Settings: one Tabs pane (2026-10-09) holds every tab's settings, a section each: Shelf (with
       Link Shelf), Timer, Weather, Notes, Clipboard, System. The Shelf, Timer and Weather panes are
       gone and the three cards left Advanced. Unreleased.

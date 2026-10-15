@@ -37,9 +37,12 @@ final class AppEnvironment {
     let notes = NotesService()
     let updates = UpdateService()
     let timer = TimerService()
+    let stopwatch = Stopwatch()
+    let focusGuard = FocusGuard()
 
     @ObservationIgnored private(set) lazy var notchWindows = NotchWindowManager(environment: self)
     @ObservationIgnored private(set) lazy var floatingNowPlaying = FloatingNowPlayingController(environment: self)
+    @ObservationIgnored private(set) lazy var floatingTimer = FloatingTimerController(environment: self)
     @ObservationIgnored private(set) lazy var menuBar = MenuBarController(environment: self)
     @ObservationIgnored private(set) lazy var settingsWindow = SettingsWindowController(environment: self)
     @ObservationIgnored private(set) lazy var onboarding = OnboardingCoordinator(environment: self)
@@ -83,6 +86,10 @@ final class AppEnvironment {
         // notifications, the same way the battery service raises `onLowBattery`.
         timer.onChange = { [weak self] in
             self?.syncTimerActivity()
+            self?.syncFocusGuard()
+        }
+        focusGuard.onLeave = { [weak self] in
+            self?.timer.restartInterval()
         }
         timer.onCompletion = { [weak self] phase in
             self?.postTimerNotification(for: phase)
@@ -174,6 +181,7 @@ final class AppEnvironment {
     /// Deliberately coarse: settings changes are rare and human-paced, so re-applying all
     /// of them is simpler and less bug-prone than tracking which key changed.
     private func settingsChanged() {
+        syncFocusGuard()
         LaunchAtLogin.reconcile(settings)
         HotkeyManager.shared.apply(settings.shortcuts)
         menuBar.update()
@@ -497,6 +505,27 @@ final class AppEnvironment {
               settings.media.sneakPeekOnTrackChange,
               track.isPlaying else { return }
         notchWindows.peekAll(duration: settings.media.sneakPeekDuration)
+    }
+
+    /// Focus Timer: watching while a countdown or a focus interval runs, popping the timer out
+    /// when one starts, and letting go when the timer stops.
+    private func syncFocusGuard() {
+        guard settings.timer.focusMode, timer.isActive else {
+            focusGuard.clear()
+            return
+        }
+        let watched = timer.state == .running && (timer.phase == .work || timer.phase == .countdown)
+        if watched {
+            if !focusGuard.hasPoppedOut {
+                focusGuard.hasPoppedOut = true
+                stopwatch.mode = .timer
+                stopwatch.isPoppedOut = true
+                floatingTimer.sync()
+            }
+            focusGuard.arm()
+        } else {
+            focusGuard.disarm()
+        }
     }
 
     /// Mirrors the timer into the pill, so a countdown is visible with the notch closed.

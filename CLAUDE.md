@@ -86,6 +86,7 @@ MiniNotch --capture-notch out.png [--collapsed] [--tab system] [--glow bars|off]
                                  [--notch-style bento-light] [--liquid-glass] [--builtin]
                                  [--no-visualizer] [--no-lyrics] [--swipe-to notes --midway 0.15]
                                  [--live grow|reopen|swipe --hold 7 [--was-active]]
+                                 [--stopwatch] [--focus]
 MiniNotch --check-lyrics "Khalid" "8TEEN" 229                      # LRCLIBClient + LRCParser
 MiniNotch --check-lyric-sync [--out f]                             # matching lyrics to the audio, synthetic
 MiniNotch --check-lyric-sync --audio f.mp3 --lrc f.lrc --shifts 0,0.5 [--peaks]   # …and a real song, old method beside it
@@ -117,6 +118,7 @@ MiniNotch --check-keep-open                                        # Keep the No
 MiniNotch --check-notes                                            # the note is saved, read back, never overwritten by a capture
 MiniNotch --check-update --feed <url> [--out f]                   # a whole Sparkle update, test builds only (see Releases)
 MiniNotch --check-clipboard                                        # what the history records, and when it is blurred
+MiniNotch --check-focus                                            # Focus Timer: which app switches restart the interval
 MiniNotch --capture-styles out.png                                 # every Notch Style's miniature, dark and light
 ```
 
@@ -1004,9 +1006,10 @@ needs no permission because it only listens, and returns at once unless a panel 
 
 **Two-finger swipes read the fingers, not the content.** `NotchGestureMonitor` flips the deltas when
 `isDirectionInvertedFromDevice` says Natural Scrolling has, so the directions are the same with it
-off as with it on (they used to come out backwards with it off). Up and down over a scroll view with
-more in it than shows belong to the list (a hit test up to an `NSScrollView`): scrolling the clipboard
-used to close the notch. A mouse wheel has no phases, so a pause of 0.35 s starts a new gesture.
+off as with it on (they used to come out backwards with it off). Up and down over any scroll view or
+text view belong to it (a hit test up to an `NSScrollView` or `NSTextView`), full or not: scrolling the
+clipboard used to close the notch, and later a short Clipboard list or a Notes page that fitted still
+did, because the check wanted more content than showed. A mouse wheel has no phases, so a pause of 0.35 s starts a new gesture.
 Momentum (the coast after the fingers lift) counts towards the swipe it belongs to, which still fires
 once: a quick flick does most of its travel there, and ignoring it dropped flicks. A gesture is over
 only when the next begins. A swipe to another tab (`NotchViewModel.swipe(to:)`) changes the height at
@@ -1309,6 +1312,21 @@ the tab is open; it clears when the last one closes (`endSampling`), when the sc
 the Mac sleeps, and when the setting is switched on. The panel is held open
 (`isInteractionLocked`) while the dialog is up. `--check-clipboard` runs the recording and the
 blur rules on a private pasteboard; the dialog itself can only be tried by hand.
+
+**The Timer tab is a timer or a stopwatch, and can float in a window of its own** (2026-10-14).
+`AppEnvironment.stopwatch` (`Stopwatch`) holds the stopwatch, which half the tab shows (Timer and
+Stopwatch chips at its top right) and whether it is popped out, so the notch and
+`FloatingTimerController`'s window (the same `TimerWidgetView`, `isFloating`) agree. The Rhythm
+chips only choose what Start Pomodoro runs: they used to start it as well, and the user wanted to
+choose without starting. A chip that is on reads in the accent, bolder; the fill alone did not show
+it. **Focus Timer** (Tabs > Timer, and a chip in the tab, `TimerSettings.focusMode`): when a
+countdown or focus interval starts the timer pops out once, and while it runs `FocusGuard` restarts
+the interval (`TimerService.restartInterval`) whenever an app other than the one it started in comes
+to the front (`didActivateApplicationNotification`, no permission). MiniNotch itself never counts
+(by process, or by bundle identifier, since a tool run from a shell has no process identifier of its
+own); breaks and pauses are let go. The user picked "switching apps" as what counts as leaving.
+`--check-focus` posts the switches; `--capture-notch --stopwatch`, `--focus` and `--floating-timer`
+draw the rest.
 
 **The timer counts against a deadline, not down from a number.** A tick that is late, and
 every timer tick is late sometimes, would otherwise lose that time for good and a

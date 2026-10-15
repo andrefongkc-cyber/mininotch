@@ -237,6 +237,12 @@ final class TimerService {
         onChange?()
     }
 
+    /// Starts the current interval again from its full length, for Focus Timer.
+    func restartInterval() {
+        guard isActive else { return }
+        begin(phase: phase, seconds: duration)
+    }
+
     /// Ends the current interval early and moves to whatever would have followed it.
     func skip() {
         guard isActive else { return }

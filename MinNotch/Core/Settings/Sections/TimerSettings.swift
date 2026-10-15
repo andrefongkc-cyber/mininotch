@@ -76,6 +76,10 @@ struct TimerSettings: Codable, Equatable {
     /// Minutes a plain countdown starts at, before the user changes it.
     var defaultCountdownMinutes: Double = 10
 
+    /// Pop the timer out when it starts, and start the interval over on switching to another
+    /// app (`FocusGuard`). Breaks are exempt.
+    var focusMode: Bool = false
+
     init() {}
 
     init(from decoder: Decoder) throws {
@@ -89,5 +93,6 @@ struct TimerSettings: Codable, Equatable {
         autoAdvance = c.value(.autoAdvance, true)
         notifyOnCompletion = c.value(.notifyOnCompletion, true)
         defaultCountdownMinutes = c.value(.defaultCountdownMinutes, 10, in: 1...180)
+        focusMode = c.value(.focusMode, false)
     }
 }

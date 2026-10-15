@@ -51,6 +51,17 @@ struct TimerSettingsView: View {
                 ) {
                     SettingsToggle(isOn: $settings.timer.notifyOnCompletion)
                 }
+
+                SettingsDivider()
+
+                SettingsRow(
+                    title: "Focus Timer",
+                    subtitle: "Pops the timer out when it starts, and starts the interval over if you switch to another app while it runs. Breaks and pauses do not count.",
+                    systemImage: "scope",
+                    isEnabled: settings.timer.enabled
+                ) {
+                    SettingsToggle(isOn: $settings.timer.focusMode)
+                }
             }
 
             SettingsCard(

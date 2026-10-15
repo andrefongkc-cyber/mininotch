@@ -237,7 +237,21 @@ enum DebugWindowCapture {
         }
         if expanded && midway == nil { viewModel.expand() }
         // `--sample-notes` fills the Notes tab with a fixed note, leaving the real one alone.
-        if arguments.contains("--sample-notes") {
+        // `--stopwatch` shows the Timer tab's stopwatch, running with two laps; `--focus` turns on
+        // Focus Timer in the throwaway settings.
+        if arguments.contains("--stopwatch") {
+            environment.stopwatch.mode = .stopwatch
+            environment.stopwatch.toggle()
+            environment.stopwatch.lap()
+            environment.stopwatch.lap()
+        }
+        if arguments.contains("--focus") { settings.timer.focusMode = true }
+        if arguments.contains("--floating-timer") {
+            debugFloatingTimerEnvironment = environment
+            environment.stopwatch.isPoppedOut = true
+            environment.floatingTimer.sync()
+        }
+                if arguments.contains("--sample-notes") {
             settings.advanced.notesEnabled = true
             environment.notes.applySample()
         }
@@ -388,7 +402,18 @@ enum DebugWindowCapture {
         writeCapture(of: hosting, to: path)
     }
 
+    private static var debugFloatingTimerEnvironment: AppEnvironment?
+
     private static func writeCapture(of hosting: NSView, to path: String) {
+        // `--floating-timer`: the pop-out timer window as well, beside the capture.
+        if CommandLine.arguments.contains("--floating-timer"),
+           let environment = debugFloatingTimerEnvironment,
+           let view = environment.floatingTimer.debugContentView,
+           let rep = view.bitmapImageRepForCachingDisplay(in: view.bounds) {
+            view.cacheDisplay(in: view.bounds, to: rep)
+            try? rep.representation(using: .png, properties: [:])?
+                .write(to: URL(fileURLWithPath: path.replacingOccurrences(of: ".png", with: "-floating.png")))
+        }
         guard let representation = hosting.bitmapImageRepForCachingDisplay(in: hosting.bounds) else {
             report("Could not create a bitmap"); exit(1)
         }

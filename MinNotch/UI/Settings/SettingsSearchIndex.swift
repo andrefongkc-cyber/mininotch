@@ -117,6 +117,7 @@ enum SettingsSearchIndex {
         .init(tab: .tabs, section: "Timer", title: "Enable Timer", subtitle: "Adds the Timer tab, and shows a running countdown in the closed pill.", symbolName: "timer"),
         .init(tab: .tabs, section: "Timer", title: "Countdown Length", subtitle: "Where a plain countdown starts. The Timer tab also offers a few quick lengths.", symbolName: "clock"),
         .init(tab: .tabs, section: "Timer", title: "Notify on Completion", subtitle: "Post a notification when an interval ends. The first one asks for permission.", symbolName: "bell"),
+        .init(tab: .tabs, section: "Timer", title: "Focus Timer", subtitle: "Pops the timer out when it starts, and starts the interval over if you switch to another app while it runs. Breaks and pauses do not count.", symbolName: "scope"),
         .init(tab: .tabs, section: "Pomodoro", title: "Rhythm", subtitle: "", symbolName: "metronome"),
         .init(tab: .tabs, section: "Pomodoro", title: "Focus Length", subtitle: "", symbolName: "brain.head.profile"),
         .init(tab: .tabs, section: "Pomodoro", title: "Break Length", subtitle: "", symbolName: "cup.and.saucer"),

@@ -77,7 +77,7 @@ no account.
 
 ![The weather tab](Docs/images/weather.png)
 
-**Timer and Pomodoro**, four rhythms, quick countdowns, and a custom length. A running timer shows
+**Timer and Pomodoro**, four rhythms, quick countdowns, and a custom length, plus a stopwatch with laps, a pop-out timer window, and a Focus Timer that starts the interval over if you switch to another app _(next)_. A running timer shows
 in the closed pill.
 
 ![The timer tab](Docs/images/timer.png)

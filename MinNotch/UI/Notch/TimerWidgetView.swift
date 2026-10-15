@@ -1,13 +1,16 @@
 import AppKit
 import SwiftUI
 
-/// The Timer widget: a countdown, and the Pomodoro cycle built on it.
+/// The Timer widget: a countdown and the Pomodoro cycle built on it, or a stopwatch, switched
+/// by the Timer and Stopwatch chips at the top right. The same view fills the pop-out window
+/// (`FloatingTimerController`), which is why the choice lives in `AppEnvironment.stopwatch`.
 struct TimerWidgetView: View {
     @Environment(\.notchStyle) private var theme
     @Environment(AppEnvironment.self) private var environment
     @Environment(SettingsStore.self) private var settings
 
     private var service: TimerService { environment.timer }
+    private var stopwatch: Stopwatch { environment.stopwatch }
 
     /// Set from the widget rather than a binding: the field is a scratch value that only
     /// becomes a timer when it is submitted.
@@ -15,6 +18,8 @@ struct TimerWidgetView: View {
     @FocusState private var isCustomFocused: Bool
 
     var viewModel: NotchViewModel?
+    /// In the pop-out window, which has no pop-out button of its own.
+    var isFloating = false
 
     /// Sized to the idle state, which is the taller of the two: three rows of options plus
     /// the custom field. The running state is shorter and sits with a little room under it,
@@ -23,7 +28,9 @@ struct TimerWidgetView: View {
 
     var body: some View {
         VStack(spacing: 10) {
-            if service.isActive {
+            if stopwatch.mode == .stopwatch {
+                stopwatchView
+            } else if service.isActive {
                 running
             } else {
                 idle
@@ -31,6 +38,97 @@ struct TimerWidgetView: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         .animation(Motion.content, value: service.isActive)
+        .animation(Motion.content, value: stopwatch.mode)
+    }
+
+    // MARK: Mode
+
+    /// Timer or Stopwatch, and the pop-out window.
+    private var modeBar: some View {
+        HStack(spacing: 4) {
+            Chip(label: "Timer", help: "Countdowns and Pomodoro", isActive: stopwatch.mode == .timer) {
+                stopwatch.mode = .timer
+            }
+            Chip(label: "Stopwatch", help: "Count up, with laps", isActive: stopwatch.mode == .stopwatch) {
+                stopwatch.mode = .stopwatch
+            }
+            if !isFloating {
+                TimerButton(
+                    systemImage: stopwatch.isPoppedOut ? "pip.exit" : "pip.enter",
+                    help: stopwatch.isPoppedOut ? "Put the timer back in the notch" : "Pop the timer out into its own window"
+                ) {
+                    stopwatch.isPoppedOut.toggle()
+                    environment.floatingTimer.sync()
+                }
+            }
+        }
+        .fixedSize()
+        .layoutPriority(1)
+    }
+
+    /// What Focus Timer is holding the interval to, and where the user went the last time it
+    /// started the interval over.
+    @ViewBuilder
+    private var focusStatus: some View {
+        let focus = environment.focusGuard
+        if focus.isArmed, let app = focus.focusAppName {
+            if let left = focus.lastLeftTo {
+                Text("· Restarted: you went to \(left). Stay in \(app)")
+                    .font(Typography.helper)
+                    .foregroundStyle(Color(nsColor: .systemRed))
+                    .lineLimit(1)
+            } else {
+                Text("· Stay in \(app)")
+                    .font(Typography.helper)
+                    .foregroundStyle(theme.ink.opacity(0.45))
+                    .lineLimit(1)
+            }
+        }
+    }
+
+    // MARK: Stopwatch
+
+    private var stopwatchView: some View {
+        VStack(spacing: 8) {
+            HStack(spacing: 6) {
+                Image(systemName: "stopwatch")
+                    .font(.system(size: 11, weight: .medium))
+                    .foregroundStyle(settings.appearance.resolvedAccent)
+                Text("Stopwatch")
+                    .font(Typography.sectionHeader)
+                    .foregroundStyle(theme.ink.opacity(0.8))
+                if let latest = stopwatch.laps.first {
+                    // The lap's own length, not the running total.
+                    let split = latest - (stopwatch.laps.count > 1 ? stopwatch.laps[1] : 0)
+                    Text("· Lap \(stopwatch.laps.count) \(Stopwatch.format(split))")
+                        .font(Typography.helper.monospacedDigit())
+                        .foregroundStyle(theme.ink.opacity(0.45))
+                        .lineLimit(1)
+                }
+                Spacer(minLength: 0)
+                modeBar
+            }
+
+            // Redraws only while running, twenty times a second for the hundredths.
+            TimelineView(.animation(minimumInterval: 1.0 / 20, paused: !stopwatch.isRunning)) { context in
+                Text(Stopwatch.format(stopwatch.elapsed(at: context.date)))
+                    .font(.system(size: 38, weight: .medium).monospacedDigit())
+                    .foregroundStyle(theme.ink)
+            }
+
+            HStack(spacing: 8) {
+                TimerButton(
+                    systemImage: stopwatch.isRunning ? "pause.fill" : "play.fill",
+                    help: stopwatch.isRunning ? "Pause" : (stopwatch.hasTime ? "Resume" : "Start")
+                ) { stopwatch.toggle() }
+                TimerButton(systemImage: "flag.fill", help: "Lap", isEnabled: stopwatch.isRunning) {
+                    stopwatch.lap()
+                }
+                TimerButton(systemImage: "arrow.counterclockwise", help: "Reset", isEnabled: stopwatch.hasTime) {
+                    stopwatch.reset()
+                }
+            }
+        }
     }
 
     // MARK: Running
@@ -52,6 +150,8 @@ struct TimerWidgetView: View {
                         .foregroundStyle(theme.ink.opacity(0.45))
                 }
 
+                focusStatus
+
                 Spacer(minLength: 0)
 
                 if service.state == .finished {
@@ -59,6 +159,8 @@ struct TimerWidgetView: View {
                         .font(Typography.helper)
                         .foregroundStyle(service.phase.tint)
                 }
+
+                modeBar
             }
 
             Text(service.remainingText)
@@ -106,24 +208,34 @@ struct TimerWidgetView: View {
                     .buttonStyle(NotchAccentButtonStyle(accent: settings.appearance.resolvedAccent))
                     .help(settings.timer.pomodoroPreset.summary(custom: settings.timer))
 
+                Chip(
+                    label: "Focus Timer",
+                    help: "Pop the timer out when it starts, and start the interval over if you switch to another app",
+                    isActive: settings.timer.focusMode
+                ) {
+                    settings.timer.focusMode.toggle()
+                }
+
                 Text(settings.timer.pomodoroPreset.summary(custom: settings.timer))
                     .font(Typography.helper)
                     .foregroundStyle(theme.ink.opacity(0.45))
                     .lineLimit(1)
 
                 Spacer(minLength: 0)
+
+                modeBar
             }
 
             row(title: "Rhythm") {
-                // Starting a preset from here runs it without changing the configured one,
-                // so trying a different rhythm once is not a settings edit.
+                // Picks the rhythm Start Pomodoro runs, and nothing else: a chip that also
+                // started it left no way to choose one without starting (the user's report).
                 ForEach(PomodoroPreset.allCases) { preset in
                     Chip(
                         label: preset.title,
                         help: preset.summary(custom: settings.timer),
                         isActive: preset == settings.timer.pomodoroPreset
                     ) {
-                        service.startPomodoro(preset: preset)
+                        settings.timer.pomodoroPreset = preset
                     }
                 }
             }
@@ -214,6 +326,7 @@ struct TimerWidgetView: View {
 /// A small capsule button, the widget's unit of "one more option".
 private struct Chip: View {
     @Environment(\.notchStyle) private var theme
+    @Environment(SettingsStore.self) private var settings
     var label: String
     var help: String
     var isActive: Bool = false
@@ -223,9 +336,11 @@ private struct Chip: View {
 
     var body: some View {
         Button(action: action) {
+            // On reads in the accent, bolder: the fill alone, 0.22 against 0.11, left an
+            // on chip and an off one looking the same (Focus Timer, Timer or Stopwatch).
             Text(label)
-                .font(Typography.helper)
-                .foregroundStyle(theme.ink.opacity(isActive ? 1 : 0.85))
+                .font(isActive ? Typography.helper.weight(.semibold) : Typography.helper)
+                .foregroundStyle(isActive ? settings.appearance.resolvedAccent : theme.ink.opacity(0.85))
                 .padding(.horizontal, 9)
                 .padding(.vertical, 4)
                 .background(
