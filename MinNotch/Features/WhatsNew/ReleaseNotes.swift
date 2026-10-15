@@ -27,8 +27,8 @@ struct ReleaseNotes {
     var removed: [ReleaseNote]
 
     static let latest = ReleaseNotes(
-        id: "0.7.1",
-        version: "0.7.1",
+        id: "0.7.2",
+        version: "0.7.2",
         added: [
             ReleaseNote(
                 symbol: "lock.rectangle.stack",
@@ -50,6 +50,12 @@ struct ReleaseNotes {
             ),
         ],
         improved: [
+            ReleaseNote(
+                symbol: "wrench.and.screwdriver",
+                title: "Settings Opens Again",
+                detail: "0.7.1 closed as soon as Settings was opened. Fixed, and MiniNotch now checks for updates every four hours instead of once a day.",
+                howTo: nil
+            ),
             ReleaseNote(
                 symbol: "square.stack.3d.up",
                 title: "One Place for Every Tab",

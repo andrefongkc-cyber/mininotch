@@ -10,7 +10,7 @@ stats, a file shelf, saved links, a timer.
 
 ## Download
 
-[**MiniNotch 0.7.1**](https://github.com/andrefongkc-cyber/mininotch/releases/latest) — open the
+[**MiniNotch 0.7.2**](https://github.com/andrefongkc-cyber/mininotch/releases/latest) — open the
 DMG, drag MiniNotch to Applications. It runs in the background: no Dock icon and nothing in ⌘-Tab,
 just the notch and an optional menu bar icon. Quit it from that icon or from Settings > About.
 
@@ -18,7 +18,7 @@ The first launch is blocked, because notarising an app needs a paid Apple member
 does not have. Open **System Settings > Privacy & Security**, scroll down, and click **Open
 Anyway**.
 
-From 0.7 on, MiniNotch keeps itself up to date: it checks for a new version once a day and asks
+From 0.7 on, MiniNotch keeps itself up to date: it checks for a new version every four hours and asks
 before installing it, or check yourself from the menu bar icon. Earlier versions have to be
 updated by hand once, to 0.7.
 
@@ -158,7 +158,7 @@ there and then; otherwise each is requested the first time a feature needs it:
 Everything stays on your Mac, with two exceptions, both off by default: setting **Media > Lyrics
 Source** to look up online sends the current title, artist, album and length to `lrclib.net`, and
 **Weather** sends a location rounded to about a kilometre, or the city you chose, to
-`open-meteo.com`. Checking for updates fetches one small file from GitHub a day and sends nothing
+`open-meteo.com`. Checking for updates fetches one small file from GitHub every four hours and sends nothing
 about your Mac; switch it off in Settings > About. No accounts, no analytics, no telemetry. Clipboard history is never written to disk, and it skips
 anything an app marks as private, and anything copied in the Passwords app or Keychain Access. Audio becomes a handful of numbers per buffer and is discarded;
 nothing is recorded.

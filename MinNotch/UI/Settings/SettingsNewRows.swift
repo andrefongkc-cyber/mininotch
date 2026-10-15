@@ -59,15 +59,15 @@ enum SettingsNewRows {
         "Background": "0.7",
         "Glass Opacity": "0.7",
 
-        // 0.7.1
-        "Lock Screen Layout": "0.7.1",
-        "Lock Screen Background": "0.7.1",
-        "Background Strength": "0.7.1",
-        "Show Player": "0.7.1",
-        "Show Synced Lyrics": "0.7.1",
-        "Size": "0.7.1",
-        "Keep the Notch Still Between Desktops": "0.7.1",
-        "Song on the Lock Screen": "0.7.1",
+        // 0.7.1, badged as 0.7.2: most people come straight from 0.7.0, past the 0.7.1 that crashed
+        "Lock Screen Layout": "0.7.2",
+        "Lock Screen Background": "0.7.2",
+        "Background Strength": "0.7.2",
+        "Show Player": "0.7.2",
+        "Show Synced Lyrics": "0.7.2",
+        "Size": "0.7.2",
+        "Keep the Notch Still Between Desktops": "0.7.2",
+        "Song on the Lock Screen": "0.7.2",
     ]
 
     static func isNew(_ title: String) -> Bool {

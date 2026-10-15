@@ -1,6 +1,6 @@
 # MiniNotch workplan
 
-Status: 0.7.1 released (2026-10-12, first update delivered through Sparkle); next: check a 0.7.0 copy offers it, then the user's feedback.
+Status: 0.7.2 released (fix for 0.7.1's Settings crash, updates every 4 h); next: timer tab work (stopwatch, pop-out, rhythm chips select only, focus timer that restarts on switching apps) and swipe-down over Clipboard and Notes closing the notch.
 
 Living document. Update the checkboxes as work lands. `CLAUDE.md` holds the architecture
 rules and the traps; this file holds the sequence.

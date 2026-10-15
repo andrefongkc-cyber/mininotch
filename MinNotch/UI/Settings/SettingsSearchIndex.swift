@@ -159,7 +159,7 @@ enum SettingsSearchIndex {
         .init(tab: .about, section: "System", title: "macOS", subtitle: "", symbolName: "desktopcomputer"),
         .init(tab: .about, section: "System", title: "Displays", subtitle: "", symbolName: "display"),
         .init(tab: .about, section: "Updates", title: "Check for Updates", subtitle: "Look for a new version now. You can also do this from the menu bar icon.", symbolName: "arrow.down.circle"),
-        .init(tab: .about, section: "Updates", title: "Check Automatically", subtitle: "Once a day. When there is a new version, it asks before installing.", symbolName: "clock.arrow.circlepath"),
+        .init(tab: .about, section: "Updates", title: "Check Automatically", subtitle: "Every four hours. When there is a new version, it asks before installing.", symbolName: "clock.arrow.circlepath"),
         .init(tab: .about, section: "MiniNotch", title: "Quit MiniNotch", subtitle: "The notch and the menu bar icon both disappear until you launch it again.", symbolName: "power"),
         .init(tab: .appearance, section: "Ambient Lighting", title: "Enable Ambient Glow", subtitle: "The Now Playing card cycles this with the visualizer, and its menu switches style.", symbolName: "light.beacon.max"),
         .init(tab: .appearance, section: "Ambient Lighting", title: "Style", subtitle: "", symbolName: "sparkles"),

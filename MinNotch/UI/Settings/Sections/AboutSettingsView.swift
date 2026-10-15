@@ -74,7 +74,7 @@ struct AboutSettingsView: View {
 
                 SettingsRow(
                     title: "Check Automatically",
-                    subtitle: "Once a day. When there is a new version, it asks before installing.",
+                    subtitle: "Every four hours. When there is a new version, it asks before installing.",
                     systemImage: "clock.arrow.circlepath",
                     isEnabled: updates.isAvailable
                 ) {

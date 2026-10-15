@@ -11,7 +11,7 @@ import Sparkle
 ///
 /// Sparkle does its own networking, the one exception to `BoundedHTTPClient`: it fetches the feed
 /// and the DMG over HTTPS and refuses anything its signature check does not pass. With checking
-/// on, that is one small file from GitHub a day; nothing about the Mac or its user is sent.
+/// on, that is one small file from GitHub every four hours; nothing about the Mac or its user is sent.
 ///
 /// Not started in a Debug build. A development copy shares the bundle identifier with the real
 /// app, so it would otherwise offer to replace itself with the last release. `--check-update` runs

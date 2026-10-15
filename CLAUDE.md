@@ -682,7 +682,7 @@ defaulting on only under `#if DEBUG`) for checking both at a glance. Review it w
 draw `ScrollView` content.
 
 `CFBundleVersion` is `$(MARKETING_VERSION)`, not a build number: Sparkle decides what is newer from
-it, and the build number had been 1 for every release. `ReleaseNotes.latest` is 0.7.1 and `MARKETING_VERSION` matches. 0.7.1 was released on 2026-10-12 (Tate's lock screen player and panel size, Spotify in Chrome, the Tabs pane), the first update installed copies find by themselves. 0.7.0 was released on 2026-10-08
+it, and the build number had been 1 for every release. `ReleaseNotes.latest` is 0.7.2 and `MARKETING_VERSION` matches. 0.7.2 (2026-10-14) fixes 0.7.1, which crashed whenever Settings opened: its `SettingsNewRows` listed seven titles twice, and a Swift dictionary literal with a repeated key traps when first read. The compiler warned and the build filter hid it; `Scripts/audit-search.sh` now refuses repeats, and **read every warning a release build prints**. 0.7.2 also checks for updates every four hours (`SUScheduledCheckInterval` 14400). 0.7.1 was released on 2026-10-12 (Tate's lock screen player and panel size, Spotify in Chrome, the Tabs pane), the first update installed copies find by themselves. 0.7.0 was released on 2026-10-08
 as the GitHub release `v0.7.0`, signed with the personal team like 0.2.0 to 0.6.0, at the user's
 request ("release on git"), and entered in `appcast.xml`: it is the first release with Sparkle, so the
 next one is the first that installed copies will find on their own. The next shared build needs new
