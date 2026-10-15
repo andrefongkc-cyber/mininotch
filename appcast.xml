@@ -6,6 +6,25 @@
     <description>MiniNotch updates</description>
     <language>en</language>
     <item>
+      <title>MiniNotch 0.7.3</title>
+      <pubDate>Thu, 15 Oct 2026 05:03:35 GMT</pubDate>
+      <sparkle:version>0.7.3</sparkle:version>
+      <sparkle:shortVersionString>0.7.3</sparkle:shortVersionString>
+      <sparkle:minimumSystemVersion>14.4</sparkle:minimumSystemVersion>
+      <description><![CDATA[<h3>New</h3>
+<ul>
+<li><b>Stopwatch</b>: The Timer tab is now a timer or a stopwatch, with laps. Switch between them at the top of the tab. <i>The Timer tab: Timer | Stopwatch, top left.</i></li>
+<li><b>Pop-Out Timer</b>: Float the timer or stopwatch in a small window above your other apps, and put it back when you are done. <i>The Timer tab&#x27;s pop-out button, top right.</i></li>
+<li><b>Focus</b>: Turn on Focus and the timer pops out when it starts. Switch to another app while a countdown, a Pomodoro focus interval or the stopwatch runs, and it starts over. Breaks and pauses do not count. <i>Focus at the top of the Timer tab, or Settings &gt; Tabs &gt; Timer &gt; Focus Timer.</i></li>
+</ul>
+<h3>Improved</h3>
+<ul>
+<li><b>Tidier Timer Tab</b>: Choose a Pomodoro rhythm, then press Start: picking a rhythm no longer starts it. Quick countdowns and your own length sit on one row below.</li>
+<li><b>Scrolling Stays Put</b>: Scrolling the Clipboard list or Notes no longer closes the notch, however short they are.</li>
+</ul>]]></description>
+      <enclosure url="https://github.com/andrefongkc-cyber/mininotch/releases/download/v0.7.3/MiniNotch-0.7.3.dmg" sparkle:edSignature="tpkQPVOGiF89Bk8Zm0xPFZXSHubo87Tw1swCdh7bk4p4TYu5ul+ucYbe/vhyrWIl17MOYySosYOT2/taOB0JDw==" length="8114130" type="application/x-apple-diskimage"/>
+    </item>
+    <item>
       <title>MiniNotch 0.7.2</title>
       <pubDate>Thu, 15 Oct 2026 04:09:28 GMT</pubDate>
       <sparkle:version>0.7.2</sparkle:version>
