@@ -70,7 +70,16 @@ struct TimerWidgetView: View {
                 settings.timer.focusMode.toggle()
             }
 
-            if !isFloating {
+            if isFloating {
+                TimerButton(systemImage: settings.timer.clockStyle.symbolName, help: "Clock style: \(settings.timer.clockStyle.title)") {
+                    NotchMenu.show(TimerClockStyle.allCases.map { style in
+                        NotchMenu.Item(title: style.title, symbol: style.symbolName,
+                                       isOn: style == settings.timer.clockStyle) {
+                            settings.timer.clockStyle = style
+                        }
+                    })
+                }
+            } else {
                 TimerButton(
                     systemImage: stopwatch.isPoppedOut ? "pip.exit" : "pip.enter",
                     help: stopwatch.isPoppedOut ? "Put the timer back in the notch" : "Pop the timer out into its own window"
@@ -235,7 +244,7 @@ struct TimerWidgetView: View {
                 }
             }
 
-            BigTime(text: service.remainingText, fills: isFloating)
+            BigTime(text: service.remainingText, fills: isFloating, style: clockStyle)
 
             // A plain stroked shape, not a `Canvas`: canvas output does not appear in an
             // AppKit layer capture, which is how this project reviews the notch.
@@ -272,22 +281,18 @@ struct TimerWidgetView: View {
                 if let latest = stopwatch.laps.first {
                     // The lap's own length, not the running total.
                     let split = latest - (stopwatch.laps.count > 1 ? stopwatch.laps[1] : 0)
-                    Text("Lap \(stopwatch.laps.count)  \(Stopwatch.format(split))")
+                    let precision: Stopwatch.Precision = settings.timer.stopwatchShowsFraction ? .hundredths : .seconds
+                    Text("Lap \(stopwatch.laps.count)  \(Stopwatch.format(split, precision: precision))")
                         .monospacedDigit()
                 } else {
                     Text(stopwatch.hasTime ? "Stopwatch" : "Stopwatch · Lap marks a split")
                 }
             }
 
-            // Redraws only while running: every frame to the hundredth, or ten times a second to
-            // the tenth in Low Power Mode or on a low battery.
-            let precision = Stopwatch.Precision(savingPower: environment.battery.status.savesPower)
-            TimelineView(.animation(minimumInterval: precision.redrawInterval, paused: !stopwatch.isRunning)) { context in
-                BigTime(
-                    text: Stopwatch.format(stopwatch.elapsed(at: context.date), precision: precision),
-                    fills: isFloating
-                )
-            }
+            stopwatchTime(Stopwatch.Precision(
+                showsFraction: settings.timer.stopwatchShowsFraction,
+                savingPower: environment.battery.status.savesPower
+            ))
 
             HStack(spacing: 8) {
                 TimerButton(
@@ -300,9 +305,50 @@ struct TimerWidgetView: View {
                 TimerButton(systemImage: "arrow.counterclockwise", help: "Reset", isEnabled: stopwatch.hasTime) {
                     stopwatch.reset()
                 }
+                Chip(
+                    label: ".00",
+                    help: settings.timer.stopwatchShowsFraction ? "Hide hundredths of a second" : "Show hundredths of a second",
+                    isActive: settings.timer.stopwatchShowsFraction
+                ) {
+                    settings.timer.stopwatchShowsFraction.toggle()
+                }
             }
         }
     }
+
+    /// Redraws only while running: every frame to the hundredth; ten times a second to the tenth
+    /// in Low Power Mode or on a low battery; once a second with the hundredths off. The slower
+    /// two land on the stopwatch's own grid (`zeroDate`), so each redraw is the moment a digit
+    /// turns over rather than up to a period after it.
+    @ViewBuilder
+    private func stopwatchTime(_ precision: Stopwatch.Precision) -> some View {
+        if let zero = stopwatch.zeroDate {
+            if let period = precision.redrawPeriod {
+                TimelineView(.periodic(from: zero, by: period)) { context in
+                    // A hair past the grid, so a value that lands exactly on a tenth is not
+                    // rounded down to the one before.
+                    stopwatchText(at: context.date.addingTimeInterval(0.001), precision)
+                }
+            } else {
+                TimelineView(.animation) { context in
+                    stopwatchText(at: context.date, precision)
+                }
+            }
+        } else {
+            stopwatchText(at: .now, precision)
+        }
+    }
+
+    private func stopwatchText(at date: Date, _ precision: Stopwatch.Precision) -> some View {
+        BigTime(
+            text: Stopwatch.format(stopwatch.elapsed(at: date), precision: precision),
+            fills: isFloating,
+            style: clockStyle
+        )
+    }
+
+    /// The pop-out window's chosen style; the notch is always plain.
+    private var clockStyle: TimerClockStyle { isFloating ? settings.timer.clockStyle : .plain }
 
     // MARK: Status
 
@@ -340,11 +386,17 @@ private struct BigTime: View {
     @Environment(\.notchStyle) private var theme
     var text: String
     var fills: Bool
+    var style: TimerClockStyle = .plain
 
     private static let notchSize: CGFloat = 38
 
     var body: some View {
-        if fills {
+        if fills, style != .plain {
+            GeometryReader { proxy in
+                ClockFaceView(text: text, style: style, space: proxy.size)
+            }
+            .frame(minHeight: 40)
+        } else if fills {
             GeometryReader { proxy in
                 Text(text)
                     .font(Self.font(size: Self.size(fitting: text, in: proxy.size)))

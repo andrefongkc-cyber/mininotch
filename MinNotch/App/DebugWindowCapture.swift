@@ -246,6 +246,13 @@ enum DebugWindowCapture {
             environment.stopwatch.lap()
         }
         if arguments.contains("--focus") { settings.timer.focusMode = true }
+        // `--clock-style flip|segments` picks the pop-out window's style; `--no-fraction` hides
+        // the stopwatch's hundredths.
+        if let index = arguments.firstIndex(of: "--clock-style"), index + 1 < arguments.count,
+           let style = TimerClockStyle(rawValue: arguments[index + 1]) {
+            settings.timer.clockStyle = style
+        }
+        if arguments.contains("--no-fraction") { settings.timer.stopwatchShowsFraction = false }
         if arguments.contains("--floating-timer") {
             debugFloatingTimerEnvironment = environment
             environment.stopwatch.isPoppedOut = true

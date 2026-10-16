@@ -87,6 +87,7 @@ MiniNotch --capture-notch out.png [--collapsed] [--tab system] [--glow bars|off]
                                  [--no-visualizer] [--no-lyrics] [--swipe-to notes --midway 0.15]
                                  [--live grow|reopen|swipe --hold 7 [--was-active]]
                                  [--stopwatch] [--focus] [--floating-timer [--floating-expanded]]
+                                 [--clock-style flip|segments] [--no-fraction]
 MiniNotch --check-lyrics "Khalid" "8TEEN" 229                      # LRCLIBClient + LRCParser
 MiniNotch --check-lyric-sync [--out f]                             # matching lyrics to the audio, synthetic
 MiniNotch --check-lyric-sync --audio f.mp3 --lrc f.lrc --shifts 0,0.5 [--peaks]   # …and a real song, old method beside it
@@ -119,6 +120,7 @@ MiniNotch --check-notes                                            # the note is
 MiniNotch --check-update --feed <url> [--out f]                   # a whole Sparkle update, test builds only (see Releases)
 MiniNotch --check-clipboard                                        # what the history records, and when it is blurred
 MiniNotch --check-focus                                            # Focus Timer: which app switches restart the interval
+MiniNotch --clock-frames [seconds]                                 # the pop-out's clock styles mid-movement, in a window for screencapture -l
 MiniNotch --capture-styles out.png                                 # every Notch Style's miniature, dark and light
 ```
 
@@ -1351,6 +1353,25 @@ change; in the notch it stays 38 points. AppKit remembers the size with the plac
 never save that frame (`remembersFrame`, off in `DebugSupport.makeEnvironment`), because they share the
 real app's defaults: `--floating-timer` used to move the user's window. `--floating-expanded` draws
 it large. Resizing by an edge has not been tried by hand.
+
+**The pop-out window has clock styles: Plain, Flip Clock, Flip Segments, Rack Segments** (2026-10-15,
+`TimerSettings.clockStyle`, from the style button in the window's header, where the notch has its
+pop-out button; the notch always draws plain). `ClockFaceView` draws them: split-flap cards whose old
+top half falls forward on its hinge and whose new bottom half lands with a small bounce
+(`FlipCard`, an `Animatable` view driven by a count of flips so a change mid-fall carries on); a
+seven-segment display of yellow paddles that turn over on their long axis with a spring's overshoot
+(`SegmentPaddle`); and a rack-driven one, white bars pushed out of their slots in a black plate, or
+drawn back in, on an even geared curve with no bounce, the face coming forward with its side and
+shadow showing (`RackBar`). Each digit animates as fast as it must to finish before it next changes:
+seconds and up the full movement, tenths a quick one, hundredths at once. The real things look the
+same whatever the Notch Style, so these ignore it. **A layer capture does not draw a 3D turn**, so
+`--capture-notch` shows flaps and paddles wrong mid-movement; `--clock-frames` puts every style
+frozen at fixed points of a 7 turning into an 8 in a window and prints its number, for
+`screencapture -l <number>`, which reads back that window and nothing else. Judged that way they
+fall, turn and push out as intended. The stopwatch's ".00" button (`stopwatchShowsFraction`) shows
+or hides hundredths, in the notch and the window; hidden, it redraws once a second on the
+stopwatch's own grid (`Stopwatch.zeroDate`), as tenths do when saving power, so each redraw is the
+moment a digit turns over.
 
 **The stopwatch draws every frame, or tenths when saving power.** It redrew twenty times a second
 showing hundredths, so the last digit only ever read 2 or 7 ("it's just alternating between .x2 and

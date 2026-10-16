@@ -48,6 +48,38 @@ enum PomodoroPreset: String, Codable, CaseIterable, Identifiable {
     }
 }
 
+/// How the pop-out timer window draws its time (`ClockFaceView`).
+enum TimerClockStyle: String, Codable, CaseIterable, Identifiable {
+    case plain
+    /// Split-flap cards: the top half of the old digit falls to show the new one.
+    case flip
+    /// A mechanical seven-segment display, each segment a paddle that turns over.
+    case segments
+    /// A rack-driven seven-segment display, each segment a bar pushed out of the plate or drawn
+    /// back into its slot.
+    case rack
+
+    var id: String { rawValue }
+
+    var title: String {
+        switch self {
+        case .plain: return "Plain"
+        case .flip: return "Flip Clock"
+        case .segments: return "Flip Segments"
+        case .rack: return "Rack Segments"
+        }
+    }
+
+    var symbolName: String {
+        switch self {
+        case .plain: return "textformat.123"
+        case .flip: return "rectangle.split.1x2"
+        case .segments: return "squareshape.split.2x2.dotted"
+        case .rack: return "square.stack.3d.forward.dottedline"
+        }
+    }
+}
+
 /// Settings > Timer.
 struct TimerSettings: Codable, Equatable {
     var enabled: Bool = true
@@ -80,6 +112,12 @@ struct TimerSettings: Codable, Equatable {
     /// app (`FocusGuard`). Breaks are exempt.
     var focusMode: Bool = false
 
+    /// The stopwatch's hundredths (the ".00" button on the stopwatch).
+    var stopwatchShowsFraction: Bool = true
+
+    /// How the pop-out window draws the time; the notch is always plain.
+    var clockStyle: TimerClockStyle = .plain
+
     init() {}
 
     init(from decoder: Decoder) throws {
@@ -94,5 +132,7 @@ struct TimerSettings: Codable, Equatable {
         notifyOnCompletion = c.value(.notifyOnCompletion, true)
         defaultCountdownMinutes = c.value(.defaultCountdownMinutes, 10, in: 1...180)
         focusMode = c.value(.focusMode, false)
+        stopwatchShowsFraction = c.value(.stopwatchShowsFraction, true)
+        clockStyle = c.value(.clockStyle, TimerClockStyle.plain)
     }
 }

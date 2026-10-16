@@ -11,6 +11,8 @@ enum NotchMenu {
     struct Item {
         var title: String
         var symbol: String
+        /// Ticked, for the choice that is in force.
+        var isOn = false
         var action: () -> Void
     }
 
@@ -19,6 +21,7 @@ enum NotchMenu {
         for item in items {
             let menuItem = ActionMenuItem(title: item.title, handler: item.action)
             menuItem.image = NSImage(systemSymbolName: item.symbol, accessibilityDescription: nil)
+            menuItem.state = item.isOn ? .on : .off
             menu.addItem(menuItem)
         }
         menu.popUp(positioning: nil, at: NSEvent.mouseLocation, in: nil)

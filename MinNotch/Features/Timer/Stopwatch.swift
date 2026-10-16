@@ -24,6 +24,9 @@ final class Stopwatch {
     @ObservationIgnored var onChange: (() -> Void)?
 
     var isRunning: Bool { startedAt != nil }
+    /// When the stopwatch would have read zero, had it run without a pause; nil while stopped.
+    /// The grid a redraw once a second, or once a tenth, lines up with.
+    var zeroDate: Date? { startedAt?.addingTimeInterval(-accumulated) }
     var hasTime: Bool { isRunning || accumulated > 0 }
 
     func elapsed(at date: Date = .now) -> TimeInterval {
@@ -63,17 +66,26 @@ final class Stopwatch {
     /// How finely the running stopwatch is drawn. It redrew twenty times a second showing
     /// hundredths, so the last digit only ever read 2 or 7 (the user's report): now it is every
     /// frame to the hundredth, or, saving power, ten times a second to the tenth, so whichever
-    /// digit is last always moves through all ten.
+    /// digit is last always moves through all ten. With the hundredths switched off it is whole
+    /// seconds, redrawn once a second.
     enum Precision {
-        case hundredths, tenths
+        case hundredths, tenths, seconds
 
-        init(savingPower: Bool) { self = savingPower ? .tenths : .hundredths }
+        init(showsFraction: Bool, savingPower: Bool) {
+            self = !showsFraction ? .seconds : (savingPower ? .tenths : .hundredths)
+        }
 
-        /// For `TimelineView(.animation(minimumInterval:))`; nil is every frame.
-        var redrawInterval: TimeInterval? { self == .hundredths ? nil : 0.1 }
+        /// Seconds between redraws, on the grid of `zeroDate`; nil is every frame.
+        var redrawPeriod: TimeInterval? {
+            switch self {
+            case .hundredths: return nil
+            case .tenths: return 0.1
+            case .seconds: return 1
+            }
+        }
     }
 
-    /// "1:02.34" under an hour ("1:02.3" in tenths), "1:02:03" over.
+    /// "1:02.34" under an hour ("1:02.3" in tenths, "1:02" in seconds), "1:02:03" over.
     static func format(_ seconds: TimeInterval, precision: Precision = .hundredths) -> String {
         let total = max(seconds, 0)
         let hours = Int(total) / 3600
@@ -87,6 +99,8 @@ final class Stopwatch {
         case .tenths:
             let tenths = Int((total * 10).rounded(.down)) % 10
             return String(format: "%d:%02d.%d", minutes, secs, tenths)
+        case .seconds:
+            return String(format: "%d:%02d", minutes, secs)
         }
     }
 }
