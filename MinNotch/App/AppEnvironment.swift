@@ -39,6 +39,7 @@ final class AppEnvironment {
     let timer = TimerService()
     let stopwatch = Stopwatch()
     let focusGuard = FocusGuard()
+    let appEnergy = AppEnergyMonitor()
 
     @ObservationIgnored private(set) lazy var notchWindows = NotchWindowManager(environment: self)
     @ObservationIgnored private(set) lazy var floatingNowPlaying = FloatingNowPlayingController(environment: self)
@@ -105,6 +106,10 @@ final class AppEnvironment {
         }
         HotkeyManager.shared.apply(settings.shortcuts)
 
+        // Before the battery starts, so its first reading reaches the monitor.
+        appEnergy.start(fileURL: NotesService.defaultFileURL.deletingLastPathComponent()
+            .appendingPathComponent("AppEnergy.json"))
+        battery.onStatusChange = { [weak self] status in self?.appEnergy.update(battery: status) }
         battery.start(settings: settings)
         systemStats.start(settings: settings)
         bluetooth.start(settings: settings)
@@ -170,6 +175,7 @@ final class AppEnvironment {
         linkShelf.stop()
         timer.stop()
         battery.stop()
+        appEnergy.stop()
         shelf.stop()
         // Also removes the key tap, so the volume and brightness keys go straight back to macOS.
         hud.stop()

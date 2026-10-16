@@ -99,6 +99,8 @@ final class BatteryService {
     /// Set by `AppEnvironment` so notification posting stays out of the service.
     @ObservationIgnored var onLowBattery: ((Int) -> Void)?
     @ObservationIgnored var onPowerSourceChange: ((Bool) -> Void)?
+    /// Every reading, for `AppEnergyMonitor`.
+    @ObservationIgnored var onStatusChange: ((BatteryStatus) -> Void)?
 
     @ObservationIgnored private var runLoopSource: CFRunLoopSource?
     @ObservationIgnored private var powerStateObserver: NSObjectProtocol?
@@ -158,6 +160,7 @@ final class BatteryService {
         evaluateLowBattery(previous: previous, current: newStatus)
         evaluatePowerSourceChange(current: newStatus)
         applyPowerSchedule()
+        onStatusChange?(newStatus)
     }
 
     // MARK: Charging power

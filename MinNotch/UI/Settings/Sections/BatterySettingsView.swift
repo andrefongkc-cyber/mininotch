@@ -20,6 +20,14 @@ struct BatterySettingsView: View {
                 }
             }
 
+            AppEnergyCard(
+                stretch: environment.appEnergy.stretch,
+                ranking: environment.appEnergy.ranking,
+                isPluggedIn: status.isPluggedIn
+            )
+            .onAppear { environment.appEnergy.beginWatching() }
+            .onDisappear { environment.appEnergy.endWatching() }
+
             SettingsCard(header: "In the Notch") {
                 SettingsRow(
                     title: "Show Percentage",

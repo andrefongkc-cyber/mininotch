@@ -121,6 +121,7 @@ MiniNotch --check-update --feed <url> [--out f]                   # a whole Spar
 MiniNotch --check-clipboard                                        # what the history records, and when it is blurred
 MiniNotch --check-focus                                            # Focus Timer: which app switches restart the interval
 MiniNotch --clock-frames [seconds]                                 # the pop-out's clock styles mid-movement, in a window for screencapture -l
+MiniNotch --check-app-energy [--card out.png]                      # Apps Using the Battery: counting, coalitions, unplug and plug-in
 MiniNotch --capture-styles out.png                                 # every Notch Style's miniature, dark and light
 ```
 
@@ -1411,6 +1412,27 @@ readings (`tdev` reads -22 on an M4) and are dropped. One read of the 31 sensors
 moment later, one interval behind the history. Units follow Settings > Weather > Temperature Units,
 with the unit letter shown, since a chip at "138°" looks broken to someone used to Celsius.
 `--check-temps` lists every sensor this Mac offers.
+
+**Apps Using the Battery counts coalitions, not processes** (2026-10-16, Settings > Battery > Battery
+Use, `AppEnergyMonitor`). macOS's own per-app record is a powerlog database only root reads, so
+MiniNotch keeps its own from the same source: the kernel's resource coalitions, one per app and
+everything it starts (a browser's helpers, a terminal's shells), each with a running total of
+processor and graphics energy that includes processes already gone, with energy a system service
+spent on an app's behalf moved onto it (`coalition_info_resource_usage`, private, through `dlsym`;
+every coalition is readable without permission; `PROC_PIDCOALITIONINFO` gives a process's). The
+energy fields are read by position in `struct coalition_resource_usage` (`AppEnergySampler.Field`),
+which only grows at the end. It counted per process (`proc_pid_rusage`'s `ri_energy_nj`) first, and
+`--check-app-energy` caught what that loses: a process that starts and exits between two readings,
+which is most of a build or a script, never counted. Once a minute on battery, every five seconds
+while the Battery pane is open, it reads every coalition and adds each one's growth to its app (its
+first member that is an app, else System Services for macOS's own paths, else the tool's name). A
+stretch starts at an unplug (or at launch, on battery, saying so), its first reading counts nothing,
+a plug-in ends it and keeps it to show ("Your last time on battery"), and it is saved to
+`Application Support/MiniNotch/AppEnergy.json` after every reading, so a relaunch on battery carries
+on unless the charge went up meanwhile. The display is in no coalition, so the shares are of what
+apps used. A loop that forks thousands of processes shows up mostly as System Services, because
+macOS's exec checks do that work; that is true, not a bug. The check tool also draws the card
+(`--card`), since the Settings window cannot be captured.
 
 **Charging power comes from the SMC, not the battery's registry entry.** While plugged in, the
 System tab shows what the charger delivers, what the Mac uses and what goes into the battery, over

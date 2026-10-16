@@ -1,6 +1,6 @@
 # MiniNotch workplan
 
-Status: pop-out clock styles and the stopwatch's .00 button done on main, unreleased; next: the user tries them, and at the next release add "New Versions" to SettingsNewRows and put the timer changes in the notes.
+Status: Apps Using the Battery done on main, unreleased; next: the user tries it on battery, and at the next release add "New Versions" and "Apps Using the Battery" to SettingsNewRows.
 
 Living document. Update the checkboxes as work lands. `CLAUDE.md` holds the architecture
 rules and the traps; this file holds the sequence.
@@ -180,6 +180,10 @@ The user plans to revamp every music-playing animation before 1.0.0. Collected h
       pop-out window; Focus Timer restarts the interval on switching apps (`--check-focus` passes).
       The window and the guard against real app switches are untried by hand. Add "Focus Timer" to
       SettingsNewRows at the next release.
+- [x] Settings > Battery > Apps Using the Battery (2026-10-16): which apps used the most energy since
+      the Mac was unplugged, from the kernel's per-app coalition totals (processor and graphics,
+      exited processes included), read once a minute on battery. `--check-app-energy` passes; never
+      watched over a real unplugged stretch.
 - [x] Stopwatch hundredths on and off (2026-10-15, a ".00" button on the stopwatch); a clock style in
       the pop-out window: Plain, Flip Clock (split flap cards that fall), Flip Segments (yellow
       paddles that turn over) and Rack Segments (white bars pushed out of the plate). Checked frozen

@@ -102,6 +102,7 @@ enum SettingsSearchIndex {
         .init(tab: .huds, section: "Presentation", title: "Dismiss After", subtitle: "How long the indicator stays on screen after the last change.", symbolName: "timer"),
         .init(tab: .huds, section: "Presentation", title: "Show Numeric Value", subtitle: "", symbolName: "number"),
         .init(tab: .huds, section: "Presentation", title: "Preview", subtitle: "Show an indicator now, so you can see the style without reaching for a key.", symbolName: "eye"),
+        .init(tab: .battery, section: "Battery Use", title: "Apps Using the Battery", subtitle: "Which apps have used the most energy since the Mac was unplugged.", symbolName: "bolt.batteryblock"),
         .init(tab: .battery, section: "In the Notch", title: "Show Percentage", subtitle: "Otherwise only the battery glyph is shown. Whether the battery appears at all, and where, is arranged in General and Appearance.", symbolName: "percent"),
         .init(tab: .battery, section: "In the Notch", title: "Show Time Remaining", subtitle: "In the expanded System panel.", symbolName: "clock.arrow.circlepath"),
         .init(tab: .battery, section: "In the Notch", title: "Show Charging Power", subtitle: "While plugged in, the System panel shows what the charger delivers, what the Mac uses, and how much goes into the battery.", symbolName: "bolt"),
@@ -236,7 +237,7 @@ extension SettingsTab {
         case .media: return ["music", "spotify", "song", "track", "now playing", "lyrics", "controls"]
         case .calendar: return ["events", "reminders", "schedule", "agenda"]
         case .huds: return ["volume", "brightness", "keyboard backlight", "overlay"]
-        case .battery: return ["charge", "power", "airpods", "bluetooth"]
+        case .battery: return ["charge", "power", "airpods", "bluetooth", "drain", "energy", "usage"]
         case .tabs: return ["shelf", "files", "drag", "drop", "tray", "links", "timer", "pomodoro", "countdown", "focus", "break", "weather", "forecast", "temperature", "rain", "location", "city", "notes", "clipboard", "copy", "system", "stats", "cpu"]
         case .shortcuts: return ["hotkey", "keyboard", "keys"]
         case .advanced: return ["display", "monitor", "external", "debug", "export", "import", "reset",
