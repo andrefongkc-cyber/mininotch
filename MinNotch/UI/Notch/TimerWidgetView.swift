@@ -27,7 +27,7 @@ struct TimerWidgetView: View {
     var isFloating = false
 
     /// The tallest state, a running timer: header, status line, time, bar, controls.
-    static let preferredHeight: CGFloat = 140
+    nonisolated static let preferredHeight: CGFloat = 140
 
     private static let labelWidth: CGFloat = 70
 
@@ -44,7 +44,9 @@ struct TimerWidgetView: View {
                     idleBody
                 }
             }
-            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+            // Centred in the pop-out window, so a large one does not leave the idle rows at the
+            // top over an empty half; the running states fill it either way.
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: isFloating ? .center : .top)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         .animation(Motion.content, value: service.isActive)
@@ -233,9 +235,7 @@ struct TimerWidgetView: View {
                 }
             }
 
-            Text(service.remainingText)
-                .font(.system(size: 38, weight: .medium).monospacedDigit())
-                .foregroundStyle(theme.ink)
+            BigTime(text: service.remainingText, fills: isFloating)
 
             // A plain stroked shape, not a `Canvas`: canvas output does not appear in an
             // AppKit layer capture, which is how this project reviews the notch.
@@ -279,11 +279,14 @@ struct TimerWidgetView: View {
                 }
             }
 
-            // Redraws only while running, twenty times a second for the hundredths.
-            TimelineView(.animation(minimumInterval: 1.0 / 20, paused: !stopwatch.isRunning)) { context in
-                Text(Stopwatch.format(stopwatch.elapsed(at: context.date)))
-                    .font(.system(size: 38, weight: .medium).monospacedDigit())
-                    .foregroundStyle(theme.ink)
+            // Redraws only while running: every frame to the hundredth, or ten times a second to
+            // the tenth in Low Power Mode or on a low battery.
+            let precision = Stopwatch.Precision(savingPower: environment.battery.status.savesPower)
+            TimelineView(.animation(minimumInterval: precision.redrawInterval, paused: !stopwatch.isRunning)) { context in
+                BigTime(
+                    text: Stopwatch.format(stopwatch.elapsed(at: context.date), precision: precision),
+                    fills: isFloating
+                )
             }
 
             HStack(spacing: 8) {
@@ -328,6 +331,50 @@ struct TimerWidgetView: View {
                 Text("· Stay in \(app)")
             }
         }
+    }
+}
+
+/// The time, large. 38 points in the notch; in the pop-out window it fills whatever room the
+/// rest leaves, so expanding or resizing the window makes the number bigger.
+private struct BigTime: View {
+    @Environment(\.notchStyle) private var theme
+    var text: String
+    var fills: Bool
+
+    private static let notchSize: CGFloat = 38
+
+    var body: some View {
+        if fills {
+            GeometryReader { proxy in
+                Text(text)
+                    .font(Self.font(size: Self.size(fitting: text, in: proxy.size)))
+                    .foregroundStyle(theme.ink)
+                    .lineLimit(1)
+                    .fixedSize()
+                    .frame(width: proxy.size.width, height: proxy.size.height)
+            }
+            .frame(minHeight: 40)
+        } else {
+            Text(text)
+                .font(Self.font(size: Self.notchSize))
+                .foregroundStyle(theme.ink)
+        }
+    }
+
+    private static func font(size: CGFloat) -> Font {
+        .system(size: size, weight: .medium).monospacedDigit()
+    }
+
+    /// The largest size the text fits at, judged with every digit a 0, so the size holds still
+    /// while the digits change and only moves when the time gains a digit.
+    private static func size(fitting text: String, in space: CGSize) -> CGFloat {
+        let template = String(text.map { $0.isNumber ? "0" : $0 })
+        let reference = NSFont.monospacedDigitSystemFont(ofSize: 100, weight: .medium)
+        let width = (template as NSString).size(withAttributes: [.font: reference]).width
+        let height = reference.ascender - reference.descender + reference.leading
+        guard width > 0, height > 0 else { return notchSize }
+        // A little short of the width, so a large number does not run edge to edge.
+        return max(12, floor(min(space.width * 0.92 / width, space.height / height) * 100))
     }
 }
 

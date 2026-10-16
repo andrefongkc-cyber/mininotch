@@ -60,14 +60,33 @@ final class Stopwatch {
         onChange?()
     }
 
-    /// "1:02.34" under an hour, "1:02:03" over.
-    static func format(_ seconds: TimeInterval) -> String {
+    /// How finely the running stopwatch is drawn. It redrew twenty times a second showing
+    /// hundredths, so the last digit only ever read 2 or 7 (the user's report): now it is every
+    /// frame to the hundredth, or, saving power, ten times a second to the tenth, so whichever
+    /// digit is last always moves through all ten.
+    enum Precision {
+        case hundredths, tenths
+
+        init(savingPower: Bool) { self = savingPower ? .tenths : .hundredths }
+
+        /// For `TimelineView(.animation(minimumInterval:))`; nil is every frame.
+        var redrawInterval: TimeInterval? { self == .hundredths ? nil : 0.1 }
+    }
+
+    /// "1:02.34" under an hour ("1:02.3" in tenths), "1:02:03" over.
+    static func format(_ seconds: TimeInterval, precision: Precision = .hundredths) -> String {
         let total = max(seconds, 0)
         let hours = Int(total) / 3600
         let minutes = Int(total) / 60 % 60
         let secs = Int(total) % 60
         if hours > 0 { return String(format: "%d:%02d:%02d", hours, minutes, secs) }
-        let hundredths = Int((total * 100).rounded(.down)) % 100
-        return String(format: "%d:%02d.%02d", minutes, secs, hundredths)
+        switch precision {
+        case .hundredths:
+            let hundredths = Int((total * 100).rounded(.down)) % 100
+            return String(format: "%d:%02d.%02d", minutes, secs, hundredths)
+        case .tenths:
+            let tenths = Int((total * 10).rounded(.down)) % 10
+            return String(format: "%d:%02d.%d", minutes, secs, tenths)
+        }
     }
 }

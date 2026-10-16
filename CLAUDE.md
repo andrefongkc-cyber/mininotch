@@ -86,7 +86,7 @@ MiniNotch --capture-notch out.png [--collapsed] [--tab system] [--glow bars|off]
                                  [--notch-style bento-light] [--liquid-glass] [--builtin]
                                  [--no-visualizer] [--no-lyrics] [--swipe-to notes --midway 0.15]
                                  [--live grow|reopen|swipe --hold 7 [--was-active]]
-                                 [--stopwatch] [--focus]
+                                 [--stopwatch] [--focus] [--floating-timer [--floating-expanded]]
 MiniNotch --check-lyrics "Khalid" "8TEEN" 229                      # LRCLIBClient + LRCParser
 MiniNotch --check-lyric-sync [--out f]                             # matching lyrics to the audio, synthetic
 MiniNotch --check-lyric-sync --audio f.mp3 --lrc f.lrc --shifts 0,0.5 [--peaks]   # …and a real song, old method beside it
@@ -1341,6 +1341,23 @@ cleared) whenever an app other than the one it started in comes to the front (`d
 own); breaks and pauses are let go. The user picked "switching apps" as what counts as leaving.
 `--check-focus` posts the switches; `--capture-notch --stopwatch`, `--focus` and `--floating-timer`
 draw the rest.
+
+**The pop-out window resizes, and the time fills it** (2026-10-15, "make it so u can expand it").
+The window is borderless and `.resizable`, so its edges drag (minimum 440 × 184); the expand button
+beside its close button, both shown on hover, jumps between 600 × 184 and 760 × 400, keeping the top
+edge. In the window the big number is `BigTime` with `fills`: a `GeometryReader` takes the height the
+rest leaves and sizes the font to fit, measured with every digit a 0 so it holds still as the digits
+change; in the notch it stays 38 points. AppKit remembers the size with the place. The capture tools
+never save that frame (`remembersFrame`, off in `DebugSupport.makeEnvironment`), because they share the
+real app's defaults: `--floating-timer` used to move the user's window. `--floating-expanded` draws
+it large. Resizing by an edge has not been tried by hand.
+
+**The stopwatch draws every frame, or tenths when saving power.** It redrew twenty times a second
+showing hundredths, so the last digit only ever read 2 or 7 ("it's just alternating between .x2 and
+.x7"). Now `Stopwatch.Precision` is every frame to the hundredth, or ten times a second to the tenth
+when `BatteryStatus.savesPower` (Low Power Mode, or on battery at 20% or less; `BatteryService` now
+also refreshes on `NSProcessInfoPowerStateDidChange`, which IOKit does not announce). Either way the
+last digit moves through all ten. Its cost did not show above the capture tool's noise.
 
 **The timer counts against a deadline, not down from a number.** A tick that is late, and
 every timer tick is late sometimes, would otherwise lose that time for good and a

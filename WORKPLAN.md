@@ -1,6 +1,6 @@
 # MiniNotch workplan
 
-Status: About > New Versions (Ask First or Install Automatically) on main, unreleased; next: the user tries it, and at the next release add "New Versions" to SettingsNewRows.
+Status: pop-out timer expand and the stopwatch's redraw rate done on main, unreleased; next: the user tries them and New Versions, and at the next release add "New Versions" to SettingsNewRows and put the pop-out and stopwatch changes in the notes.
 
 Living document. Update the checkboxes as work lands. `CLAUDE.md` holds the architecture
 rules and the traps; this file holds the sequence.
@@ -180,6 +180,10 @@ The user plans to revamp every music-playing animation before 1.0.0. Collected h
       pop-out window; Focus Timer restarts the interval on switching apps (`--check-focus` passes).
       The window and the guard against real app switches are untried by hand. Add "Focus Timer" to
       SettingsNewRows at the next release.
+- [x] Pop-out timer expands (2026-10-15): a button, and the window resizes, the time growing with it;
+      the stopwatch redraws every frame, to the hundredth, and ten times a second to the tenth in Low
+      Power Mode or on a low battery. It drew twenty a second, so hundredths only ever ended in 2 or 7.
+      Edge resizing and the power switch are untried by hand.
 - [x] Settings > About > New Versions (2026-10-14): Ask First shows Sparkle's window with the new
       version's notes; Install Automatically downloads quietly and installs once the notch is closed
       and no timer runs. Untried end to end (the update check tool does not go through it).

@@ -41,6 +41,12 @@ struct BatteryStatus: Equatable {
         return neutral
     }
 
+    /// Low Power Mode, or running on a battery at 20% or less: when anything that redraws often
+    /// (the stopwatch) should do it less.
+    var savesPower: Bool {
+        isLowPowerMode || (isPresent && !isPluggedIn && percentage <= 20)
+    }
+
     var timeRemainingDescription: String? {
         guard let minutesRemaining, minutesRemaining > 0 else { return nil }
         let hours = minutesRemaining / 60
@@ -95,6 +101,7 @@ final class BatteryService {
     @ObservationIgnored var onPowerSourceChange: ((Bool) -> Void)?
 
     @ObservationIgnored private var runLoopSource: CFRunLoopSource?
+    @ObservationIgnored private var powerStateObserver: NSObjectProtocol?
     @ObservationIgnored private var lastNotifiedThresholdCrossing: Int?
     @ObservationIgnored private var lastPluggedIn: Bool?
     @ObservationIgnored private var settings: SettingsStore?
@@ -123,6 +130,13 @@ final class BatteryService {
 
         runLoopSource = source
         CFRunLoopAddSource(CFRunLoopGetMain(), source, .defaultMode)
+
+        // Switching Low Power Mode is not a power source change, so IOKit says nothing about it.
+        powerStateObserver = NotificationCenter.default.addObserver(
+            forName: .NSProcessInfoPowerStateDidChange, object: nil, queue: .main
+        ) { [weak self] _ in
+            MainActor.assumeIsolated { self?.refresh() }
+        }
     }
 
     func stop() {
@@ -130,6 +144,8 @@ final class BatteryService {
             CFRunLoopRemoveSource(CFRunLoopGetMain(), runLoopSource, .defaultMode)
         }
         runLoopSource = nil
+        if let powerStateObserver { NotificationCenter.default.removeObserver(powerStateObserver) }
+        powerStateObserver = nil
         powerObservers = 0
         applyPowerSchedule()
     }

@@ -249,7 +249,10 @@ enum DebugWindowCapture {
         if arguments.contains("--floating-timer") {
             debugFloatingTimerEnvironment = environment
             environment.stopwatch.isPoppedOut = true
+            environment.floatingTimer.remembersFrame = false
             environment.floatingTimer.sync()
+            // `--floating-expanded`: the window at its large size, as its expand button leaves it.
+            if arguments.contains("--floating-expanded") { environment.floatingTimer.setExpanded(true) }
         }
                 if arguments.contains("--sample-notes") {
             settings.advanced.notesEnabled = true
