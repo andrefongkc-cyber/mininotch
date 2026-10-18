@@ -181,7 +181,7 @@ enum DebugWindowCapture {
         if arguments.contains("--closed-lyrics") { settings.media.showLyrics = true }
         // Appearance > Panel Shadow, which is off by default and only exists while open.
         settings.appearance.showPanelShadow = arguments.contains("--shadow")
-        // Advanced > Hide Until Hovered, which only changes a virtual notch, so pair it with
+        // Layout > Displays > Hide Until Hovered, which only changes a virtual notch, so pair it with
         // `--virtual`. Set either way, so a capture does not inherit it from the real settings.
         settings.advanced.hideVirtualNotchUntilHover = arguments.contains("--hide-virtual")
         // Advanced > Clipboard > Blur Until Unlocked, with `--tab clipboard`: the locked list.

@@ -1,6 +1,8 @@
 import SwiftUI
 
-/// Settings > Layout: what the notch shows, and where, arranged on a picture of it.
+/// Settings > Layout: what the notch shows, and where, arranged on a picture of it, with the
+/// virtual notch for displays without one (moved from Advanced so the closed pill and the notch
+/// on an external monitor are arranged in one place, at the user's request).
 ///
 /// The closed pill, the open panel's widgets and top bar, and the Now Playing controls used to
 /// be arranged in three different panes with lanes of text chips. They are one question, what
@@ -22,7 +24,7 @@ struct LayoutSettingsView: View {
             ) {
                 SettingsRow(
                     title: "Show Indicators When Closed",
-                    subtitle: "Widen the pill either side of the notch to show battery and what is playing.",
+                    subtitle: "Widen the pill either side of the notch to show battery and what is playing. A display without a notch always shows them.",
                     systemImage: "rectangle.expand.vertical"
                 ) {
                     SettingsToggle(isOn: $settings.general.extendPillForIndicators)
@@ -43,7 +45,7 @@ struct LayoutSettingsView: View {
                     catalogue: PillIndicator.allCases,
                     inactiveCaption: settings.general.extendPillForIndicators
                         ? nil
-                        : "Indicators are off, so the closed pill shows nothing",
+                        : "Indicators are off, so only displays without a notch show these",
                     // The miniature shows what the pill is showing: this cover, this song, this
                     // battery. Anything with nothing to show right now keeps its symbol, faded.
                     livePreview: { indicator in
@@ -68,6 +70,112 @@ struct LayoutSettingsView: View {
                             Text(choice.title).tag(choice)
                         }
                     }
+                }
+            }
+
+            SettingsCard(
+                header: "Displays",
+                footer: "External monitors and Macs without a physical notch get a virtual one, drawn where a notch would be. It always shows the closed pill's indicators, arranged above, since there is no camera housing to hide them."
+            ) {
+                SettingsRow(
+                    title: "Show on Displays Without a Notch",
+                    systemImage: "display.2"
+                ) {
+                    SettingsToggle(isOn: $settings.advanced.showOnNonNotchDisplays)
+                }
+
+                SettingsDivider()
+
+                SettingsRow(
+                    title: "Show On",
+                    subtitle: "Which display carries the notch when several are connected.",
+                    systemImage: "rectangle.on.rectangle"
+                ) {
+                    InlinePicker(selection: $settings.advanced.displayTargeting) {
+                        ForEach(DisplayTargeting.allCases) { option in
+                            Text(option.title).tag(option)
+                        }
+                    }
+                }
+
+                SettingsDivider()
+
+                SettingsRow(
+                    title: "Opens On Without a Notch",
+                    subtitle: "Which tab a virtual notch shows when you open it. What its closed pill shows is arranged above, where a running timer or stopwatch appears as the Live Activity.",
+                    systemImage: "rectangle.topthird.inset.filled",
+                    isEnabled: settings.advanced.showOnNonNotchDisplays
+                ) {
+                    InlinePicker(selection: $settings.advanced.nonNotchDefaultTab) {
+                        ForEach(NotchTab.allCases) { tab in
+                            Text(tab.title).tag(tab)
+                        }
+                    }
+                }
+
+                SettingsDivider()
+
+                SettingsRow(
+                    title: "Hide Until Hovered",
+                    subtitle: "On displays without a notch, draw nothing until the pointer reaches the top middle of the screen, then open as usual. Volume and brightness still show. Needs Open on Hover, or click there instead.",
+                    systemImage: "eye.slash",
+                    isEnabled: settings.advanced.showOnNonNotchDisplays
+                ) {
+                    SettingsToggle(isOn: $settings.advanced.hideVirtualNotchUntilHover)
+                }
+
+                SettingsDivider()
+
+                SettingsRow(
+                    title: "Keep the Notch Still Between Desktops",
+                    subtitle: NotchSpace.shared.isAvailable
+                        ? "Without it the notch slides away and back when you swipe between desktops. Uses a private part of macOS, so a future version may stop it working."
+                        : "Not available on this version of macOS.",
+                    systemImage: "rectangle.on.rectangle.slash",
+                    isEnabled: NotchSpace.shared.isAvailable
+                ) {
+                    SettingsToggle(isOn: $settings.advanced.keepNotchStillBetweenDesktops)
+                }
+            }
+
+            SettingsCard(header: "Notch Size") {
+                SettingsRow(
+                    title: "Height",
+                    subtitle: "Match the hardware cutout, or pin a fixed height everywhere.",
+                    systemImage: "arrow.up.and.down"
+                ) {
+                    InlinePicker(selection: $settings.advanced.notchHeightMode) {
+                        ForEach(NotchHeightMode.allCases) { mode in
+                            Text(mode.title).tag(mode)
+                        }
+                    }
+                }
+
+                SettingsDivider()
+
+                SettingsRow(
+                    title: "Virtual Notch Height",
+                    subtitle: "Used on displays with no physical notch.",
+                    systemImage: "ruler"
+                ) {
+                    ValueSlider(
+                        value: $settings.advanced.virtualNotchHeight,
+                        range: 22...48,
+                        step: 1
+                    ) { "\(Int($0)) pt" }
+                }
+
+                SettingsDivider()
+
+                SettingsRow(
+                    title: "Virtual Notch Width",
+                    systemImage: "ruler"
+                ) {
+                    ValueSlider(
+                        value: $settings.advanced.virtualNotchWidth,
+                        range: 120...320,
+                        step: 5
+                    ) { "\(Int($0)) pt" }
                 }
             }
 

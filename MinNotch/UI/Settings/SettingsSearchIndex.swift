@@ -9,6 +9,10 @@ struct SettingsSearchEntry: Identifiable, Hashable {
     let title: String
     let subtitle: String
     let symbolName: String
+    /// Words someone might type for this row that are not on it. Per row, never per pane: a
+    /// pane's words matched every row in it (see `rank`). "monitor" only ever found the display
+    /// rows because one subtitle happened to say "external monitor", and rewording it lost them.
+    var keywords: [String] = []
 
     var id: String { "\(tab.rawValue)/\(section)/\(title)" }
 }
@@ -44,7 +48,7 @@ enum SettingsSearchIndex {
         .init(tab: .appearance, section: "Panel Size", title: "Corner Radius", subtitle: "Match this to your display's physical notch for the cleanest join.", symbolName: "rectangle.roundedbottom"),
         .init(tab: .appearance, section: "Media Card", title: "Card Style", subtitle: "Classic, Compact, or Full Artwork.", symbolName: "rectangle.on.rectangle"),
         .init(tab: .appearance, section: "Media Card", title: "Custom Visualizer", subtitle: "", symbolName: "waveform.path.ecg"),
-        .init(tab: .layout, section: "Closed Pill", title: "Show Indicators When Closed", subtitle: "Widen the pill either side of the notch to show battery and what is playing.", symbolName: "rectangle.expand.vertical"),
+        .init(tab: .layout, section: "Closed Pill", title: "Show Indicators When Closed", subtitle: "Widen the pill either side of the notch to show battery and what is playing. A display without a notch always shows them.", symbolName: "rectangle.expand.vertical"),
         .init(tab: .layout, section: "Closed Pill", title: "Arrangement", subtitle: "What the closed pill shows either side of the notch. Album art and the song appear while a song is loaded, the playing indicator only while it plays, and a live activity is a timer, a download or a device connecting.", symbolName: "rectangle.split.3x1"),
         .init(tab: .layout, section: "Closed Pill", title: "Song Shows", subtitle: "What the Song in the closed pill says. Long names are cut short.", symbolName: "textformat"),
         .init(tab: .layout, section: "Live Activities", title: "Downloads", subtitle: "Show how far along a download is, from Safari, Chrome, Firefox and most other browsers. Reads your Downloads folder.", symbolName: "arrow.down.circle"),
@@ -130,20 +134,20 @@ enum SettingsSearchIndex {
         .init(tab: .tabs, section: "Location", title: "Use My Location", subtitle: "Uses Location Services. Or choose a city instead.", symbolName: "location"),
         .init(tab: .tabs, section: "Location", title: "City", subtitle: "Search, then pick one, to use a city instead of your location.", symbolName: "mappin.and.ellipse"),
         .init(tab: .shortcuts, section: "Global Shortcuts", title: "Enable Global Shortcuts", subtitle: "Turn this off to silence every shortcut without losing what you recorded.", symbolName: "command"),
-        .init(tab: .advanced, section: "Displays", title: "Show on Displays Without a Notch", subtitle: "", symbolName: "display.2"),
-        .init(tab: .advanced, section: "Displays", title: "Show On", subtitle: "Which display carries the notch when several are connected.", symbolName: "rectangle.on.rectangle"),
-        .init(tab: .advanced, section: "Displays", title: "Opens On Without a Notch", subtitle: "Which tab a virtual notch shows when you open it. What the closed pill shows is arranged in Layout > Closed Pill, where a running timer or stopwatch appears as the Live Activity.", symbolName: "rectangle.topthird.inset.filled"),
-        .init(tab: .advanced, section: "Displays", title: "Keep the Notch Still Between Desktops", subtitle: "Without it the notch slides away and back when you swipe between desktops. Uses a private part of macOS, so a future version may stop it working.", symbolName: "rectangle.on.rectangle.slash"),
-        .init(tab: .advanced, section: "Displays", title: "Hide Until Hovered", subtitle: "On displays without a notch, draw nothing until the pointer reaches the top middle of the screen, then open as usual. Volume and brightness still show. Needs Open on Hover, or click there instead.", symbolName: "eye.slash"),
+        .init(tab: .layout, section: "Displays", title: "Show on Displays Without a Notch", subtitle: "", symbolName: "display.2", keywords: ["monitor", "external", "screen", "display"]),
+        .init(tab: .layout, section: "Displays", title: "Show On", subtitle: "Which display carries the notch when several are connected.", symbolName: "rectangle.on.rectangle", keywords: ["monitor", "external", "screen", "display"]),
+        .init(tab: .layout, section: "Displays", title: "Opens On Without a Notch", subtitle: "Which tab a virtual notch shows when you open it. What its closed pill shows is arranged above, where a running timer or stopwatch appears as the Live Activity.", symbolName: "rectangle.topthird.inset.filled", keywords: ["monitor", "external", "screen", "display"]),
+        .init(tab: .layout, section: "Displays", title: "Keep the Notch Still Between Desktops", subtitle: "Without it the notch slides away and back when you swipe between desktops. Uses a private part of macOS, so a future version may stop it working.", symbolName: "rectangle.on.rectangle.slash", keywords: ["spaces", "desktop", "swipe", "mission control"]),
+        .init(tab: .layout, section: "Displays", title: "Hide Until Hovered", subtitle: "On displays without a notch, draw nothing until the pointer reaches the top middle of the screen, then open as usual. Volume and brightness still show. Needs Open on Hover, or click there instead.", symbolName: "eye.slash", keywords: ["monitor", "external", "screen", "display"]),
         .init(tab: .tabs, section: "Notes", title: "Show Notes", subtitle: "A Notes tab in the open panel: one scratchpad, kept between opens. The Open Notes shortcut in Shortcuts opens it ready to type.", symbolName: "note.text"),
         .init(tab: .tabs, section: "Link Shelf", title: "Link Shelf", subtitle: "Keep links on the notch, in the Shelf tab under any files. Opening one uses your default browser.", symbolName: "link"),
         .init(tab: .tabs, section: "Link Shelf", title: "Links Kept", subtitle: "The oldest link is dropped once the shelf is full.", symbolName: "list.bullet"),
         .init(tab: .tabs, section: "Clipboard", title: "Clipboard History", subtitle: "Remember what you copy and offer it back from the Clipboard tab.", symbolName: "doc.on.clipboard"),
         .init(tab: .tabs, section: "Clipboard", title: "Items Kept", subtitle: "The oldest is dropped once the history is full. Pinned items do not count towards this.", symbolName: "list.bullet"),
         .init(tab: .tabs, section: "Clipboard", title: "Blur Until Unlocked", subtitle: "Blur what you copied until you unlock it with Touch ID or your password. It blurs again when the tab closes.", symbolName: "lock"),
-        .init(tab: .advanced, section: "Size", title: "Height", subtitle: "Match the hardware cutout, or pin a fixed height everywhere.", symbolName: "arrow.up.and.down"),
-        .init(tab: .advanced, section: "Size", title: "Virtual Notch Height", subtitle: "Used on displays with no physical notch.", symbolName: "ruler"),
-        .init(tab: .advanced, section: "Size", title: "Virtual Notch Width", subtitle: "", symbolName: "ruler"),
+        .init(tab: .layout, section: "Notch Size", title: "Height", subtitle: "Match the hardware cutout, or pin a fixed height everywhere.", symbolName: "arrow.up.and.down", keywords: ["notch", "size", "tall"]),
+        .init(tab: .layout, section: "Notch Size", title: "Virtual Notch Height", subtitle: "Used on displays with no physical notch.", symbolName: "ruler", keywords: ["monitor", "external", "screen", "display"]),
+        .init(tab: .layout, section: "Notch Size", title: "Virtual Notch Width", subtitle: "", symbolName: "ruler", keywords: ["monitor", "external", "screen", "display"]),
         .init(tab: .tabs, section: "System Stats", title: "Show CPU, GPU, Memory and Network", subtitle: "In the System tab of the notch.", symbolName: "gauge.with.dots.needle.33percent"),
         .init(tab: .tabs, section: "System Stats", title: "Refresh Interval", subtitle: "How often the readout updates while it is on screen.", symbolName: "arrow.clockwise"),
         .init(tab: .tabs, section: "System Stats", title: "Show Temperatures", subtitle: "The chip, the battery and the SSD, read from the Mac's own sensors through a private part of macOS. In the units chosen in Settings > Tabs > Weather.", symbolName: "thermometer.medium"),
@@ -218,6 +222,7 @@ enum SettingsSearchIndex {
         if title.contains(needle) { return 1 }
         if fold(entry.section).contains(needle) { return 2 }
         if fold(entry.subtitle).contains(needle) { return 3 }
+        if entry.keywords.contains(where: { hasWordPrefix(fold($0), needle) }) { return 3 }
         // Deliberately not the pane's name or its keywords. Those match every row in the
         // pane at once, so "monitor" returned all nineteen Advanced rows alphabetically and
         // the display ones were buried under Clipboard History. A pane-level match is offered
@@ -233,14 +238,15 @@ extension SettingsTab {
         case .general: return ["startup", "login", "hover", "click", "menu bar"]
         case .appearance: return ["theme", "look", "colour", "color", "glow", "lighting", "width", "corner", "style", "notch style", "dark", "light", "minimal", "bento", "glass", "neumorphic", "clay", "skeuomorphic", "liquid glass", "liquid", "tahoe"]
         case .layout: return ["arrange", "rearrange", "reorder", "customise", "customize", "icons", "tabs", "toolbar",
-                              "top bar", "pill", "indicators", "widgets", "buttons", "controls", "order"]
+                              "top bar", "pill", "indicators", "widgets", "buttons", "controls", "order",
+                              "display", "monitor", "external", "screen", "virtual notch", "notch size"]
         case .media: return ["music", "spotify", "song", "track", "now playing", "lyrics", "controls"]
         case .calendar: return ["events", "reminders", "schedule", "agenda"]
         case .huds: return ["volume", "brightness", "keyboard backlight", "overlay"]
         case .battery: return ["charge", "power", "airpods", "bluetooth", "drain", "energy", "usage"]
         case .tabs: return ["shelf", "files", "drag", "drop", "tray", "links", "timer", "pomodoro", "countdown", "focus", "break", "weather", "forecast", "temperature", "rain", "location", "city", "notes", "clipboard", "copy", "system", "stats", "cpu"]
         case .shortcuts: return ["hotkey", "keyboard", "keys"]
-        case .advanced: return ["display", "monitor", "external", "debug", "export", "import", "reset",
+        case .advanced: return ["debug", "export", "import", "reset",
                                 "welcome", "tutorial", "onboarding", "tour", "links", "bookmarks", "url"]
         case .about: return ["version", "quit", "changelog", "what's new", "release notes", "update"]
         }

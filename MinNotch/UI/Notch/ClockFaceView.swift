@@ -171,27 +171,44 @@ private struct Separator: View {
 
 // MARK: - Flip clock
 
-/// One split-flap card. A change counts up `flips`, and `FlipCard` draws the fractional part of
-/// the animated value as how far the flap has fallen, so a change that arrives mid-fall carries on
-/// from where the flap is rather than starting over.
+/// One split-flap card. A change counts `target` up by one at once and animates `flips` after it,
+/// and `FlipCard` draws how far `flips` has to go as how far the flap has fallen.
+///
+/// The card draws the digit it has taken on (`shown`), not the one passed in, and is only at rest
+/// while `flips` has caught up with `target`. It used to draw the incoming digit and call any whole
+/// number of flips rest, so a change showed the new digit whole for the frame before the flip began
+/// and again on the flip's first frame, then the old one under the falling flap: 25 flashed 26,
+/// went back to 25, and flipped to 26 (the user's report). `--check-flip` records every frame.
 private struct FlipDigit: View {
     var digit: Character
     var size: CGSize
     var duration: TimeInterval?
 
+    /// Taken from the first digit when the card is made, and after that only from a change.
+    @State private var shown: Character
     @State private var previous: Character?
     @State private var flips: Double = 0
+    @State private var target: Double = 0
+
+    init(digit: Character, size: CGSize, duration: TimeInterval?) {
+        self.digit = digit
+        self.size = size
+        self.duration = duration
+        _shown = State(initialValue: digit)
+    }
 
     var body: some View {
-        FlipCard(old: previous ?? digit, new: digit, flips: flips, size: size)
-            .onChange(of: digit) { old, _ in
-                previous = old
+        FlipCard(old: previous ?? shown, new: shown, flips: flips, target: target, size: size)
+            .onChange(of: digit) { _, new in
+                previous = shown
+                shown = new
+                target += 1
                 if let duration {
-                    withAnimation(.linear(duration: duration)) { flips += 1 }
+                    withAnimation(.linear(duration: duration)) { flips = target }
                 } else {
                     var instant = Transaction()
                     instant.disablesAnimations = true
-                    withTransaction(instant) { flips += 1 }
+                    withTransaction(instant) { flips = target }
                 }
             }
     }
@@ -201,6 +218,8 @@ private struct FlipCard: View, Animatable {
     var old: Character
     var new: Character
     var flips: Double
+    /// Where `flips` is going; not animated.
+    var target: Double
     var size: CGSize
 
     nonisolated var animatableData: Double {
@@ -208,19 +227,28 @@ private struct FlipCard: View, Animatable {
         set { flips = newValue }
     }
 
-    /// 0 at rest, then through to 1 as the flap falls and lands.
-    private var progress: Double { flips - flips.rounded(.down) }
+    /// 0 as a flip starts, through to 1 as the flap lands; nil at rest. A change that arrives
+    /// mid-flip starts over from the digit already showing.
+    private var progress: Double? {
+        let remaining = target - flips
+        guard remaining > 0.0001 else { return nil }
+        return min(max(1 - remaining, 0), 1)
+    }
 
     var body: some View {
         let p = progress
         let half = size.height / 2
-        let falling = p > 0 && p < 0.5
-        let landing = p >= 0.5
+        let falling = p.map { $0 < 0.5 } ?? false
+        let landing = p.map { $0 >= 0.5 } ?? false
+        let land = p.map(Self.landing) ?? 1
+        #if DEBUG
+        let _ = Self.debugRecord?("\(falling ? old : new)\(landing && land > 0.5 ? new : (p == nil ? new : old))")
+        #endif
         VStack(spacing: 0) {
             ZStack {
                 // Behind the falling flap, the new digit's top half is already there.
                 CardHalf(digit: new, size: size, top: true)
-                if falling {
+                if falling, let p {
                     // The old top half falls forward on its hinge, speeding up like a real flap.
                     let fall = pow(p / 0.5, 2)
                     CardHalf(digit: old, size: size, top: true)
@@ -234,10 +262,9 @@ private struct FlipCard: View, Animatable {
 
             ZStack {
                 // Until the new bottom half lands on it, the old one stays, shadowed by the flap.
-                CardHalf(digit: p == 0 ? new : old, size: size, top: false)
-                    .overlay(Color.black.opacity(landing ? 0.3 * (1 - Self.landing(p)) : 0.3 * p / 0.5))
+                CardHalf(digit: p == nil ? new : old, size: size, top: false)
+                    .overlay(Color.black.opacity(p.map { landing ? 0.3 * (1 - land) : 0.3 * $0 / 0.5 } ?? 0))
                 if landing {
-                    let land = Self.landing(p)
                     CardHalf(digit: new, size: size, top: false)
                         .overlay(Color.black.opacity(0.35 * (1 - min(land, 1))))
                         .rotation3DEffect(.degrees(90 * (1 - land)), axis: (x: 1, y: 0, z: 0),
@@ -249,6 +276,11 @@ private struct FlipCard: View, Animatable {
         }
         .frame(width: size.width, height: size.height)
     }
+
+    #if DEBUG
+    /// Each frame's visible top and bottom digit, for `--check-flip`.
+    static var debugRecord: ((String) -> Void)?
+    #endif
 
     /// The bottom flap's travel, 0 to 1 over the second half, with a small bounce as it lands.
     private static func landing(_ p: Double) -> Double {
@@ -498,8 +530,8 @@ struct ClockFaceDebugFrames: View {
         let segment = CGSize(width: 56, height: 100)
         VStack(alignment: .leading, spacing: 18) {
             HStack(spacing: 10) {
-                ForEach([0, 0.1, 0.2, 0.3, 0.42, 0.55, 0.7, 0.8, 0.95], id: \.self) { p in
-                    FlipCard(old: "7", new: "8", flips: p, size: card)
+                ForEach([0, 0.1, 0.2, 0.3, 0.42, 0.55, 0.7, 0.85, 1], id: \.self) { p in
+                    FlipCard(old: "7", new: "8", flips: p, target: 1, size: card)
                 }
             }
             HStack(spacing: 14) {
@@ -540,6 +572,23 @@ struct ClockFaceDebugFrames: View {
 
     private static func travel(_ s: SevenSegment, changing travel: Double) -> Double {
         seven.contains(s) ? 1 : (eight.contains(s) ? travel : 0)
+    }
+}
+
+/// One card turning 5 into 6 at half a second, for `--check-flip`, which reads what it shows on
+/// every frame through `record`.
+struct FlipDigitDebugHost: View {
+    static func record(_ handler: ((String) -> Void)?) { FlipCard.debugRecord = handler }
+
+    @State private var digit: Character = "5"
+
+    var body: some View {
+        FlipDigit(digit: digit, size: CGSize(width: 68, height: 100), duration: 0.5)
+            .padding(20)
+            .background(Color.black)
+            .onAppear {
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { digit = "6" }
+            }
     }
 }
 #endif

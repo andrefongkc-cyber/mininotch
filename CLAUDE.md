@@ -121,6 +121,7 @@ MiniNotch --check-update --feed <url> [--out f]                   # a whole Spar
 MiniNotch --check-clipboard                                        # what the history records, and when it is blurred
 MiniNotch --check-focus                                            # Focus Timer: which app switches restart the interval
 MiniNotch --clock-frames [seconds]                                 # the pop-out's clock styles mid-movement, in a window for screencapture -l
+MiniNotch --check-flip                                             # one flip card turning 5 into 6, every frame recorded: no flash
 MiniNotch --check-app-energy [--card out.png]                      # Apps Using the Battery: counting, coalitions, unplug and plug-in
 MiniNotch --capture-styles out.png                                 # every Notch Style's miniature, dark and light
 ```
@@ -286,7 +287,7 @@ Scripts/          build, run, preview
   already a black tab stuck to the top of the screen, and leaving it empty is all of the cost
   and none of the benefit. `isExtended` is therefore
   `extendPillForIndicators || !geometry.hasPhysicalNotch`. That is what it draws when it is drawn
-  at all: Advanced > Hide Until Hovered draws nothing at rest (see "A hidden virtual notch").
+  at all: Layout > Displays > Hide Until Hovered draws nothing at rest (see "A hidden virtual notch").
 - **The pill's leading flank composes, it does not choose.** Artwork and a Live Activity are
   drawn side by side. They used to be a chain of else-ifs with artwork first, which meant a
   running timer was invisible for as long as anything was playing, which is precisely when
@@ -650,6 +651,11 @@ Three things about ranking were wrong first, and `--check-settings-search` is ho
 - **A word that starts with the query ranks like a title that does.** Otherwise "Glow Radius"
   beats "Enable Ambient Glow" on a technicality.
 
+- **A row's other words are its own `keywords`, never the pane's.** "monitor" found the display rows
+  only because one subtitle said "external monitor"; rewording it (2026-10-18) left the search with
+  the pane and no rows, and the user noticed. `SettingsSearchEntry.keywords` ranks with subtitles;
+  every display and virtual notch row carries monitor, external, screen and display.
+
 Rows and panes do not know search exists. `SettingsRow` and `SettingsPane` read
 `settingsSearchTarget` from the environment, scroll and flash when it names them, and the root
 view clears it after a moment so returning to the pane later does not replay the flash.
@@ -813,8 +819,8 @@ the camera housing stayed put. `NotchSpace` makes a space at absolute level 99 a
 window to it after `orderFrontRegardless` (`NotchWindowController.show`), as Boring Notch does with
 its `NotchSpaceManager`. Boring Notch uses the highest level there is, which draws over the lock
 screen; 99 is above the desktops and below Setup Assistant (100), password prompts (200) and the lock
-screen (300), so the notch with its clipboard and notes never shows over a locked Mac. Advanced >
-Keep the Notch Still Between Desktops (on) switches it; changing it rebuilds every surface, because a
+screen (300), so the notch with its clipboard and notes never shows over a locked Mac. Layout >
+Displays > Keep the Notch Still Between Desktops (on) switches it; changing it rebuilds every surface, because a
 window cannot reliably be taken back out of the space. Only seen working by the user swiping.
 
 **The lock screen player is a second window, in the middle of the screen.** Asked for on 2026-10-08
@@ -853,7 +859,7 @@ layer of its own behind the surface, present for as long as the setting is on an
 spring. Anything that changes with open and closed goes in a value, never a branch around the
 surface.
 
-**A hidden virtual notch is invisible, not absent.** Advanced > Hide Until Hovered
+**A hidden virtual notch is invisible, not absent.** Layout > Displays > Hide Until Hovered
 (`hideVirtualNotchUntilHover`) is for an external monitor where a black tab at the top is
 unwanted. While it is at rest (`NotchRootView.isHiddenAtRest`: the setting, no physical notch,
 closed, no HUD) the surface keeps the virtual notch's own rect and its `.contentShape`, so
@@ -1326,6 +1332,12 @@ the Mac sleeps, and when the setting is switched on. The panel is held open
 (`isInteractionLocked`) while the dialog is up. `--check-clipboard` runs the recording and the
 blur rules on a private pasteboard; the dialog itself can only be tried by hand.
 
+**The virtual notch's settings live in Layout, under the Closed Pill** (2026-10-18, the user's "combine
+closed notch with the monitor notch settings"): the Displays card (Show on Displays Without a Notch,
+Show On, Opens On Without a Notch, Hide Until Hovered, Keep the Notch Still Between Desktops) and the
+Notch Size card moved there from Advanced, with the Layout pane taking Advanced's display, monitor and
+external keywords. The settings themselves are still `AdvancedSettings`; only the pane moved.
+
 **The Timer tab is a timer or a stopwatch, and can float in a window of its own** (2026-10-14).
 Every state has one header: a Timer | Stopwatch switch (`ModePicker`) on the left, Focus and the
 pop-out button on the right; idle, two rows under it, Pomodoro (rhythm chips, Start, the rhythm's
@@ -1369,7 +1381,12 @@ same whatever the Notch Style, so these ignore it. **A layer capture does not dr
 `--capture-notch` shows flaps and paddles wrong mid-movement; `--clock-frames` puts every style
 frozen at fixed points of a 7 turning into an 8 in a window and prints its number, for
 `screencapture -l <number>`, which reads back that window and nothing else. Judged that way they
-fall, turn and push out as intended. The stopwatch's ".00" button (`stopwatchShowsFraction`) shows
+fall, turn and push out as intended. **A card holds the digit it has taken on** (`FlipDigit.shown`,
+set from the first digit in `init` and after that only by a change) and is at rest only while the
+animated `flips` has caught up with `target`: it drew the incoming digit and called any whole number
+of flips rest, so every change flashed the new digit whole for a frame, went back to the old one
+under the falling flap, then flipped ("25 flashes 26, then 25, then flips to 26"). `--check-flip`
+records what one card shows on every frame in a real window and wants exactly 55 → 65 → 66. The stopwatch's ".00" button (`stopwatchShowsFraction`) shows
 or hides hundredths, in the notch and the window; hidden, it redraws once a second on the
 stopwatch's own grid (`Stopwatch.zeroDate`), as tenths do when saving power, so each redraw is the
 moment a digit turns over.

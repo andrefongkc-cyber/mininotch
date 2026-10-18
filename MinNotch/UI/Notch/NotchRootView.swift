@@ -30,7 +30,7 @@ struct NotchRootView: View {
         viewModel.state == .peeking && environment.nowPlaying.track != nil && !hidesWhenClosed
     }
 
-    /// Settings > Advanced > Hide Until Hovered, on a display with no physical notch.
+    /// Settings > Layout > Displays > Hide Until Hovered, on a display with no physical notch.
     ///
     /// A real notch is never affected: it already sits behind the camera housing.
     private var hidesWhenClosed: Bool {
