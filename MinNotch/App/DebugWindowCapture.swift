@@ -240,6 +240,8 @@ enum DebugWindowCapture {
         // `--stopwatch` shows the Timer tab's stopwatch, running with two laps; `--focus` turns on
         // Focus Timer in the throwaway settings.
         if arguments.contains("--stopwatch") {
+            // The wiring `AppEnvironment.start()` installs, so the stopwatch reaches the pill.
+            environment.stopwatch.onChange = { [weak environment] in environment?.syncStopwatchActivity() }
             environment.stopwatch.mode = .stopwatch
             environment.stopwatch.toggle()
             environment.stopwatch.lap()

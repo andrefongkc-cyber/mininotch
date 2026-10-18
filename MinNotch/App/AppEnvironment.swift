@@ -90,6 +90,7 @@ final class AppEnvironment {
             self?.syncFocusGuard()
         }
         stopwatch.onChange = { [weak self] in
+            self?.syncStopwatchActivity()
             self?.syncFocusGuard()
         }
         focusGuard.onLeave = { [weak self] in
@@ -174,6 +175,7 @@ final class AppEnvironment {
         clipboard.stop()
         linkShelf.stop()
         timer.stop()
+        stopwatchTicker?.invalidate()
         battery.stop()
         appEnergy.stop()
         shelf.stop()
@@ -198,6 +200,7 @@ final class AppEnvironment {
     /// of them is simpler and less bug-prone than tracking which key changed.
     private func settingsChanged() {
         syncFocusGuard()
+        syncStopwatchActivity()
         LaunchAtLogin.reconcile(settings)
         HotkeyManager.shared.apply(settings.shortcuts)
         menuBar.update()
@@ -265,6 +268,7 @@ final class AppEnvironment {
     // MARK: Meeting countdown
 
     @ObservationIgnored private var meetingTimer: Timer?
+    @ObservationIgnored private var stopwatchTicker: Timer?
 
     private var wantsMeetingCountdown: Bool {
         FeatureFlag.liveActivities.isEnabled
@@ -579,6 +583,48 @@ final class AppEnvironment {
     }
 
     private static let timerActivityID = "timer.current"
+
+    /// The stopwatch in the pill, as the countdown is: from when it starts until it is reset,
+    /// paused or not, whole seconds only. It never reached the pill, so on an external monitor,
+    /// where the pill is in plain view, a running stopwatch was nowhere to be seen (the user's
+    /// report). While it runs it ticks on its own grid (`Stopwatch.zeroDate`), so the pill turns
+    /// over with the stopwatch rather than up to a second after it. A countdown outranks it.
+    func syncStopwatchActivity() {
+        stopwatchTicker?.invalidate()
+        stopwatchTicker = nil
+        guard FeatureFlag.liveActivities.isEnabled, settings.timer.enabled, stopwatch.hasTime else {
+            liveActivities.dismiss(id: Self.stopwatchActivityID)
+            return
+        }
+        presentStopwatchActivity()
+        guard let zero = stopwatch.zeroDate else { return }
+        let next = zero.addingTimeInterval(Date.now.timeIntervalSince(zero).rounded(.down) + 1)
+        let ticker = Timer(fire: next, interval: 1, repeats: true) { [weak self] _ in
+            MainActor.assumeIsolated { self?.presentStopwatchActivity() }
+        }
+        ticker.tolerance = 0.05
+        RunLoop.main.add(ticker, forMode: .common)
+        stopwatchTicker = ticker
+    }
+
+    private func presentStopwatchActivity() {
+        liveActivities.present(
+            LiveActivity(
+                id: Self.stopwatchActivityID,
+                kind: .timer,
+                symbolName: "stopwatch",
+                title: "Stopwatch",
+                // A hair past the grid, so a tick landing exactly on a second shows that second.
+                detail: Stopwatch.format(stopwatch.elapsed(at: .now.addingTimeInterval(0.001)), precision: .seconds),
+                progress: nil,
+                tint: settings.appearance.resolvedAccent,
+                expiresAt: nil,
+                priority: 59
+            )
+        )
+    }
+
+    private static let stopwatchActivityID = "stopwatch.current"
 
     private func postTimerNotification(for phase: TimerPhase) {
         guard settings.timer.notifyOnCompletion else { return }

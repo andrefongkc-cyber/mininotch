@@ -1374,6 +1374,15 @@ or hides hundredths, in the notch and the window; hidden, it redraws once a seco
 stopwatch's own grid (`Stopwatch.zeroDate`), as tenths do when saving power, so each redraw is the
 moment a digit turns over.
 
+**A running stopwatch is a Live Activity in the pill, like the countdown** (2026-10-18). It was not
+one, so on an external monitor, where the closed pill is in plain view, the user set Opens On Without
+a Notch to Timer expecting the pill to show it, and saw only the song and the battery. That setting is
+which tab a virtual notch opens on; its subtitle now says so and points at Layout > Closed Pill.
+`AppEnvironment.syncStopwatchActivity` presents it from start to reset, paused or not, in whole
+seconds, ticking on the stopwatch's own grid; kind `.timer`, so a swipe cannot put it away, and
+priority 59, under the countdown's 60. `--capture-notch --virtual --collapsed --stopwatch --hold 2.6`
+shows it at 0:02.
+
 **The stopwatch draws every frame, or tenths when saving power.** It redrew twenty times a second
 showing hundredths, so the last digit only ever read 2 or 7 ("it's just alternating between .x2 and
 .x7"). Now `Stopwatch.Precision` is every frame to the hundredth, or ten times a second to the tenth

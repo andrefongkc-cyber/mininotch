@@ -41,7 +41,7 @@ struct AdvancedSettingsView: View {
 
                 SettingsRow(
                     title: "Opens On Without a Notch",
-                    subtitle: "Which tab a virtual notch starts on. A real notch hides behind the camera housing; one on an external monitor does not, so it may as well be showing something.",
+                    subtitle: "Which tab a virtual notch shows when you open it. What the closed pill shows is arranged in Layout > Closed Pill, where a running timer or stopwatch appears as the Live Activity.",
                     systemImage: "rectangle.topthird.inset.filled",
                     isEnabled: settings.advanced.showOnNonNotchDisplays
                 ) {

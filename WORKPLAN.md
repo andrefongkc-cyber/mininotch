@@ -1,6 +1,6 @@
 # MiniNotch workplan
 
-Status: Apps Using the Battery done on main, unreleased; next: the user tries it on battery, and at the next release add "New Versions" and "Apps Using the Battery" to SettingsNewRows.
+Status: stopwatch in the pill done on main, unreleased; next: the user checks it on the external monitor, and at the next release add "New Versions" and "Apps Using the Battery" to SettingsNewRows.
 
 Living document. Update the checkboxes as work lands. `CLAUDE.md` holds the architecture
 rules and the traps; this file holds the sequence.
@@ -180,6 +180,9 @@ The user plans to revamp every music-playing animation before 1.0.0. Collected h
       pop-out window; Focus Timer restarts the interval on switching apps (`--check-focus` passes).
       The window and the guard against real app switches are untried by hand. Add "Focus Timer" to
       SettingsNewRows at the next release.
+- [x] A running stopwatch shows in the closed pill as a Live Activity (2026-10-18), like the countdown;
+      it never did, so the external monitor's pill showed only the song and battery. Opens On Without
+      a Notch's subtitle now says it is the tab that opens, and where the pill is arranged.
 - [x] Settings > Battery > Apps Using the Battery (2026-10-16): which apps used the most energy since
       the Mac was unplugged, from the kernel's per-app coalition totals (processor and graphics,
       exited processes included), read once a minute on battery. `--check-app-energy` passes; never
