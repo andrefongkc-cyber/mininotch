@@ -1295,7 +1295,11 @@ it reads `navigator.mediaSession` and Spotify's `data-testid` time labels and cl
 buttons; without it, only the tab title ("Song • Artist") and no controls. No seek (the page's
 slider ignores a value set from outside). Chrome is its own Automation permission, and a refusal is
 kept per app (`AppleScriptRunner.run(_:scope:)`) so it never turns off Music and Spotify. Never run
-against Spotify's page yet: the script compiles against Chrome's dictionary, and that is all.
+against Spotify's page yet: the script compiles against Chrome's dictionary, and that is all. **Find the tab
+with one Apple Event** (`URL of tabs of windows`), never by asking each tab: that loop was a round trip
+per tab, 3.5 s with 32 tabs, and with nothing playing every refresh ran it on the queue all players
+share, so Music's artwork, lyrics and pause button waited (2026-10-19). `NowPlayingController.refresh`
+also keeps at most one refresh waiting behind the one on the queue (`isRefreshing`, `refreshAgain`).
 
 **Clicking a lyric line seeks by lyric time, not by track time.** The strip's clock is
 `elapsed + offset + audio correction - latency`, so seeking to a line's timestamp directly would
