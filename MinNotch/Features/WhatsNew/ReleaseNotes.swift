@@ -27,25 +27,18 @@ struct ReleaseNotes {
     var removed: [ReleaseNote]
 
     static let latest = ReleaseNotes(
-        id: "0.7.5",
-        version: "0.7.5",
+        id: "0.7.6",
+        version: "0.7.6",
         added: [],
         improved: [
             ReleaseNote(
-                symbol: "list.bullet.rectangle",
-                title: "Everything You Missed",
-                detail: "If you skip a few versions, this window now lists what came in every one of them, newest first, not only the latest.",
+                symbol: "playpause",
+                title: "Music Controls Answer Straight Away",
+                detail: "With Chrome open and many tabs, the cover, the lyrics and the pause button could take seconds to respond, even in Apple Music. They respond at once again.",
                 howTo: nil
             ),
         ],
-        removed: [
-            ReleaseNote(
-                symbol: "waveform.path",
-                title: "Wave and Chase Glow Styles, for Now",
-                detail: "They are being reworked and will come back. If you had one picked, the glow now uses Pulse.",
-                howTo: "Settings > Appearance > Ambient Lighting to pick Pulse, Bars or Rainbow Cycle."
-            ),
-        ]
+        removed: []
     )
 }
 

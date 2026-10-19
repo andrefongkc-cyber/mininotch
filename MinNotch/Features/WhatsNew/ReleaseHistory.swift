@@ -7,8 +7,30 @@ import Foundation
 /// release goes out, its `latest` moves here under its own name and the new notes take its place.
 extension ReleaseNotes {
     static let history: [ReleaseNotes] = [
-        latest, v0_7_4, v0_7_3, v0_7_2, v0_7_1, v0_7_0, v0_6_0, v0_5_0, v0_4_0, v0_3_0, v0_2_0,
+        latest, v0_7_5, v0_7_4, v0_7_3, v0_7_2, v0_7_1, v0_7_0, v0_6_0, v0_5_0, v0_4_0, v0_3_0, v0_2_0,
     ]
+
+    static let v0_7_5 = ReleaseNotes(
+        id: "0.7.5",
+        version: "0.7.5",
+        added: [],
+        improved: [
+            ReleaseNote(
+                symbol: "list.bullet.rectangle",
+                title: "Everything You Missed",
+                detail: "If you skip a few versions, this window now lists what came in every one of them, newest first, not only the latest.",
+                howTo: nil
+            ),
+        ],
+        removed: [
+            ReleaseNote(
+                symbol: "waveform.path",
+                title: "Wave and Chase Glow Styles, for Now",
+                detail: "They are being reworked and will come back. If you had one picked, the glow now uses Pulse.",
+                howTo: "Settings > Appearance > Ambient Lighting to pick Pulse, Bars or Rainbow Cycle."
+            ),
+        ]
+    )
 
     static let v0_7_4 = ReleaseNotes(
         id: "0.7.4",
