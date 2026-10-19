@@ -273,26 +273,65 @@ struct TimerWidgetView: View {
 
     // MARK: Stopwatch
 
+    /// The stopwatch, and once there is a lap, every lap in a column beside it: the one being run
+    /// now, ticking, then the rest newest first, fastest in green and slowest in red. It used to
+    /// show only the latest lap, in the line above the time, with the panel's sides empty (the
+    /// user's report). Where the column does not fit, that line is still what shows.
     private var stopwatchBody: some View {
+        let precision = Stopwatch.Precision(
+            showsFraction: settings.timer.stopwatchShowsFraction,
+            savingPower: environment.battery.status.savesPower
+        )
+        return Group {
+            if stopwatch.laps.isEmpty {
+                stopwatchMain(precision, latestLapInStatus: false)
+            } else {
+                ViewThatFits(in: .horizontal) {
+                    HStack(alignment: .top, spacing: 12) {
+                        stopwatchMain(precision, latestLapInStatus: false)
+                            .frame(minWidth: Self.stopwatchMinWidth, maxWidth: .infinity)
+                        Rectangle()
+                            .fill(theme.ink.opacity(0.08))
+                            .frame(width: 1, height: isFloating ? nil : Self.lapsHeight)
+                        lapsList(precision)
+                            .frame(width: Self.lapsWidth)
+                    }
+                    stopwatchMain(precision, latestLapInStatus: true)
+                }
+            }
+        }
+    }
+
+    private static let stopwatchMinWidth: CGFloat = 230
+    private static let lapsWidth: CGFloat = 170
+    /// The room under the header in the notch, which a `ScrollView` has to be told: it has no
+    /// height of its own.
+    private static let lapsHeight: CGFloat = 96
+
+    private func stopwatchMain(_ precision: Stopwatch.Precision, latestLapInStatus: Bool) -> some View {
         VStack(spacing: 6) {
             statusLine {
                 TransportSymbol.image("stopwatch", pointSize: 10)
                     .foregroundStyle(settings.appearance.resolvedAccent)
-                if let latest = stopwatch.laps.first {
+                if latestLapInStatus, let latest = stopwatch.laps.first {
                     // The lap's own length, not the running total.
                     let split = latest - (stopwatch.laps.count > 1 ? stopwatch.laps[1] : 0)
-                    let precision: Stopwatch.Precision = settings.timer.stopwatchShowsFraction ? .hundredths : .seconds
-                    Text("Lap \(stopwatch.laps.count)  \(Stopwatch.format(split, precision: precision))")
+                    Text("Lap \(stopwatch.laps.count)  \(Stopwatch.format(split, precision: lapPrecision))")
                         .monospacedDigit()
-                } else {
+                } else if stopwatch.laps.isEmpty {
                     Text(stopwatch.hasTime ? "Stopwatch" : "Stopwatch · Lap marks a split")
+                } else {
+                    Text("Stopwatch")
                 }
             }
 
-            stopwatchTime(Stopwatch.Precision(
-                showsFraction: settings.timer.stopwatchShowsFraction,
-                savingPower: environment.battery.status.savesPower
-            ))
+            ticking(from: 0, precision) { elapsed in
+                BigTime(
+                    text: Stopwatch.format(elapsed, precision: precision),
+                    fills: isFloating,
+                    style: clockStyle
+                )
+            }
 
             HStack(spacing: 8) {
                 TimerButton(
@@ -316,35 +355,84 @@ struct TimerWidgetView: View {
         }
     }
 
+    /// Finished laps are still, so they show hundredths whenever the hundredths are on.
+    private var lapPrecision: Stopwatch.Precision {
+        settings.timer.stopwatchShowsFraction ? .hundredths : .seconds
+    }
+
+    private func lapsList(_ precision: Stopwatch.Precision) -> some View {
+        let laps = stopwatch.laps
+        // Each lap's own length, newest first, from the totals the stopwatch keeps.
+        let splits = laps.indices.map { laps[$0] - (laps.indices.contains($0 + 1) ? laps[$0 + 1] : 0) }
+        // Fastest and slowest only mean something once there are three to compare.
+        let marks = splits.count >= 3
+        let fastest = splits.min()
+        let slowest = splits.max()
+        return ScrollView(.vertical) {
+            VStack(spacing: 4) {
+                // The lap being run now, ticking with the big number.
+                ticking(from: laps.first ?? 0, precision) { current in
+                    lapRow(laps.count + 1, Stopwatch.format(current, precision: precision),
+                           tint: settings.appearance.resolvedAccent)
+                }
+                ForEach(Array(splits.enumerated()), id: \.offset) { index, split in
+                    lapRow(laps.count - index, Stopwatch.format(split, precision: lapPrecision), tint: {
+                        if marks, split == fastest { return Color(nsColor: .systemGreen) }
+                        if marks, split == slowest { return Color(nsColor: .systemRed) }
+                        return theme.ink.opacity(0.85)
+                    }())
+                    .help("Lap \(laps.count - index): \(Stopwatch.format(split, precision: lapPrecision)), at \(Stopwatch.format(laps[index], precision: lapPrecision))")
+                }
+            }
+            .padding(.trailing, 4)
+        }
+        .scrollIndicators(.automatic)
+        // Faded at the foot, so a row cut short there reads as more to scroll to.
+        .mask(LinearGradient(stops: [.init(color: .black, location: 0), .init(color: .black, location: 0.8),
+                                     .init(color: .black.opacity(0), location: 1)],
+                             startPoint: .top, endPoint: .bottom))
+        .frame(height: isFloating ? nil : Self.lapsHeight)
+        .frame(maxHeight: .infinity, alignment: .top)
+    }
+
+    private func lapRow(_ number: Int, _ time: String, tint: Color) -> some View {
+        HStack {
+            Text("Lap \(number)")
+                .foregroundStyle(theme.ink.opacity(0.45))
+            Spacer(minLength: 8)
+            Text(time)
+                .monospacedDigit()
+                .foregroundStyle(tint)
+        }
+        .font(Typography.helper)
+        .lineLimit(1)
+    }
+
     /// Redraws only while running: every frame to the hundredth; ten times a second to the tenth
     /// in Low Power Mode or on a low battery; once a second with the hundredths off. The slower
-    /// two land on the stopwatch's own grid (`zeroDate`), so each redraw is the moment a digit
-    /// turns over rather than up to a period after it.
+    /// two land on the stopwatch's own grid (`zeroDate`, plus `offset` for a lap that started
+    /// there), so each redraw is the moment a digit turns over rather than up to a period after it.
+    /// `content` gets the time since `offset`.
     @ViewBuilder
-    private func stopwatchTime(_ precision: Stopwatch.Precision) -> some View {
+    private func ticking<Content: View>(
+        from offset: TimeInterval, _ precision: Stopwatch.Precision,
+        @ViewBuilder content: @escaping (TimeInterval) -> Content
+    ) -> some View {
         if let zero = stopwatch.zeroDate {
             if let period = precision.redrawPeriod {
-                TimelineView(.periodic(from: zero, by: period)) { context in
+                TimelineView(.periodic(from: zero.addingTimeInterval(offset), by: period)) { context in
                     // A hair past the grid, so a value that lands exactly on a tenth is not
                     // rounded down to the one before.
-                    stopwatchText(at: context.date.addingTimeInterval(0.001), precision)
+                    content(stopwatch.elapsed(at: context.date.addingTimeInterval(0.001)) - offset)
                 }
             } else {
                 TimelineView(.animation) { context in
-                    stopwatchText(at: context.date, precision)
+                    content(stopwatch.elapsed(at: context.date) - offset)
                 }
             }
         } else {
-            stopwatchText(at: .now, precision)
+            content(stopwatch.elapsed() - offset)
         }
-    }
-
-    private func stopwatchText(at date: Date, _ precision: Stopwatch.Precision) -> some View {
-        BigTime(
-            text: Stopwatch.format(stopwatch.elapsed(at: date), precision: precision),
-            fills: isFloating,
-            style: clockStyle
-        )
     }
 
     /// The pop-out window's chosen style; the notch is always plain.

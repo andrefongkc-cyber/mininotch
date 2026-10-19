@@ -55,6 +55,15 @@ final class Stopwatch {
         onChange?()
     }
 
+    #if DEBUG
+    /// A paused stopwatch with laps already taken, for `--capture-notch --sample-laps`.
+    func debugLoad(elapsed: TimeInterval, laps: [TimeInterval]) {
+        startedAt = nil
+        accumulated = elapsed
+        self.laps = laps
+    }
+    #endif
+
     /// From zero again, still running, for Focus.
     func restart() {
         accumulated = 0

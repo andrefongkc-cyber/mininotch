@@ -1,6 +1,6 @@
 # MiniNotch workplan
 
-Status: display settings in Layout, search keywords and the flip clock fix done on main, unreleased; next: the user tries them, and at the next release add "New Versions" and "Apps Using the Battery" to SettingsNewRows.
+Status: stopwatch laps column done on main, unreleased; next: the user tries it, and at the next release add "New Versions" and "Apps Using the Battery" to SettingsNewRows.
 
 Living document. Update the checkboxes as work lands. `CLAUDE.md` holds the architecture
 rules and the traps; this file holds the sequence.
@@ -180,6 +180,8 @@ The user plans to revamp every music-playing animation before 1.0.0. Collected h
       pop-out window; Focus Timer restarts the interval on switching apps (`--check-focus` passes).
       The window and the guard against real app switches are untried by hand. Add "Focus Timer" to
       SettingsNewRows at the next release.
+- [x] Stopwatch laps column (2026-10-18): every lap beside the time, the current one ticking, fastest
+      green and slowest red, scrolling; the old one-line latest lap on a narrow panel.
 - [x] Display settings moved from Advanced into Layout, under the Closed Pill (2026-10-18), so the
       closed notch and the external monitor's notch are arranged together.
 - [x] Settings search: "monitor" found the pane and no rows after a subtitle was reworded; rows now

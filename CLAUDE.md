@@ -86,7 +86,7 @@ MiniNotch --capture-notch out.png [--collapsed] [--tab system] [--glow bars|off]
                                  [--notch-style bento-light] [--liquid-glass] [--builtin]
                                  [--no-visualizer] [--no-lyrics] [--swipe-to notes --midway 0.15]
                                  [--live grow|reopen|swipe --hold 7 [--was-active]]
-                                 [--stopwatch] [--focus] [--floating-timer [--floating-expanded]]
+                                 [--stopwatch] [--sample-laps] [--focus] [--floating-timer [--floating-expanded]]
                                  [--clock-style flip|segments] [--no-fraction]
 MiniNotch --check-lyrics "Khalid" "8TEEN" 229                      # LRCLIBClient + LRCParser
 MiniNotch --check-lyric-sync [--out f]                             # matching lyrics to the audio, synthetic
@@ -1390,6 +1390,15 @@ records what one card shows on every frame in a real window and wants exactly 55
 or hides hundredths, in the notch and the window; hidden, it redraws once a second on the
 stopwatch's own grid (`Stopwatch.zeroDate`), as tenths do when saving power, so each redraw is the
 moment a digit turns over.
+
+**Every lap shows, in a column beside the stopwatch** (2026-10-18, "there's so much extra space, I
+would like to see my other laps"). Once there is a lap, `TimerWidgetView.lapsList` sits right of the
+time behind a hairline: the lap being run now on top, ticking on the same schedule as the big number
+from the last lap's moment (`ticking(from:)`), then every finished lap newest first, the fastest
+green and the slowest red once there are three, scrolling under a faded foot. In the notch the list
+is given its height (`lapsHeight`, 96), since a `ScrollView` has none; in the pop-out it fills. A
+`ViewThatFits` falls back to the old status line with only the latest lap on a panel too narrow
+for both. `--capture-notch --tab timer --sample-laps` draws six laps, paused at 2:17:18.
 
 **A running stopwatch is a Live Activity in the pill, like the countdown** (2026-10-18). It was not
 one, so on an external monitor, where the closed pill is in plain view, the user set Opens On Without

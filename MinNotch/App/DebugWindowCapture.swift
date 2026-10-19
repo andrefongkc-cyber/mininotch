@@ -247,6 +247,11 @@ enum DebugWindowCapture {
             environment.stopwatch.lap()
             environment.stopwatch.lap()
         }
+        // `--sample-laps`: the stopwatch paused at 2:17:18 with six laps, fastest and slowest among them.
+        if arguments.contains("--sample-laps") {
+            environment.stopwatch.mode = .stopwatch
+            environment.stopwatch.debugLoad(elapsed: 8238, laps: [8100, 4600, 3500, 3200, 1500, 612.34])
+        }
         if arguments.contains("--focus") { settings.timer.focusMode = true }
         // `--clock-style flip|segments` picks the pop-out window's style; `--no-fraction` hides
         // the stopwatch's hundredths.
