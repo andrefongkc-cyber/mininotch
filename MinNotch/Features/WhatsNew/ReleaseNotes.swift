@@ -27,39 +27,63 @@ struct ReleaseNotes {
     var removed: [ReleaseNote]
 
     static let latest = ReleaseNotes(
-        id: "0.7.3",
-        version: "0.7.3",
+        id: "0.7.4",
+        version: "0.7.4",
         added: [
             ReleaseNote(
-                symbol: "stopwatch",
-                title: "Stopwatch",
-                detail: "The Timer tab is now a timer or a stopwatch, with laps. Switch between them at the top of the tab.",
-                howTo: "The Timer tab: Timer | Stopwatch, top left."
+                symbol: "rectangle.split.1x2",
+                title: "Clock Styles",
+                detail: "Show the timer and stopwatch as a flip clock, or as a mechanical seven-segment display whose segments flip over or slide out, in the notch and the pop-out window.",
+                howTo: "The style button at the top of the Timer tab, beside Focus."
             ),
             ReleaseNote(
-                symbol: "pip.enter",
-                title: "Pop-Out Timer",
-                detail: "Float the timer or stopwatch in a small window above your other apps, and put it back when you are done.",
-                howTo: "The Timer tab's pop-out button, top right."
+                symbol: "flag",
+                title: "Every Lap",
+                detail: "The stopwatch lists all your laps beside the time, the current one ticking, the fastest in green and the slowest in red. The .00 button shows or hides hundredths.",
+                howTo: nil
             ),
             ReleaseNote(
-                symbol: "scope",
-                title: "Focus",
-                detail: "Turn on Focus and the timer pops out when it starts. Switch to another app while a countdown, a Pomodoro focus interval or the stopwatch runs, and it starts over. Breaks and pauses do not count.",
-                howTo: "Focus at the top of the Timer tab, or Settings > Tabs > Timer > Focus Timer."
+                symbol: "arrow.up.left.and.arrow.down.right",
+                title: "Bigger Pop-Out Timer",
+                detail: "Expand the pop-out timer, or drag its edges, and the time grows with it.",
+                howTo: "Hover the pop-out window and click the expand button, top left."
+            ),
+            ReleaseNote(
+                symbol: "bolt.batteryblock",
+                title: "Apps Using the Battery",
+                detail: "See which apps have used the most energy since you unplugged.",
+                howTo: "Settings > Battery > Battery Use."
+            ),
+            ReleaseNote(
+                symbol: "arrow.down.circle",
+                title: "Install Updates Automatically",
+                detail: "Choose to have new versions install by themselves, once the notch is closed and no timer is running, or keep being asked first.",
+                howTo: "Settings > About > New Versions."
             ),
         ],
         improved: [
             ReleaseNote(
-                symbol: "timer",
-                title: "Tidier Timer Tab",
-                detail: "Choose a Pomodoro rhythm, then press Start: picking a rhythm no longer starts it. Quick countdowns and your own length sit on one row below.",
+                symbol: "stopwatch",
+                title: "Stopwatch in the Closed Notch",
+                detail: "A running stopwatch shows in the closed notch, as a countdown does.",
                 howTo: nil
             ),
             ReleaseNote(
-                symbol: "hand.draw",
-                title: "Scrolling Stays Put",
-                detail: "Scrolling the Clipboard list or Notes no longer closes the notch, however short they are.",
+                symbol: "display.2",
+                title: "External Displays in Layout",
+                detail: "The settings for the notch on displays without one now sit in Settings > Layout, under the Closed Pill, and searching \"monitor\" finds them.",
+                howTo: nil
+            ),
+            ReleaseNote(
+                symbol: "sparkles",
+                title: "Menus in the Notch",
+                detail: "The top bar's What's New button and the clock style button open their menus inside the notch, where they can be seen and clicked.",
+                howTo: nil
+            ),
+            ReleaseNote(
+                symbol: "timer",
+                title: "Smoother Stopwatch",
+                detail: "The stopwatch counts every hundredth, and slows to tenths in Low Power Mode or on a low battery.",
                 howTo: nil
             ),
         ],

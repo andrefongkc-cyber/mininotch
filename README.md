@@ -19,7 +19,7 @@ does not have. Open **System Settings > Privacy & Security**, scroll down, and c
 Anyway**.
 
 From 0.7 on, MiniNotch keeps itself up to date: it checks for a new version every three hours (or as often as you set in Settings > About > How Often) and asks
-before installing it, or installs on its own if you set Settings > About > New Versions to Install Automatically _(next)_; check yourself from the menu bar icon. Earlier versions have to be
+before installing it, or installs on its own if you set Settings > About > New Versions to Install Automatically; check yourself from the menu bar icon. Earlier versions have to be
 updated by hand once, to 0.7.
 
 Requires macOS 14.4 or later, Apple silicon or Intel; on anything older, macOS refuses to open
@@ -77,7 +77,7 @@ no account.
 
 ![The weather tab](Docs/images/weather.png)
 
-**Timer and Pomodoro**, four rhythms, quick countdowns, and a custom length, plus a stopwatch with laps, a pop-out timer window that you can expand or resize, the time growing with it, in a plain, flip clock or mechanical seven-segment style (in the notch too), and a button to show or hide the stopwatch's hundredths _(next)_, and Focus, which starts the countdown, Pomodoro interval or stopwatch over if you switch to another app. A running timer shows
+**Timer and Pomodoro**, four rhythms, quick countdowns, and a custom length, plus a stopwatch with laps, a pop-out timer window that you can expand or resize, the time growing with it, in a plain, flip clock or mechanical seven-segment style (in the notch too), and a button to show or hide the stopwatch's hundredths, and Focus, which starts the countdown, Pomodoro interval or stopwatch over if you switch to another app. A running timer shows
 in the closed pill.
 
 ![The timer tab](Docs/images/timer.png)
@@ -101,7 +101,7 @@ Also:
   Plugged in, it shows what the charger is giving, what the Mac uses, and how much of it is going
   into the battery.
 - **Apps using the battery**: Settings > Battery lists the apps that have used the most energy since
-  you unplugged, with each one's share, helpers and all _(next)_.
+  you unplugged, with each one's share, helpers and all.
 - **Volume, brightness and keyboard backlight** shown at the notch, optionally instead of Apple's
   own overlay, which MiniNotch hides by taking those keys before macOS sees them (needs
   Accessibility). They also show over the lock screen, as does the song with its controls.

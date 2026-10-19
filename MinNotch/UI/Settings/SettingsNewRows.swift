@@ -72,6 +72,10 @@ enum SettingsNewRows {
 
         // 0.7.3
         "Focus Timer": "0.7.3",
+
+        // 0.7.4
+        "New Versions": "0.7.4",
+        "Apps Using the Battery": "0.7.4",
     ]
 
     static func isNew(_ title: String) -> Bool {
