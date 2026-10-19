@@ -30,6 +30,11 @@ enum AmbientGlowStyleKind: String, Codable, CaseIterable, Identifiable {
         }
     }
 
+    /// The styles Settings and the Now Playing card offer. Wave and Chase are off the menus
+    /// (2026-10-19, the user's request) while they are reworked; their styles stay in
+    /// `AmbientGlowStyles.swift`, and a saved one is read back as Pulse (`AmbientGlowSettings`).
+    static let offered: [AmbientGlowStyleKind] = [.pulse, .bars, .rainbow]
+
     /// Rainbow owns its own colour, so the colour mode picker is meaningless for it.
     var usesColorMode: Bool { self != .rainbow }
 }
@@ -213,6 +218,8 @@ struct AmbientGlowSettings: Codable, Equatable {
         let c = try decoder.container(keyedBy: CodingKeys.self)
         isEnabled = c.value(.isEnabled, false)
         style = c.value(.style, AmbientGlowStyleKind.rainbow)
+        // Wave and Chase are not offered for now, and a style nobody can see chosen is not kept.
+        if !AmbientGlowStyleKind.offered.contains(style) { style = .pulse }
         // Read as strings and filtered, not as the enum directly. A saved set that still names
         // the removed album-art placement would otherwise fail to decode as a whole and fall
         // back to the default, throwing away whichever of the other two the user had chosen.

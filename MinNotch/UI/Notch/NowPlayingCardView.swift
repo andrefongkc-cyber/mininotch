@@ -555,7 +555,7 @@ struct NowPlayingCardView: View {
                 .disabled(!mode.showsAmbient)
 
             Section("Style") {
-                ForEach(AmbientGlowStyleKind.allCases) { style in
+                ForEach(AmbientGlowStyleKind.offered) { style in
                     Button {
                         settings.appearance.ambientGlow.style = style
                         settings.appearance.ambientGlow.isEnabled = true
@@ -613,7 +613,7 @@ struct NowPlayingCardView: View {
     }
 
     private func advanceGlowStyle() {
-        let all = AmbientGlowStyleKind.allCases
+        let all = AmbientGlowStyleKind.offered
         let current = settings.appearance.ambientGlow.style
         let index = all.firstIndex(of: current) ?? 0
         settings.appearance.ambientGlow.style = all[(index + 1) % all.count]

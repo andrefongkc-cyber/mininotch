@@ -62,7 +62,7 @@ struct AmbientLightingCard: View {
                 isEnabled: glow.isEnabled
             ) {
                 InlinePicker(selection: $settings.appearance.ambientGlow.style) {
-                    ForEach(AmbientGlowStyleKind.allCases) { style in
+                    ForEach(AmbientGlowStyleKind.offered) { style in
                         Text(style.title).tag(style)
                     }
                 }

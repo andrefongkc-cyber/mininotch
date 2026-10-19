@@ -1191,6 +1191,11 @@ along with the music rather than hitting on it. Stroke width carries most of it,
 varies each bar's arc length, Wave and Chase lengthen with energy, and the blur radius itself
 rides the level, capped so it can never exceed the spill the caller promised.
 
+**Wave and Chase are off the menus while they are reworked** (2026-10-19). `AmbientGlowStyleKind.offered`
+(Pulse, Bars, Rainbow) is what Settings > Ambient Lighting, the card's style menu and its click-to-cycle
+offer; the two styles' code and cases stay, so `--glow wave` still draws them, and a saved Wave or
+Chase decodes as Pulse. Putting one back is adding it to `offered`.
+
 **Glow styles return data, not drawing.** An `AmbientGlowStyle` turns `GlowInput` into
 `[GlowSegment]` and never touches a graphics context, so a style can be reasoned about
 without a renderer and a sixth one is a single function. Placement is a separate dimension

@@ -1,6 +1,6 @@
 # MiniNotch workplan
 
-Status: 0.7.4 released (2026-10-19) and in the feed; next: whatever the user reports from it.
+Status: Wave and Chase hidden from the glow menus (code kept for a revamp), on main, unreleased; next: the revamp when the user asks.
 
 Living document. Update the checkboxes as work lands. `CLAUDE.md` holds the architecture
 rules and the traps; this file holds the sequence.
@@ -180,6 +180,7 @@ The user plans to revamp every music-playing animation before 1.0.0. Collected h
       pop-out window; Focus Timer restarts the interval on switching apps (`--check-focus` passes).
       The window and the guard against real app switches are untried by hand. Add "Focus Timer" to
       SettingsNewRows at the next release.
+- [ ] Revamp the Wave and Chase glow styles; hidden from the menus on 2026-10-19 (`AmbientGlowStyleKind.offered`), code kept.
 - [x] The top bar's What's New / Tutorial button opened a menu hidden under the notch (its own
       window server space is above AppKit's menus); menus in the notch are now drawn in the panel
       (2026-10-19), the clock style menu too. Clicking them has not been tried by hand.
