@@ -37,23 +37,35 @@ final class ChromeSpotifySource: MediaSource, @unchecked Sendable {
     """
 
     /// Runs `javascript` in the first Spotify tab, returning the tab's title and the result.
+    ///
+    /// Every tab's URL comes back in one Apple Event and is searched here. Asking each tab for
+    /// its URL in a loop was a round trip per tab: 3.5 s with 32 tabs open, on the queue every
+    /// player shares, so Music's artwork, lyrics and pause button waited behind it on every
+    /// refresh.
     private static func inSpotifyTab(_ javascript: String?) -> String {
         let run = javascript.map { "set pageInfo to execute t javascript \"\($0)\"" } ?? ""
         return """
         if application id "\(bundleIdentifier)" is running then
-            tell application id "\(bundleIdentifier)"
-                repeat with w in windows
-                    repeat with t in tabs of w
-                        if (URL of t) contains "open.spotify.com" then
+            tell application id "\(bundleIdentifier)" to set allURLs to URL of tabs of windows
+            repeat with i from 1 to count allURLs
+                set urls to item i of allURLs
+                repeat with j from 1 to count urls
+                    set u to ""
+                    try
+                        set u to (item j of urls) as text
+                    end try
+                    if u contains "open.spotify.com" then
+                        tell application id "\(bundleIdentifier)"
+                            set t to tab j of window i
                             set pageInfo to ""
                             try
                                 \(run)
                             end try
                             return {(title of t) as text, pageInfo as text}
-                        end if
-                    end repeat
+                        end tell
+                    end if
                 end repeat
-            end tell
+            end repeat
         end if
         return {}
         """

@@ -94,6 +94,11 @@ final class NowPlayingController {
     /// Source that most recently reported a track, used to stay on one player when both
     /// are open and one is merely paused.
     @ObservationIgnored private var stickySource: MediaSourceKind?
+    /// A refresh is on the AppleScript queue, and whether another was asked for meanwhile. At
+    /// most one waits behind it: a read slower than the poll (several paused players, a slow
+    /// app) used to stack refreshes on the queue, and a press of pause waited behind them all.
+    @ObservationIgnored private var isRefreshing = false
+    @ObservationIgnored private var refreshAgain = false
 
     init() {}
 
@@ -173,6 +178,9 @@ final class NowPlayingController {
         // read on the AppleScript queue, which was a data race with every settings change.
         let candidates = orderedSources(for: settings.media.preferredSource)
 
+        guard !isRefreshing else { refreshAgain = true; return }
+        isRefreshing = true
+
         AppleScriptRunner.shared.queue.async {
             var chosen: (MediaSource, NowPlayingTrack)?
             for source in candidates {
@@ -187,7 +195,15 @@ final class NowPlayingController {
             // extrapolation that much late. It is why the lyric highlight trailed the vocal.
             let capturedAt = Date()
             let result = chosen
-            DispatchQueue.main.async { [weak self] in self?.publish(result, capturedAt: capturedAt) }
+            DispatchQueue.main.async { [weak self] in
+                guard let self else { return }
+                self.isRefreshing = false
+                self.publish(result, capturedAt: capturedAt)
+                if self.refreshAgain {
+                    self.refreshAgain = false
+                    self.refresh()
+                }
+            }
         }
     }
 
