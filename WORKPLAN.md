@@ -1,6 +1,6 @@
 # MiniNotch workplan
 
-Status: 0.7.5 (Wave and Chase off the menus, What's New lists every skipped release) built, being released; next: the Wave and Chase revamp when the user asks.
+Status: 0.7.5 released 2026-10-19 (Wave and Chase off the menus, What's New lists every skipped release); next: the Wave and Chase revamp when the user asks.
 
 Living document. Update the checkboxes as work lands. `CLAUDE.md` holds the architecture
 rules and the traps; this file holds the sequence.
