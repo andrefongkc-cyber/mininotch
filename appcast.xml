@@ -6,6 +6,19 @@
     <description>MiniNotch updates</description>
     <language>en</language>
     <item>
+      <title>MiniNotch 0.7.6</title>
+      <pubDate>Mon, 19 Oct 2026 22:26:30 GMT</pubDate>
+      <sparkle:version>0.7.6</sparkle:version>
+      <sparkle:shortVersionString>0.7.6</sparkle:shortVersionString>
+      <sparkle:minimumSystemVersion>14.4</sparkle:minimumSystemVersion>
+      <description><![CDATA[<h3>Improved</h3>
+<ul>
+<li><b>Music Controls Answer Straight Away</b>: With Chrome open and many tabs, the cover, the lyrics and the pause button could take seconds to respond, even in Apple Music. They respond at once again.</li>
+</ul>]]></description>
+      <sparkle:fullReleaseNotesLink>https://github.com/andrefongkc-cyber/mininotch/releases</sparkle:fullReleaseNotesLink>
+      <enclosure url="https://github.com/andrefongkc-cyber/mininotch/releases/download/v0.7.6/MiniNotch-0.7.6.dmg" sparkle:edSignature="j/uDZjb/+y0Sb7AtPaF9hEJjdDBfiXaycBhrQbT/1iSXJTiVpioiX1eI0kNBIzoFc0h41zzMCJvno/IBjdd8Dw==" length="8589499" type="application/x-apple-diskimage"/>
+    </item>
+    <item>
       <title>MiniNotch 0.7.5</title>
       <pubDate>Mon, 19 Oct 2026 21:31:57 GMT</pubDate>
       <sparkle:version>0.7.5</sparkle:version>
