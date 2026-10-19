@@ -1367,9 +1367,11 @@ never save that frame (`remembersFrame`, off in `DebugSupport.makeEnvironment`),
 real app's defaults: `--floating-timer` used to move the user's window. `--floating-expanded` draws
 it large. Resizing by an edge has not been tried by hand.
 
-**The pop-out window has clock styles: Plain, Flip Clock, Flip Segments, Rack Segments** (2026-10-15,
-`TimerSettings.clockStyle`, from the style button in the window's header, where the notch has its
-pop-out button; the notch always draws plain). `ClockFaceView` draws them: split-flap cards whose old
+**The Timer tab has clock styles: Plain, Flip Clock, Flip Segments, Rack Segments** (2026-10-15,
+`TimerSettings.clockStyle`, from the style button in the tab's header, beside Focus). They were the
+pop-out window's alone until 2026-10-18, when the user asked for them in the notch: one setting now
+draws in both, in the notch in a band 50 points tall (`BigTime.styledNotchHeight`), in the window
+filling it. `ClockFaceView` draws them: split-flap cards whose old
 top half falls forward on its hinge and whose new bottom half lands with a small bounce
 (`FlipCard`, an `Animatable` view driven by a count of flips so a change mid-fall carries on); a
 seven-segment display of yellow paddles that turn over on their long axis with a spring's overshoot

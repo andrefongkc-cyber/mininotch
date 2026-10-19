@@ -48,7 +48,7 @@ enum PomodoroPreset: String, Codable, CaseIterable, Identifiable {
     }
 }
 
-/// How the pop-out timer window draws its time (`ClockFaceView`).
+/// How the Timer tab draws its time, in the notch and the pop-out window (`ClockFaceView`).
 enum TimerClockStyle: String, Codable, CaseIterable, Identifiable {
     case plain
     /// Split-flap cards: the top half of the old digit falls to show the new one.
@@ -115,7 +115,7 @@ struct TimerSettings: Codable, Equatable {
     /// The stopwatch's hundredths (the ".00" button on the stopwatch).
     var stopwatchShowsFraction: Bool = true
 
-    /// How the pop-out window draws the time; the notch is always plain.
+    /// How the Timer tab draws the time, in the notch and the pop-out window.
     var clockStyle: TimerClockStyle = .plain
 
     init() {}

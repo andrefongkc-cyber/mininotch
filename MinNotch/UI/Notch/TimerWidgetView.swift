@@ -70,16 +70,18 @@ struct TimerWidgetView: View {
                 settings.timer.focusMode.toggle()
             }
 
-            if isFloating {
-                TimerButton(systemImage: settings.timer.clockStyle.symbolName, help: "Clock style: \(settings.timer.clockStyle.title)") {
-                    NotchMenu.show(TimerClockStyle.allCases.map { style in
-                        NotchMenu.Item(title: style.title, symbol: style.symbolName,
-                                       isOn: style == settings.timer.clockStyle) {
-                            settings.timer.clockStyle = style
-                        }
-                    })
-                }
-            } else {
+            // The clock style, in the notch and the pop-out alike: it was the pop-out's alone, and
+            // the user wanted to choose it, and see it, in the notch too.
+            TimerButton(systemImage: settings.timer.clockStyle.symbolName, help: "Clock style: \(settings.timer.clockStyle.title)") {
+                NotchMenu.show(TimerClockStyle.allCases.map { style in
+                    NotchMenu.Item(title: style.title, symbol: style.symbolName,
+                                   isOn: style == settings.timer.clockStyle) {
+                        settings.timer.clockStyle = style
+                    }
+                })
+            }
+
+            if !isFloating {
                 TimerButton(
                     systemImage: stopwatch.isPoppedOut ? "pip.exit" : "pip.enter",
                     help: stopwatch.isPoppedOut ? "Put the timer back in the notch" : "Pop the timer out into its own window"
@@ -435,8 +437,7 @@ struct TimerWidgetView: View {
         }
     }
 
-    /// The pop-out window's chosen style; the notch is always plain.
-    private var clockStyle: TimerClockStyle { isFloating ? settings.timer.clockStyle : .plain }
+    private var clockStyle: TimerClockStyle { settings.timer.clockStyle }
 
     // MARK: Status
 
@@ -468,8 +469,9 @@ struct TimerWidgetView: View {
     }
 }
 
-/// The time, large. 38 points in the notch; in the pop-out window it fills whatever room the
-/// rest leaves, so expanding or resizing the window makes the number bigger.
+/// The time, large. 38 points in the notch, or a clock style in a band `styledNotchHeight` tall;
+/// in the pop-out window it fills whatever room the rest leaves, so expanding or resizing the
+/// window makes the number bigger.
 private struct BigTime: View {
     @Environment(\.notchStyle) private var theme
     var text: String
@@ -477,13 +479,16 @@ private struct BigTime: View {
     var style: TimerClockStyle = .plain
 
     private static let notchSize: CGFloat = 38
+    /// A little taller than the plain number's line, since a styled one draws cards or a plate
+    /// around its digits; the tab's height has room for it.
+    private static let styledNotchHeight: CGFloat = 50
 
     var body: some View {
-        if fills, style != .plain {
+        if style != .plain {
             GeometryReader { proxy in
                 ClockFaceView(text: text, style: style, space: proxy.size)
             }
-            .frame(minHeight: 40)
+            .frame(minHeight: fills ? 40 : Self.styledNotchHeight, maxHeight: fills ? .infinity : Self.styledNotchHeight)
         } else if fills {
             GeometryReader { proxy in
                 Text(text)
