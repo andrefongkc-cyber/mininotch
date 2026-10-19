@@ -162,8 +162,11 @@ final class AppEnvironment {
             // A first launch has nothing to compare against, so this release counts as seen.
             whatsNew.markSeen()
         } else if whatsNew.shouldPresent {
+            // Every release since the one last seen, so an update that skipped versions says
+            // what came in each.
+            let releases = whatsNew.unseen
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) { [weak self] in
-                self?.whatsNew.present()
+                self?.whatsNew.present(releases)
             }
         }
     }

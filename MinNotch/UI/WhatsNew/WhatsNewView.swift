@@ -1,11 +1,12 @@
 import SwiftUI
 
-/// The release notes window: what was added, improved, and removed, and where to find each.
+/// The release notes window: what was added, improved, and removed, and where to find each,
+/// for one release or for every release someone skipped, newest first.
 ///
 /// Drawn in plain colours, like the tutorial, so `--capture-whats-new` can read it back from a
 /// real window.
 struct WhatsNewView: View {
-    let notes: ReleaseNotes
+    let releases: [ReleaseNotes]
     var onClose: () -> Void
 
     static let size = CGSize(width: 520, height: 600)
@@ -13,7 +14,7 @@ struct WhatsNewView: View {
     var body: some View {
         VStack(spacing: 0) {
             ScrollView {
-                WhatsNewContent(notes: notes)
+                WhatsNewContent(releases: releases)
             }
 
             footer
@@ -42,14 +43,26 @@ struct WhatsNewView: View {
 /// Everything inside the scroll view, separate so `--capture-whats-new` can render it: an
 /// AppKit capture of a window does not draw `ScrollView` content.
 struct WhatsNewContent: View {
-    let notes: ReleaseNotes
+    let releases: [ReleaseNotes]
+
+    private var newest: ReleaseNotes { releases.first ?? .latest }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 18) {
             header
-            section("New", notes.added)
-            section("Improved", notes.improved)
-            section("Removed", notes.removed)
+            if releases.count > 1 {
+                ForEach(releases, id: \.id) { notes in
+                    VStack(alignment: .leading, spacing: 14) {
+                        Divider().overlay(Palette.separator)
+                        Text("MiniNotch \(notes.version)")
+                            .font(.system(size: 16, weight: .bold))
+                            .foregroundStyle(Palette.primaryText)
+                        sections(notes)
+                    }
+                }
+            } else {
+                sections(newest)
+            }
         }
         .padding(.horizontal, 28)
         .padding(.top, 34)
@@ -59,14 +72,27 @@ struct WhatsNewContent: View {
 
     private var header: some View {
         VStack(alignment: .leading, spacing: 4) {
-            Text("What's New in MiniNotch \(notes.version)")
+            Text("What's New in MiniNotch \(newest.version)")
                 .font(.system(size: 22, weight: .bold))
                 .foregroundStyle(Palette.primaryText)
-            Text("Hover over the notch or click it to open it. Everything below is also in Settings, from the menu bar icon.")
+            Text(subtitle)
                 .font(.system(size: 12))
                 .foregroundStyle(Palette.secondaryText)
                 .fixedSize(horizontal: false, vertical: true)
         }
+    }
+
+    private var subtitle: String {
+        let basics = "Hover over the notch or click it to open it. Everything below is also in Settings, from the menu bar icon."
+        guard releases.count > 1, let oldest = releases.last else { return basics }
+        return "Everything since your last update: \(releases.count) releases, \(oldest.version) to \(newest.version), newest first. " + basics
+    }
+
+    @ViewBuilder
+    private func sections(_ notes: ReleaseNotes) -> some View {
+        section("New", notes.added)
+        section("Improved", notes.improved)
+        section("Removed", notes.removed)
     }
 
     @ViewBuilder

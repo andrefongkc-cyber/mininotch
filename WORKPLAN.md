@@ -1,6 +1,6 @@
 # MiniNotch workplan
 
-Status: Wave and Chase hidden from the glow menus (code kept for a revamp), on main, unreleased; next: the revamp when the user asks.
+Status: 0.7.5 (Wave and Chase off the menus, What's New lists every skipped release) built, being released; next: the Wave and Chase revamp when the user asks.
 
 Living document. Update the checkboxes as work lands. `CLAUDE.md` holds the architecture
 rules and the traps; this file holds the sequence.
@@ -180,6 +180,7 @@ The user plans to revamp every music-playing animation before 1.0.0. Collected h
       pop-out window; Focus Timer restarts the interval on switching apps (`--check-focus` passes).
       The window and the guard against real app switches are untried by hand. Add "Focus Timer" to
       SettingsNewRows at the next release.
+- [x] 0.7.5: What's New at launch lists every release since the one last seen (`ReleaseNotes.history`, `since`), and the feed links Sparkle's Version History.
 - [ ] Revamp the Wave and Chase glow styles; hidden from the menus on 2026-10-19 (`AmbientGlowStyleKind.offered`), code kept.
 - [x] The top bar's What's New / Tutorial button opened a menu hidden under the notch (its own
       window server space is above AppKit's menus); menus in the notch are now drawn in the panel

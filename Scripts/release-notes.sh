@@ -15,6 +15,7 @@ import html, re, sys
 source = open(sys.argv[1]).read()
 as_html = sys.argv[2] == "--html"
 block = source[source.index("static let latest"):]
+block = block[:block.index("\n    )\n") + 1]  # this release only, not what follows it
 version = re.search(r'version:\s*"([^"]*)"', block).group(1)
 
 def field(entry, name):
@@ -25,7 +26,7 @@ def field(entry, name):
 
 if as_html:
     for key, heading in [("added", "New"), ("improved", "Improved"), ("removed", "Removed")]:
-        section = re.search(key + r":\s*\[(.*?)\n\s*\],?\n", block, re.S)
+        section = re.search(key + r":\s*\[((?:(?!\b(?:added|improved|removed):).)*?)\]", block, re.S)
         entries = re.findall(r"ReleaseNote\((.*?)\n\s*\)", section.group(1), re.S) if section else []
         if not entries:
             continue
@@ -41,7 +42,7 @@ if as_html:
 
 print(f"# MiniNotch {version}\n")
 for key, heading in [("added", "New"), ("improved", "Improved"), ("removed", "Removed")]:
-    section = re.search(key + r":\s*\[(.*?)\n\s*\],?\n", block, re.S)
+    section = re.search(key + r":\s*\[((?:(?!\b(?:added|improved|removed):).)*?)\]", block, re.S)
     if not section:
         continue
     entries = re.findall(r"ReleaseNote\((.*?)\n\s*\)", section.group(1), re.S)

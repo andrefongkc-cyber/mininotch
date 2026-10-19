@@ -52,8 +52,8 @@ of opening the whole panel, for as long as you set.
 
 ![The sneak peek](Docs/images/sneak-peek.png)
 
-**Ambient lighting** around the closed pill or the open panel, in five styles, coloured from the
-album art. With the system audio permission granted it follows what is actually playing; without
+**Ambient lighting** around the closed pill or the open panel, in three styles (Pulse, Bars and
+Rainbow Cycle; Wave and Chase are being reworked), coloured from the album art. With the system audio permission granted it follows what is actually playing; without
 it, it keeps the song's own tempo from Music, a tempo you tap out, or one of its own. With nothing
 playing it stays still.
 
@@ -115,7 +115,8 @@ Also:
   behind the camera.
 - **Settings** in their own window with search: press ⌘F, type, and a result takes you to the row.
   What is new in an update is marked New.
-- **What's New** after each update, and a welcome tour on first launch.
+- **What's New** after each update, listing every release since the one you last saw, and a welcome
+  tour on first launch.
 
 ![The release notes window](Docs/images/whats-new.png)
 

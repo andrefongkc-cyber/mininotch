@@ -48,6 +48,7 @@ item = f"""    <item>
       <sparkle:shortVersionString>{version}</sparkle:shortVersionString>
       <sparkle:minimumSystemVersion>14.4</sparkle:minimumSystemVersion>
       <description><![CDATA[{notes}]]></description>
+      <sparkle:fullReleaseNotesLink>https://github.com/andrefongkc-cyber/mininotch/releases</sparkle:fullReleaseNotesLink>
       <enclosure url="{url}" {signature} type="application/x-apple-diskimage"/>
     </item>
 """

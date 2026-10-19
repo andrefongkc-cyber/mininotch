@@ -4,7 +4,8 @@ import SwiftUI
 
 /// Captures the What's New window from a real window, scrolled to the top and to the bottom.
 ///
-/// Run with `MiniNotch --capture-whats-new <dir>`. Writes nothing to settings or defaults, so
+/// Run with `MiniNotch --capture-whats-new <dir> [--since 0.6.0]`; `--since` draws what someone
+/// who last saw that release is shown. Writes nothing to settings or defaults, so
 /// looking at the window does not mark the release as seen.
 @MainActor
 enum DebugWhatsNewCapture {
@@ -16,7 +17,10 @@ enum DebugWhatsNewCapture {
         let directory = arguments.indices.contains(index + 1) ? arguments[index + 1] : NSTemporaryDirectory()
         try? FileManager.default.createDirectory(atPath: directory, withIntermediateDirectories: true)
 
-        let window = WhatsNewCoordinator.makeWindow(onClose: {})
+        let releases = arguments.firstIndex(of: "--since").flatMap { arguments.indices.contains($0 + 1) ? arguments[$0 + 1] : nil }
+            .map(ReleaseNotes.since) ?? [.latest]
+        FileHandle.standardError.write("Releases: \(releases.map(\.version).joined(separator: ", "))\n".data(using: .utf8)!)
+        let window = WhatsNewCoordinator.makeWindow(releases: releases, onClose: {})
         window.setFrameOrigin(CGPoint(x: 80, y: 80))
         window.orderFrontRegardless()
         RunLoop.main.run(until: Date().addingTimeInterval(0.8))
@@ -27,7 +31,7 @@ enum DebugWhatsNewCapture {
         for (name, appearance) in [("dark", NSAppearance.Name.darkAqua), ("light", .aqua)] {
             NSAppearance(named: appearance)?.performAsCurrentDrawingAppearance {
                 let renderer = ImageRenderer(
-                    content: WhatsNewContent(notes: .latest)
+                    content: WhatsNewContent(releases: releases)
                         .background(Palette.paneBackground)
                         .environment(\.colorScheme, name == "dark" ? .dark : .light)
                 )

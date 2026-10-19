@@ -694,12 +694,23 @@ defaulting on only under `#if DEBUG`) for checking both at a glance. Review it w
 draw `ScrollView` content.
 
 `CFBundleVersion` is `$(MARKETING_VERSION)`, not a build number: Sparkle decides what is newer from
-it, and the build number had been 1 for every release. `ReleaseNotes.latest` is 0.7.4 and `MARKETING_VERSION` matches. 0.7.4 (2026-10-19) brought clock styles in the notch and the pop-out, every lap, the bigger pop-out, Apps Using the Battery, Install Automatically, the stopwatch in the closed pill, the display settings in Layout and menus drawn in the panel; its release copy was launched and opened Settings before publishing. 0.7.3 (2026-10-14) brought the Timer tab's stopwatch, pop-out window and Focus, and the swipe fix over Clipboard and Notes. 0.7.2 (2026-10-14) fixes 0.7.1, which crashed whenever Settings opened: its `SettingsNewRows` listed seven titles twice, and a Swift dictionary literal with a repeated key traps when first read. The compiler warned and the build filter hid it; `Scripts/audit-search.sh` now refuses repeats, and **read every warning a release build prints**. 0.7.2 also lets people pick how often it checks (About > How Often, an hour to a week, `UpdateService.checkInterval`, kept by Sparkle in the defaults), defaulting to three hours (`SUScheduledCheckInterval` 10800). An hour is the floor because Sparkle will not schedule checks closer together; the user chose that over a timer of MiniNotch's own. 0.7.1 was released on 2026-10-12 (Tate's lock screen player and panel size, Spotify in Chrome, the Tabs pane), the first update installed copies find by themselves. 0.7.0 was released on 2026-10-08
+it, and the build number had been 1 for every release. `ReleaseNotes.latest` is 0.7.5 and `MARKETING_VERSION` matches. 0.7.5 (2026-10-19) takes Wave and Chase off the glow menus and shows every skipped release at launch. 0.7.4 (2026-10-19) brought clock styles in the notch and the pop-out, every lap, the bigger pop-out, Apps Using the Battery, Install Automatically, the stopwatch in the closed pill, the display settings in Layout and menus drawn in the panel; its release copy was launched and opened Settings before publishing. 0.7.3 (2026-10-14) brought the Timer tab's stopwatch, pop-out window and Focus, and the swipe fix over Clipboard and Notes. 0.7.2 (2026-10-14) fixes 0.7.1, which crashed whenever Settings opened: its `SettingsNewRows` listed seven titles twice, and a Swift dictionary literal with a repeated key traps when first read. The compiler warned and the build filter hid it; `Scripts/audit-search.sh` now refuses repeats, and **read every warning a release build prints**. 0.7.2 also lets people pick how often it checks (About > How Often, an hour to a week, `UpdateService.checkInterval`, kept by Sparkle in the defaults), defaulting to three hours (`SUScheduledCheckInterval` 10800). An hour is the floor because Sparkle will not schedule checks closer together; the user chose that over a timer of MiniNotch's own. 0.7.1 was released on 2026-10-12 (Tate's lock screen player and panel size, Spotify in Chrome, the Tabs pane), the first update installed copies find by themselves. 0.7.0 was released on 2026-10-08
 as the GitHub release `v0.7.0`, signed with the personal team like 0.2.0 to 0.6.0, at the user's
 request ("release on git"), and entered in `appcast.xml`: it is the first release with Sparkle, so the
 next one is the first that installed copies will find on their own. The next shared build needs new
 notes, a new `id`, and a version bump. When the README describes something on
 `main` that no download has yet, mark it _(next)_ and take the markers out at release.
+
+**Someone who skipped versions is shown all of them** (2026-10-19, the user's "if someone updates from
+0.6 to 0.7.5, say all the things that were included"). `ReleaseNotes.history` (`ReleaseHistory.swift`)
+holds every release's notes as shipped, back to 0.2, rebuilt from the tags; `ReleaseNotes.since(seen)`
+gives the releases after the one in `whatsNew.seenRelease`, and the launch window draws each under its
+own heading. A seen id it does not know gets the latest alone; the menu bar's What's New is the latest
+alone. **At each release, move the old `latest` into `ReleaseHistory.swift` under its version's name
+and add it to `history`**, or someone who skipped it never reads it. Sparkle's Ask First window can only
+show the newest entry's notes, so each feed entry also carries `sparkle:fullReleaseNotesLink` to the
+GitHub releases page, which Sparkle offers as Version History. `--capture-whats-new <dir> --since 0.6.0`
+draws what a 0.6 user sees.
 
 **Settings says what is new.** `SettingsNewRows` maps row titles to the release that brought them,
 and every row from `ReleaseNotes.latest.version` gets a "New" badge, as does its pane in the

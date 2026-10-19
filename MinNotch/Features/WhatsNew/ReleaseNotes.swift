@@ -27,68 +27,36 @@ struct ReleaseNotes {
     var removed: [ReleaseNote]
 
     static let latest = ReleaseNotes(
-        id: "0.7.4",
-        version: "0.7.4",
-        added: [
-            ReleaseNote(
-                symbol: "rectangle.split.1x2",
-                title: "Clock Styles",
-                detail: "Show the timer and stopwatch as a flip clock, or as a mechanical seven-segment display whose segments flip over or slide out, in the notch and the pop-out window.",
-                howTo: "The style button at the top of the Timer tab, beside Focus."
-            ),
-            ReleaseNote(
-                symbol: "flag",
-                title: "Every Lap",
-                detail: "The stopwatch lists all your laps beside the time, the current one ticking, the fastest in green and the slowest in red. The .00 button shows or hides hundredths.",
-                howTo: nil
-            ),
-            ReleaseNote(
-                symbol: "arrow.up.left.and.arrow.down.right",
-                title: "Bigger Pop-Out Timer",
-                detail: "Expand the pop-out timer, or drag its edges, and the time grows with it.",
-                howTo: "Hover the pop-out window and click the expand button, top left."
-            ),
-            ReleaseNote(
-                symbol: "bolt.batteryblock",
-                title: "Apps Using the Battery",
-                detail: "See which apps have used the most energy since you unplugged.",
-                howTo: "Settings > Battery > Battery Use."
-            ),
-            ReleaseNote(
-                symbol: "arrow.down.circle",
-                title: "Install Updates Automatically",
-                detail: "Choose to have new versions install by themselves, once the notch is closed and no timer is running, or keep being asked first.",
-                howTo: "Settings > About > New Versions."
-            ),
-        ],
+        id: "0.7.5",
+        version: "0.7.5",
+        added: [],
         improved: [
             ReleaseNote(
-                symbol: "stopwatch",
-                title: "Stopwatch in the Closed Notch",
-                detail: "A running stopwatch shows in the closed notch, as a countdown does.",
-                howTo: nil
-            ),
-            ReleaseNote(
-                symbol: "display.2",
-                title: "External Displays in Layout",
-                detail: "The settings for the notch on displays without one now sit in Settings > Layout, under the Closed Pill, and searching \"monitor\" finds them.",
-                howTo: nil
-            ),
-            ReleaseNote(
-                symbol: "sparkles",
-                title: "Menus in the Notch",
-                detail: "The top bar's What's New button and the clock style button open their menus inside the notch, where they can be seen and clicked.",
-                howTo: nil
-            ),
-            ReleaseNote(
-                symbol: "timer",
-                title: "Smoother Stopwatch",
-                detail: "The stopwatch counts every hundredth, and slows to tenths in Low Power Mode or on a low battery.",
+                symbol: "list.bullet.rectangle",
+                title: "Everything You Missed",
+                detail: "If you skip a few versions, this window now lists what came in every one of them, newest first, not only the latest.",
                 howTo: nil
             ),
         ],
-        removed: []
+        removed: [
+            ReleaseNote(
+                symbol: "waveform.path",
+                title: "Wave and Chase Glow Styles, for Now",
+                detail: "They are being reworked and will come back. If you had one picked, the glow now uses Pulse.",
+                howTo: "Settings > Appearance > Ambient Lighting to pick Pulse, Bars or Rainbow Cycle."
+            ),
+        ]
     )
+}
+
+extension ReleaseNotes {
+    /// Every release newer than `seenID`, newest first. A seen release this build does not know
+    /// (nil, or from a build with notes that were never kept) gets the latest alone, rather than
+    /// the whole history back to 0.2.
+    static func since(_ seenID: String?) -> [ReleaseNotes] {
+        guard let seenID, let index = history.firstIndex(where: { $0.id == seenID }) else { return [latest] }
+        return Array(history.prefix(index))
+    }
 }
 
 /// Shows the release notes once per release, at launch.
@@ -111,18 +79,25 @@ final class WhatsNewCoordinator: NSObject, NSWindowDelegate {
         defaults.string(forKey: Self.seenKey) != ReleaseNotes.latest.id
     }
 
+    /// The releases to show at launch: every one since the last seen, so skipping versions skips
+    /// nothing. The menu bar's What's New passes no seen release and gets the latest alone.
+    var unseen: [ReleaseNotes] {
+        ReleaseNotes.since(defaults.string(forKey: Self.seenKey))
+    }
+
     func markSeen() {
         defaults.set(ReleaseNotes.latest.id, forKey: Self.seenKey)
     }
 
-    func present() {
+    /// Shows `releases`, newest first; the latest alone when nil.
+    func present(_ releases: [ReleaseNotes]? = nil) {
         if let window {
             NSApp.activate(ignoringOtherApps: true)
             window.makeKeyAndOrderFront(nil)
             return
         }
 
-        let window = Self.makeWindow(onClose: { [weak self] in self?.window?.close() })
+        let window = Self.makeWindow(releases: releases ?? [.latest], onClose: { [weak self] in self?.window?.close() })
         window.delegate = self
         self.window = window
 
@@ -132,7 +107,7 @@ final class WhatsNewCoordinator: NSObject, NSWindowDelegate {
     }
 
     /// Builds the window without showing it. Shared with `--capture-whats-new`.
-    static func makeWindow(onClose: @escaping () -> Void) -> NSWindow {
+    static func makeWindow(releases: [ReleaseNotes] = [.latest], onClose: @escaping () -> Void) -> NSWindow {
         let window = NSWindow(
             contentRect: CGRect(origin: .zero, size: WhatsNewView.size),
             styleMask: [.titled, .closable, .fullSizeContentView],
@@ -144,7 +119,7 @@ final class WhatsNewCoordinator: NSObject, NSWindowDelegate {
         window.titlebarAppearsTransparent = true
         window.isMovableByWindowBackground = true
         window.isReleasedWhenClosed = false
-        window.contentView = NSHostingView(rootView: WhatsNewView(notes: .latest, onClose: onClose))
+        window.contentView = NSHostingView(rootView: WhatsNewView(releases: releases, onClose: onClose))
         window.setContentSize(WhatsNewView.size)
         return window
     }
