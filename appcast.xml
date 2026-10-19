@@ -6,6 +6,23 @@
     <description>MiniNotch updates</description>
     <language>en</language>
     <item>
+      <title>MiniNotch 0.7.5</title>
+      <pubDate>Mon, 19 Oct 2026 21:31:57 GMT</pubDate>
+      <sparkle:version>0.7.5</sparkle:version>
+      <sparkle:shortVersionString>0.7.5</sparkle:shortVersionString>
+      <sparkle:minimumSystemVersion>14.4</sparkle:minimumSystemVersion>
+      <description><![CDATA[<h3>Improved</h3>
+<ul>
+<li><b>Everything You Missed</b>: If you skip a few versions, this window now lists what came in every one of them, newest first, not only the latest.</li>
+</ul>
+<h3>Removed</h3>
+<ul>
+<li><b>Wave and Chase Glow Styles, for Now</b>: They are being reworked and will come back. If you had one picked, the glow now uses Pulse. <i>Settings &gt; Appearance &gt; Ambient Lighting to pick Pulse, Bars or Rainbow Cycle.</i></li>
+</ul>]]></description>
+      <sparkle:fullReleaseNotesLink>https://github.com/andrefongkc-cyber/mininotch/releases</sparkle:fullReleaseNotesLink>
+      <enclosure url="https://github.com/andrefongkc-cyber/mininotch/releases/download/v0.7.5/MiniNotch-0.7.5.dmg" sparkle:edSignature="Wfky/yICRpGUkVX5KjHHzjy0tBMoMRsI4Qn3vF/REWYfGPYqGlOIyGf5ifT22op9SLbEod5LulcyIao8h0z6Cg==" length="8587676" type="application/x-apple-diskimage"/>
+    </item>
+    <item>
       <title>MiniNotch 0.7.4</title>
       <pubDate>Mon, 19 Oct 2026 20:09:54 GMT</pubDate>
       <sparkle:version>0.7.4</sparkle:version>
