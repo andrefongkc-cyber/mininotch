@@ -1,6 +1,6 @@
 # MiniNotch workplan
 
-Status: menus drawn in the notch panel done on main, unreleased; next: the user tries them, and at the next release add "New Versions" and "Apps Using the Battery" to SettingsNewRows.
+Status: 0.7.4 released (2026-10-19) and in the feed; next: whatever the user reports from it.
 
 Living document. Update the checkboxes as work lands. `CLAUDE.md` holds the architecture
 rules and the traps; this file holds the sequence.

@@ -6,6 +6,29 @@
     <description>MiniNotch updates</description>
     <language>en</language>
     <item>
+      <title>MiniNotch 0.7.4</title>
+      <pubDate>Mon, 19 Oct 2026 20:09:54 GMT</pubDate>
+      <sparkle:version>0.7.4</sparkle:version>
+      <sparkle:shortVersionString>0.7.4</sparkle:shortVersionString>
+      <sparkle:minimumSystemVersion>14.4</sparkle:minimumSystemVersion>
+      <description><![CDATA[<h3>New</h3>
+<ul>
+<li><b>Clock Styles</b>: Show the timer and stopwatch as a flip clock, or as a mechanical seven-segment display whose segments flip over or slide out, in the notch and the pop-out window. <i>The style button at the top of the Timer tab, beside Focus.</i></li>
+<li><b>Every Lap</b>: The stopwatch lists all your laps beside the time, the current one ticking, the fastest in green and the slowest in red. The .00 button shows or hides hundredths.</li>
+<li><b>Bigger Pop-Out Timer</b>: Expand the pop-out timer, or drag its edges, and the time grows with it. <i>Hover the pop-out window and click the expand button, top left.</i></li>
+<li><b>Apps Using the Battery</b>: See which apps have used the most energy since you unplugged. <i>Settings &gt; Battery &gt; Battery Use.</i></li>
+<li><b>Install Updates Automatically</b>: Choose to have new versions install by themselves, once the notch is closed and no timer is running, or keep being asked first. <i>Settings &gt; About &gt; New Versions.</i></li>
+</ul>
+<h3>Improved</h3>
+<ul>
+<li><b>Stopwatch in the Closed Notch</b>: A running stopwatch shows in the closed notch, as a countdown does.</li>
+<li><b>External Displays in Layout</b>: The settings for the notch on displays without one now sit in Settings &gt; Layout, under the Closed Pill, and searching &quot;monitor&quot; finds them.</li>
+<li><b>Menus in the Notch</b>: The top bar&#x27;s What&#x27;s New button and the clock style button open their menus inside the notch, where they can be seen and clicked.</li>
+<li><b>Smoother Stopwatch</b>: The stopwatch counts every hundredth, and slows to tenths in Low Power Mode or on a low battery.</li>
+</ul>]]></description>
+      <enclosure url="https://github.com/andrefongkc-cyber/mininotch/releases/download/v0.7.4/MiniNotch-0.7.4.dmg" sparkle:edSignature="EOSvDQTS8oBH6tTlHcKf2laMGqmr5LiqC+vuEeOHFr5y53XDLbRaw083q8iKBjtR1fhta6lRktlXGRBXbWZXCg==" length="8559580" type="application/x-apple-diskimage"/>
+    </item>
+    <item>
       <title>MiniNotch 0.7.3</title>
       <pubDate>Thu, 15 Oct 2026 05:03:35 GMT</pubDate>
       <sparkle:version>0.7.3</sparkle:version>
