@@ -1,6 +1,6 @@
 # MiniNotch workplan
 
-Status: clock styles in the notch done on main, unreleased; next: the user tries it, and at the next release add "New Versions" and "Apps Using the Battery" to SettingsNewRows.
+Status: menus drawn in the notch panel done on main, unreleased; next: the user tries them, and at the next release add "New Versions" and "Apps Using the Battery" to SettingsNewRows.
 
 Living document. Update the checkboxes as work lands. `CLAUDE.md` holds the architecture
 rules and the traps; this file holds the sequence.
@@ -180,6 +180,9 @@ The user plans to revamp every music-playing animation before 1.0.0. Collected h
       pop-out window; Focus Timer restarts the interval on switching apps (`--check-focus` passes).
       The window and the guard against real app switches are untried by hand. Add "Focus Timer" to
       SettingsNewRows at the next release.
+- [x] The top bar's What's New / Tutorial button opened a menu hidden under the notch (its own
+      window server space is above AppKit's menus); menus in the notch are now drawn in the panel
+      (2026-10-19), the clock style menu too. Clicking them has not been tried by hand.
 - [x] Clock styles in the notch too (2026-10-18): the style button sits in the Timer tab's header in
       the notch as well as the pop-out, and the chosen style draws in both.
 - [x] Stopwatch laps column (2026-10-18): every lap beside the time, the current one ticking, fastest

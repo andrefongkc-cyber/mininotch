@@ -87,7 +87,7 @@ MiniNotch --capture-notch out.png [--collapsed] [--tab system] [--glow bars|off]
                                  [--no-visualizer] [--no-lyrics] [--swipe-to notes --midway 0.15]
                                  [--live grow|reopen|swipe --hold 7 [--was-active]]
                                  [--stopwatch] [--sample-laps] [--focus] [--floating-timer [--floating-expanded]]
-                                 [--clock-style flip|segments] [--no-fraction]
+                                 [--clock-style flip|segments] [--no-fraction] [--open-menu whatsNew|clockStyle]
 MiniNotch --check-lyrics "Khalid" "8TEEN" 229                      # LRCLIBClient + LRCParser
 MiniNotch --check-lyric-sync [--out f]                             # matching lyrics to the audio, synthetic
 MiniNotch --check-lyric-sync --audio f.mp3 --lrc f.lrc --shifts 0,0.5 [--peaks]   # …and a real song, old method beside it
@@ -122,6 +122,7 @@ MiniNotch --check-clipboard                                        # what the hi
 MiniNotch --check-focus                                            # Focus Timer: which app switches restart the interval
 MiniNotch --clock-frames [seconds]                                 # the pop-out's clock styles mid-movement, in a window for screencapture -l
 MiniNotch --check-flip                                             # one flip card turning 5 into 6, every frame recorded: no flash
+MiniNotch --check-notch-menu out.png [--no-space]                 # an AppKit menu over a window in the notch's space: hidden
 MiniNotch --check-app-energy [--card out.png]                      # Apps Using the Battery: counting, coalitions, unplug and plug-in
 MiniNotch --capture-styles out.png                                 # every Notch Style's miniature, dark and light
 ```
@@ -1095,7 +1096,20 @@ costs nothing. A capture's sample note (`--sample-notes`) is never marked loaded
 saved over the real one; `--check-notes` proves it with a scratch file.
 
 **What's New and the tutorial share one debug button.** `TopStripItem.whatsNew` opens a small menu
-(`NotchMenu`, an `NSMenu` at the pointer, so the button keeps the bar's look) offering either.
+(`NotchMenu`) offering either.
+
+**A menu in the notch is drawn in the panel, never by AppKit** (2026-10-19). The notch lives in its
+own window server space above every other (`NotchSpace`), and an `NSMenu`'s window opens in the
+ordinary one, underneath the panel: the top bar's What's New button opened a menu nobody could see,
+reported as "cannot click the tutorial/change log button". `--check-notch-menu out.png` proves it
+with a red window in the space and the menu over it (`--no-space` for the visible control); moving
+the menu's window into the space by its window number did not show it either. `NotchMenu.show(items,
+anchor:in:)` therefore sets `NotchViewModel.menu`, and `NotchMenuOverlay` (an overlay on
+`ExpandedPanelView`, in the `NotchMenu.space` coordinate space) draws it in the Notch Style under the
+button that registered that anchor (`.notchMenuAnchor`), kept inside the panel; a click elsewhere in
+the panel, a tab change or `collapse()` closes it. With no view model (the pop-out windows, which are
+in the ordinary space) it is still AppKit's menu at the pointer. `--capture-notch --open-menu
+whatsNew|clockStyle` draws either open.
 `.tutorial` stays as a case only so saved arrangements decode; `TopStripLayout.resolve` never shows
 it.
 

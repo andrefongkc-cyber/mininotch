@@ -41,6 +41,7 @@ if MainActor.assumeIsolated({ DebugClipboardCheck.runIfRequested() }) { exit(0) 
 if MainActor.assumeIsolated({ DebugFocusCheck.runIfRequested() }) { exit(0) }
 if MainActor.assumeIsolated({ DebugClockFrames.runIfRequested() }) { exit(0) }
 if MainActor.assumeIsolated({ DebugAppEnergyCheck.runIfRequested() }) { exit(0) }
+if MainActor.assumeIsolated({ DebugNotchMenuCheck.runIfRequested() }) { exit(0) }
 if MainActor.assumeIsolated({ DebugStyleGallery.runIfRequested() }) { exit(0) }
 #endif
 

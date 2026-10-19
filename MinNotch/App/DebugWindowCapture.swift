@@ -287,6 +287,19 @@ enum DebugWindowCapture {
             settings.huds.dismissDelay = 10
             environment.hud.preview(.volume)
         }
+        // `--open-menu whatsNew|clockStyle`: that button's menu open in the panel, once the
+        // buttons have been laid out and so have said where they are.
+        if expanded, let index = arguments.firstIndex(of: "--open-menu"), arguments.indices.contains(index + 1) {
+            let anchor = arguments[index + 1]
+            // The What's New button is a debug button, which captures leave out unless asked.
+            if anchor == "whatsNew" { settings.advanced.showDebugButtons = true }
+            let items: [NotchMenu.Item] = anchor == "clockStyle"
+                ? TimerClockStyle.allCases.map { NotchMenu.Item(title: $0.title, symbol: $0.symbolName, isOn: $0 == settings.timer.clockStyle) {} }
+                : [NotchMenu.Item(title: "What's New", symbol: "sparkles") {}, NotchMenu.Item(title: "Tutorial", symbol: "graduationcap") {}]
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                viewModel.menu = NotchMenu.Open(anchor: anchor, items: items)
+            }
+        }
         // `--keep-open` holds the panel open, which puts its pin in the top bar.
         if expanded && midway == nil && arguments.contains("--keep-open") { viewModel.setKeptOpen(true) }
         // The track-change drop below the pill. Held for longer than the real one, so the

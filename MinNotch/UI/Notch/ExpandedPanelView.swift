@@ -45,6 +45,9 @@ struct ExpandedPanelView: View {
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         }
         .environment(\.notchContentScale, Self.contentScale(panelWidth: viewModel.expandedPanelWidth))
+        .coordinateSpace(.named(NotchMenu.space))
+        .overlay { NotchMenuOverlay(viewModel: viewModel) }
+        .onChange(of: viewModel.selectedTab) { viewModel.menu = nil }
     }
 
     /// Text and controls scale with the panel: a narrow panel (Settings > Appearance > Panel
@@ -179,8 +182,9 @@ struct ExpandedPanelView: View {
                         // changes nothing unless a box is changed.
                         environment.onboarding.present(isRerun: true)
                     },
-                ])
+                ], anchor: "whatsNew", in: viewModel)
             }
+            .notchMenuAnchor("whatsNew", in: viewModel)
         }
     }
 

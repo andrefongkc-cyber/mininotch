@@ -29,6 +29,10 @@ final class NotchViewModel {
     /// Blocks the automatic close. Set while a text field in the panel has focus, because
     /// collapsing the panel out from under someone who is typing loses what they typed.
     var isInteractionLocked = false
+    /// A menu open inside the panel (`NotchMenu`), drawn by `NotchMenuOverlay` over everything.
+    var menu: NotchMenu.Open?
+    /// Where each button a menu can hang from sits in the panel, by its anchor id.
+    @ObservationIgnored var menuAnchors: [String: CGRect] = [:]
 
     /// Kept open on purpose, by the Keep the Notch Open shortcut or the top bar's pin: the
     /// pointer leaving does not close it, and neither does a click on the panel. Anything that
@@ -159,6 +163,7 @@ final class NotchViewModel {
     func collapse() {
         cancelPendingWork()
         isKeptOpen = false
+        menu = nil
         releaseSwipeAnchor()
         guard state != .collapsed else { return }
         setState(.collapsed)

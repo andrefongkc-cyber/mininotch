@@ -73,13 +73,15 @@ struct TimerWidgetView: View {
             // The clock style, in the notch and the pop-out alike: it was the pop-out's alone, and
             // the user wanted to choose it, and see it, in the notch too.
             TimerButton(systemImage: settings.timer.clockStyle.symbolName, help: "Clock style: \(settings.timer.clockStyle.title)") {
+                // In the notch, drawn in the panel; in the pop-out window (no view model), AppKit's.
                 NotchMenu.show(TimerClockStyle.allCases.map { style in
                     NotchMenu.Item(title: style.title, symbol: style.symbolName,
                                    isOn: style == settings.timer.clockStyle) {
                         settings.timer.clockStyle = style
                     }
-                })
+                }, anchor: "clockStyle", in: viewModel)
             }
+            .notchMenuAnchor("clockStyle", in: viewModel)
 
             if !isFloating {
                 TimerButton(
