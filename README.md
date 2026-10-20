@@ -112,7 +112,7 @@ Also:
   each with a graph of the last five minutes, plus the chip, battery and SSD temperatures.
   Plugged in, it shows what the charger is giving, what the Mac uses, and how much of it is going
   into the battery.
-- **Apps using the battery**: Settings > Battery lists the apps that have used the most energy since
+- **Apps using the battery**: Settings > Battery & System lists the apps that have used the most energy since
   you unplugged, with each one's share, helpers and all.
 - **Volume, brightness and keyboard backlight** shown at the notch, optionally instead of Apple's
   own overlay, which MiniNotch hides by taking those keys before macOS sees them (needs
@@ -170,7 +170,7 @@ there and then; otherwise each is requested the first time a feature needs it:
 | Accessibility | Only to hide Apple's volume and brightness overlay |
 | Location | Only for weather where you are; a city you type needs none |
 
-Everything stays on your Mac, with two exceptions, both off by default: setting **Media > Lyrics
+Everything stays on your Mac, with two exceptions, both off by default: setting **Music > Lyrics
 Source** to look up online sends the current title, artist, album and length to `lrclib.net`, and
 **Weather** sends a location rounded to about a kilometre, or the city you chose, to
 `open-meteo.com`. Checking for updates fetches one small file from GitHub every three hours, or as often as you choose, and sends nothing

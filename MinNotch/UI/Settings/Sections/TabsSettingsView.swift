@@ -1,25 +1,8 @@
 import SwiftUI
 
-/// Settings > Tabs: every tab of the open notch that has settings, one section each, in the
-/// order of the sidebar they replaced (Shelf, Timer, Weather) and then the ones that lived in
-/// Advanced (Notes, Clipboard, System).
-struct TabsSettingsView: View {
-    @Environment(SettingsStore.self) private var settings
-    @Environment(AppEnvironment.self) private var environment
-
-    var body: some View {
-        SettingsPane(title: "Tabs", subtitle: "Settings for each tab of the open notch. Which tabs show, and where, is in Layout.") {
-            ShelfSettingsView()
-            TimerSettingsView()
-            WeatherSettingsView()
-            NotesTabSettings()
-            ClipboardTabSettings()
-            SystemTabSettings()
-        }
-    }
-}
-
-private struct NotesTabSettings: View {
+/// Cards for the Notes, Clipboard and System tabs, shown in the Shelf & Notes and Battery & System
+/// panes (`SettingsPanes`). These used to be one Tabs pane with Shelf, Timer and Weather.
+struct NotesTabSettings: View {
     @Environment(SettingsStore.self) private var settings
     var body: some View {
         @Bindable var settings = settings
@@ -30,7 +13,7 @@ private struct NotesTabSettings: View {
                 ) {
                     SettingsRow(
                         title: "Show Notes",
-                        subtitle: "A Notes tab in the open panel: one scratchpad, kept between opens. The Open Notes shortcut in Shortcuts opens it ready to type.",
+                        subtitle: "A Notes tab in the open panel: one scratchpad, kept between opens. The Open Notes shortcut in General > Keyboard Shortcuts opens it ready to type.",
                         systemImage: "note.text",
                         badge: FeatureFlag.quickNotes.badge
                     ) {
@@ -42,7 +25,7 @@ private struct NotesTabSettings: View {
     }
 }
 
-private struct ClipboardTabSettings: View {
+struct ClipboardTabSettings: View {
     @Environment(SettingsStore.self) private var settings
     @Environment(AppEnvironment.self) private var environment
     var body: some View {
@@ -94,7 +77,7 @@ private struct ClipboardTabSettings: View {
     }
 }
 
-private struct SystemTabSettings: View {
+struct SystemTabSettings: View {
     @Environment(SettingsStore.self) private var settings
     @Environment(AppEnvironment.self) private var environment
     var body: some View {
@@ -131,7 +114,7 @@ private struct SystemTabSettings: View {
 
                     SettingsRow(
                         title: "Show Temperatures",
-                        subtitle: "The chip, the battery and the SSD, read from the Mac's own sensors through a private part of macOS. In the units chosen in Settings > Tabs > Weather.",
+                        subtitle: "The chip, the battery and the SSD, read from the Mac's own sensors through a private part of macOS. In the units chosen in Settings > Weather.",
                         systemImage: "thermometer.medium",
                         isEnabled: settings.advanced.showSystemStats
                     ) {
@@ -144,6 +127,12 @@ private struct SystemTabSettings: View {
 }
 
 /// One tab's settings inside the Tabs pane: a heading and its cards.
+/// A feature's cards, in a pane that may hold several features.
+///
+/// It used to put the feature's name and a line about it above the cards, which in the
+/// feature-named panes repeated the pane's title and in Shelf & Notes repeated each card's own
+/// header ("Shelf", then a card headed "Shelf"). The card headers name the feature now, so this
+/// draws the cards alone; `title` and `subtitle` stay as the code's own label for the group.
 struct TabSettingsSection<Content: View>: View {
     var title: String
     var subtitle: String?
@@ -151,14 +140,6 @@ struct TabSettingsSection<Content: View>: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: Metrics.cardSpacing) {
-            VStack(alignment: .leading, spacing: 2) {
-                Text(title).font(.title3.weight(.semibold)).foregroundStyle(Palette.primaryText)
-                if let subtitle {
-                    Text(subtitle).font(Typography.helper).foregroundStyle(Palette.secondaryText)
-                        .fixedSize(horizontal: false, vertical: true)
-                }
-            }
-            .padding(.top, 8)
             content
         }
     }

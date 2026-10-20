@@ -1,16 +1,17 @@
 import SwiftUI
 
+/// The keyboard shortcut cards, shown in General under More Options (`SettingsPanes`).
 struct ShortcutsSettingsView: View {
     @Environment(SettingsStore.self) private var settings
 
     var body: some View {
         @Bindable var settings = settings
 
-        SettingsPane(
-            title: "Shortcuts",
-            subtitle: "Global shortcuts work from any app. MiniNotch uses the system shortcut API, so no Accessibility permission is needed."
-        ) {
-            SettingsCard(header: "Global Shortcuts") {
+        Group {
+            SettingsCard(
+                header: "Keyboard Shortcuts",
+                footer: "Shortcuts work from any app. MiniNotch uses the system shortcut API, so no Accessibility permission is needed."
+            ) {
                 SettingsRow(
                     title: "Enable Global Shortcuts",
                     subtitle: "Turn this off to silence every shortcut without losing what you recorded.",

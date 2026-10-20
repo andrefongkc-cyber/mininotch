@@ -199,7 +199,7 @@ enum LyricsStatus: Equatable {
         switch self {
         case .idle, .loaded: return nil
         case .searching: return "Looking for lyrics…"
-        case .noneStoredLocally: return "No lyrics stored for this track. Turn on Look Up Online in Settings > Media."
+        case .noneStoredLocally: return "No lyrics stored for this track. Turn on Look Up Online in Settings > Music."
         case .notFound: return "No lyrics found for this track."
         case .needsChromeJavaScript:
             return "For the cover, time and lyrics, turn on View > Developer > Allow JavaScript from Apple Events in Chrome."

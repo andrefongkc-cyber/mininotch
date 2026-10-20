@@ -2,18 +2,24 @@ import SwiftUI
 
 /// One row in the Settings sidebar.
 ///
-/// Grouped the way System Settings groups its own panes: behaviour first, then the
-/// individual features, then the things you configure once and forget.
+/// Named after what is being changed rather than after the app's internals: Music, not Media;
+/// Volume & Brightness, not HUDs. Each feature has its own pane, so the user looking for the
+/// weather finds Weather rather than a Tabs pane (2026-10-19, "way too hard to find things").
+/// Grouped the way System Settings groups its own panes: how the notch behaves and looks, then
+/// the features, then the Mac's own readings, then the things you configure once and forget.
+/// Each pane folds its rarely changed rows under More Options; see `SettingsPanes`.
 enum SettingsTab: String, CaseIterable, Identifiable {
     case general
     case appearance
     case layout
-    case media
+    case music
+    case lockScreen
     case calendar
+    case weather
+    case timer
+    case shelf
+    case batterySystem
     case huds
-    case battery
-    case tabs
-    case shortcuts
     case advanced
     case about
 
@@ -24,12 +30,14 @@ enum SettingsTab: String, CaseIterable, Identifiable {
         case .general: return "General"
         case .appearance: return "Appearance"
         case .layout: return "Layout"
-        case .media: return "Media"
+        case .music: return "Music"
+        case .lockScreen: return "Lock Screen"
         case .calendar: return "Calendar"
-        case .huds: return "HUDs"
-        case .battery: return "Battery"
-        case .tabs: return "Tabs"
-        case .shortcuts: return "Shortcuts"
+        case .weather: return "Weather"
+        case .timer: return "Timer"
+        case .shelf: return "Shelf & Notes"
+        case .batterySystem: return "Battery & System"
+        case .huds: return "Volume & Brightness"
         case .advanced: return "Advanced"
         case .about: return "About"
         }
@@ -40,12 +48,14 @@ enum SettingsTab: String, CaseIterable, Identifiable {
         case .general: return "gearshape"
         case .appearance: return "paintbrush"
         case .layout: return "rectangle.3.group"
-        case .media: return "music.note"
+        case .music: return "music.note"
+        case .lockScreen: return "lock.fill"
         case .calendar: return "calendar"
+        case .weather: return "cloud.sun.fill"
+        case .timer: return "timer"
+        case .shelf: return "tray.full"
+        case .batterySystem: return "battery.100percent"
         case .huds: return "speaker.wave.2"
-        case .battery: return "battery.100percent"
-        case .tabs: return "square.stack.3d.up"
-        case .shortcuts: return "command"
         case .advanced: return "slider.horizontal.3"
         case .about: return "info.circle"
         }
@@ -58,12 +68,14 @@ enum SettingsTab: String, CaseIterable, Identifiable {
         case .general: return Color(nsColor: .systemGray)
         case .appearance: return Color(nsColor: .systemPink)
         case .layout: return Color(nsColor: .systemCyan)
-        case .media: return Color(nsColor: .systemRed)
+        case .music: return Color(nsColor: .systemRed)
+        case .lockScreen: return Color(nsColor: .systemIndigo)
         case .calendar: return Color(nsColor: .systemOrange)
+        case .weather: return Color(nsColor: .systemTeal)
+        case .timer: return Color(nsColor: .systemYellow)
+        case .shelf: return Color(nsColor: .systemBrown)
+        case .batterySystem: return Color(nsColor: .systemGreen)
         case .huds: return Color(nsColor: .systemPurple)
-        case .battery: return Color(nsColor: .systemGreen)
-        case .tabs: return Color(nsColor: .systemTeal)
-        case .shortcuts: return Color(nsColor: .systemIndigo)
         case .advanced: return Color(nsColor: .systemBlue)
         case .about: return Color(nsColor: .systemGray)
         }
@@ -79,8 +91,9 @@ enum SettingsTab: String, CaseIterable, Identifiable {
 
     static let groups: [[SettingsTab]] = [
         [.general, .appearance, .layout],
-        [.media, .calendar, .huds, .battery, .tabs],
-        [.shortcuts, .advanced, .about]
+        [.music, .lockScreen, .calendar, .weather, .timer, .shelf],
+        [.batterySystem, .huds],
+        [.advanced, .about]
     ]
 }
 

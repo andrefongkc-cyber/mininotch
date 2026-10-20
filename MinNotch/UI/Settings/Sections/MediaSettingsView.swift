@@ -1,14 +1,36 @@
 import SwiftUI
 
+/// Settings > Music's cards, and the song's cards in Settings > Lock Screen. `main` and
+/// `lockScreen` are what those panes show; `more` and `lockScreenMore` are folded under More
+/// Options. The panes are put together in `SettingsPanes`.
 struct MediaSettingsView: View {
+    enum Part { case main, more, lockScreen, lockScreenMore }
+    var part: Part = .main
+
     @Environment(SettingsStore.self) private var settings
     @Environment(AppEnvironment.self) private var environment
 
     var body: some View {
-        @Bindable var settings = settings
+        switch part {
+        case .main:
+            sourceCard
+            lyricsCard
+            lookCard
+        case .more:
+            lyricsTimingCard
+            nowPlayingCard
+            sneakPeekCard
+            playerCard
+        case .lockScreen:
+            lockScreenCard
+        case .lockScreenMore:
+            lockScreenBackgroundCard
+        }
+    }
 
-        SettingsPane(title: "Media") {
-            SettingsCard(header: "Source") {
+    private var sourceCard: some View {
+        @Bindable var settings = settings
+        return SettingsCard(header: "Source") {
                 SettingsRow(
                     title: "Show Now Playing",
                     systemImage: "music.note"
@@ -31,16 +53,6 @@ struct MediaSettingsView: View {
                     }
                 }
 
-                SettingsDivider()
-
-                SettingsRow(
-                    title: "System Now Playing",
-                    subtitle: environment.nowPlaying.systemSourceStatus,
-                    systemImage: "waveform"
-                ) {
-                    EmptyView()
-                }
-
                 if AppleScriptRunner.shared.isAuthorizationDenied {
                     SettingsDivider()
 
@@ -56,14 +68,14 @@ struct MediaSettingsView: View {
                         .controlSize(.small)
                     }
                 }
-            }
-
-            SettingsCard(
-                header: "Lyrics",
-                footer: settings.media.lyricsSource.usesNetwork
-                    ? "Looking up online sends the track title, artist, album, and length to lrclib.net. Nothing else is sent, and no account is needed."
-                    : "Streamed tracks almost never carry lyrics locally, so this finds very little on its own. Switch to Look Up Online to fetch synced lyrics."
-            ) {
+        }
+    }
+    private var lyricsCard: some View {
+        @Bindable var settings = settings
+        return SettingsCard(header: "Lyrics",
+            footer: settings.media.lyricsSource.usesNetwork
+                ? "Looking up online sends the track title, artist, album, and length to lrclib.net. Nothing else is sent, and no account is needed."
+                : "Streamed tracks almost never carry lyrics locally, so this finds very little on its own. Switch to Look Up Online to fetch synced lyrics.") {
                 SettingsRow(
                     title: "Show Lyrics",
                     subtitle: "Display the current line under the track info when lyrics are available.",
@@ -83,6 +95,27 @@ struct MediaSettingsView: View {
                 SettingsDivider()
 
                 SettingsRow(
+                    title: "Lyrics Source",
+                    subtitle: "Where to look when your player has no lyrics stored.",
+                    systemImage: "magnifyingglass",
+                    isEnabled: settings.media.enabled && (settings.media.showLyrics || settings.media.wantsLockScreenLyrics)
+                ) {
+                    InlinePicker(selection: Binding(
+                        get: { settings.media.lyricsSource },
+                        set: { newValue in
+                            settings.media.lyricsSource = newValue
+                            environment.nowPlaying.reloadLyricsIfNeeded()
+                        }
+                    )) {
+                        ForEach(LyricsSource.allCases) { source in
+                            Text(source.title).tag(source)
+                        }
+                    }
+                }
+
+                SettingsDivider()
+
+                SettingsRow(
                     title: "Show Lyrics When Closed",
                     subtitle: "The line being sung, under the closed notch, while a song with synced lyrics plays.",
                     systemImage: "text.below.photo",
@@ -90,9 +123,40 @@ struct MediaSettingsView: View {
                 ) {
                     SettingsToggle(isOn: $settings.media.showLyricsWhenClosed)
                 }
+        }
+    }
+    private var lookCard: some View {
+        @Bindable var settings = settings
+        return SettingsCard(header: "Look",
+            footer: "The visualizer's bars are an animation rather than an analysis of the audio. Ambient Lighting, in Appearance, can follow the real beat. The Now Playing card has one button that cycles the two effects.") {
+                SettingsRow(
+                    title: "Sneak Peek on Track Change",
+                    subtitle: "When a new song starts, the closed notch drops down for a moment to show what it is.",
+                    systemImage: "rectangle.expand.vertical",
+                    isEnabled: settings.media.enabled
+                ) {
+                    SettingsToggle(isOn: $settings.media.sneakPeekOnTrackChange)
+                }
 
                 SettingsDivider()
 
+                AppearanceSettingsView(part: .cardStyle)
+
+                SettingsDivider()
+
+                SettingsRow(
+                    title: "Show Visualizer",
+                    subtitle: "Animated bars over the artwork, coloured from the album.",
+                    systemImage: "waveform.path",
+                    isEnabled: settings.media.enabled
+                ) {
+                    SettingsToggle(isOn: $settings.media.showVisualizer)
+                }
+        }
+    }
+    private var lyricsTimingCard: some View {
+        @Bindable var settings = settings
+        return SettingsCard(header: "Lyrics Timing") {
                 SettingsRow(
                     title: "Timing Offset",
                     subtitle: "Shift lyrics earlier or later. Lyric files are timed by hand and disagree between sources.",
@@ -129,30 +193,11 @@ struct MediaSettingsView: View {
                 ) {
                     SettingsToggle(isOn: $settings.media.matchLyricsToAudio)
                 }
-
-                SettingsDivider()
-
-                SettingsRow(
-                    title: "Lyrics Source",
-                    subtitle: "Where to look when your player has no lyrics stored.",
-                    systemImage: "magnifyingglass",
-                    isEnabled: settings.media.enabled && settings.media.showLyrics
-                ) {
-                    InlinePicker(selection: Binding(
-                        get: { settings.media.lyricsSource },
-                        set: { newValue in
-                            settings.media.lyricsSource = newValue
-                            environment.nowPlaying.reloadLyricsIfNeeded()
-                        }
-                    )) {
-                        ForEach(LyricsSource.allCases) { source in
-                            Text(source.title).tag(source)
-                        }
-                    }
-                }
-            }
-
-            SettingsCard(header: "Display") {
+        }
+    }
+    private var nowPlayingCard: some View {
+        @Bindable var settings = settings
+        return SettingsCard(header: "Now Playing Card") {
                 SettingsRow(
                     title: "Floating Window",
                     subtitle: "Also show Now Playing in a small window above other apps. Drag it anywhere; it remembers where you put it. The pop-out button on the Now Playing card does the same.",
@@ -160,44 +205,6 @@ struct MediaSettingsView: View {
                     isEnabled: settings.media.enabled
                 ) {
                     SettingsToggle(isOn: $settings.media.floatingWindow)
-                }
-
-                SettingsDivider()
-
-                SettingsRow(
-                    title: "Sneak Peek on Track Change",
-                    subtitle: "When a new song starts, the closed notch drops down for a moment to show what it is.",
-                    systemImage: "rectangle.expand.vertical",
-                    isEnabled: settings.media.enabled
-                ) {
-                    SettingsToggle(isOn: $settings.media.sneakPeekOnTrackChange)
-                }
-
-                SettingsDivider()
-
-                SettingsRow(
-                    title: "Sneak Peek Length",
-                    subtitle: "How long the song stays on screen after it changes.",
-                    systemImage: "timer",
-                    isEnabled: settings.media.enabled && settings.media.sneakPeekOnTrackChange
-                ) {
-                    ValueSlider(
-                        value: $settings.media.sneakPeekDuration,
-                        range: MediaSettings.sneakPeekDurationRange,
-                        step: 0.5
-                    ) { String(format: "%.1f s", $0) }
-                }
-
-                SettingsDivider()
-
-                SettingsRow(
-                    title: "Show Up Next",
-                    subtitle: "Off for now. Music tells other apps a playlist is shuffling when it is playing in order, so the list was wrong too often to be worth showing.",
-                    systemImage: "text.line.first.and.arrowtriangle.forward",
-                    badge: FeatureFlag.upNext.badge,
-                    isEnabled: settings.media.enabled && FeatureFlag.upNext.isEnabled
-                ) {
-                    SettingsToggle(isOn: $settings.media.showUpNext)
                 }
 
                 SettingsDivider()
@@ -245,6 +252,51 @@ struct MediaSettingsView: View {
 
                 SettingsDivider()
 
+                AppearanceSettingsView(part: .visualizer)
+        }
+    }
+    private var sneakPeekCard: some View {
+        @Bindable var settings = settings
+        return SettingsCard(header: "Sneak Peek and Up Next") {
+                SettingsRow(
+                    title: "Sneak Peek Length",
+                    subtitle: "How long the song stays on screen after it changes.",
+                    systemImage: "timer",
+                    isEnabled: settings.media.enabled && settings.media.sneakPeekOnTrackChange
+                ) {
+                    ValueSlider(
+                        value: $settings.media.sneakPeekDuration,
+                        range: MediaSettings.sneakPeekDurationRange,
+                        step: 0.5
+                    ) { String(format: "%.1f s", $0) }
+                }
+
+                SettingsDivider()
+
+                SettingsRow(
+                    title: "Show Up Next",
+                    subtitle: "Off for now. Music tells other apps a playlist is shuffling when it is playing in order, so the list was wrong too often to be worth showing.",
+                    systemImage: "text.line.first.and.arrowtriangle.forward",
+                    badge: FeatureFlag.upNext.badge,
+                    isEnabled: settings.media.enabled && FeatureFlag.upNext.isEnabled
+                ) {
+                    SettingsToggle(isOn: $settings.media.showUpNext)
+                }
+        }
+    }
+    private var playerCard: some View {
+        @Bindable var settings = settings
+        return SettingsCard(header: "Player") {
+                SettingsRow(
+                    title: "System Now Playing",
+                    subtitle: environment.nowPlaying.systemSourceStatus,
+                    systemImage: "waveform"
+                ) {
+                    EmptyView()
+                }
+
+                SettingsDivider()
+
                 SettingsRow(
                     title: "Refresh Interval",
                     subtitle: "How often the position is re-read. Track changes update instantly regardless.",
@@ -257,14 +309,14 @@ struct MediaSettingsView: View {
                         step: 0.5
                     ) { String(format: "%.1f s", $0) }
                 }
-            }
-
-            SettingsCard(
-                header: "Lock Screen",
-                footer: LockScreenSpace.shared.isAvailable
-                    ? "Drawn over the lock screen through a private part of macOS, so a future version may stop it working. Lock your Mac to see it."
-                    : "Not available on this version of macOS."
-            ) {
+        }
+    }
+    private var lockScreenCard: some View {
+        @Bindable var settings = settings
+        return SettingsCard(header: "Song",
+            footer: LockScreenSpace.shared.isAvailable
+                ? "Drawn over the lock screen through a private part of macOS, so a future version may stop it working. Lock your Mac to see it."
+                : "Not available on this version of macOS.") {
                 SettingsRow(
                     title: "Song on the Lock Screen",
                     subtitle: "What is playing, with its controls, while your Mac is locked.",
@@ -315,9 +367,11 @@ struct MediaSettingsView: View {
                 ) {
                     SettingsToggle(isOn: lockScreenBinding($settings.media.lockScreenShowsLyrics))
                 }
-
-                SettingsDivider()
-
+        }
+    }
+    private var lockScreenBackgroundCard: some View {
+        @Bindable var settings = settings
+        return SettingsCard(header: "Background") {
                 SettingsRow(
                     title: "Lock Screen Background",
                     subtitle: "A wash of colour from the cover, or the cover itself blurred, behind the player.",
@@ -344,23 +398,6 @@ struct MediaSettingsView: View {
                         step: 0.1
                     ) { "\(Int(($0 * 100).rounded()))%" }
                 }
-            }
-
-            SettingsCard(
-                header: "Visualizer",
-                footer: "The bars are an animation rather than an analysis of the audio. Ambient Lighting, in Appearance, can follow the real beat. The Now Playing card has one button that cycles the two effects."
-            ) {
-                SettingsRow(
-                    title: "Show Visualizer",
-                    subtitle: "Animated bars over the artwork, coloured from the album.",
-                    systemImage: "waveform.path",
-                    isEnabled: settings.media.enabled
-                ) {
-                    SettingsToggle(isOn: $settings.media.showVisualizer)
-                }
-
-            }
-
         }
     }
 

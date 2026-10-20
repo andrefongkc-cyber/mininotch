@@ -635,6 +635,30 @@ page, only for features that were ticked, and offers an "Allow Now" button for C
 Notifications. That is the one moment a prompt is welcome: the reason is on screen, and the
 tutorial window is frontmost, which this accessory app otherwise never is.
 
+## Settings layout
+
+Rebuilt on 2026-10-19 because the user found it "way too hard to find things and change them":
+about 150 rows in 11 panes, 26 of them in Media. The sidebar (`SettingsTab`) is now named after what
+is being changed, General, Appearance, Layout, then Music, Lock Screen, Calendar, Weather, Timer,
+Shelf & Notes, then Battery & System and Volume & Brightness, then Advanced and About, and each pane
+shows what most people touch and folds the rest under **More Options** (`SettingsMoreOptions`, open
+or closed remembered per pane in `settings.moreOptions.<pane>`). Panes are assembled in
+`UI/Settings/SettingsPanes.swift` from the card views in `Sections/`, which take a `part` (`main`,
+`more`, and for cards that live in another pane, e.g. `MediaSettingsView(part: .lockScreen)`,
+`AdvancedSettingsView(part: .gestures)`). Gestures and keyboard shortcuts are in General's fold; the
+Now Playing card's style is in Music; the volume indicator's lock screen switch is in Lock Screen.
+
+Folded rows are still in the view tree, at zero height and clipped, never left out: a search result
+has to reach them. A row a search lands on calls `settingsRevealMoreOptions` from the environment,
+which opens its fold before the pane scrolls. Anything in a fold that starts work on `onAppear`
+starts it while folded, which is why the glow's audio meter stays in Appearance's main card and only
+its tuning is folded. Moving a row between panes means changing its entry's `tab` (and `section`) in
+`SettingsSearchIndex`, since that is how search and the sidebar's New badge find it; the audit does
+not check that. `--capture-settings <dir> [--expanded] [--tab music] [--search "Timing Offset"]`
+draws each pane in a real window (the sidebar cannot be captured, a pane can); `--search` checks a
+folded row opens its fold. Text elsewhere names panes ("Settings > Music"); past release notes keep
+the names they had.
+
 ## Settings search
 
 The index, `SettingsSearchIndex.all`, is a flat list, because SwiftUI cannot be asked what rows

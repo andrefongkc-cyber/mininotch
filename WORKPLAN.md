@@ -1,6 +1,6 @@
 # MiniNotch workplan
 
-Status: website and clearer install steps done on branch website, in a PR; Pages needs switching on by Andre (Settings > Pages > Source: GitHub Actions); next: the Wave and Chase revamp when the user asks.
+Status: Settings declutter done and committed (branch settings-declutter); doing the song peek with Spotify sign-in, on top of it; next: the Wave and Chase revamp when the user asks.
 
 Living document. Update the checkboxes as work lands. `CLAUDE.md` holds the architecture
 rules and the traps; this file holds the sequence.
@@ -322,6 +322,9 @@ Sparkle was asked about and deferred ("not now"); it is free (MIT) and needs no 
 - [x] Weather: location or a typed city, Open-Meteo, a tab and a pill indicator. The location prompt needs trying by hand.
 
 - [x] Website (asked 2026-10-19): `website/`, deployed to GitHub Pages by a workflow, with install steps that explain Open Anyway; the README, the release notes script and the 0.7.6 release page carry the same steps. Pages not yet switched on.
+
+- [x] Settings declutter (asked 2026-10-19): sidebar by feature (Music, Lock Screen, Weather, Timer, Shelf & Notes, Battery & System, Volume & Brightness), each pane's rarely changed rows under More Options, search opens a fold. Checked with `--capture-settings`; the real window not yet looked at by the user.
+- [~] Song peek between Next and pop-out (asked 2026-10-19): the next song in the queue. Apple Music in order from the playlist; Spotify through the Spotify Web API after a one-time sign-in (the user chose this), since the Spotify app shares no queue.
 
 ## 0.3 feedback (2026-09-23)
 
