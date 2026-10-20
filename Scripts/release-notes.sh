@@ -57,6 +57,11 @@ for key, heading in [("added", "New"), ("improved", "Improved"), ("removed", "Re
         print(line)
     print()
 
-print("Download the DMG below. It is not notarised, so the first time you open it, allow it")
-print("under System Settings > Privacy & Security > Open Anyway.")
+print("## Installing\n")
+print("Already on 0.7 or later? MiniNotch updates itself; nothing to download.\n")
+print("1. Download the DMG below, open it, and drag **MiniNotch** onto **Applications**.")
+print("2. Open MiniNotch. **macOS refuses the first time**, because the app is not notarised (that needs")
+print("   a paid Apple membership). Click **Done**, not Move to Trash.")
+print("3. Open **System Settings > Privacy & Security**, scroll down, click **Open Anyway**, enter your")
+print("   password, then click **Open**. You only do this once.")
 PY

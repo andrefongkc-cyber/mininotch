@@ -1,0 +1,558 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>MiniNotch — the notch, put to work</title>
+<meta name="description" content="MiniNotch turns the notch on your MacBook into a home for your music, lyrics, calendar, weather, files and more. Free for macOS.">
+<meta property="og:title" content="MiniNotch">
+<meta property="og:description" content="The notch, put to work. Music, lyrics, calendar, weather, files and more, in the notch on your MacBook.">
+<meta property="og:image" content="images/media-glow.png">
+<link rel="icon" href="images/icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Doto:wght@600;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #f4f4f2;
+    --surface: #ffffff;
+    --surface-2: #ececea;
+    --ink: #0b0b0b;
+    --muted: #6a6a68;
+    --faint: #a3a3a0;
+    --line: rgba(0, 0, 0, 0.08);
+    --dot: rgba(0, 0, 0, 0.09);
+    --accent: #d71921;
+    --button-ink: #ffffff;
+    --shadow: 0 1px 2px rgba(0,0,0,.04), 0 12px 40px rgba(0,0,0,.06);
+    --radius: 28px;
+    --mono: "Doto", ui-monospace, "SF Mono", Menlo, monospace;
+    --sans: "Inter", -apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui, sans-serif;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #070707;
+      --surface: #111111;
+      --surface-2: #1a1a1a;
+      --ink: #f2f2f0;
+      --muted: #8e8e8b;
+      --faint: #5a5a58;
+      --line: rgba(255, 255, 255, 0.08);
+      --dot: rgba(255, 255, 255, 0.07);
+      --button-ink: #0b0b0b;
+      --shadow: 0 1px 2px rgba(0,0,0,.4), 0 20px 60px rgba(0,0,0,.5);
+    }
+  }
+
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; -webkit-text-size-adjust: 100%; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: var(--sans);
+    font-size: 17px;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+    overflow-x: hidden;
+  }
+  img { display: block; max-width: 100%; height: auto; }
+  a { color: inherit; }
+  .wrap { width: min(1120px, 100% - 32px); margin-inline: auto; }
+
+  /* Dot-matrix labels, after Nothing. */
+  .dots {
+    font-family: var(--mono);
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+  .eyebrow {
+    display: inline-flex; align-items: center; gap: 10px;
+    font-size: 14px; color: var(--muted);
+  }
+  .eyebrow::before {
+    content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--accent);
+  }
+
+  /* Nav */
+  nav {
+    position: sticky; top: 0; z-index: 20;
+    backdrop-filter: saturate(180%) blur(18px);
+    -webkit-backdrop-filter: saturate(180%) blur(18px);
+    background: color-mix(in srgb, var(--bg) 78%, transparent);
+    border-bottom: 1px solid var(--line);
+  }
+  nav .wrap { display: flex; align-items: center; gap: 24px; height: 60px; }
+  .brand { display: flex; align-items: center; gap: 10px; text-decoration: none; font-weight: 600; letter-spacing: -0.01em; }
+  .brand img { width: 26px; height: 26px; border-radius: 7px; }
+  nav .links { display: flex; gap: 22px; margin-left: auto; font-size: 14px; }
+  nav .links a { text-decoration: none; color: var(--muted); transition: color .2s; }
+  nav .links a:hover { color: var(--ink); }
+
+  .button {
+    display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+    height: 48px; padding: 0 24px; border-radius: 999px;
+    background: var(--ink); color: var(--button-ink);
+    font-weight: 600; font-size: 16px; text-decoration: none; letter-spacing: -0.01em;
+    border: 0; cursor: pointer; transition: transform .2s, opacity .2s;
+  }
+  .button:hover { transform: translateY(-1px); opacity: .92; }
+  .button.small { height: 34px; padding: 0 16px; font-size: 14px; }
+  .button.ghost { background: transparent; color: var(--ink); box-shadow: inset 0 0 0 1px var(--line); }
+  .button svg { width: 18px; height: 18px; }
+
+  /* Hero */
+  .hero { padding: 88px 0 40px; text-align: center; position: relative; }
+  .hero::before {
+    content: ""; position: absolute; inset: 0; z-index: -1;
+    background-image: radial-gradient(var(--dot) 1.2px, transparent 1.3px);
+    background-size: 18px 18px;
+    mask-image: radial-gradient(ellipse 70% 60% at 50% 35%, #000 30%, transparent 75%);
+    -webkit-mask-image: radial-gradient(ellipse 70% 60% at 50% 35%, #000 30%, transparent 75%);
+  }
+  h1 {
+    font-size: clamp(44px, 8vw, 92px); line-height: 1.02; letter-spacing: -0.045em;
+    margin: 22px 0 18px; font-weight: 700;
+  }
+  .lede { font-size: clamp(18px, 2.2vw, 22px); color: var(--muted); max-width: 640px; margin: 0 auto; letter-spacing: -0.01em; }
+  .ctas { display: flex; gap: 12px; justify-content: center; margin-top: 34px; flex-wrap: wrap; }
+  .meta { margin-top: 16px; font-size: 13px; color: var(--faint); }
+
+  /* The MacBook's top edge, with the notch opening and closing. */
+  .screen {
+    position: relative; margin: 64px auto 0; width: min(1000px, 100%);
+    aspect-ratio: 1000 / 360;
+    border-radius: 26px 26px 0 0;
+    background:
+      radial-gradient(120% 90% at 20% 0%, #2a3a6b 0%, transparent 60%),
+      radial-gradient(90% 80% at 85% 10%, #6b2a4a 0%, transparent 55%),
+      linear-gradient(180deg, #121624, #0a0b10);
+    border: 10px solid #0b0b0c; border-bottom: 0;
+    box-shadow: var(--shadow);
+    overflow: hidden;
+  }
+  .menubar {
+    position: absolute; inset: 0 0 auto; height: 4.2%;
+    min-height: 18px;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 0 2.2%;
+    font-size: clamp(8px, 1.3vw, 13px); color: rgba(255,255,255,.85); font-weight: 500;
+    background: rgba(0,0,0,.18);
+  }
+  .menubar span + span { margin-left: 1.6em; }
+  .menubar .left span:first-child { font-weight: 700; }
+  .notch-stage { position: absolute; top: 0; left: 50%; transform: translateX(-50%); width: 60.1%; }
+  .notch-stage img { position: absolute; top: 0; left: 50%; transform-origin: top center; transition: opacity .45s ease, transform .6s cubic-bezier(.2,.9,.25,1.15); }
+  .notch-stage .pill { width: 83.5%; transform: translateX(-50%); }
+  .notch-stage .panel { width: 100%; transform: translateX(-50%) scale(.55, .2); opacity: 0; }
+  .screen.open .pill { opacity: 0; }
+  .screen.open .panel { opacity: 1; transform: translateX(-50%) scale(1); }
+  .screen-hint {
+    position: absolute; bottom: 7%; left: 50%; transform: translateX(-50%);
+    font-size: 12px; color: rgba(255,255,255,.55);
+  }
+
+  section { padding: 110px 0; }
+  .section-head { max-width: 720px; margin-bottom: 52px; }
+  .section-head.center { text-align: center; margin-inline: auto; }
+  h2 { font-size: clamp(34px, 5vw, 56px); line-height: 1.06; letter-spacing: -0.035em; margin: 16px 0 14px; font-weight: 700; }
+  .section-head p { color: var(--muted); font-size: 19px; margin: 0; }
+
+  /* Feature grid */
+  .grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 16px; }
+  .card {
+    background: var(--surface); border-radius: var(--radius);
+    box-shadow: inset 0 0 0 1px var(--line);
+    padding: 30px; overflow: hidden; position: relative;
+    display: flex; flex-direction: column;
+  }
+  .card h3 { font-size: 22px; letter-spacing: -0.02em; margin: 10px 0 6px; font-weight: 650; }
+  .card p { margin: 0; color: var(--muted); font-size: 16px; }
+  .card .shot { margin-top: auto; padding-top: 28px; }
+  .card .shot img { width: 100%; filter: drop-shadow(0 18px 30px rgba(0,0,0,.18)); }
+  .span-6 { grid-column: span 6; }
+  .span-4 { grid-column: span 4; }
+  .span-3 { grid-column: span 3; }
+  .span-2 { grid-column: span 2; }
+  .card.wide { display: grid; grid-template-columns: 1fr 1.5fr; gap: 36px; align-items: center; }
+  .card.wide .shot { padding-top: 0; }
+  .card.dark { background: #0b0b0b; color: #f2f2f0; }
+  .card.dark p { color: #8e8e8b; }
+  .card.dark .eyebrow { color: #8e8e8b; }
+  .stat { font-family: var(--mono); font-weight: 800; font-size: 64px; line-height: 1; letter-spacing: 0.02em; }
+  .stat small { font-size: 28px; }
+  .card.mini { justify-content: space-between; min-height: 200px; }
+  .lock-shot { border-radius: 16px; overflow: hidden; box-shadow: 0 20px 50px rgba(0,0,0,.35); }
+  .lock-shot img { filter: none !important; }
+
+  /* Styles */
+  .segmented {
+    display: inline-flex; padding: 4px; border-radius: 999px; background: var(--surface-2);
+    margin-bottom: 30px;
+  }
+  .segmented button {
+    font: inherit; font-size: 14px; font-weight: 600; border: 0; background: transparent; color: var(--muted);
+    padding: 8px 18px; border-radius: 999px; cursor: pointer; transition: background .2s, color .2s;
+  }
+  .segmented button[aria-pressed="true"] { background: var(--surface); color: var(--ink); box-shadow: 0 1px 3px rgba(0,0,0,.12); }
+  .styles { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+  .style { background: var(--surface); border-radius: 22px; box-shadow: inset 0 0 0 1px var(--line); padding: 14px 14px 16px; }
+  .style img { border-radius: 14px; width: 100%; aspect-ratio: 2 / 1; object-fit: cover; }
+  .style span { display: block; margin: 12px 4px 0; font-weight: 600; font-size: 15px; }
+
+  /* Privacy */
+  .privacy { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+  .privacy .card { min-height: 0; }
+  .privacy .dots { font-size: 13px; color: var(--accent); }
+
+  /* Install */
+  .install { background: var(--surface); border-radius: 36px; box-shadow: inset 0 0 0 1px var(--line); padding: clamp(28px, 5vw, 64px); }
+  .install.flash { animation: flash 1.6s ease; }
+  @keyframes flash { 0%, 100% { box-shadow: inset 0 0 0 1px var(--line); } 30% { box-shadow: inset 0 0 0 2px var(--accent); } }
+  .steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 36px; margin-top: 44px; }
+  .step .num { font-family: var(--mono); font-weight: 800; font-size: 44px; line-height: 1; color: var(--accent); }
+  .step h3 { font-size: 21px; margin: 18px 0 8px; letter-spacing: -0.02em; }
+  .step p { margin: 0; color: var(--muted); font-size: 16px; }
+  .step kbd, .step b { color: var(--ink); font-weight: 600; font-family: inherit; }
+
+  /* A drawing of the Privacy & Security row, so it can be spotted. */
+  .settings-mock {
+    margin-top: 22px; border-radius: 14px; background: var(--surface-2); padding: 14px 16px;
+    font-size: 13px; display: grid; gap: 10px;
+  }
+  .settings-mock .title { font-weight: 600; font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; }
+  .settings-mock .row { display: flex; align-items: center; gap: 12px; }
+  .settings-mock .row p { margin: 0; color: var(--ink); font-size: 13px; line-height: 1.35; }
+  .settings-mock .open { margin-left: auto; white-space: nowrap; background: var(--surface); border-radius: 7px; padding: 5px 11px; font-weight: 600; box-shadow: 0 0 0 1px var(--line), 0 1px 2px rgba(0,0,0,.08); position: relative; }
+  .settings-mock .open::after { content: ""; position: absolute; inset: -5px; border-radius: 10px; border: 2px solid var(--accent); animation: pulse 2s ease-in-out infinite; }
+  @keyframes pulse { 0%, 100% { opacity: .9; } 50% { opacity: .25; } }
+  .why { margin-top: 44px; padding-top: 28px; border-top: 1px solid var(--line); display: grid; grid-template-columns: 1fr 1fr; gap: 36px; color: var(--muted); font-size: 15px; }
+  .why h4 { color: var(--ink); margin: 0 0 6px; font-size: 16px; }
+  .why p { margin: 0; }
+
+  footer { padding: 56px 0 72px; color: var(--faint); font-size: 13px; }
+  footer .wrap { display: flex; justify-content: space-between; gap: 20px; flex-wrap: wrap; border-top: 1px solid var(--line); padding-top: 28px; }
+  footer a { color: var(--muted); text-decoration: none; }
+  footer a:hover { color: var(--ink); }
+
+  .reveal { opacity: 0; transform: translateY(18px); transition: opacity .8s ease, transform .8s ease; }
+  .reveal.in { opacity: 1; transform: none; }
+
+  @media (max-width: 900px) {
+    .span-4, .span-3, .span-2 { grid-column: span 6; }
+    .card.wide { grid-template-columns: 1fr; }
+    .styles { grid-template-columns: repeat(2, 1fr); }
+    .privacy, .steps, .why { grid-template-columns: 1fr; }
+    nav .links a:not(.button) { display: none; }
+  }
+  @media (max-width: 520px) {
+    .styles { grid-template-columns: 1fr; }
+    .card { padding: 24px; }
+    section { padding: 80px 0; }
+    .hero { padding-top: 64px; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    html { scroll-behavior: auto; }
+    .reveal { opacity: 1; transform: none; transition: none; }
+    .notch-stage img, .settings-mock .open::after { transition: none; animation: none; }
+  }
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="wrap">
+    <a class="brand" href="#top"><img src="images/icon.png" alt="">MiniNotch</a>
+    <div class="links">
+      <a href="#features">Features</a>
+      <a href="#styles">Styles</a>
+      <a href="#install">Install</a>
+      <a href="https://github.com/andrefongkc-cyber/mininotch">GitHub</a>
+      <a class="button small" data-download href="https://github.com/andrefongkc-cyber/mininotch/releases/latest">Download</a>
+    </div>
+  </div>
+</nav>
+
+<header class="hero" id="top">
+  <div class="wrap">
+    <span class="eyebrow dots">MiniNotch <span data-version>for Mac</span></span>
+    <h1>The notch,<br>put to work.</h1>
+    <p class="lede">MiniNotch turns the camera housing on your MacBook into a home for your music, lyrics, calendar, weather and files. It stays out of sight until you reach for it.</p>
+    <div class="ctas">
+      <a class="button" data-download href="https://github.com/andrefongkc-cyber/mininotch/releases/latest">
+        <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M16.37 12.87c-.02-2.2 1.8-3.26 1.88-3.31-1.03-1.5-2.62-1.7-3.18-1.73-1.35-.14-2.64.8-3.33.8-.69 0-1.74-.78-2.86-.76-1.47.02-2.83.86-3.59 2.18-1.53 2.66-.39 6.59 1.1 8.75.73 1.05 1.6 2.24 2.73 2.2 1.1-.05 1.51-.71 2.84-.71 1.32 0 1.7.71 2.86.69 1.18-.02 1.93-1.07 2.65-2.13.84-1.22 1.18-2.4 1.2-2.46-.03-.01-2.3-.88-2.3-3.52zM14.2 6.4c.6-.73 1-1.74.9-2.75-.87.04-1.92.58-2.54 1.31-.56.64-1.05 1.67-.92 2.66.97.07 1.96-.49 2.56-1.22z"/></svg>
+        Download for Mac
+      </a>
+      <a class="button ghost" href="#install">How to install</a>
+    </div>
+    <p class="meta">Free · macOS 14.4 or later · Apple silicon and Intel</p>
+
+    <div class="screen" id="screen" aria-label="A MacBook's notch opening into MiniNotch's panel">
+      <div class="menubar">
+        <div class="left"><span></span><span>Finder</span><span>File</span><span>Edit</span><span>View</span></div>
+        <div class="right"><span>Mon 9:41</span></div>
+      </div>
+      <div class="notch-stage">
+        <img class="pill" src="images/pill.png" alt="">
+        <img class="panel" src="images/media-glow.png" alt="MiniNotch open on Now Playing">
+      </div>
+      <span class="screen-hint">Hover to open</span>
+    </div>
+  </div>
+</header>
+
+<section id="features">
+  <div class="wrap">
+    <div class="section-head reveal">
+      <span class="eyebrow dots">Features</span>
+      <h2>Everything you glance at,<br>right where you look.</h2>
+      <p>Hover over the notch and it opens. Move away and it's gone. Swipe with two fingers to flip between tabs.</p>
+    </div>
+
+    <div class="grid">
+      <article class="card span-6 wide reveal">
+        <div>
+          <span class="eyebrow dots">Now Playing</span>
+          <h3>Your music, with the words.</h3>
+          <p>Apple Music, Spotify and more. Album art, a scrubber you can drag, and synced lyrics that highlight the word being sung. Click any line to jump to it.</p>
+        </div>
+        <div class="shot"><img src="images/media.png" alt="The Now Playing card" loading="lazy"></div>
+      </article>
+
+      <article class="card span-6 wide dark reveal">
+        <div>
+          <span class="eyebrow dots">Lock Screen</span>
+          <h3>Lyrics, even when you're locked.</h3>
+          <p>Lock your Mac and the song stays on screen: the cover, the controls, and big lyrics that scroll and fade as the song goes. Pick the layout you like.</p>
+        </div>
+        <div class="shot lock-shot"><img src="images/lock-screen.png" alt="The lock screen player with album art and lyrics" loading="lazy"></div>
+      </article>
+
+      <article class="card span-3 reveal">
+        <span class="eyebrow dots">Calendar</span>
+        <h3>Your day at a glance.</h3>
+        <p>The week or the month, reminders you can tick off, and a Join button right before your call starts.</p>
+        <div class="shot"><img src="images/calendar.png" alt="The calendar tab" loading="lazy"></div>
+      </article>
+
+      <article class="card span-3 reveal">
+        <span class="eyebrow dots">Weather</span>
+        <h3>Look up, not around.</h3>
+        <p>The next hours and days, for where you are or a city you choose. No account needed.</p>
+        <div class="shot"><img src="images/weather.png" alt="The weather tab" loading="lazy"></div>
+      </article>
+
+      <article class="card span-3 reveal">
+        <span class="eyebrow dots">Shelf</span>
+        <h3>A pocket for files.</h3>
+        <p>Drop files and links on the notch, drag them out later, or send them with AirDrop.</p>
+        <div class="shot"><img src="images/shelf.png" alt="The shelf with files and links" loading="lazy"></div>
+      </article>
+
+      <article class="card span-3 reveal">
+        <span class="eyebrow dots">Timer</span>
+        <h3>Focus, in the corner of your eye.</h3>
+        <p>Quick countdowns and Pomodoro. The time left stays visible even with the notch closed.</p>
+        <div class="shot"><img src="images/timer.png" alt="The timer tab" loading="lazy"></div>
+      </article>
+
+      <article class="card span-3 reveal">
+        <span class="eyebrow dots">System</span>
+        <h3>What your Mac is up to.</h3>
+        <p>CPU, GPU, memory, network and temperatures, each with five minutes of history.</p>
+        <div class="shot"><img src="images/system.png" alt="System stats" loading="lazy"></div>
+      </article>
+
+      <article class="card span-3 reveal">
+        <span class="eyebrow dots">Notes</span>
+        <h3>A scratchpad that's always there.</h3>
+        <p>Jot something down without opening an app. Saved on your Mac as you type.</p>
+        <div class="shot"><img src="images/notes.png" alt="The notes tab" loading="lazy"></div>
+      </article>
+
+      <article class="card span-2 mini reveal">
+        <span class="eyebrow dots">Closed</span>
+        <div class="stat">0<small>%</small></div>
+        <p>CPU while the notch is closed. It costs nothing until you use it.</p>
+      </article>
+      <article class="card span-2 mini reveal">
+        <span class="eyebrow dots">Indicators</span>
+        <div class="stat">HUD</div>
+        <p>Volume, brightness and keyboard backlight, shown at the notch instead of the middle of your screen.</p>
+      </article>
+      <article class="card span-2 mini reveal">
+        <span class="eyebrow dots">Updates</span>
+        <div class="stat">Auto</div>
+        <p>MiniNotch checks for new versions on its own and asks before installing them, so you only download it once.</p>
+      </article>
+    </div>
+  </div>
+</section>
+
+<section id="styles">
+  <div class="wrap">
+    <div class="section-head center reveal">
+      <span class="eyebrow dots">Notch Styles</span>
+      <h2>Six looks. Dark or light.</h2>
+      <p>From plain black to soft clay. Any of them can sit on Liquid Glass on macOS 26.</p>
+    </div>
+    <div style="text-align:center" class="reveal">
+      <div class="segmented" role="group" aria-label="Appearance">
+        <button type="button" data-variant="dark" aria-pressed="true">Dark</button>
+        <button type="button" data-variant="light" aria-pressed="false">Light</button>
+      </div>
+    </div>
+    <div class="styles reveal">
+      <figure class="style" style="margin:0"><img data-style="minimal" src="images/style-minimal-dark.png" alt="Minimal style" loading="lazy"><span>Minimal</span></figure>
+      <figure class="style" style="margin:0"><img data-style="bento" src="images/style-bento-dark.png" alt="Bento style" loading="lazy"><span>Bento</span></figure>
+      <figure class="style" style="margin:0"><img data-style="glass" src="images/style-glass-dark.png" alt="Glass style" loading="lazy"><span>Glass</span></figure>
+      <figure class="style" style="margin:0"><img data-style="neumorphic" src="images/style-neumorphic-dark.png" alt="Neumorphic style" loading="lazy"><span>Neumorphic</span></figure>
+      <figure class="style" style="margin:0"><img data-style="clay" src="images/style-clay-dark.png" alt="Clay style" loading="lazy"><span>Clay</span></figure>
+      <figure class="style" style="margin:0"><img data-style="skeuomorphic" src="images/style-skeuomorphic-dark.png" alt="Skeuomorphic style" loading="lazy"><span>Skeuomorphic</span></figure>
+    </div>
+  </div>
+</section>
+
+<section id="privacy">
+  <div class="wrap">
+    <div class="section-head reveal">
+      <span class="eyebrow dots">Privacy</span>
+      <h2>Stays on your Mac.</h2>
+      <p>No accounts, no analytics, no tracking.</p>
+    </div>
+    <div class="privacy">
+      <div class="card reveal">
+        <span class="dots">Nothing asked at launch</span>
+        <h3>Permissions when you need them.</h3>
+        <p>Each one is requested the first time a feature needs it, with the reason on screen.</p>
+      </div>
+      <div class="card reveal">
+        <span class="dots">Off by default</span>
+        <h3>Only two things go online.</h3>
+        <p>Online lyrics send the song's title and artist to lrclib.net. Weather sends a rounded location to open-meteo.com. Both are your choice.</p>
+      </div>
+      <div class="card reveal">
+        <span class="dots">Never saved</span>
+        <h3>Your clipboard, kept private.</h3>
+        <p>Clipboard history lives in memory only, skips passwords, and can stay blurred until Touch ID.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="install-section">
+  <div class="wrap">
+    <div class="install reveal" id="install">
+      <span class="eyebrow dots">Install</span>
+      <h2>Up and running in a minute.</h2>
+      <p style="color:var(--muted);font-size:19px;margin:0;max-width:680px">The first time you open MiniNotch, macOS will stop it. That's expected. Step 3 shows how to let it through. You only do this once.</p>
+
+      <div class="steps">
+        <div class="step">
+          <div class="num">01</div>
+          <h3>Download</h3>
+          <p>Get the latest version, <b data-version-text>from GitHub</b>. It's a single disk image.</p>
+          <p style="margin-top:18px"><a class="button small" data-download href="https://github.com/andrefongkc-cyber/mininotch/releases/latest">Download for Mac</a></p>
+        </div>
+        <div class="step">
+          <div class="num">02</div>
+          <h3>Drag to Applications</h3>
+          <p>Open the disk image and drag <b>MiniNotch</b> onto the <b>Applications</b> folder. Then open it from Applications.</p>
+        </div>
+        <div class="step">
+          <div class="num">03</div>
+          <h3>Allow it in Settings</h3>
+          <p>macOS says MiniNotch can't be opened. Click <b>Done</b>, then open <b>System Settings</b> → <b>Privacy &amp; Security</b>, scroll down, and click <b>Open Anyway</b>. Enter your password, then <b>Open</b>.</p>
+          <div class="settings-mock" aria-hidden="true">
+            <div class="title">Security</div>
+            <div class="row">
+              <p>“MiniNotch” was blocked to protect your Mac.</p>
+              <span class="open">Open Anyway</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="why">
+        <div>
+          <h4>Why does macOS block it?</h4>
+          <p>Apple only lets apps open without asking once they have been notarised, which needs a paid developer membership MiniNotch doesn't have yet. The app is the same either way, and its code is public on GitHub for anyone to read.</p>
+        </div>
+        <div>
+          <h4>Right-click → Open didn't work?</h4>
+          <p>Recent versions of macOS removed that shortcut. Open Anyway in Privacy &amp; Security is the way now, and the button only appears after you've tried to open the app once.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <span>MiniNotch is free. Not affiliated with Apple.</span>
+    <span><a href="https://github.com/andrefongkc-cyber/mininotch">GitHub</a> · <a href="https://github.com/andrefongkc-cyber/mininotch/releases">Releases</a> · <a href="https://github.com/andrefongkc-cyber/mininotch/issues">Report a problem</a></span>
+  </div>
+</footer>
+
+<script>
+  // The latest release's disk image, straight from GitHub, so the button always downloads the
+  // newest version. Until the answer arrives (or if it never does) the links go to the release page.
+  fetch("https://api.github.com/repos/andrefongkc-cyber/mininotch/releases/latest")
+    .then(function (r) { return r.ok ? r.json() : Promise.reject(r.status); })
+    .then(function (release) {
+      var dmg = (release.assets || []).find(function (a) { return /\.dmg$/i.test(a.name); });
+      var version = (release.tag_name || "").replace(/^v/, "");
+      if (dmg) {
+        document.querySelectorAll("[data-download]").forEach(function (a) { a.href = dmg.browser_download_url; });
+      }
+      if (version) {
+        document.querySelectorAll("[data-version]").forEach(function (el) { el.textContent = version; });
+        document.querySelectorAll("[data-version-text]").forEach(function (el) { el.textContent = "version " + version; });
+      }
+    })
+    .catch(function () {});
+
+  // After a download starts, bring the install steps into view, since step 3 is the one people miss.
+  document.querySelectorAll("[data-download]").forEach(function (a) {
+    a.addEventListener("click", function () {
+      var install = document.getElementById("install");
+      setTimeout(function () {
+        install.scrollIntoView({ behavior: "smooth", block: "start" });
+        install.classList.remove("flash");
+        void install.offsetWidth;
+        install.classList.add("flash");
+      }, 400);
+    });
+  });
+
+  // The notch opens on hover, and by itself now and then for anyone not pointing at it.
+  var screen = document.getElementById("screen");
+  var hovering = false;
+  screen.addEventListener("mouseenter", function () { hovering = true; screen.classList.add("open"); });
+  screen.addEventListener("mouseleave", function () { hovering = false; screen.classList.remove("open"); });
+  screen.addEventListener("click", function () { screen.classList.toggle("open"); });
+  if (!matchMedia("(prefers-reduced-motion: reduce)").matches) {
+    setTimeout(function () { if (!hovering) screen.classList.add("open"); }, 1200);
+    setInterval(function () { if (!hovering) screen.classList.toggle("open"); }, 4200);
+  }
+
+  // Dark and light Notch Styles.
+  document.querySelectorAll("[data-variant]").forEach(function (button) {
+    button.addEventListener("click", function () {
+      var variant = button.dataset.variant;
+      document.querySelectorAll("[data-variant]").forEach(function (b) { b.setAttribute("aria-pressed", String(b === button)); });
+      document.querySelectorAll("[data-style]").forEach(function (img) {
+        img.src = "images/style-" + img.dataset.style + "-" + variant + ".png";
+      });
+    });
+  });
+
+  // Fade sections in as they arrive.
+  var observer = new IntersectionObserver(function (entries) {
+    entries.forEach(function (e) { if (e.isIntersecting) { e.target.classList.add("in"); observer.unobserve(e.target); } });
+  }, { rootMargin: "0px 0px -8% 0px" });
+  document.querySelectorAll(".reveal").forEach(function (el) { observer.observe(el); });
+</script>
+</body>
+</html>

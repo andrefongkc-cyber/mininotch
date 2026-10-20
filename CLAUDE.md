@@ -782,6 +782,22 @@ launch the older copy with the flag. On 2026-10-05: 0.6.90 found, downloaded, ve
 0.6.91 and quit; the same feed with one character of the signature changed was refused ("EdDSA
 signature does not match") and left 0.6.90 in place.
 
+## Website
+
+`website/` is the product page, one `index.html` with its CSS and script inline and the pictures in
+`website/images`, published to GitHub Pages by `.github/workflows/pages.yml` on every push to `main`
+that touches it. Pages has to be switched on once by a repository admin (Settings > Pages > Source:
+GitHub Actions); the address is `https://andrefongkc-cyber.github.io/mininotch/`. Apple and Nothing
+were the brief: off-white or black, Inter, dot-matrix labels in Doto, one red accent. The Download
+buttons ask GitHub's API for the latest release's DMG, so a release needs no change here, and fall back
+to the releases page. Clicking one scrolls to the install steps, because step 3 (Open Anyway) is the
+one people miss. The pictures are real captures: `--capture-notch --builtin --notch-style minimal-dark
+--width 600` per tab with the `--sample-*` data, cropped to their alpha, the Notch Style tiles cut
+from `--capture-styles`, and the lock screen from `--capture-lock-screen --player`. Retake them when
+the look changes. Preview with `python3 -m http.server --directory website`. `Docs/` (capital D) holds
+the README's pictures; a lowercase `docs/` would collide with it on macOS, which is why the site is not
+there.
+
 ## No setting may be inert
 
 Every persisted setting must be read by something. A control that saves a value and changes
