@@ -627,6 +627,7 @@ open -n -a <path to MiniNotch.app> --args --check-permissions --out /tmp/perm.lo
 | Accessibility | `AXIsProcessTrustedWithOptions`, then a `CGEvent` tap | Switching on HUDs > Hide the System Overlay |
 | Notifications | `UNUserNotificationCenter` | First low-battery alert |
 | Downloads folder | Reading `~/Downloads` | Switching on Layout > Downloads |
+| Spotify sign-in (not a permission) | `ASWebAuthenticationSession`, then the Spotify Web API | Connect in Settings > Music > Up Next |
 | Location | `CLLocationManager`, then Open-Meteo | Weather on with Use My Location; Allow in Weather, the Weather tab, or the tutorial |
 | Touch ID or password (not a permission) | LocalAuthentication `deviceOwnerAuthentication` | Unlock in the Clipboard tab, with Blur Until Unlocked on |
 
@@ -1320,6 +1321,21 @@ connection callbacks would mean the Bluetooth permission for something the user 
 "a device appeared" for free, and the charge is read two seconds later because a service that has
 just matched has usually not published it yet. The iterator has to be drained once when it is
 armed, or everything already connected arrives as news at launch.
+
+**Up Next is a peek, read only while it is open.** A transport control (`MediaControl.upNext`,
+added after Next to every arrangement once by settings schema 3) opens a row under the card with
+the next song (`NowPlayingController.isShowingUpNext`); nothing about the queue is read while it is
+closed. Apple Music: the playlist or album's order from the current track (`playlistReading`),
+read whatever `shuffle enabled` says, because Music says it is shuffling when it is not; the order
+is listed under a shuffle claim only after a track change matched it (`checkPlaylistPrediction`),
+until one does not, or shuffle is flipped. Spotify, app or Chrome: its Web API's
+`/v1/me/player/queue` (`SpotifyAccount`), 0.8 s after a track change because the server learns of a
+skip late. Sign-in is PKCE with the user's own Client ID (their app on developer.spotify.com, redirect
+`mininotch://spotify-callback`, caught by `ASWebAuthenticationSession`, so no URL type in the
+Info.plist); only the refresh token is stored, in the login keychain (`SpotifyKeychain`), and
+requests go through `BoundedHTTPClient`, which takes a POST body for the token endpoint only. The
+user chose sign-in over an Apple-Music-only peek (2026-10-19). Never tried against a real Spotify
+app or a real Music playlist yet; `--capture-notch --up-next` draws the sample.
 
 **A lyric search takes a length within 5 seconds, or failing that a synced sheet within 15.**
 `LRCLIBClient.fetchBestTextFromSearch` used to take only the 5-second matches, so a song whose

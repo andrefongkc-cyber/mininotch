@@ -13,6 +13,8 @@ import Observation
 final class AppEnvironment {
     let settings: SettingsStore
     let nowPlaying = NowPlayingController()
+    /// The user's Spotify sign-in, for the Up Next peek's Spotify queue.
+    let spotify = SpotifyAccount()
     let calendarService = CalendarService()
     let battery = BatteryService()
     let systemStats = SystemStatsService()
@@ -71,6 +73,16 @@ final class AppEnvironment {
         nowPlaying.audioLatencyProvider = { [weak self] in
             guard let self, self.audioAnalyzer.hasMeasuredLatency else { return nil }
             return self.audioAnalyzer.outputLatency
+        }
+        // The peek asks for Spotify's queue; the account knows how to sign in and ask.
+        spotify.clientID = { [weak self] in self?.settings.media.spotifyClientID ?? "" }
+        nowPlaying.spotifyQueue = { [weak self] limit, completion in
+            guard let self else { return }
+            self.spotify.fetchQueue(limit: limit, completion: completion)
+        }
+        nowPlaying.spotifyImage = { [weak self] url, completion in
+            guard let self else { return }
+            self.spotify.loadImage(url, completion: completion)
         }
         nowPlaying.onPlayingChange = { [weak self] _ in
             self?.applyAudioAnalysisSetting()

@@ -1,6 +1,6 @@
 # MiniNotch workplan
 
-Status: Settings declutter done and committed (branch settings-declutter); doing the song peek with Spotify sign-in, on top of it; next: the Wave and Chase revamp when the user asks.
+Status: Settings declutter and the Up Next peek built on branch settings-declutter; next: the user registers a Spotify app and tries the peek, then a PR; next: the Wave and Chase revamp when the user asks.
 
 Living document. Update the checkboxes as work lands. `CLAUDE.md` holds the architecture
 rules and the traps; this file holds the sequence.
@@ -324,7 +324,7 @@ Sparkle was asked about and deferred ("not now"); it is free (MIT) and needs no 
 - [x] Website (asked 2026-10-19): `website/`, deployed to GitHub Pages by a workflow, with install steps that explain Open Anyway; the README, the release notes script and the 0.7.6 release page carry the same steps. Pages not yet switched on.
 
 - [x] Settings declutter (asked 2026-10-19): sidebar by feature (Music, Lock Screen, Weather, Timer, Shelf & Notes, Battery & System, Volume & Brightness), each pane's rarely changed rows under More Options, search opens a fold. Checked with `--capture-settings`; the real window not yet looked at by the user.
-- [~] Song peek between Next and pop-out (asked 2026-10-19): the next song in the queue. Apple Music in order from the playlist; Spotify through the Spotify Web API after a one-time sign-in (the user chose this), since the Spotify app shares no queue.
+- [~] Song peek between Next and pop-out (asked 2026-10-19): built, captured with the sample queue. Apple Music in order from the playlist, checked against what plays; Spotify through the Web API after a one-time sign-in with the user's own Client ID. Needs the user to register a Spotify app, then trying both players by hand.
 
 ## 0.3 feedback (2026-09-23)
 

@@ -94,6 +94,14 @@ struct NowPlayingCardView: View {
                 .font(.system(size: 9, weight: .bold))
                 .foregroundStyle(surfaceTheme.ink.opacity(0.4))
 
+            if let cover = controller.upNextArtwork {
+                Image(nsImage: cover)
+                    .resizable()
+                    .aspectRatio(contentMode: .fill)
+                    .frame(width: 16, height: 16)
+                    .clipShape(RoundedRectangle(cornerRadius: 3, style: .continuous))
+            }
+
             switch controller.upNext {
             case .loaded(let items):
                 if let first = items.first {
@@ -622,7 +630,7 @@ struct NowPlayingCardView: View {
 
     /// The toggles are drawn a size down from the transport arrows, as Music draws them.
     private static func isStateControl(_ control: MediaControl) -> Bool {
-        control == .shuffle || control == .repeatMode || control == .favorite
+        control == .shuffle || control == .repeatMode || control == .favorite || control == .upNext
     }
 
     private func transportButton(_ control: MediaControl) -> some View {
@@ -637,6 +645,7 @@ struct NowPlayingCardView: View {
             case .shuffle: controller.send(.toggleShuffle)
             case .repeatMode: controller.send(.cycleRepeat)
             case .favorite: controller.send(.toggleFavorite)
+            case .upNext: controller.isShowingUpNext.toggle()
             }
         } label: {
             TransportSymbol.image(
@@ -672,6 +681,7 @@ struct NowPlayingCardView: View {
         case .shuffle: return track?.isShuffling == true ? accent : theme.ink.opacity(0.45)
         case .repeatMode: return (track?.repeatMode ?? .off) != .off ? accent : theme.ink.opacity(0.45)
         case .favorite: return track?.isFavorite == true ? accent : theme.ink.opacity(0.45)
+        case .upNext: return controller.isShowingUpNext ? accent : theme.ink.opacity(0.45)
         case .previous, .next: return theme.ink.opacity(0.8)
         }
     }
@@ -688,6 +698,7 @@ struct NowPlayingCardView: View {
             case .one: return "One Song"
             }
         case .favorite: return track?.isFavorite == true ? "Favourite" : "Not a favourite"
+        case .upNext: return controller.isShowingUpNext ? "Showing" : "Hidden"
         case .playPause, .previous, .next: return nil
         }
     }
@@ -700,6 +711,7 @@ struct NowPlayingCardView: View {
         case .shuffle: return "shuffle"
         case .repeatMode: return controller.track?.repeatMode == .one ? "repeat.1" : "repeat"
         case .favorite: return controller.track?.isFavorite == true ? "heart.fill" : "heart"
+        case .upNext: return "text.line.first.and.arrowtriangle.forward"
         }
     }
 

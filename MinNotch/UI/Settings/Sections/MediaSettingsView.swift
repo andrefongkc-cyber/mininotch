@@ -15,6 +15,7 @@ struct MediaSettingsView: View {
         case .main:
             sourceCard
             lyricsCard
+            upNextCard
             lookCard
         case .more:
             lyricsTimingCard
@@ -154,6 +155,62 @@ struct MediaSettingsView: View {
                 }
         }
     }
+    /// Spotify's queue for the Up Next peek. The Spotify app shares none, so it is read from
+    /// Spotify's Web API after the user signs in with an app of their own (`SpotifyAccount`).
+    private var upNextCard: some View {
+        @Bindable var settings = settings
+        let spotify = environment.spotify
+        return SettingsCard(
+            header: "Up Next",
+            footer: "The Up Next button beside Next shows what plays after this song. Apple Music shares it for a playlist or album playing in order. For Spotify, create an app at developer.spotify.com (Web API), add the redirect URI \(SpotifyAccount.redirectURI), paste its Client ID here and connect. Only your queue is read, and only while Up Next is open. Arrange the button in Layout."
+        ) {
+            if !spotify.isConnected {
+                SettingsRow(
+                    title: "Spotify Client ID",
+                    subtitle: "From your app on Spotify's developer dashboard.",
+                    systemImage: "key"
+                ) {
+                    HStack(spacing: 6) {
+                        TextField("Client ID", text: $settings.media.spotifyClientID)
+                            .textFieldStyle(.roundedBorder)
+                            .frame(width: 170)
+                        Link("Dashboard", destination: URL(string: "https://developer.spotify.com/dashboard")!)
+                            .font(Typography.helper)
+                    }
+                }
+
+                SettingsDivider()
+            }
+
+            SettingsRow(
+                title: "Spotify Account",
+                subtitle: spotifyStatus(spotify.status),
+                systemImage: "person.crop.circle"
+            ) {
+                switch spotify.status {
+                case .connected:
+                    Button("Disconnect") { spotify.disconnect() }
+                        .controlSize(.small)
+                case .connecting:
+                    ProgressView().controlSize(.small)
+                case .notConnected, .failed:
+                    Button("Connect…") { spotify.connect() }
+                        .controlSize(.small)
+                        .disabled(settings.media.spotifyClientID.trimmingCharacters(in: .whitespaces).isEmpty)
+                }
+            }
+        }
+    }
+
+    private func spotifyStatus(_ status: SpotifyAccount.Status) -> String {
+        switch status {
+        case .notConnected: return "Not connected. Up Next shows Apple Music only."
+        case .connecting: return "Finish signing in in the window that opened."
+        case .connected: return "Connected. Up Next can show what Spotify plays next."
+        case .failed(let reason): return reason
+        }
+    }
+
     private var lyricsTimingCard: some View {
         @Bindable var settings = settings
         return SettingsCard(header: "Lyrics Timing") {
@@ -257,7 +314,7 @@ struct MediaSettingsView: View {
     }
     private var sneakPeekCard: some View {
         @Bindable var settings = settings
-        return SettingsCard(header: "Sneak Peek and Up Next") {
+        return SettingsCard(header: "Sneak Peek") {
                 SettingsRow(
                     title: "Sneak Peek Length",
                     subtitle: "How long the song stays on screen after it changes.",
@@ -269,18 +326,6 @@ struct MediaSettingsView: View {
                         range: MediaSettings.sneakPeekDurationRange,
                         step: 0.5
                     ) { String(format: "%.1f s", $0) }
-                }
-
-                SettingsDivider()
-
-                SettingsRow(
-                    title: "Show Up Next",
-                    subtitle: "Off for now. Music tells other apps a playlist is shuffling when it is playing in order, so the list was wrong too often to be worth showing.",
-                    systemImage: "text.line.first.and.arrowtriangle.forward",
-                    badge: FeatureFlag.upNext.badge,
-                    isEnabled: settings.media.enabled && FeatureFlag.upNext.isEnabled
-                ) {
-                    SettingsToggle(isOn: $settings.media.showUpNext)
                 }
         }
     }
@@ -467,6 +512,7 @@ struct MediaSettingsView: View {
         case .next: return "forward.end"
         case .repeatMode: return "repeat"
         case .favorite: return "heart"
+        case .upNext: return "text.line.first.and.arrowtriangle.forward"
         }
     }
 }

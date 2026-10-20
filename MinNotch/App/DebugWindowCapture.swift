@@ -95,6 +95,11 @@ enum DebugWindowCapture {
             environment.battery.applySampleCharging(settings: settings)
         }
 
+        // `--up-next` opens the Up Next peek, on the sample queue.
+        if arguments.contains("--up-next") {
+            environment.nowPlaying.isShowingUpNext = true
+        }
+
         // `--lyrics-sheet` opens the full lyrics list instead of the two-line strip.
         if arguments.contains("--lyrics-sheet") {
             environment.nowPlaying.isShowingLyricsSheet = true

@@ -2,8 +2,8 @@ import Foundation
 
 /// Outbound HTTP that refuses to be surprised.
 ///
-/// This app reaches the network in exactly two places, and in both of them the thing being
-/// fetched is named by somebody who is not the user: LRCLIB answers a lyrics query, and the
+/// In most of the places this app reaches the network, the thing being fetched is named by
+/// somebody who is not the user: LRCLIB answers a lyrics query, and the
 /// artwork URL is whatever string the running media player hands back over Apple Events.
 /// Neither of those should be able to make an unsandboxed app read a local file, follow a
 /// redirect somewhere else, hang indefinitely, or buffer an unbounded response into memory.
@@ -97,7 +97,15 @@ final class BoundedHTTPClient: NSObject, @unchecked Sendable {
     ///
     /// The callers cannot act on the difference between a refusal, a 503, and an empty
     /// result, so the distinction is deliberately not offered.
-    func fetch(_ url: URL, headers: [String: String] = [:], completion: @escaping @Sendable (Data?) -> Void) {
+    ///
+    /// `body` makes it a POST, for the one caller that sends something: signing in to Spotify,
+    /// whose token endpoint takes a form. The same limits apply to it as to every fetch.
+    func fetch(
+        _ url: URL,
+        headers: [String: String] = [:],
+        body: Data? = nil,
+        completion: @escaping @Sendable (Data?) -> Void
+    ) {
         guard accepts(url), let host = url.host?.lowercased() else {
             completion(nil)
             return
@@ -105,6 +113,10 @@ final class BoundedHTTPClient: NSObject, @unchecked Sendable {
 
         var request = URLRequest(url: url)
         for (field, value) in headers { request.setValue(value, forHTTPHeaderField: field) }
+        if let body {
+            request.httpMethod = "POST"
+            request.httpBody = body
+        }
 
         let task = session.dataTask(with: request)
         lock.lock()

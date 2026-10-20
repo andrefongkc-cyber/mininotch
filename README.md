@@ -54,6 +54,9 @@ when they connect. What goes on which side is yours to arrange in Settings > Lay
 of the pill that shows what it is showing right now. It is off by default on a Mac with a notch,
 where the pill sits behind the camera housing; turn it on in Settings > Layout.
 
+**Up Next.** A button beside Next peeks at what plays after this song. Apple Music shares it for a
+playlist or album playing in order; for Spotify, connect your account in Settings > Music.
+
 **Lyrics with the notch closed**. The line being sung, just under the closed pill, while a
 song plays.
 
@@ -170,10 +173,12 @@ there and then; otherwise each is requested the first time a feature needs it:
 | Accessibility | Only to hide Apple's volume and brightness overlay |
 | Location | Only for weather where you are; a city you type needs none |
 
-Everything stays on your Mac, with two exceptions, both off by default: setting **Music > Lyrics
-Source** to look up online sends the current title, artist, album and length to `lrclib.net`, and
+Everything stays on your Mac, with three exceptions, all off by default: setting **Music > Lyrics
+Source** to look up online sends the current title, artist, album and length to `lrclib.net`;
 **Weather** sends a location rounded to about a kilometre, or the city you chose, to
-`open-meteo.com`. Checking for updates fetches one small file from GitHub every three hours, or as often as you choose, and sends nothing
+`open-meteo.com`; and connecting **Music > Up Next > Spotify Account** lets MiniNotch ask Spotify
+for your queue while the Up Next peek is open, signed in with an app you register yourself, its
+sign-in kept in your keychain. Checking for updates fetches one small file from GitHub every three hours, or as often as you choose, and sends nothing
 about your Mac; switch it off in Settings > About. No accounts, no analytics, no telemetry. Clipboard history is never written to disk, and it skips
 anything an app marks as private, and anything copied in the Passwords app or Keychain Access. Audio becomes a handful of numbers per buffer and is discarded;
 nothing is recorded.
