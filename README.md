@@ -10,13 +10,25 @@ stats, a file shelf, saved links, a timer.
 
 ## Download
 
-[**MiniNotch 0.7.3**](https://github.com/andrefongkc-cyber/mininotch/releases/latest) — open the
-DMG, drag MiniNotch to Applications. It runs in the background: no Dock icon and nothing in ⌘-Tab,
-just the notch and an optional menu bar icon. Quit it from that icon or from Settings > About.
+**[Download the latest MiniNotch](https://github.com/andrefongkc-cyber/mininotch/releases/latest)**
+(the `.dmg` under Assets), or visit the [website](https://andrefongkc-cyber.github.io/mininotch/).
 
-The first launch is blocked, because notarising an app needs a paid Apple membership this project
-does not have. Open **System Settings > Privacy & Security**, scroll down, and click **Open
-Anyway**.
+### Installing
+
+1. Open the DMG and drag **MiniNotch** onto **Applications**.
+2. Open MiniNotch from Applications. **macOS will refuse to open it the first time.** That is
+   expected: click **Done** (not Move to Trash).
+3. Open **System Settings > Privacy & Security**, scroll down to the message that MiniNotch was
+   blocked, and click **Open Anyway**. Enter your password, then click **Open**.
+
+You only do this once; after that MiniNotch opens like any other app. macOS blocks it because
+apps have to be notarised by Apple to open without asking, and that needs a paid developer
+membership this project does not have. On recent macOS, right-clicking the app and choosing Open
+no longer gets around it; Open Anyway is the way, and it only appears after you have tried to open
+the app once.
+
+MiniNotch runs in the background: no Dock icon and nothing in ⌘-Tab, just the notch and an
+optional menu bar icon. Quit it from that icon or from Settings > About.
 
 From 0.7 on, MiniNotch keeps itself up to date: it checks for a new version every three hours (or as often as you set in Settings > About > How Often) and asks
 before installing it, or installs on its own if you set Settings > About > New Versions to Install Automatically; check yourself from the menu bar icon. Earlier versions have to be

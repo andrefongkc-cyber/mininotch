@@ -1,6 +1,6 @@
 # MiniNotch workplan
 
-Status: 0.7.6 released 2026-10-19 (the Chrome tab lookup that stalled Music's controls); next: the Wave and Chase revamp when the user asks.
+Status: website and clearer install steps done on branch website, in a PR; Pages needs switching on by Andre (Settings > Pages > Source: GitHub Actions); next: the Wave and Chase revamp when the user asks.
 
 Living document. Update the checkboxes as work lands. `CLAUDE.md` holds the architecture
 rules and the traps; this file holds the sequence.
@@ -320,6 +320,8 @@ Sparkle was asked about and deferred ("not now"); it is free (MIT) and needs no 
 - [x] Default Tab applies on every open with Remember Last Tab off.
 - [x] Lyric search takes a synced sheet within 15 s when none is within 5 s (Spotify's lengths differ from LRCLIB's). Confirmed by the user.
 - [x] Weather: location or a typed city, Open-Meteo, a tab and a pill indicator. The location prompt needs trying by hand.
+
+- [x] Website (asked 2026-10-19): `website/`, deployed to GitHub Pages by a workflow, with install steps that explain Open Anyway; the README, the release notes script and the 0.7.6 release page carry the same steps. Pages not yet switched on.
 
 ## 0.3 feedback (2026-09-23)
 
