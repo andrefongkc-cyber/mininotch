@@ -941,6 +941,15 @@ Shelf, the Notes shortcut, the timer's URL) clears the mark, because those calle
 then expand. It used to choose the tab only in `init`, so the panel reopened on whatever was used
 last whichever way the switch was set. The real notch only; a virtual one keeps its own default.
 
+**The pill's clock is the Mac's own time, sized for its widest** (2026-10-20, `PillIndicator.clock`,
+placed in Layout > Closed Pill like any indicator, Clock Shows picks Time or Day and Time,
+`GeneralSettings.pillClockText`). Written with the template `Jmm` (`EEEJmm`), which follows the Mac's
+12 or 24 hour choice with no AM or PM. It redraws in a `TimelineView(.everyMinute)` and at no other
+time. Its width is measured at the widest the time gets (`PillClockText.widestSample`: every weekday at
+10 and 22 o'clock, two digits on either clock, cached per locale), for the reason under "Nothing may
+hardcode which indicator is the wide one": measured at 18:58 alone it was "6:58" on a 12-hour Mac and
+"10:58" did not fit.
+
 **The song is not a live activity.** It used to be presented as one, the lowest priority, which
 put the artist in the Live Activity slot with no choice of title and never took it down again, so
 the pill named an artist after the player had quit. `PillIndicator.song` reads the track directly

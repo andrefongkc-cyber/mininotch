@@ -48,7 +48,7 @@ lined up with the singing, and each song's correction is remembered.
 
 ![The closed pill](Docs/images/closed-pill.png)
 
-Closed, the pill can show the cover and the song's title or artist, the battery, a playing
+Closed, the pill can show the cover and the song's title or artist, the battery, the time, a playing
 indicator, and live activities: a running timer, a download's progress, or your AirPods' charge
 when they connect. What goes on which side is yours to arrange in Settings > Layout, on a picture
 of the pill that shows what it is showing right now. It is off by default on a Mac with a notch,

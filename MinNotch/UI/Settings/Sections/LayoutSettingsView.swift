@@ -113,6 +113,21 @@ struct LayoutSettingsView: View {
                             }
                         }
                     }
+
+                    SettingsDivider()
+
+                    SettingsRow(
+                        title: "Clock Shows",
+                        subtitle: "What the Clock in the closed pill says, in your Mac's 12 or 24 hour time.",
+                        systemImage: "clock",
+                        isEnabled: settings.general.extendPillForIndicators
+                    ) {
+                        InlinePicker(selection: $settings.general.pillClockText) {
+                            ForEach(PillClockText.allCases) { choice in
+                                Text(choice.title).tag(choice)
+                            }
+                        }
+                    }
                 }
 
                 SettingsCard(

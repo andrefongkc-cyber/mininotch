@@ -326,6 +326,8 @@ Sparkle was asked about and deferred ("not now"); it is free (MIT) and needs no 
 - [x] Settings declutter (asked 2026-10-19): sidebar by feature (Music, Lock Screen, Weather, Timer, Shelf & Notes, Battery & System, Volume & Brightness), each pane's rarely changed rows under More Options, search opens a fold. Checked with `--capture-settings`; the real window not yet looked at by the user.
 - [~] Song peek between Next and pop-out (asked 2026-10-19): built, captured with the sample queue. Apple Music in order from the playlist, checked against what plays; Spotify through the Web API after a one-time sign-in with the user's own Client ID. Needs the user to register a Spotify app, then trying both players by hand.
 
+- [x] Clock in the closed pill (asked 2026-10-20): a Clock indicator for Layout > Closed Pill, Time or Day and Time, in the Mac's 12 or 24 hour time. Captured; placed on the user's right side with indicators switched on.
+
 ## 0.3 feedback (2026-09-23)
 
 The user's first round on 0.3, with screenshots. In the order they are being done.

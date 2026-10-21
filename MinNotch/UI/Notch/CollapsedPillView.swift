@@ -15,6 +15,8 @@ struct CollapsedPillContent: Equatable {
     var showPercentage: Bool
     /// The current conditions, when Weather is on and has a forecast.
     var weather: WeatherReport? = nil
+    /// What the Clock indicator writes. The time itself is read as it is drawn, once a minute.
+    var clockText: PillClockText = .time
     /// When false the pill stays exactly the size of the hardware notch and shows nothing,
     /// which on a notched display makes it invisible.
     var isExtended: Bool
@@ -66,6 +68,7 @@ struct CollapsedPillContent: Equatable {
             battery: environment.battery.status,
             showPercentage: settings.battery.showPercentage,
             weather: settings.weather.enabled ? environment.weather.report : nil,
+            clockText: settings.general.pillClockText,
             isExtended: isExtended,
             leadingLayout: settings.general.pillLeading,
             trailingLayout: settings.general.pillTrailing
@@ -100,6 +103,7 @@ struct CollapsedPillContent: Equatable {
             return isPlaying
         case .battery: return battery.isPresent
         case .weather: return weather != nil
+        case .clock: return true
         }
     }
 
@@ -138,6 +142,9 @@ struct CollapsedPillContent: Equatable {
         case .weather:
             // At the widest a temperature gets, so the pill does not resize as it warms up.
             return Self.glyphWidth + Self.detailSpacing + Self.measure("-00°")
+        case .clock:
+            // At the widest the time gets, for the same reason.
+            return Self.measure(clockText.widestSample)
         }
     }
 
@@ -347,6 +354,18 @@ struct PillIndicatorView: View {
                 }
                 .accessibilityElement(children: .combine)
                 .accessibilityLabel("\(weather.condition.title), \(WeatherReport.degrees(weather.temperature))")
+            }
+
+        case .clock:
+            // Redrawn on the minute and at no other time, so the clock costs nothing between.
+            TimelineView(.everyMinute) { context in
+                Text(content.clockText.string(from: context.date))
+                    .font(.system(size: 11, weight: .medium).monospacedDigit())
+                    .foregroundStyle(theme.ink.opacity(0.92))
+                    .lineLimit(1)
+                    .fixedSize()
+                    .frame(minWidth: CollapsedPillContent.measure(content.clockText.widestSample), alignment: .trailing)
+                    .accessibilityLabel(context.date.formatted(date: .omitted, time: .shortened))
             }
         }
     }
