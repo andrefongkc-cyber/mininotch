@@ -5,6 +5,10 @@ import SwiftUI
 /// Split out of `AppearanceSettingsView` because it is the largest single group in the app
 /// and carries its own live preview, which is a view rather than a row.
 struct AmbientLightingCard: View {
+    /// `main` in Appearance; `tuning` under its More Options.
+    enum Part { case main, tuning }
+    var part: Part = .main
+
     @Environment(SettingsStore.self) private var settings
     @Environment(AppEnvironment.self) private var environment
     @Environment(\.controlActiveState) private var windowState
@@ -37,10 +41,12 @@ struct AmbientLightingCard: View {
         @Bindable var settings = settings
         let glow = settings.appearance.ambientGlow
 
-        // One card rather than five. Splitting it into separate groups scattered the
-        // controls for a single effect down the length of the pane, which made comparing a
-        // style against its own colour and speed a scrolling exercise.
-        SettingsCard(header: "Ambient Lighting", footer: audioFooter) {
+        // The effect's own controls in one card, so a style can be compared against its colour
+        // without scrolling. The fine-tuning is folded under More Options (`tuning`), where
+        // nothing listens to audio: the meter stays here, since a folded row is still drawn.
+        switch part {
+        case .main:
+            SettingsCard(header: "Ambient Lighting", footer: audioFooter) {
             SettingsRow(
                 title: "Enable Ambient Glow",
                 subtitle: "The Now Playing card cycles this with the visualizer, and its menu switches style.",
@@ -113,6 +119,55 @@ struct AmbientLightingCard: View {
 
             SettingsDivider()
 
+            SettingsRow(
+                title: "Follow the Beat",
+                subtitle: "Analyse what is playing so the light tracks the music instead of animating on its own.",
+                systemImage: "waveform.badge.magnifyingglass",
+                badge: FeatureFlag.audioReactiveGlow.badge,
+                isEnabled: glow.isEnabled
+            ) {
+                SettingsToggle(isOn: $settings.appearance.ambientGlow.isAudioReactive)
+            }
+
+            if glow.isAudioReactive, glow.isEnabled {
+                SettingsDivider()
+
+                SettingsRow(
+                    title: "What It Is Hearing",
+                    subtitle: hearingSubtitle,
+                    systemImage: "waveform"
+                ) {
+                    AudioLevelMeter(analyzer: environment.audioAnalyzer)
+                        // The tap only listens while something plays; while this meter is
+                        // showing it listens anyway, so silence reads as silence. Showing means in
+                        // view in a window in front: the pane is not lazy, so on appearing alone
+                        // it listened from the moment Appearance opened, scrolled away or not.
+                        .modifier(ScrollVisibility(isOnScreen: $isMeterOnScreen))
+                        .onAppear { syncAudioPreview() }
+                        .onChange(of: wantsAudioPreview) { syncAudioPreview() }
+                        .onDisappear {
+                            guard isPreviewingAudio else { return }
+                            isPreviewingAudio = false
+                            environment.endAudioPreview()
+                        }
+                }
+            }
+
+            if environment.audioAnalyzer.failure != nil, glow.isAudioReactive {
+                SettingsDivider()
+
+                SettingsRow(
+                    title: "Try Again",
+                    subtitle: "Ask for the system audio permission once more.",
+                    systemImage: "arrow.clockwise"
+                ) {
+                    Button("Retry") { environment.audioAnalyzer.retry() }
+                        .controlSize(.small)
+                }
+            }
+            }
+        case .tuning:
+            SettingsCard(header: "Ambient Lighting Tuning") {
             SettingsRow(title: "Intensity", systemImage: "sun.max", isEnabled: glow.isEnabled) {
                 ValueSlider(
                     value: $settings.appearance.ambientGlow.intensity,
@@ -188,60 +243,12 @@ struct AmbientLightingCard: View {
             SettingsDivider()
 
             SettingsRow(
-                title: "Follow the Beat",
-                subtitle: "Analyse what is playing so the light tracks the music instead of animating on its own.",
-                systemImage: "waveform.badge.magnifyingglass",
-                badge: FeatureFlag.audioReactiveGlow.badge,
-                isEnabled: glow.isEnabled
-            ) {
-                SettingsToggle(isOn: $settings.appearance.ambientGlow.isAudioReactive)
-            }
-
-            if glow.isAudioReactive, glow.isEnabled {
-                SettingsDivider()
-
-                SettingsRow(
-                    title: "What It Is Hearing",
-                    subtitle: hearingSubtitle,
-                    systemImage: "waveform"
-                ) {
-                    AudioLevelMeter(analyzer: environment.audioAnalyzer)
-                        // The tap only listens while something plays; while this meter is
-                        // showing it listens anyway, so silence reads as silence. Showing means in
-                        // view in a window in front: the pane is not lazy, so on appearing alone
-                        // it listened from the moment Appearance opened, scrolled away or not.
-                        .modifier(ScrollVisibility(isOnScreen: $isMeterOnScreen))
-                        .onAppear { syncAudioPreview() }
-                        .onChange(of: wantsAudioPreview) { syncAudioPreview() }
-                        .onDisappear {
-                            guard isPreviewingAudio else { return }
-                            isPreviewingAudio = false
-                            environment.endAudioPreview()
-                        }
-                }
-            }
-
-            if environment.audioAnalyzer.failure != nil, glow.isAudioReactive {
-                SettingsDivider()
-
-                SettingsRow(
-                    title: "Try Again",
-                    subtitle: "Ask for the system audio permission once more.",
-                    systemImage: "arrow.clockwise"
-                ) {
-                    Button("Retry") { environment.audioAnalyzer.retry() }
-                        .controlSize(.small)
-                }
-            }
-
-            SettingsDivider()
-
-            SettingsRow(
                 title: "Pause in Low Power Mode",
                 systemImage: "battery.25percent",
                 isEnabled: glow.isEnabled
             ) {
                 SettingsToggle(isOn: $settings.appearance.ambientGlow.pauseInLowPowerMode)
+            }
             }
         }
     }

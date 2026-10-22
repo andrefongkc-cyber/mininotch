@@ -1,6 +1,8 @@
 import SwiftUI
 
-/// Settings > Timer.
+
+/// A part of a Settings pane (`main`, and `more` under More Options), put together in
+/// `SettingsPanes`.
 struct TimerSettingsView: View {
     @Environment(SettingsStore.self) private var settings
 
@@ -10,10 +12,15 @@ struct TimerSettingsView: View {
         settings.timer.enabled && settings.timer.pomodoroPreset == .custom
     }
 
+    enum Part { case main, more }
+    var part: Part = .main
+
     var body: some View {
         @Bindable var settings = settings
 
-        TabSettingsSection(
+        switch part {
+        case .main:
+            TabSettingsSection(
             title: "Timer",
             subtitle: "A countdown in the notch, and the Pomodoro cycle built on top of it."
         ) {
@@ -63,88 +70,89 @@ struct TimerSettingsView: View {
                     SettingsToggle(isOn: $settings.timer.focusMode)
                 }
             }
-
-            SettingsCard(
-                header: "Pomodoro",
-                footer: "A work interval, then a short break, with a longer one after a full set. The Timer tab can start any of these without changing which one this button uses."
+            }
+        case .more:
+        SettingsCard(
+            header: "Pomodoro",
+            footer: "A work interval, then a short break, with a longer one after a full set. The Timer tab can start any of these without changing which one this button uses."
+        ) {
+            SettingsRow(
+                title: "Rhythm",
+                subtitle: settings.timer.pomodoroPreset.summary(custom: settings.timer),
+                systemImage: "metronome",
+                isEnabled: settings.timer.enabled
             ) {
-                SettingsRow(
-                    title: "Rhythm",
-                    subtitle: settings.timer.pomodoroPreset.summary(custom: settings.timer),
-                    systemImage: "metronome",
-                    isEnabled: settings.timer.enabled
-                ) {
-                    InlinePicker(selection: $settings.timer.pomodoroPreset) {
-                        ForEach(PomodoroPreset.allCases) { preset in
-                            Text(preset.title).tag(preset)
-                        }
+                InlinePicker(selection: $settings.timer.pomodoroPreset) {
+                    ForEach(PomodoroPreset.allCases) { preset in
+                        Text(preset.title).tag(preset)
                     }
-                }
-
-                SettingsDivider()
-
-                SettingsRow(
-                    title: "Focus Length",
-                    systemImage: "brain.head.profile",
-                    isEnabled: isCustomRhythm
-                ) {
-                    ValueSlider(value: $settings.timer.workMinutes, range: 1...120, step: 1) {
-                        "\(Int($0)) min"
-                    }
-                }
-
-                SettingsDivider()
-
-                SettingsRow(
-                    title: "Break Length",
-                    systemImage: "cup.and.saucer",
-                    isEnabled: isCustomRhythm
-                ) {
-                    ValueSlider(value: $settings.timer.breakMinutes, range: 1...60, step: 1) {
-                        "\(Int($0)) min"
-                    }
-                }
-
-                SettingsDivider()
-
-                SettingsRow(
-                    title: "Long Break Length",
-                    systemImage: "figure.walk",
-                    isEnabled: isCustomRhythm
-                ) {
-                    ValueSlider(value: $settings.timer.longBreakMinutes, range: 1...60, step: 1) {
-                        "\(Int($0)) min"
-                    }
-                }
-
-                SettingsDivider()
-
-                SettingsRow(
-                    title: "Intervals Before a Long Break",
-                    systemImage: "repeat",
-                    isEnabled: isCustomRhythm
-                ) {
-                    ValueSlider(
-                        value: Binding(
-                            get: { Double(settings.timer.intervalsBeforeLongBreak) },
-                            set: { settings.timer.intervalsBeforeLongBreak = Int($0) }
-                        ),
-                        range: 2...8,
-                        step: 1
-                    ) { "\(Int($0))" }
-                }
-
-                SettingsDivider()
-
-                SettingsRow(
-                    title: "Start the Next Interval Automatically",
-                    subtitle: "Off means each interval waits for you. On is the point of the technique: it keeps going while you are concentrating.",
-                    systemImage: "play.circle",
-                    isEnabled: settings.timer.enabled
-                ) {
-                    SettingsToggle(isOn: $settings.timer.autoAdvance)
                 }
             }
+
+            SettingsDivider()
+
+            SettingsRow(
+                title: "Focus Length",
+                systemImage: "brain.head.profile",
+                isEnabled: isCustomRhythm
+            ) {
+                ValueSlider(value: $settings.timer.workMinutes, range: 1...120, step: 1) {
+                    "\(Int($0)) min"
+                }
+            }
+
+            SettingsDivider()
+
+            SettingsRow(
+                title: "Break Length",
+                systemImage: "cup.and.saucer",
+                isEnabled: isCustomRhythm
+            ) {
+                ValueSlider(value: $settings.timer.breakMinutes, range: 1...60, step: 1) {
+                    "\(Int($0)) min"
+                }
+            }
+
+            SettingsDivider()
+
+            SettingsRow(
+                title: "Long Break Length",
+                systemImage: "figure.walk",
+                isEnabled: isCustomRhythm
+            ) {
+                ValueSlider(value: $settings.timer.longBreakMinutes, range: 1...60, step: 1) {
+                    "\(Int($0)) min"
+                }
+            }
+
+            SettingsDivider()
+
+            SettingsRow(
+                title: "Intervals Before a Long Break",
+                systemImage: "repeat",
+                isEnabled: isCustomRhythm
+            ) {
+                ValueSlider(
+                    value: Binding(
+                        get: { Double(settings.timer.intervalsBeforeLongBreak) },
+                        set: { settings.timer.intervalsBeforeLongBreak = Int($0) }
+                    ),
+                    range: 2...8,
+                    step: 1
+                ) { "\(Int($0))" }
+            }
+
+            SettingsDivider()
+
+            SettingsRow(
+                title: "Start the Next Interval Automatically",
+                subtitle: "Off means each interval waits for you. On is the point of the technique: it keeps going while you are concentrating.",
+                systemImage: "play.circle",
+                isEnabled: settings.timer.enabled
+            ) {
+                SettingsToggle(isOn: $settings.timer.autoAdvance)
+            }
+        }
         }
     }
 }

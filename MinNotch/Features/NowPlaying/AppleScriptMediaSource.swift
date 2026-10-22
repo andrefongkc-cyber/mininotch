@@ -88,7 +88,9 @@ struct PlayerDescriptor {
         // Music does not expose its real Up Next queue to AppleScript. What it does expose is
         // the playlist or album the current track is playing from, and the current track's
         // position in it, which gives the next tracks in order. With shuffle on that order is
-        // not the play order, so it says so instead of listing tracks that will not come next.
+        // not the play order, except that Music sometimes says it is shuffling when it is not;
+        // the script returns the order either way, and `NowPlayingController` lists it under a
+        // shuffle claim only once a track change has matched it (`PlaylistReading`).
         //
         // Checked for another way in, and there is none: the dictionary has no queue, shuffle
         // mode, or "playing next" class at all, and the session Music saves to
@@ -99,19 +101,22 @@ struct PlayerDescriptor {
         if application "Music" is running then
             tell application "Music"
                 try
-                    if shuffle enabled then
-                        set sourceName to ""
-                        try
-                            set sourceName to (name of current playlist) as text
-                        end try
-                        return {"shuffle", sourceName}
-                    end if
+                    set sourceName to ""
+                    try
+                        set sourceName to (name of current playlist) as text
+                    end try
                     set sourceList to current playlist
                     set position to index of current track
                     set total to count of tracks of sourceList
                     set lastPosition to position + LIMIT
                     if lastPosition > total then set lastPosition to total
-                    set upcoming to {"ok"}
+                    -- The order is read whatever shuffle claims, since the claim is not always
+                    -- true; the controller decides whether to believe it.
+                    if shuffle enabled then
+                        set upcoming to {"shuffle", sourceName}
+                    else
+                        set upcoming to {"ok", sourceName}
+                    end if
                     repeat with i from (position + 1) to lastPosition
                         set nextTrack to track i of sourceList
                         set end of upcoming to {(name of nextTrack) as text, (artist of nextTrack) as text}
@@ -345,35 +350,37 @@ final class AppleScriptMediaSource: MediaSource {
     // MARK: Up Next
 
     func upNext(limit: Int) -> UpNextState {
-        guard let template = descriptor.upNextScript else { return .idle }
-        guard isAvailable else { return .unavailable("Music is not running.") }
-
-        let script = template.replacingOccurrences(of: "LIMIT", with: String(max(limit, 1)))
-        guard let result = AppleScriptRunner.shared.run(script), result.numberOfItems >= 1 else {
-            return .unavailable("Up Next could not be read from Music.")
+        guard let reading = playlistReading(limit: limit) else {
+            return isAvailable ? .unavailable("Up Next is only known when playing from a playlist or album.") : .unavailable("Music is not running.")
         }
-
-        switch result.atIndex(1)?.stringValue {
-        case "shuffle":
-            let source = result.numberOfItems >= 2 ? (result.atIndex(2)?.stringValue ?? "") : ""
+        if reading.claimsShuffle {
             return .unavailable(
-                source.isEmpty
+                reading.source.isEmpty
                     ? "Shuffling. Music doesn't share the shuffled order."
-                    : "Shuffling \u{201C}\(source)\u{201D}. Music doesn't share the order."
+                    : "Shuffling \u{201C}\(reading.source)\u{201D}. Music doesn't share the order."
             )
-        case "ok":
-            guard result.numberOfItems >= 2 else {
-                return .unavailable("Nothing after this in the current playlist.")
-            }
-            let items: [UpNextItem] = (2...result.numberOfItems).compactMap { index in
+        }
+        return reading.items.isEmpty ? .unavailable("Nothing after this in the current playlist.") : .loaded(reading.items)
+    }
+
+    /// The tracks after this one in the playlist or album it plays from, and whether Music
+    /// claims to be shuffling. Nil when Music has no current playlist to read.
+    func playlistReading(limit: Int) -> PlaylistReading? {
+        guard let template = descriptor.upNextScript, isAvailable else { return nil }
+        let script = template.replacingOccurrences(of: "LIMIT", with: String(max(limit, 1)))
+        guard let result = AppleScriptRunner.shared.run(script), result.numberOfItems >= 2,
+              let status = result.atIndex(1)?.stringValue, status == "ok" || status == "shuffle"
+        else { return nil }
+
+        let source = result.atIndex(2)?.stringValue ?? ""
+        let items: [UpNextItem] = result.numberOfItems >= 3
+            ? (3...result.numberOfItems).compactMap { index in
                 guard let pair = result.atIndex(index), pair.numberOfItems >= 2,
                       let title = pair.atIndex(1)?.stringValue, !title.isEmpty else { return nil }
                 return UpNextItem(title: title, artist: pair.atIndex(2)?.stringValue ?? "")
             }
-            return items.isEmpty ? .unavailable("Nothing after this in the current playlist.") : .loaded(items)
-        default:
-            return .unavailable("Up Next is only known when playing from a playlist or album.")
-        }
+            : []
+        return PlaylistReading(items: items, claimsShuffle: status == "shuffle", source: source)
     }
 
     // MARK: Artwork

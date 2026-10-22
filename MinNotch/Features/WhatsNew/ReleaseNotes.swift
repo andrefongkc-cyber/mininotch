@@ -27,14 +27,39 @@ struct ReleaseNotes {
     var removed: [ReleaseNote]
 
     static let latest = ReleaseNotes(
-        id: "0.7.6",
-        version: "0.7.6",
-        added: [],
+        id: "0.8.0",
+        version: "0.8.0",
+        added: [
+            ReleaseNote(
+                symbol: "clock",
+                title: "The Time in the Notch",
+                detail: "A clock beside the camera, in your Mac's 12 or 24 hour time, with the day if you like.",
+                howTo: "Settings > Layout > Closed Pill: drag Clock onto either side, with Show Indicators When Closed on. Clock Shows picks Time or Day and Time."
+            ),
+            ReleaseNote(
+                symbol: "text.line.first.and.arrowtriangle.forward",
+                title: "Up Next",
+                detail: "A new button beside Next shows what plays after this song. Apple Music shares it for a playlist or album playing in order; for Spotify, connect your account once.",
+                howTo: "The button is added after Next for you; move it in Settings > Layout. Connect Spotify in Settings > Music > Up Next."
+            ),
+            ReleaseNote(
+                symbol: "globe",
+                title: "MiniNotch Has a Website",
+                detail: "Every feature, the six Notch Styles, and the easiest way to install, to share with friends. We plan to move it to mininotch.app soon.",
+                howTo: "andrefongkc-cyber.github.io/mininotch"
+            ),
+        ],
         improved: [
             ReleaseNote(
-                symbol: "playpause",
-                title: "Music Controls Answer Straight Away",
-                detail: "With Chrome open and many tabs, the cover, the lyrics and the pause button could take seconds to respond, even in Apple Music. They respond at once again.",
+                symbol: "gearshape",
+                title: "Simpler Settings",
+                detail: "Settings is sorted by what you are changing: Music, Lock Screen, Weather, Timer, Shelf & Notes and more. Each section shows what most people change, with the rest under More Options, and search still finds everything.",
+                howTo: "Open Settings from the menu bar icon."
+            ),
+            ReleaseNote(
+                symbol: "tray.and.arrow.down",
+                title: "Drag Files to the Notch Again",
+                detail: "Dragging a file or a link to the closed notch opens the Shelf again, ready to keep it or send it with AirDrop.",
                 howTo: nil
             ),
         ],

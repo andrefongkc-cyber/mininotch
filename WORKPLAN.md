@@ -1,6 +1,6 @@
 # MiniNotch workplan
 
-Status: website and clearer install steps done on branch website, in a PR; Pages needs switching on by Andre (Settings > Pages > Source: GitHub Actions); next: the Wave and Chase revamp when the user asks.
+Status: 0.8.0 prepared on branch settings-declutter (notes, version, drag-to-notch fix), in a PR for Andre to merge and release from his Mac; next: the user tries a drag to the notch and the Spotify sign-in.
 
 Living document. Update the checkboxes as work lands. `CLAUDE.md` holds the architecture
 rules and the traps; this file holds the sequence.
@@ -322,6 +322,14 @@ Sparkle was asked about and deferred ("not now"); it is free (MIT) and needs no 
 - [x] Weather: location or a typed city, Open-Meteo, a tab and a pill indicator. The location prompt needs trying by hand.
 
 - [x] Website (asked 2026-10-19): `website/`, deployed to GitHub Pages by a workflow, with install steps that explain Open Anyway; the README, the release notes script and the 0.7.6 release page carry the same steps. Pages not yet switched on.
+
+- [x] Settings declutter (asked 2026-10-19): sidebar by feature (Music, Lock Screen, Weather, Timer, Shelf & Notes, Battery & System, Volume & Brightness), each pane's rarely changed rows under More Options, search opens a fold. Checked with `--capture-settings`; the real window not yet looked at by the user.
+- [~] Song peek between Next and pop-out (asked 2026-10-19): built, captured with the sample queue. Apple Music in order from the playlist, checked against what plays; Spotify through the Web API after a one-time sign-in with the user's own Client ID. Needs the user to register a Spotify app, then trying both players by hand.
+
+- [x] Clock in the closed pill (asked 2026-10-20): a Clock indicator for Layout > Closed Pill, Time or Day and Time, in the Mac's 12 or 24 hour time. Captured; placed on the user's right side with indicators switched on.
+
+- [~] Dragging a file to the closed notch opens it again (reported 2026-10-22): `NotchDragDetector`, a global mouse monitor, since the notch's own space stopped its drop target hearing drags. Built; not tried with a real drag.
+- [~] 0.8.0 (asked 2026-10-22): notes written, version bumped, 0.7.6 moved into the history. Release from Andre's Mac with `Scripts/release.sh`, then the feed.
 
 ## 0.3 feedback (2026-09-23)
 

@@ -37,6 +37,9 @@ struct GeneralSettings: Codable, Equatable {
     /// Whether the closed pill's Song indicator shows the title or the artist.
     var pillSongText: PillSongText = .title
 
+    /// What the closed pill's Clock indicator shows.
+    var pillClockText: PillClockText = .time
+
     /// A live activity for each file arriving in Downloads. Off by default: it reads the
     /// Downloads folder, which is a permission of its own.
     var showDownloadActivity: Bool = false
@@ -67,6 +70,7 @@ struct GeneralSettings: Codable, Equatable {
         pillLeading = c.value(.pillLeading, PillIndicator.defaultLeading)
         pillTrailing = c.value(.pillTrailing, PillIndicator.defaultTrailing)
         pillSongText = c.value(.pillSongText, PillSongText.title)
+        pillClockText = c.value(.pillClockText, PillClockText.time)
         // Before the song had an indicator of its own, it rode in the Live Activity slot as the
         // lowest-priority activity. A file from then has no `pillSongText` key, and gets the Song
         // placed where that slot is, so the song stays where its owner was used to seeing it.
@@ -93,6 +97,8 @@ enum PillIndicator: String, Codable, CaseIterable, Identifiable, LayoutArrangeab
     case playing
     case battery
     case weather
+    /// The time, as the Mac's own clock writes it, without AM or PM.
+    case clock
 
     var id: String { rawValue }
 
@@ -104,6 +110,7 @@ enum PillIndicator: String, Codable, CaseIterable, Identifiable, LayoutArrangeab
         case .playing: return "Playing Indicator"
         case .battery: return "Battery"
         case .weather: return "Weather"
+        case .clock: return "Clock"
         }
     }
 
@@ -115,6 +122,7 @@ enum PillIndicator: String, Codable, CaseIterable, Identifiable, LayoutArrangeab
         case .playing: return "waveform"
         case .battery: return "battery.100percent"
         case .weather: return "cloud.sun"
+        case .clock: return "clock"
         }
     }
 
@@ -134,6 +142,79 @@ enum PillIndicator: String, Codable, CaseIterable, Identifiable, LayoutArrangeab
         } else if let index = trailing.firstIndex(of: .activity) {
             trailing.insert(.song, at: index)
         }
+    }
+}
+
+/// What the closed pill's Clock indicator shows.
+enum PillClockText: String, Codable, CaseIterable, Identifiable {
+    case time
+    case dayAndTime
+
+    var id: String { rawValue }
+
+    var title: String {
+        switch self {
+        case .time: return "Time"
+        case .dayAndTime: return "Day and Time"
+        }
+    }
+
+    /// The format template. `J` is the hour in whichever of 12 and 24 hours the Mac uses, with
+    /// no AM or PM: the menu bar's clock already says which, and the pill is short of room.
+    var template: String {
+        switch self {
+        case .time: return "Jmm"
+        case .dayAndTime: return "EEEJmm"
+        }
+    }
+
+    /// `date` as the pill writes it, in the Mac's own language and hour cycle.
+    func string(from date: Date) -> String {
+        let formatter = DateFormatter()
+        formatter.locale = .autoupdatingCurrent
+        formatter.setLocalizedDateFormatFromTemplate(template)
+        return formatter.string(from: date)
+    }
+
+    /// The widest this ever gets, so the pill does not resize as the minutes go by: every digit
+    /// an 8 at a two-digit hour, and the widest weekday name.
+    ///
+    /// Worked out once per style and locale and kept, since the pill's width is read on every
+    /// frame of its spring.
+    var widestSample: String {
+        let key = "\(rawValue)|\(Locale.autoupdatingCurrent.identifier)|\(DateFormatter.dateFormat(fromTemplate: "j", options: 0, locale: .autoupdatingCurrent) ?? "")"
+        return Self.widestCache.value(for: key) { computeWidestSample() }
+    }
+
+    private static let widestCache = LockedCache()
+
+    private func computeWidestSample() -> String {
+        let calendar = Calendar.autoupdatingCurrent
+        // Every weekday, at a two-digit hour on either clock: 10 and 22 are both two digits
+        // whether the Mac counts to 12 or to 24 (18 alone was "6:58" on a 12-hour Mac, and
+        // "10:58" did not fit).
+        let dates = (4...10).flatMap { day in
+            [10, 22].compactMap { hour in
+                calendar.date(from: DateComponents(year: 2026, month: 1, day: day, hour: hour, minute: 58))
+            }
+        }
+        return dates.map(string(from:)).max { CollapsedPillContent.measure($0) < CollapsedPillContent.measure($1) } ?? "22:58"
+    }
+}
+
+/// A string cache safe to read from any thread: `widestSample` is read wherever the pill's
+/// width is.
+private final class LockedCache: @unchecked Sendable {
+    private var values: [String: String] = [:]
+    private let lock = NSLock()
+
+    func value(for key: String, make: () -> String) -> String {
+        lock.lock()
+        defer { lock.unlock() }
+        if let value = values[key] { return value }
+        let value = make()
+        values[key] = value
+        return value
     }
 }
 

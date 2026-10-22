@@ -38,9 +38,9 @@ enum FeatureFlag: String, CaseIterable {
     case customVisualizers
     case multiDisplay
     case audioReactiveGlow
-    /// The next songs under the Now Playing card. Built, and off: it depends on Music's
-    /// `shuffle enabled`, which said a playlist playing in order was shuffling, so the row
-    /// explained a shuffle that was not happening instead of listing what came next.
+    /// The Up Next peek on the Now Playing card. Off from 0.4 because Music's `shuffle enabled`
+    /// said a playlist playing in order was shuffling; back on 2026-10-19 with the order checked
+    /// against what plays, and Spotify's queue read through its Web API.
     case upNext
 
     var availability: FeatureAvailability {
@@ -50,9 +50,9 @@ enum FeatureFlag: String, CaseIterable {
         case .lyrics:
             return .beta
         case .gestures, .haptics, .shelf, .hud, .reminders, .customVisualizers, .audioReactiveGlow,
-             .clipboardHistory, .pomodoro, .liveActivities, .linkShelf, .weather, .quickNotes:
+             .clipboardHistory, .pomodoro, .liveActivities, .linkShelf, .weather, .quickNotes, .upNext:
             return .beta
-        case .shortcutsWidget, .focusMode, .mirror, .upNext:
+        case .shortcutsWidget, .focusMode, .mirror:
             return .hidden
         }
     }

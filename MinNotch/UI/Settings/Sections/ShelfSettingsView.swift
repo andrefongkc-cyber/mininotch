@@ -1,15 +1,22 @@
 import SwiftUI
 
 /// Settings > Shelf.
+/// A part of a Settings pane (`main`, and `more` under More Options), put together in
+/// `SettingsPanes`.
 struct ShelfSettingsView: View {
     @Environment(SettingsStore.self) private var settings
 
     private var isBuilt: Bool { FeatureFlag.shelf.isEnabled }
 
+    enum Part { case main, more }
+    var part: Part = .main
+
     var body: some View {
         @Bindable var settings = settings
 
-        TabSettingsSection(
+        switch part {
+        case .main:
+            TabSettingsSection(
             title: "Shelf",
             subtitle: "A drop zone in the notch for files on their way somewhere else."
         ) {
@@ -44,30 +51,6 @@ struct ShelfSettingsView: View {
                 }
             }
 
-            SettingsCard(header: "Storage") {
-                SettingsRow(
-                    title: "Item Limit",
-                    subtitle: "The oldest item is dropped once the shelf is full.",
-                    systemImage: "square.stack"
-                ) {
-                    ValueSlider(
-                        value: Binding(
-                            get: { Double(settings.shelf.maxItems) },
-                            set: { settings.shelf.maxItems = Int($0) }
-                        ),
-                        range: 4...40,
-                        step: 1
-                    ) { "\(Int($0))" }
-                    
-                }
-
-                SettingsDivider()
-
-                SettingsRow(title: "Clear on Quit", systemImage: "trash") {
-                    SettingsToggle(isOn: $settings.shelf.clearOnQuit)
-                }
-            }
-
             SettingsCard(
                 header: "Link Shelf",
                 footer: "Each link's title and icon are read from the site itself when you add it, which means a request to that site. Links are kept between launches."
@@ -98,6 +81,31 @@ struct ShelfSettingsView: View {
                     ) { "\(Int($0))" }
                 }
             }
+            }
+        case .more:
+        SettingsCard(header: "Shelf Storage") {
+            SettingsRow(
+                title: "Item Limit",
+                subtitle: "The oldest item is dropped once the shelf is full.",
+                systemImage: "square.stack"
+            ) {
+                ValueSlider(
+                    value: Binding(
+                        get: { Double(settings.shelf.maxItems) },
+                        set: { settings.shelf.maxItems = Int($0) }
+                    ),
+                    range: 4...40,
+                    step: 1
+                ) { "\(Int($0))" }
+                    
+            }
+
+            SettingsDivider()
+
+            SettingsRow(title: "Clear on Quit", systemImage: "trash") {
+                SettingsToggle(isOn: $settings.shelf.clearOnQuit)
+            }
+        }
         }
     }
 }

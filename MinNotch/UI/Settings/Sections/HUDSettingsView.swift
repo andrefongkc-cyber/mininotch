@@ -1,19 +1,32 @@
 import SwiftUI
 
-/// Settings > HUDs.
+/// Settings > Volume & Brightness's cards (`main`, and `more` under More Options), and the
+/// indicator's row in Settings > Lock Screen (`lockScreen`). The panes are put together in
+/// `SettingsPanes`.
 struct HUDSettingsView: View {
+    enum Part { case main, more, lockScreen }
+    var part: Part = .main
+
     @Environment(SettingsStore.self) private var settings
     @Environment(AppEnvironment.self) private var environment
 
     private var coordinator: HUDCoordinator { environment.hud }
 
     var body: some View {
-        @Bindable var settings = settings
+        switch part {
+        case .main:
+            indicatorCards
+            presentationCard
+        case .more:
+            timingCard
+        case .lockScreen:
+            lockScreenCard
+        }
+    }
 
-        SettingsPane(
-            title: "HUDs",
-            subtitle: "Show volume, brightness, and keyboard backlight in the notch instead of hunting for the overlay in the middle of the screen."
-        ) {
+    private var indicatorCards: some View {
+        @Bindable var settings = settings
+        return Group {
             SettingsCard(
                 header: "Show in the Notch",
                 footer: "These add an indicator at the notch. Apple's own overlay appears too unless you hide it below."
@@ -87,22 +100,12 @@ struct HUDSettingsView: View {
                     }
                 }
             }
+        }
+    }
 
-            SettingsCard(header: "Presentation") {
-                SettingsRow(
-                    title: "Show on the Lock Screen",
-                    subtitle: LockScreenSpace.shared.isAvailable
-                        ? "Volume and brightness over the lock screen too. Uses a private part of macOS, so a future version may stop it working."
-                        : "Not available on this version of macOS.",
-                    systemImage: "lock.display",
-                    isEnabled: LockScreenSpace.shared.isAvailable
-                        && (settings.huds.replaceVolumeHUD || settings.huds.replaceBrightnessHUD || settings.huds.replaceKeyboardBacklightHUD)
-                ) {
-                    SettingsToggle(isOn: $settings.huds.showOnLockScreen)
-                }
-
-                SettingsDivider()
-
+    private var presentationCard: some View {
+        @Bindable var settings = settings
+        return SettingsCard(header: "Presentation") {
                 SettingsRow(title: "Style", systemImage: "rectangle.on.rectangle") {
                     InlinePicker(selection: $settings.huds.style) {
                         ForEach(HUDStyle.allCases) { style in
@@ -113,6 +116,20 @@ struct HUDSettingsView: View {
 
                 SettingsDivider()
 
+                SettingsRow(
+                    title: "Preview",
+                    subtitle: "Show an indicator now, so you can see the style without reaching for a key.",
+                    systemImage: "eye"
+                ) {
+                    Button("Show") { coordinator.preview(.volume) }
+                        .controlSize(.small)
+                }
+        }
+    }
+
+    private var timingCard: some View {
+        @Bindable var settings = settings
+        return SettingsCard(header: "Presentation") {
                 SettingsRow(
                     title: "Dismiss After",
                     subtitle: "How long the indicator stays on screen after the last change.",
@@ -130,18 +147,23 @@ struct HUDSettingsView: View {
                 SettingsRow(title: "Show Numeric Value", systemImage: "number") {
                     SettingsToggle(isOn: $settings.huds.showNumericValue)
                 }
+        }
+    }
 
-                SettingsDivider()
-
+    private var lockScreenCard: some View {
+        @Bindable var settings = settings
+        return SettingsCard {
                 SettingsRow(
-                    title: "Preview",
-                    subtitle: "Show an indicator now, so you can see the style without reaching for a key.",
-                    systemImage: "eye"
+                    title: "Volume and Brightness",
+                    subtitle: LockScreenSpace.shared.isAvailable
+                        ? "The volume and brightness indicator over the lock screen too, when you press those keys there."
+                        : "Not available on this version of macOS.",
+                    systemImage: "lock.display",
+                    isEnabled: LockScreenSpace.shared.isAvailable
+                        && (settings.huds.replaceVolumeHUD || settings.huds.replaceBrightnessHUD || settings.huds.replaceKeyboardBacklightHUD)
                 ) {
-                    Button("Show") { coordinator.preview(.volume) }
-                        .controlSize(.small)
+                    SettingsToggle(isOn: $settings.huds.showOnLockScreen)
                 }
-            }
         }
     }
 

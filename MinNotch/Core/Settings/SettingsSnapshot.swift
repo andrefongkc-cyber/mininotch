@@ -8,7 +8,7 @@ import Foundation
 struct SettingsSnapshot: Codable, Equatable {
     /// Bumped only for changes a lenient decode cannot absorb, e.g. a key whose meaning
     /// changed. `SettingsMigrator` handles those.
-    static let currentSchemaVersion = 2
+    static let currentSchemaVersion = 3
 
     var schemaVersion: Int = SettingsSnapshot.currentSchemaVersion
     var general = GeneralSettings()
@@ -60,6 +60,16 @@ enum SettingsMigrator {
                 result.media.controlOrder.insert(.shuffle, at: 0)
             }
             result.media.sneakPeekOnTrackChange = true
+        }
+
+        // Version 3 added the Up Next button to the transport row. An arrangement saved before
+        // it could not have chosen it, so it goes after Next, or at the end, once.
+        if result.schemaVersion < 3, !result.media.controlOrder.contains(.upNext) {
+            if let next = result.media.controlOrder.firstIndex(of: .next) {
+                result.media.controlOrder.insert(.upNext, at: next + 1)
+            } else {
+                result.media.controlOrder.append(.upNext)
+            }
         }
 
         result.schemaVersion = SettingsSnapshot.currentSchemaVersion
