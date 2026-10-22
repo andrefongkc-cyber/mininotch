@@ -1164,7 +1164,7 @@ the drag pasteboard's change count, as Boring Notch's `DragDetector` does; while
 dragged, `NotchWindowManager.dragMoved` opens any closed notch whose reach (the notch, 20 points wider
 each side and 24 below) holds the pointer, through `NotchViewModel.openForDrag`, which the old drop
 target now calls too. When the drag ends somewhere other than over the open panel, a notch it opened
-closes again. Never tried with a real drag here: the screen capture available hid the notch.
+closes again. Confirmed by the user with a real drag on 2026-10-22.
 
 **What's New and the tutorial share one debug button.** `TopStripItem.whatsNew` opens a small menu
 (`NotchMenu`) offering either.
@@ -1375,6 +1375,16 @@ with one Apple Event** (`URL of tabs of windows`), never by asking each tab: tha
 per tab, 3.5 s with 32 tabs, and with nothing playing every refresh ran it on the queue all players
 share, so Music's artwork, lyrics and pause button waited (2026-10-19). `NowPlayingController.refresh`
 also keeps at most one refresh waiting behind the one on the queue (`isRefreshing`, `refreshAgain`).
+
+**Play, pause, next and previous show at once, then the player confirms** (2026-10-22, "there's a
+delay when I play or pause or skip", with Spotify). The button used to wait for the command, a 0.15 s
+pause and a whole refresh, sometimes queued behind one already under way, about half a second.
+`NowPlayingController.send` now flips `isPlaying` (rebasing the clock so a pause freezes the scrubber
+where it is) and sets a skip's position to zero before the command is sent. A read captured before the
+command reached the player (`staleBefore`) keeps those values rather than flipping the button back;
+the first read from after it takes over, so a command the player ignored still shows the truth. A skip
+is read again at 0.6 s for the new song's title. Every caller of `send` gets it: the card, the floating
+window, the lock screen, the shortcuts.
 
 **Clicking a lyric line seeks by lyric time, not by track time.** The strip's clock is
 `elapsed + offset + audio correction - latency`, so seeking to a line's timestamp directly would

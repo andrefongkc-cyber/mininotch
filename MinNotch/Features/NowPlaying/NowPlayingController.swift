@@ -66,6 +66,12 @@ final class NowPlayingController {
     /// playlist whose order a track change has confirmed. Music's `shuffle enabled` can claim a
     /// shuffle that is not happening; once the song that plays is the one the order named, the
     /// order is listed whatever the claim says, until a change does not match.
+    /// Reads captured before this moment come from before the last command reached the player,
+    /// so their play state and position are stale: a refresh already under way when Pause was
+    /// clicked would flip the button back for a beat. `.distantFuture` while the command waits on
+    /// the queue; nil once a read from after it has arrived.
+    @ObservationIgnored private var staleBefore: Date?
+
     @ObservationIgnored private var predictedNextTitle: String?
     @ObservationIgnored private var predictedFrom: String?
     @ObservationIgnored private var confirmedOrderSource: String?
@@ -266,6 +272,15 @@ final class NowPlayingController {
             || snapshot.artworkKey != track?.artworkKey
 
         var published = snapshot
+        if let stale = staleBefore {
+            if capturedAt < stale, let current = track, !isNewTrack {
+                // Older than the command: keep what the command already showed.
+                published.isPlaying = current.isPlaying
+                published.elapsed = elapsed(at: capturedAt)
+            } else if capturedAt >= stale {
+                staleBefore = nil
+            }
+        }
         if !isNewTrack, let current = track, current.isPlaying, snapshot.isPlaying, !isScrubbing {
             published.elapsed = Self.smoothedPosition(reported: snapshot.elapsed, predicted: elapsed(at: capturedAt))
         }
@@ -273,7 +288,7 @@ final class NowPlayingController {
         // Hold the user's drag position until the seek round-trips.
         if isScrubbing, let scrubTarget { published.elapsed = scrubTarget }
         track = published
-        reportPlaying(snapshot.isPlaying)
+        reportPlaying(published.isPlaying)
 
         guard isNewTrack else { return }
         lastTrackIdentity = snapshot.trackIdentity
@@ -635,8 +650,27 @@ final class NowPlayingController {
 
         // Shuffle, repeat and favourite are shown changed at once and confirmed by the
         // read-back below. Waiting for the round trip left the button looking unresponsive for
-        // a noticeable beat.
+        // a noticeable beat. Play, pause, next and previous too (2026-10-22, "there's a delay
+        // when I play or pause or skip"): the button waited for the command, a pause, and a
+        // whole refresh, sometimes behind one already on the queue.
+        let now = Date()
         switch command {
+        case .playPause:
+            if let current = track {
+                // The clock is rebased to now, so pausing freezes the scrubber where it is and
+                // playing carries on from there.
+                track?.elapsed = elapsed(at: now)
+                snapshotDate = now
+                track?.isPlaying = !current.isPlaying
+                reportPlaying(!current.isPlaying)
+            }
+        case .nextTrack, .previousTrack:
+            // Both land at the start of a song: the next one, or this one again (previous more
+            // than a few seconds in). The title follows when the player says what it is.
+            if track != nil {
+                track?.elapsed = 0
+                snapshotDate = now
+            }
         case .toggleShuffle:
             if let current = track?.isShuffling { track?.isShuffling = !current }
         case .cycleRepeat:
@@ -649,9 +683,19 @@ final class NowPlayingController {
             break
         }
 
+        staleBefore = .distantFuture
         AppleScriptRunner.shared.queue.async {
             source.send(command)
-            // Read back promptly so the button state reflects reality rather than a guess.
+            let sent = Date()
+            DispatchQueue.main.async { [weak self] in
+                if self?.staleBefore == .distantFuture { self?.staleBefore = sent }
+            }
+            // Read back promptly so the button state reflects reality rather than a guess. A
+            // skip is read again a moment later too, since a player can take that long to say
+            // what the new song is.
+            if command == .nextTrack || command == .previousTrack {
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) { [weak self] in self?.refresh() }
+            }
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) { [weak self] in
                 guard let self else { return }
                 self.refresh()

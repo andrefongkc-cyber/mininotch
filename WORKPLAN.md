@@ -328,8 +328,10 @@ Sparkle was asked about and deferred ("not now"); it is free (MIT) and needs no 
 
 - [x] Clock in the closed pill (asked 2026-10-20): a Clock indicator for Layout > Closed Pill, Time or Day and Time, in the Mac's 12 or 24 hour time. Captured; placed on the user's right side with indicators switched on.
 
-- [~] Dragging a file to the closed notch opens it again (reported 2026-10-22): `NotchDragDetector`, a global mouse monitor, since the notch's own space stopped its drop target hearing drags. Built; not tried with a real drag.
+- [x] Dragging a file to the closed notch opens it again (reported 2026-10-22): `NotchDragDetector`, a global mouse monitor, since the notch's own space stopped its drop target hearing drags. Confirmed by the user.
 - [~] 0.8.0 (asked 2026-10-22): notes written, version bumped, 0.7.6 moved into the history. Release from Andre's Mac with `Scripts/release.sh`, then the feed.
+
+- [~] Play, pause and skip respond at once (reported 2026-10-22 with Spotify): shown before the round trip, stale reads ignored. Built; the user to try before it joins the 0.8.0 PR.
 
 ## 0.3 feedback (2026-09-23)
 
