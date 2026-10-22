@@ -54,7 +54,7 @@ when they connect. What goes on which side is yours to arrange in Settings > Lay
 of the pill that shows what it is showing right now. It is off by default on a Mac with a notch,
 where the pill sits behind the camera housing; turn it on in Settings > Layout.
 
-**Up Next.** A button beside Next peeks at what plays after this song. Apple Music shares it for a
+**Up Next** _(next)_. A button beside Next peeks at what plays after this song. Apple Music shares it for a
 playlist or album playing in order; for Spotify, connect your account in Settings > Music.
 
 **Lyrics with the notch closed**. The line being sung, just under the closed pill, while a

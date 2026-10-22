@@ -7,8 +7,23 @@ import Foundation
 /// release goes out, its `latest` moves here under its own name and the new notes take its place.
 extension ReleaseNotes {
     static let history: [ReleaseNotes] = [
-        latest, v0_7_5, v0_7_4, v0_7_3, v0_7_2, v0_7_1, v0_7_0, v0_6_0, v0_5_0, v0_4_0, v0_3_0, v0_2_0,
+        latest, v0_7_6, v0_7_5, v0_7_4, v0_7_3, v0_7_2, v0_7_1, v0_7_0, v0_6_0, v0_5_0, v0_4_0, v0_3_0, v0_2_0,
     ]
+
+    static let v0_7_6 = ReleaseNotes(
+        id: "0.7.6",
+        version: "0.7.6",
+        added: [],
+        improved: [
+            ReleaseNote(
+                symbol: "playpause",
+                title: "Music Controls Answer Straight Away",
+                detail: "With Chrome open and many tabs, the cover, the lyrics and the pause button could take seconds to respond, even in Apple Music. They respond at once again.",
+                howTo: nil
+            ),
+        ],
+        removed: []
+    )
 
     static let v0_7_5 = ReleaseNotes(
         id: "0.7.5",

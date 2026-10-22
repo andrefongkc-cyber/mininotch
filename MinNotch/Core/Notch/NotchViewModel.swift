@@ -151,6 +151,27 @@ final class NotchViewModel {
         }
     }
 
+    // MARK: Dragging
+
+    /// True while the panel is open because a drag reached it, so it can close again if the drag
+    /// goes elsewhere. Set by `openForDrag`, cleared when the drag ends.
+    @ObservationIgnored var isOpenForDrag = false
+
+    /// Opens on the Shelf tab for a file, or a link, being dragged to the notch, when the setting
+    /// for it is on. Called by `NotchDragDetector`, through the window manager, and by the notch's
+    /// own drop target.
+    func openForDrag(carryingFiles: Bool) {
+        if carryingFiles {
+            guard settings.shelf.enabled, settings.shelf.expandOnDragEnter, FeatureFlag.shelf.isEnabled else { return }
+        } else {
+            guard settings.advanced.linkShelfEnabled, FeatureFlag.linkShelf.isEnabled else { return }
+        }
+        guard state != .expanded else { return }
+        selectedTab = .shelf
+        isOpenForDrag = true
+        expand()
+    }
+
     // MARK: State transitions
 
     func expand() {

@@ -15,6 +15,8 @@ final class NotchWindowManager {
     private var spaceObserver: NSObjectProtocol?
     private var pointerMonitor: Any?
     private var lastPointerDisplay: CGDirectDisplayID?
+    /// Opens a closed notch when a file or link is dragged to it. See `NotchDragDetector`.
+    private let dragDetector = NotchDragDetector()
     /// Keep the Notch Still Between Desktops as the surfaces were built with it.
     private var lastPinned: Bool?
 
@@ -34,6 +36,10 @@ final class NotchWindowManager {
 
     func start() {
         rebuild()
+
+        dragDetector.onDragMove = { [weak self] point, payload in self?.dragMoved(to: point, carrying: payload) }
+        dragDetector.onDragEnd = { [weak self] in self?.dragEnded() }
+        dragDetector.start()
 
         screenObserver = NotificationCenter.default.addObserver(
             forName: NSApplication.didChangeScreenParametersNotification,
@@ -95,6 +101,7 @@ final class NotchWindowManager {
     #endif
 
     func stop() {
+        dragDetector.stop()
         if let screenObserver { NotificationCenter.default.removeObserver(screenObserver) }
         screenObserver = nil
         if let spaceObserver { NSWorkspace.shared.notificationCenter.removeObserver(spaceObserver) }
@@ -172,6 +179,46 @@ final class NotchWindowManager {
                 return [pointerScreen]
             }
             return Array(pool.prefix(1))
+        }
+    }
+
+    // MARK: Dragging to the notch
+
+    /// Opens whichever closed notch a drag has reached, on the tab that can take it. The reach is
+    /// a little wider than the notch and a little below it, since the notch is small and the
+    /// pointer arrives at speed.
+    private func dragMoved(to point: CGPoint, carrying payload: NotchDragDetector.Payload) {
+        for controller in controllers.values {
+            let viewModel = controller.viewModel
+            guard viewModel.state != .expanded else { continue }
+            let geometry = viewModel.geometry
+            let notch = geometry.collapsedRectInWindow.offsetBy(dx: geometry.windowFrame.minX, dy: geometry.windowFrame.minY)
+            let reach = CGRect(x: notch.minX - 20, y: notch.minY - 24, width: notch.width + 40, height: notch.height + 24)
+            if reach.contains(point) {
+                viewModel.openForDrag(carryingFiles: payload == .files)
+            }
+        }
+    }
+
+    /// A notch a drag opened closes again once the drag is over, unless it ended over the panel,
+    /// where it was dropped, or the pointer is still there.
+    private func dragEnded() {
+        let point = NSEvent.mouseLocation
+        for controller in controllers.values where controller.viewModel.isOpenForDrag {
+            let viewModel = controller.viewModel
+            viewModel.isOpenForDrag = false
+            let geometry = viewModel.geometry
+            let width = viewModel.expandedPanelWidth
+            let height = max(viewModel.lastPanelHeight, geometry.collapsedSize.height)
+            let panel = CGRect(
+                x: geometry.windowFrame.midX - width / 2,
+                y: geometry.windowFrame.maxY - height,
+                width: width,
+                height: height
+            )
+            if !panel.contains(point) {
+                withAnimation(Motion.notch) { viewModel.collapse() }
+            }
         }
     }
 

@@ -122,20 +122,13 @@ struct NotchRootView: View {
     /// holds files. This exists only to notice the drag arriving, because a collapsed pill is
     /// far too small a target to drop onto accurately.
     private func openShelfForDrag() {
-        guard settings.shelf.enabled,
-              settings.shelf.expandOnDragEnter,
-              FeatureFlag.shelf.isEnabled else { return }
-        viewModel.selectedTab = .shelf
-        viewModel.expand()
+        viewModel.openForDrag(carryingFiles: true)
     }
 
     /// Opens the notch on the Shelf tab, where links are kept, when a link or text is dragged
     /// over the closed pill.
     private func openLinksForDrag() {
-        guard settings.advanced.linkShelfEnabled,
-              FeatureFlag.linkShelf.isEnabled else { return }
-        viewModel.selectedTab = .shelf
-        viewModel.expand()
+        viewModel.openForDrag(carryingFiles: false)
     }
 
     private var shapeStyle: NotchShape {
