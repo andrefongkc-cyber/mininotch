@@ -101,6 +101,7 @@ MiniNotch --capture-whats-new <dir>                                # release not
 MiniNotch --capture-layout <dir> [--width 460]                     # Settings > Layout editors
 MiniNotch --check-permissions [--request] [--out f]                # TCC state
 MiniNotch --check-media [--scripts <dir>] [--out f]                # snapshot, shuffle, Up Next
+MiniNotch --check-transport                                        # pause, play and next on the sample song, without a player
 MiniNotch --check-keys [--simulate] [--control] [--out f]          # volume/brightness key tap
 MiniNotch --check-links "<url or text>" ...                        # link shelf: titles, icons, refusals
 MiniNotch --check-downloads [--out f]                              # download activities, in a scratch folder
@@ -1384,7 +1385,10 @@ where it is) and sets a skip's position to zero before the command is sent. A re
 command reached the player (`staleBefore`) keeps those values rather than flipping the button back;
 the first read from after it takes over, so a command the player ignored still shows the truth. A skip
 is read again at 0.6 s for the new song's title. Every caller of `send` gets it: the card, the floating
-window, the lock screen, the shortcuts.
+window, the lock screen, the shortcuts. **Never write `track?.x = f()` where `f` reads `track`**: the
+first version did (`track?.elapsed = elapsed(at:)`), which is two accesses to one property at once, and
+Swift stopped the app on the first click. Change a copy and assign it. `--check-transport` presses
+pause, play and next on the sample song and prints the result; run it after touching `send`.
 
 **Clicking a lyric line seeks by lyric time, not by track time.** The strip's clock is
 `elapsed + offset + audio correction - latency`, so seeking to a line's timestamp directly would

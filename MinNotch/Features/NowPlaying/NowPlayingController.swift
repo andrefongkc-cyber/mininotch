@@ -656,20 +656,24 @@ final class NowPlayingController {
         let now = Date()
         switch command {
         case .playPause:
-            if let current = track {
+            if var changed = track {
                 // The clock is rebased to now, so pausing freezes the scrubber where it is and
-                // playing carries on from there.
-                track?.elapsed = elapsed(at: now)
+                // playing carries on from there. Worked out before `track` is written: reading
+                // it inside an assignment to it is two accesses at once, which Swift stops the
+                // app for (it crashed on the first click, 2026-10-22).
+                changed.elapsed = elapsed(at: now)
+                changed.isPlaying.toggle()
                 snapshotDate = now
-                track?.isPlaying = !current.isPlaying
-                reportPlaying(!current.isPlaying)
+                track = changed
+                reportPlaying(changed.isPlaying)
             }
         case .nextTrack, .previousTrack:
             // Both land at the start of a song: the next one, or this one again (previous more
             // than a few seconds in). The title follows when the player says what it is.
-            if track != nil {
-                track?.elapsed = 0
+            if var changed = track {
+                changed.elapsed = 0
                 snapshotDate = now
+                track = changed
             }
         case .toggleShuffle:
             if let current = track?.isShuffling { track?.isShuffling = !current }

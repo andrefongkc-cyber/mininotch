@@ -20,6 +20,7 @@ if MainActor.assumeIsolated({ DebugSettingsCapture.runIfRequested() }) { exit(0)
 if MainActor.assumeIsolated({ DebugSettingsPaneCapture.runIfRequested() }) { exit(0) }
 if MainActor.assumeIsolated({ DebugOnboardingCapture.runIfRequested() }) { exit(0) }
 if MainActor.assumeIsolated({ DebugMediaCheck.runIfRequested() }) { exit(0) }
+if MainActor.assumeIsolated({ DebugTransportCheck.runIfRequested() }) { exit(0) }
 if MainActor.assumeIsolated({ DebugKeysCheck.runIfRequested() }) { exit(0) }
 if MainActor.assumeIsolated({ DebugLinksCheck.runIfRequested() }) { exit(0) }
 if MainActor.assumeIsolated({ DebugWhatsNewCapture.runIfRequested() }) { exit(0) }
