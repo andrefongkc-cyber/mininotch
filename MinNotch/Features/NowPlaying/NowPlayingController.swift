@@ -66,11 +66,20 @@ final class NowPlayingController {
     /// playlist whose order a track change has confirmed. Music's `shuffle enabled` can claim a
     /// shuffle that is not happening; once the song that plays is the one the order named, the
     /// order is listed whatever the claim says, until a change does not match.
-    /// Reads captured before this moment come from before the last command reached the player,
-    /// so their play state and position are stale: a refresh already under way when Pause was
-    /// clicked would flip the button back for a beat. `.distantFuture` while the command waits on
-    /// the queue; nil once a read from after it has arrived.
-    @ObservationIgnored private var staleBefore: Date?
+    /// What the last play, pause or skip showed, held until the player agrees or `until` passes.
+    ///
+    /// A player takes a moment to act on a command, and reads in that moment still say the old
+    /// state: holding only reads from before the command was sent let the next ones through, and
+    /// the button swapped between pause and play before settling (2026-10-22). Now any read that
+    /// disagrees is overruled until one agrees, which ends the hold, or the time runs out, in which
+    /// case the player ignored the command and what it says is shown.
+    private struct Expectation {
+        var isPlaying: Bool?
+        var restarted: Bool
+        var until: Date
+    }
+    @ObservationIgnored private var expectation: Expectation?
+    private static let expectationHold: TimeInterval = 1.5
 
     @ObservationIgnored private var predictedNextTitle: String?
     @ObservationIgnored private var predictedFrom: String?
@@ -272,13 +281,22 @@ final class NowPlayingController {
             || snapshot.artworkKey != track?.artworkKey
 
         var published = snapshot
-        if let stale = staleBefore {
-            if capturedAt < stale, let current = track, !isNewTrack {
-                // Older than the command: keep what the command already showed.
-                published.isPlaying = current.isPlaying
-                published.elapsed = elapsed(at: capturedAt)
-            } else if capturedAt >= stale {
-                staleBefore = nil
+        if let expected = expectation {
+            if isNewTrack || capturedAt > expected.until {
+                expectation = nil
+            } else {
+                var agrees = true
+                if let playing = expected.isPlaying, snapshot.isPlaying != playing {
+                    agrees = false
+                    published.isPlaying = playing
+                    published.elapsed = elapsed(at: capturedAt)
+                }
+                // A restart reads as a position near the start; one still far in is from before.
+                if expected.restarted, snapshot.elapsed > 3 {
+                    agrees = false
+                    published.elapsed = elapsed(at: capturedAt)
+                }
+                if agrees { expectation = nil }
             }
         }
         if !isNewTrack, let current = track, current.isPlaying, snapshot.isPlaying, !isScrubbing {
@@ -666,6 +684,7 @@ final class NowPlayingController {
                 snapshotDate = now
                 track = changed
                 reportPlaying(changed.isPlaying)
+                expectation = Expectation(isPlaying: changed.isPlaying, restarted: false, until: now + Self.expectationHold)
             }
         case .nextTrack, .previousTrack:
             // Both land at the start of a song: the next one, or this one again (previous more
@@ -674,6 +693,7 @@ final class NowPlayingController {
                 changed.elapsed = 0
                 snapshotDate = now
                 track = changed
+                expectation = Expectation(isPlaying: nil, restarted: true, until: now + Self.expectationHold)
             }
         case .toggleShuffle:
             if let current = track?.isShuffling { track?.isShuffling = !current }
@@ -687,13 +707,8 @@ final class NowPlayingController {
             break
         }
 
-        staleBefore = .distantFuture
         AppleScriptRunner.shared.queue.async {
             source.send(command)
-            let sent = Date()
-            DispatchQueue.main.async { [weak self] in
-                if self?.staleBefore == .distantFuture { self?.staleBefore = sent }
-            }
             // Read back promptly so the button state reflects reality rather than a guess. A
             // skip is read again a moment later too, since a player can take that long to say
             // what the new song is.
@@ -777,6 +792,16 @@ extension NowPlayingController {
     /// `settings` is attached without starting anything, so a capture can see the settings-
     /// dependent parts of the card, such as whether Up Next shows, without the controller
     /// polling the real player and replacing the sample with whatever is actually playing.
+    #if DEBUG
+    /// Hands the controller a read as if the player had just answered, for `--check-transport`.
+    func simulateRead(isPlaying: Bool, elapsed: TimeInterval, at date: Date = Date()) {
+        guard var snapshot = track else { return }
+        snapshot.isPlaying = isPlaying
+        snapshot.elapsed = elapsed
+        publish((appleMusic, snapshot), capturedAt: date)
+    }
+    #endif
+
     func applySample(settings: SettingsStore? = nil, isPlaying: Bool = true) {
         if let settings { self.settings = settings }
         track = NowPlayingTrack(

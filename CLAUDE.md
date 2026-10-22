@@ -1381,9 +1381,11 @@ also keeps at most one refresh waiting behind the one on the queue (`isRefreshin
 delay when I play or pause or skip", with Spotify). The button used to wait for the command, a 0.15 s
 pause and a whole refresh, sometimes queued behind one already under way, about half a second.
 `NowPlayingController.send` now flips `isPlaying` (rebasing the clock so a pause freezes the scrubber
-where it is) and sets a skip's position to zero before the command is sent. A read captured before the
-command reached the player (`staleBefore`) keeps those values rather than flipping the button back;
-the first read from after it takes over, so a command the player ignored still shows the truth. A skip
+where it is) and sets a skip's position to zero before the command is sent. Any read that disagrees
+is overruled (`Expectation`) until one agrees, which ends the hold, or 1.5 s pass, after which a
+player that ignored the command is believed. Holding only reads from before the command was sent was
+not enough: Spotify still says "playing" for a moment after it has the command, and the button
+swapped between pause and play before settling. A skip
 is read again at 0.6 s for the new song's title. Every caller of `send` gets it: the card, the floating
 window, the lock screen, the shortcuts. **Never write `track?.x = f()` where `f` reads `track`**: the
 first version did (`track?.elapsed = elapsed(at:)`), which is two accesses to one property at once, and

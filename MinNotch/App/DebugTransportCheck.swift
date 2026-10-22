@@ -23,15 +23,27 @@ enum DebugTransportCheck {
             let track = controller.track
             print("\(step): playing \(track?.isPlaying ?? false), at \(String(format: "%.1f", controller.elapsed())) s")
         }
+        // One ordinary read first, so the sample is the song the controller already knows, as a
+        // playing song always is by the time anyone presses pause.
+        controller.simulateRead(isPlaying: true, elapsed: 97)
         report("start")
         controller.send(.playPause)
         report("after pause")
-        RunLoop.main.run(until: Date().addingTimeInterval(1))
-        report("a second later")
+        // The player answering before it has acted: it must not flip the button back.
+        controller.simulateRead(isPlaying: true, elapsed: 97.2)
+        report("player still says playing (want: false)")
+        controller.simulateRead(isPlaying: false, elapsed: 97.2)
+        report("player agrees (want: false)")
         controller.send(.playPause)
-        report("after play")
+        report("after play (want: true)")
+        controller.simulateRead(isPlaying: false, elapsed: 97.2)
+        report("player still says paused (want: true)")
+        // A player that ignored the command: after the hold, what it says is shown.
+        controller.simulateRead(isPlaying: false, elapsed: 97.2, at: Date().addingTimeInterval(2))
+        report("ignored, 2 s on (want: false)")
         controller.send(.nextTrack)
-        report("after next")
+        controller.simulateRead(isPlaying: true, elapsed: 98)
+        report("after next, old position read (want: ~0)")
         return true
     }
 }
