@@ -198,10 +198,13 @@ struct AmbientGlowSettings: Codable, Equatable {
     var isEnabled: Bool = false
     var style: AmbientGlowStyleKind = .rainbow
     /// Multi-select: each active placement renders the same style against its own geometry.
-    var placements: Set<AmbientGlowPlacement> = [.collapsedNotch, .closedLyrics, .expandedPanel]
+    var placements: Set<AmbientGlowPlacement> = [.collapsedNotch, .closedLyrics, .expandedPanel, .popOutWindow]
     /// Whether the saved placements know about `closedLyrics`. A file from before it lit the
     /// closed lyrics with the closed notch, so it gets `closedLyrics` wherever it had the notch.
     var knowsLyricsPlacement = true
+    /// The same for `popOutWindow`: the pop-out shows the open panel's card, so a file from before
+    /// it gets the pop-out wherever it had the open panel.
+    var knowsPopOutPlacement = true
     var colorMode: GlowColorMode = .albumArt
     var staticColor: RGBAColor = .systemBlue
 
@@ -239,10 +242,14 @@ struct AmbientGlowSettings: Codable, Equatable {
             if !c.value(.knowsLyricsPlacement, false), placements.contains(.collapsedNotch) {
                 placements.insert(.closedLyrics)
             }
+            if !c.value(.knowsPopOutPlacement, false), placements.contains(.expandedPanel) {
+                placements.insert(.popOutWindow)
+            }
         } else {
-            placements = [.collapsedNotch, .closedLyrics, .expandedPanel]
+            placements = [.collapsedNotch, .closedLyrics, .expandedPanel, .popOutWindow]
         }
         knowsLyricsPlacement = true
+        knowsPopOutPlacement = true
         colorMode = c.value(.colorMode, GlowColorMode.albumArt)
         staticColor = c.value(.staticColor, RGBAColor.systemBlue)
         isAudioReactive = c.value(.isAudioReactive, false)

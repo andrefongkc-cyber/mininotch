@@ -1183,7 +1183,7 @@ invisible copy of pop-out and effects to centre play; that copy must not registe
 the rest. **The pop-out window is a glow placement too** (`popOutWindow`, the user's "glow not still around"
 on a screenshot of it): `FloatingNowPlayingView` overlays an `AmbientGlowView` on the clipped card, and
 the window always carries `FloatingNowPlayingController.glowRoom` (56) of transparent margin on every
-side so the blur has somewhere to go. A frame saved at the old width moves out by the margin once, so
+side so the blur has somewhere to go. Settings from before it (`knowsPopOutPlacement` missing) get it wherever they had Open Panel, since the user expected it on without asking. A frame saved at the old width moves out by the margin once, so
 the card stays put. The capture tools no longer save that window's frame (`remembersFrame`, as the
 timer's), and `--floating` now writes `<out>-nowplaying.png`.
 
