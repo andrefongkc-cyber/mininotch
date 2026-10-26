@@ -49,6 +49,8 @@ enum AmbientGlowPlacement: String, Codable, CaseIterable, Identifiable, Hashable
     /// The closed notch while it shows the lyrics under it (Show Lyrics When Closed).
     case closedLyrics
     case expandedPanel
+    /// The floating Now Playing window (Media > Floating Window, or the card's pop-out button).
+    case popOutWindow
 
     var id: String { rawValue }
 
@@ -57,6 +59,7 @@ enum AmbientGlowPlacement: String, Codable, CaseIterable, Identifiable, Hashable
         case .collapsedNotch: return "Closed Notch"
         case .closedLyrics: return "Lyrics When Closed"
         case .expandedPanel: return "Open Panel"
+        case .popOutWindow: return "Pop-Out Window"
         }
     }
 
@@ -65,6 +68,7 @@ enum AmbientGlowPlacement: String, Codable, CaseIterable, Identifiable, Hashable
         case .collapsedNotch: return "rectangle.topthird.inset.filled"
         case .closedLyrics: return "text.below.photo"
         case .expandedPanel: return "rectangle.expand.vertical"
+        case .popOutWindow: return "pip"
         }
     }
 }

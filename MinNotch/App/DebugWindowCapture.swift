@@ -198,6 +198,7 @@ enum DebugWindowCapture {
             if names.contains("closed") { placements.insert(.collapsedNotch) }
             if names.contains("lyrics") { placements.insert(.closedLyrics) }
             if names.contains("open") { placements.insert(.expandedPanel) }
+            if names.contains("popout") { placements.insert(.popOutWindow) }
             settings.appearance.ambientGlow.placements = placements
         }
         // `--notch-style bento-light` draws in that Notch Style: a language, a dash, and dark or
@@ -343,9 +344,11 @@ enum DebugWindowCapture {
         var floating: FloatingNowPlayingController?
         if arguments.contains("--floating") {
             let controller = FloatingNowPlayingController(environment: environment)
+            controller.remembersFrame = false
             controller.show()
             controller.debugMove(to: CGPoint(x: geometry.windowFrame.minX + 10, y: geometry.windowFrame.maxY - 380))
             floating = controller
+            debugFloatingNowPlaying = controller
         }
         _ = floating
 
@@ -446,6 +449,7 @@ enum DebugWindowCapture {
     }
 
     private static var debugFloatingTimerEnvironment: AppEnvironment?
+    private static var debugFloatingNowPlaying: FloatingNowPlayingController?
 
     private static func writeCapture(of hosting: NSView, to path: String) {
         // `--floating-timer`: the pop-out timer window as well, beside the capture.
@@ -457,7 +461,14 @@ enum DebugWindowCapture {
             try? rep.representation(using: .png, properties: [:])?
                 .write(to: URL(fileURLWithPath: path.replacingOccurrences(of: ".png", with: "-floating.png")))
         }
-        guard let representation = hosting.bitmapImageRepForCachingDisplay(in: hosting.bounds) else {
+        // `--floating`: the floating Now Playing window, glow and all, beside the capture.
+        if let view = debugFloatingNowPlaying?.debugContentView,
+           let rep = view.bitmapImageRepForCachingDisplay(in: view.bounds) {
+            view.cacheDisplay(in: view.bounds, to: rep)
+            try? rep.representation(using: .png, properties: [:])?
+                .write(to: URL(fileURLWithPath: path.replacingOccurrences(of: ".png", with: "-nowplaying.png")))
+        }
+                guard let representation = hosting.bitmapImageRepForCachingDisplay(in: hosting.bounds) else {
             report("Could not create a bitmap"); exit(1)
         }
         hosting.cacheDisplay(in: hosting.bounds, to: representation)

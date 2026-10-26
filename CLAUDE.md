@@ -76,7 +76,7 @@ MiniNotch --render-previews <dir>                                  # what previe
 MiniNotch --capture-notch out.png [--collapsed] [--tab system] [--glow bars|off] [--debug]
                                  [--hold 12] [--midway 0.14] [--extended] [--virtual]
                                  [--timer 12] [--width 460] [--right timer,settings,battery]
-                                 [--paused] [--placements closed,lyrics,open]
+                                 [--paused] [--placements closed,lyrics,open,popout] [--floating]
                                  [--sample-calendar] [--calendar-step 1] [--calendar-pick 2]
                                  [--card compact|fullArtwork] [--controls shuffle,playPause,repeatMode]
                                  [--lyrics-sheet] [--sample-stats] [--shadow] [--closed-lyrics]
@@ -1180,7 +1180,12 @@ like the What's New one, and only the floating window keeps a right-click. The c
 invisible copy of pop-out and effects to centre play; that copy must not register the menu's anchor
 (`trailingCluster(anchorsMenu: false)`), or the menu hangs from empty space. `--capture-notch
 --open-menu glowMenu|closedLyrics` draws the real menus, `--placements lyrics` and `--lyrics-on`
-the rest.
+the rest. **The pop-out window is a glow placement too** (`popOutWindow`, the user's "glow not still around"
+on a screenshot of it): `FloatingNowPlayingView` overlays an `AmbientGlowView` on the clipped card, and
+the window always carries `FloatingNowPlayingController.glowRoom` (56) of transparent margin on every
+side so the blur has somewhere to go. A frame saved at the old width moves out by the margin once, so
+the card stays put. The capture tools no longer save that window's frame (`remembersFrame`, as the
+timer's), and `--floating` now writes `<out>-nowplaying.png`.
 
 **Lyrics with the notch closed use the sneak peek's shape and size**, so a track change swaps what
 the strip says rather than resizing the notch. The lyric strip on the card has a button for it,

@@ -28,6 +28,10 @@ final class FloatingNowPlayingController {
     /// Room above the card for the drag strip and its close button.
     private static let topChrome: CGFloat = 26
     private static let bottomChrome: CGFloat = 12
+    /// Transparent room around the card for the glow to spill into (Ambient Lighting > Where It
+    /// Shows > Pop-Out Window), always there so the window does not change size when it is
+    /// switched on. A blurred layer cannot reach past its own window.
+    static let glowRoom: CGFloat = Metrics.notchGlowSpill
 
     /// Sized from the card itself rather than a constant, so turning lyrics on does not
     /// leave the strip clipped against the bottom of the window.
@@ -41,14 +45,22 @@ final class FloatingNowPlayingController {
             outputDeviceCount: environment.audioOutputs.devices.count,
             moduleGap: environment.notchStyle().moduleGap
         )
-        return CGSize(width: Self.width, height: card + Self.topChrome + Self.bottomChrome)
+        return CGSize(width: Self.width + Self.glowRoom * 2,
+                      height: card + Self.topChrome + Self.bottomChrome + Self.glowRoom * 2)
     }
 
     #if DEBUG
+    /// Off for the capture tools, which share the real app's defaults and would otherwise move
+    /// the user's window.
+    var remembersFrame = true
+
     /// Puts the window at a given place, for `--capture-notch --floating`.
     func debugMove(to origin: CGPoint) {
         panel?.setFrameOrigin(origin)
     }
+
+    /// The window's content, for `--capture-notch --floating`.
+    var debugContentView: NSView? { panel?.contentView }
     #endif
 
     init(environment: AppEnvironment) {
@@ -120,8 +132,21 @@ final class FloatingNowPlayingController {
         panel.contentView = hosting
 
         // Autosave restores a remembered position; the centre is only the first-run default.
+        #if DEBUG
+        if remembersFrame { panel.setFrameAutosaveName(Self.frameAutosaveName) }
+        #else
         panel.setFrameAutosaveName(Self.frameAutosaveName)
+        #endif
         if panel.frame.origin == .zero { panel.center() }
+        // A place saved before the glow's margin: move out by the margin, so the card stays
+        // where it was left rather than jumping in by it.
+        if abs(panel.frame.width - Self.width) < 1 {
+            var frame = panel.frame
+            frame.origin.x -= Self.glowRoom
+            frame.origin.y -= Self.glowRoom
+            frame.size = initial
+            panel.setFrame(frame, display: false)
+        }
         panel.orderFrontRegardless()
 
         self.panel = panel
@@ -161,6 +186,45 @@ private struct FloatingNowPlayingView: View {
     private static let cornerRadius: CGFloat = 14
 
     var body: some View {
+        card
+            .overlay(glow)
+            .padding(FloatingNowPlayingController.glowRoom)
+    }
+
+    /// Ambient Lighting around the window, while Where It Shows includes the pop-out window.
+    /// Overlaid on the clipped card, so the light spills past its edge into the window's
+    /// transparent margin, and kept in place while hidden, as the notch's is.
+    @ViewBuilder
+    private var glow: some View {
+        let settings = environment.settings
+        let glow = settings.appearance.ambientGlow
+        if glow.isActive(isLowPower: environment.battery.status.isLowPowerMode),
+           glow.placements.contains(.popOutWindow) {
+            AmbientGlowView(
+                outline: .roundedRect(cornerRadius: Self.cornerRadius),
+                settings: styledGlow(glow),
+                palette: environment.nowPlaying.palette,
+                isPlaying: environment.nowPlaying.track?.isPlaying ?? false,
+                // `isRunning`, never `current`, for the reason in `NotchRootView.ambientGlow`.
+                audio: environment.audioAnalyzer.isRunning ? environment.audioAnalyzer : nil,
+                tempo: environment.glowTempo(),
+                // Only caps the blur; a `GeometryReader` here would align the glow's larger layer
+                // top-leading instead of centring it on the card.
+                sizeHint: CGSize(width: 420, height: 180),
+                spill: min(CGFloat(glow.glowRadius) * 2, FloatingNowPlayingController.glowRoom)
+            )
+            .allowsHitTesting(false)
+        }
+    }
+
+    private func styledGlow(_ glow: AmbientGlowSettings) -> AmbientGlowSettings {
+        guard theme.glow.intensityScale != 1 else { return glow }
+        var styled = glow
+        styled.intensity = min(glow.intensity * theme.glow.intensityScale, 1)
+        return styled
+    }
+
+    private var card: some View {
         NowPlayingCardView()
             .padding(.horizontal, 14)
             .padding(.top, 26)
