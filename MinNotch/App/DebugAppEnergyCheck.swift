@@ -82,6 +82,15 @@ enum DebugAppEnergyCheck {
         check(charged.stretch?.startedAt != monitor.stretch?.startedAt && charged.stretch?.sawUnplug == false,
               "a relaunch after the charge went up starts afresh, from the launch")
 
+        // A relaunch while plugged in closes a stretch left open at its last reading. This read
+        // and wrote `stretch` in one statement, which crashed 0.7.6 at every launch.
+        let saved = AppEnergyMonitor()
+        saved.start(fileURL: file)
+        let wasOpen = saved.stretch?.endedAt == nil
+        saved.update(battery: status(percentage: 90, pluggedIn: true))
+        check(wasOpen && saved.stretch?.endedAt != nil && saved.stretch?.endedAt == saved.stretch?.lastSampleAt,
+              "a relaunch while plugged in ends the saved stretch at its last reading")
+
         // Plugging in ends the stretch and keeps it; unplugging starts a new one.
         monitor.update(battery: status(percentage: 79, pluggedIn: true))
         wait(1)
