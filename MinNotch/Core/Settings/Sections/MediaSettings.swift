@@ -297,6 +297,8 @@ struct MediaSettings: Codable, Equatable {
     /// The current lyric line under the closed pill, in a strip the size of the sneak peek,
     /// for as long as something with lyrics is playing.
     var showLyricsWhenClosed: Bool = false
+    /// Which displays show them: the Mac's own screen, the others, or all.
+    var closedLyricsDisplays: DisplayChoice = .all
 
     /// Show the next few tracks under the current one. Apple Music only: Spotify's scripting
     /// dictionary has no queue to read.
@@ -329,6 +331,7 @@ struct MediaSettings: Codable, Equatable {
         sneakPeekOnTrackChange = c.value(.sneakPeekOnTrackChange, true)
         sneakPeekDuration = c.value(.sneakPeekDuration, 2.6, in: Self.sneakPeekDurationRange)
         showLyricsWhenClosed = c.value(.showLyricsWhenClosed, false)
+        closedLyricsDisplays = c.value(.closedLyricsDisplays, DisplayChoice.all)
         showOutputButton = c.value(.showOutputButton, true)
         showOnLockScreen = c.value(.showOnLockScreen, true)
         lockScreenLayout = c.value(.lockScreenLayout, LockScreenMediaLayout.playerLeft)
@@ -342,5 +345,38 @@ struct MediaSettings: Codable, Equatable {
         showVisualizer = c.value(.showVisualizer, false)
         customVisualizerPath = c.value(.customVisualizerPath, nil as String?)
         pollInterval = c.value(.pollInterval, 1.0, in: 0.5...5)
+    }
+}
+
+/// Which displays something appears on, for a Mac with more than one.
+enum DisplayChoice: String, Codable, CaseIterable, Identifiable {
+    case all
+    case builtIn
+    case others
+
+    var id: String { rawValue }
+
+    var title: String {
+        switch self {
+        case .all: return "All Displays"
+        case .builtIn: return "Built-in Display"
+        case .others: return "Other Displays"
+        }
+    }
+
+    var symbolName: String {
+        switch self {
+        case .all: return "display.2"
+        case .builtIn: return "laptopcomputer"
+        case .others: return "display"
+        }
+    }
+
+    func includes(isBuiltIn: Bool) -> Bool {
+        switch self {
+        case .all: return true
+        case .builtIn: return isBuiltIn
+        case .others: return !isBuiltIn
+        }
     }
 }

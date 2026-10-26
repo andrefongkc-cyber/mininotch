@@ -76,6 +76,10 @@ enum SettingsNewRows {
         // 0.7.4
         "New Versions": "0.7.4",
         "Apps Using the Battery": "0.7.4",
+
+        // 0.7.7
+        "Pin Settings to the Menu": "0.7.7",
+        "Show Lyrics On": "0.7.7",
     ]
 
     static func isNew(_ title: String) -> Bool {

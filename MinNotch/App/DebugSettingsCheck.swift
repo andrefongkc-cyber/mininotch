@@ -68,6 +68,8 @@ enum DebugSettingsCheck {
         report(String(format: "  timer.countdown      %10.2f   (1...180)", settings.timer.defaultCountdownMinutes))
         report("  nonNotchDefaultTab   \(settings.advanced.nonNotchDefaultTab.rawValue)  (must be a real tab)")
         report("  glow.placements      \(settings.appearance.ambientGlow.placements.map(\.rawValue).sorted())  (unknown names dropped, the rest kept)")
+        report("  menuBarPins          \(settings.general.menuBarPins.map(\.rawValue))  (unknown and repeated pins dropped)")
+        report("  closedLyricsDisplays \(settings.media.closedLyricsDisplays.rawValue)  (all, builtIn or others)")
         // A file from before the Song indicator gets it placed where the Live Activity is.
         report("  pill                 \(settings.general.pillLeading.map(\.rawValue)) | \(settings.general.pillTrailing.map(\.rawValue))  (song beside activity when the file predates it)")
         report("  pillSongText         \(settings.general.pillSongText.rawValue)")

@@ -46,6 +46,8 @@ enum AmbientGlowStyleKind: String, Codable, CaseIterable, Identifiable {
 /// files that still name it decode without it; see `AmbientGlowSettings.init(from:)`.
 enum AmbientGlowPlacement: String, Codable, CaseIterable, Identifiable, Hashable {
     case collapsedNotch
+    /// The closed notch while it shows the lyrics under it (Show Lyrics When Closed).
+    case closedLyrics
     case expandedPanel
 
     var id: String { rawValue }
@@ -53,6 +55,7 @@ enum AmbientGlowPlacement: String, Codable, CaseIterable, Identifiable, Hashable
     var title: String {
         switch self {
         case .collapsedNotch: return "Closed Notch"
+        case .closedLyrics: return "Lyrics When Closed"
         case .expandedPanel: return "Open Panel"
         }
     }
@@ -60,6 +63,7 @@ enum AmbientGlowPlacement: String, Codable, CaseIterable, Identifiable, Hashable
     var symbolName: String {
         switch self {
         case .collapsedNotch: return "rectangle.topthird.inset.filled"
+        case .closedLyrics: return "text.below.photo"
         case .expandedPanel: return "rectangle.expand.vertical"
         }
     }
@@ -190,7 +194,10 @@ struct AmbientGlowSettings: Codable, Equatable {
     var isEnabled: Bool = false
     var style: AmbientGlowStyleKind = .rainbow
     /// Multi-select: each active placement renders the same style against its own geometry.
-    var placements: Set<AmbientGlowPlacement> = [.collapsedNotch, .expandedPanel]
+    var placements: Set<AmbientGlowPlacement> = [.collapsedNotch, .closedLyrics, .expandedPanel]
+    /// Whether the saved placements know about `closedLyrics`. A file from before it lit the
+    /// closed lyrics with the closed notch, so it gets `closedLyrics` wherever it had the notch.
+    var knowsLyricsPlacement = true
     var colorMode: GlowColorMode = .albumArt
     var staticColor: RGBAColor = .systemBlue
 
@@ -225,9 +232,13 @@ struct AmbientGlowSettings: Codable, Equatable {
         // back to the default, throwing away whichever of the other two the user had chosen.
         if let names = try? c.decodeIfPresent([String].self, forKey: .placements) {
             placements = Set(names.compactMap(AmbientGlowPlacement.init(rawValue:)))
+            if !c.value(.knowsLyricsPlacement, false), placements.contains(.collapsedNotch) {
+                placements.insert(.closedLyrics)
+            }
         } else {
-            placements = [.collapsedNotch, .expandedPanel]
+            placements = [.collapsedNotch, .closedLyrics, .expandedPanel]
         }
+        knowsLyricsPlacement = true
         colorMode = c.value(.colorMode, GlowColorMode.albumArt)
         staticColor = c.value(.staticColor, RGBAColor.systemBlue)
         isAudioReactive = c.value(.isAudioReactive, false)

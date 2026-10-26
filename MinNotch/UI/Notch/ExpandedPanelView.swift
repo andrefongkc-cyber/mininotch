@@ -66,7 +66,7 @@ struct ExpandedPanelView: View {
     private var widget: some View {
         switch viewModel.selectedTab {
         case .media:
-            NowPlayingCardView()
+            NowPlayingCardView(viewModel: viewModel)
         case .calendar:
             CalendarWidgetView(viewModel: viewModel)
         case .system:

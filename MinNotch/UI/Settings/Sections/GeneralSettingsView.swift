@@ -31,6 +31,25 @@ struct GeneralSettingsView: View {
                 ) {
                     SettingsToggle(isOn: $settings.general.showMenuBarIcon)
                 }
+
+                SettingsDivider()
+
+                SettingsRow(
+                    title: "Pin Settings to the Menu",
+                    subtitle: "Pin switches to the menu bar icon's menu, to turn them on and off without opening Settings.",
+                    systemImage: "pin",
+                    isEnabled: settings.general.showMenuBarIcon
+                ) {
+                    Menu {
+                        ForEach(MenuBarPin.allCases) { pin in
+                            Toggle(pin.title, isOn: pinBinding(pin))
+                        }
+                    } label: {
+                        Text(pinSummary)
+                    }
+                    .menuStyle(.borderlessButton)
+                    .fixedSize()
+                }
             }
 
             SettingsCard(header: "Opening the Notch") {
@@ -114,6 +133,28 @@ struct GeneralSettingsView: View {
                         .controlSize(.small)
                 }
             }
+        }
+    }
+}
+
+extension GeneralSettingsView {
+    /// Pinned or not, kept in the order the choices are listed.
+    fileprivate func pinBinding(_ pin: MenuBarPin) -> Binding<Bool> {
+        Binding(
+            get: { settings.general.menuBarPins.contains(pin) },
+            set: { isOn in
+                var pins = Set(settings.general.menuBarPins)
+                if isOn { pins.insert(pin) } else { pins.remove(pin) }
+                settings.general.menuBarPins = MenuBarPin.allCases.filter(pins.contains)
+            }
+        )
+    }
+
+    fileprivate var pinSummary: String {
+        switch settings.general.menuBarPins.count {
+        case 0: return "None"
+        case 1: return settings.general.menuBarPins[0].title
+        case let count: return "\(count) Pinned"
         }
     }
 }

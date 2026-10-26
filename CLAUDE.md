@@ -76,18 +76,18 @@ MiniNotch --render-previews <dir>                                  # what previe
 MiniNotch --capture-notch out.png [--collapsed] [--tab system] [--glow bars|off] [--debug]
                                  [--hold 12] [--midway 0.14] [--extended] [--virtual]
                                  [--timer 12] [--width 460] [--right timer,settings,battery]
-                                 [--paused] [--placements closed,open]
+                                 [--paused] [--placements closed,lyrics,open]
                                  [--sample-calendar] [--calendar-step 1] [--calendar-pick 2]
                                  [--card compact|fullArtwork] [--controls shuffle,playPause,repeatMode]
                                  [--lyrics-sheet] [--sample-stats] [--shadow] [--closed-lyrics]
-                                 [--sample-shelf] [--output-sheet] [--sample-weather]
+                                 [--sample-shelf] [--output-sheet] [--lyrics-on builtIn|others] [--sample-weather]
                                  [--sample-power] [--keep-open] [--hud-style floatingPill] [--no-media]
                                  [--sample-notes] [--blur-clipboard]
                                  [--notch-style bento-light] [--liquid-glass] [--builtin]
                                  [--no-visualizer] [--no-lyrics] [--swipe-to notes --midway 0.15]
                                  [--live grow|reopen|swipe --hold 7 [--was-active]]
                                  [--stopwatch] [--sample-laps] [--focus] [--floating-timer [--floating-expanded]]
-                                 [--clock-style flip|segments] [--no-fraction] [--open-menu whatsNew|clockStyle]
+                                 [--clock-style flip|segments] [--no-fraction] [--open-menu whatsNew|clockStyle|glowMenu|closedLyrics]
 MiniNotch --check-lyrics "Khalid" "8TEEN" 229                      # LRCLIBClient + LRCParser
 MiniNotch --check-lyric-sync [--out f]                             # matching lyrics to the audio, synthetic
 MiniNotch --check-lyric-sync --audio f.mp3 --lrc f.lrc --shifts 0,0.5 [--peaks]   # …and a real song, old method beside it
@@ -1159,6 +1159,28 @@ scheme like `zoommtg:`, plain http, and a lookalike host must all be refused;
 15 second tick whenever it is switched on, not only once the calendar can be read, because access
 arrives from a dialog with no settings change to start a clock. A countdown swiped away stays
 away: `LiveActivityCenter.putAway` remembers the id, which is per occurrence.
+
+**Settings can be pinned to the menu bar icon's menu** (2026-10-25, the user's "add a way to pin
+settings here"). General > Menu Bar > Pin Settings to the Menu picks from `MenuBarPin`, switches that
+take effect by themselves (Open on Hover, Show Indicators When Closed, Show Lyrics When Closed, Sneak
+Peek, Ambient Glow, Follow the Beat, Focus Timer, Clipboard History, Haptic Feedback), each naming its
+setting by key path. Hide the System Overlay is left out on purpose: switching it on asks for
+Accessibility from the HUDs pane. `MenuBarController` is the menu's delegate and builds it in
+`menuNeedsUpdate`, so a pin's tick is how the setting is now, whoever changed it.
+
+**Lyrics with the notch closed can be kept to some displays, and the glow has a placement for them**
+(2026-10-25). Media > Show Lyrics On (`MediaSettings.closedLyricsDisplays`, `DisplayChoice`: All,
+Built-in, Other) is read in `NotchRootView.closedLyrics` against `CGDisplayIsBuiltin` of the surface's
+display. The lyric strip's button on the card is now a menu, Off or On one of the three, writing the same
+two settings. `AmbientGlowPlacement.closedLyrics` (Lyrics When Closed) is the closed notch while its
+lyrics show; a settings file from before it (`knowsLyricsPlacement` missing) gets it wherever it had
+Closed Notch, since the glow used to light the lyrics with the notch. The card's glow menu is drawn in
+the panel on option-click: its old right-click `contextMenu` was an AppKit menu, hidden under the notch
+like the What's New one, and only the floating window keeps a right-click. The controls row draws an
+invisible copy of pop-out and effects to centre play; that copy must not register the menu's anchor
+(`trailingCluster(anchorsMenu: false)`), or the menu hangs from empty space. `--capture-notch
+--open-menu glowMenu|closedLyrics` draws the real menus, `--placements lyrics` and `--lyrics-on`
+the rest.
 
 **Lyrics with the notch closed use the sneak peek's shape and size**, so a track change swaps what
 the strip says rather than resizing the notch. The lyric strip on the card has a button for it,

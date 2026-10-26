@@ -179,6 +179,10 @@ enum DebugWindowCapture {
         // either way, like the shadow, so a capture does not inherit it from the real settings.
         settings.media.showLyricsWhenClosed = arguments.contains("--closed-lyrics")
         if arguments.contains("--closed-lyrics") { settings.media.showLyrics = true }
+        // `--lyrics-on builtIn|others`: which displays show them (Media > Show Lyrics On); all
+        // otherwise, so a capture never inherits the real choice.
+        settings.media.closedLyricsDisplays = arguments.firstIndex(of: "--lyrics-on")
+            .flatMap { arguments.indices.contains($0 + 1) ? DisplayChoice(rawValue: arguments[$0 + 1]) : nil } ?? .all
         // Appearance > Panel Shadow, which is off by default and only exists while open.
         settings.appearance.showPanelShadow = arguments.contains("--shadow")
         // Layout > Displays > Hide Until Hovered, which only changes a virtual notch, so pair it with
@@ -192,6 +196,7 @@ enum DebugWindowCapture {
             let names = arguments[index + 1].split(separator: ",").map(String.init)
             var placements = Set<AmbientGlowPlacement>()
             if names.contains("closed") { placements.insert(.collapsedNotch) }
+            if names.contains("lyrics") { placements.insert(.closedLyrics) }
             if names.contains("open") { placements.insert(.expandedPanel) }
             settings.appearance.ambientGlow.placements = placements
         }
@@ -287,15 +292,23 @@ enum DebugWindowCapture {
             settings.huds.dismissDelay = 10
             environment.hud.preview(.volume)
         }
-        // `--open-menu whatsNew|clockStyle`: that button's menu open in the panel, once the
+        // `--open-menu whatsNew|clockStyle|glowMenu|closedLyrics`: that button's menu open in the panel, once the
         // buttons have been laid out and so have said where they are.
         if expanded, let index = arguments.firstIndex(of: "--open-menu"), arguments.indices.contains(index + 1) {
             let anchor = arguments[index + 1]
             // The What's New button is a debug button, which captures leave out unless asked.
             if anchor == "whatsNew" { settings.advanced.showDebugButtons = true }
-            let items: [NotchMenu.Item] = anchor == "clockStyle"
-                ? TimerClockStyle.allCases.map { NotchMenu.Item(title: $0.title, symbol: $0.symbolName, isOn: $0 == settings.timer.clockStyle) {} }
-                : [NotchMenu.Item(title: "What's New", symbol: "sparkles") {}, NotchMenu.Item(title: "Tutorial", symbol: "graduationcap") {}]
+            let items: [NotchMenu.Item]
+            switch anchor {
+            case "clockStyle":
+                items = TimerClockStyle.allCases.map { NotchMenu.Item(title: $0.title, symbol: $0.symbolName, isOn: $0 == settings.timer.clockStyle) {} }
+            case "glowMenu":
+                items = NowPlayingCardView.glowMenuItems(settings: settings)
+            case "closedLyrics":
+                items = LyricsStripView.closedLyricsMenuItems(settings: settings)
+            default:
+                items = [NotchMenu.Item(title: "What's New", symbol: "sparkles") {}, NotchMenu.Item(title: "Tutorial", symbol: "graduationcap") {}]
+            }
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
                 viewModel.menu = NotchMenu.Open(anchor: anchor, items: items)
             }

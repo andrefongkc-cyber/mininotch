@@ -10,6 +10,9 @@ struct GeneralSettings: Codable, Equatable {
     /// only ways to reach Settings, so the hotkey must always stay registered.
     var showMenuBarIcon: Bool = true
 
+    /// Settings pinned to the menu bar icon's menu, in the order shown. None by default.
+    var menuBarPins: [MenuBarPin] = []
+
     /// Expand the notch when the pointer rests over it.
     var hoverToOpen: Bool = true
 
@@ -59,6 +62,11 @@ struct GeneralSettings: Codable, Equatable {
         let c = try decoder.container(keyedBy: CodingKeys.self)
         launchAtLogin = c.value(.launchAtLogin, false)
         showMenuBarIcon = c.value(.showMenuBarIcon, true)
+        // Read as strings and filtered, so a pin a later build drops does not lose the rest.
+        let pinNames: [String] = c.value(.menuBarPins, [])
+        var pins: [MenuBarPin] = []
+        for pin in pinNames.compactMap(MenuBarPin.init(rawValue:)) where !pins.contains(pin) { pins.append(pin) }
+        menuBarPins = pins
         hoverToOpen = c.value(.hoverToOpen, true)
         hoverOpenDelay = c.value(.hoverOpenDelay, 0.25, in: 0...1)
         closeOnMouseExit = c.value(.closeOnMouseExit, true)

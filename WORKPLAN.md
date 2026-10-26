@@ -1,6 +1,6 @@
 # MiniNotch workplan
 
-Status: website and clearer install steps done on branch website, in a PR; Pages needs switching on by Andre (Settings > Pages > Source: GitHub Actions); next: the Wave and Chase revamp when the user asks.
+Status: menu bar pins, Show Lyrics On and the lyrics glow placement on main, unreleased with the launch crash fix; next: release 0.7.7 when the user says.
 
 Living document. Update the checkboxes as work lands. `CLAUDE.md` holds the architecture
 rules and the traps; this file holds the sequence.
@@ -181,6 +181,8 @@ The user plans to revamp every music-playing animation before 1.0.0. Collected h
       The window and the guard against real app switches are untried by hand. Add "Focus Timer" to
       SettingsNewRows at the next release.
 - [x] 0.7.5: What's New at launch lists every release since the one last seen (`ReleaseNotes.history`, `since`), and the feed links Sparkle's Version History.
+- [x] Pin settings to the menu bar icon's menu (General > Menu Bar > Pin Settings to the Menu), 2026-10-25.
+- [x] Show Lyrics On (all, built-in, other displays), from Settings > Media or the lyric strip's button, now a menu; glow placement Lyrics When Closed; the card's glow menu drawn in the panel, 2026-10-25. Untried by hand: the menu bar menu with pins, two real displays.
 - [ ] Revamp the Wave and Chase glow styles; hidden from the menus on 2026-10-19 (`AmbientGlowStyleKind.offered`), code kept.
 - [x] The top bar's What's New / Tutorial button opened a menu hidden under the notch (its own
       window server space is above AppKit's menus); menus in the notch are now drawn in the panel

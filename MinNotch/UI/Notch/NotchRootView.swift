@@ -54,6 +54,7 @@ struct NotchRootView: View {
     private var closedLyrics: Lyrics? {
         guard viewModel.state == .collapsed, !hidesWhenClosed,
               settings.media.enabled, settings.media.showLyrics, settings.media.showLyricsWhenClosed,
+              settings.media.closedLyricsDisplays.includes(isBuiltIn: CGDisplayIsBuiltin(geometry.displayID) != 0),
               FeatureFlag.lyrics.isEnabled,
               environment.nowPlaying.track?.isPlaying == true,
               let lyrics = environment.nowPlaying.lyrics, !lyrics.isEmpty, lyrics.isSynced
@@ -346,7 +347,10 @@ struct NotchRootView: View {
     @ViewBuilder
     private var ambientGlow: some View {
         let glow = settings.appearance.ambientGlow
-        let placement: AmbientGlowPlacement = isExpanded ? .expandedPanel : .collapsedNotch
+        // The closed lyrics are a placement of their own: someone can want light around the
+        // lyrics and not around the bare notch, or the other way round.
+        let placement: AmbientGlowPlacement = isExpanded ? .expandedPanel
+            : closedLyrics != nil ? .closedLyrics : .collapsedNotch
 
         // Present whenever the glow is on for either state, and shown or hidden with
         // `isVisible`, rather than inserted and removed as the notch opens and closes. An
