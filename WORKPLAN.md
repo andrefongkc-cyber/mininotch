@@ -1,6 +1,6 @@
 # MiniNotch workplan
 
-Status: menu bar pins, Show Lyrics On and the lyrics glow placement on main, unreleased with the launch crash fix; next: release 0.7.7 when the user says.
+Status: releasing 0.7.7 (menu bar pins, Show Lyrics On, pop-out and lyrics glow, the launch crash fix); next: the Wave and Chase revamp when the user asks.
 
 Living document. Update the checkboxes as work lands. `CLAUDE.md` holds the architecture
 rules and the traps; this file holds the sequence.

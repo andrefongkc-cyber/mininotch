@@ -27,14 +27,39 @@ struct ReleaseNotes {
     var removed: [ReleaseNote]
 
     static let latest = ReleaseNotes(
-        id: "0.7.6",
-        version: "0.7.6",
-        added: [],
+        id: "0.7.7",
+        version: "0.7.7",
+        added: [
+            ReleaseNote(
+                symbol: "pin",
+                title: "Settings in the Menu Bar",
+                detail: "Pin the switches you use most to the menu bar icon's menu, and turn them on and off without opening Settings.",
+                howTo: "Settings > General > Pin Settings to the Menu."
+            ),
+            ReleaseNote(
+                symbol: "display.2",
+                title: "Lyrics on Your Choice of Display",
+                detail: "Show the lyrics under the closed notch on every display, only the Mac's own, or only the others.",
+                howTo: "The lyrics button on the music card, or Settings > Media > Show Lyrics On."
+            ),
+            ReleaseNote(
+                symbol: "pip",
+                title: "Glow Around the Pop-Out Player",
+                detail: "Ambient Lighting now glows around the pop-out music window too, and can light the lyrics under the closed notch on their own.",
+                howTo: "Option-click the effects button on the music card, or Settings > Appearance > Ambient Lighting > Where It Shows."
+            ),
+        ],
         improved: [
             ReleaseNote(
-                symbol: "playpause",
-                title: "Music Controls Answer Straight Away",
-                detail: "With Chrome open and many tabs, the cover, the lyrics and the pause button could take seconds to respond, even in Apple Music. They respond at once again.",
+                symbol: "exclamationmark.triangle",
+                title: "Opens Again",
+                detail: "0.7.6 could close straight away every time it was opened while the Mac was plugged in, after it had last been quit on battery. Fixed.",
+                howTo: "If 0.7.6 will not open, it cannot update itself: download this version, or open 0.7.6 once with the Mac unplugged and it will update."
+            ),
+            ReleaseNote(
+                symbol: "sparkles",
+                title: "Glow Menu You Can See",
+                detail: "The glow's style and placement menu on the music card opens inside the notch, where it used to be hidden.",
                 howTo: nil
             ),
         ],
