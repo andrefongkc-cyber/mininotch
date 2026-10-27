@@ -6,6 +6,20 @@
     <description>MiniNotch updates</description>
     <language>en</language>
     <item>
+      <title>MiniNotch 0.8.1</title>
+      <pubDate>Tue, 27 Oct 2026 18:21:50 GMT</pubDate>
+      <sparkle:version>0.8.1</sparkle:version>
+      <sparkle:shortVersionString>0.8.1</sparkle:shortVersionString>
+      <sparkle:minimumSystemVersion>14.4</sparkle:minimumSystemVersion>
+      <description><![CDATA[<h3>Improved</h3>
+<ul>
+<li><b>Updates Install Themselves</b>: New versions now download and install on their own, once the notch is closed and no timer or stopwatch is running, and What&#x27;s New tells you what changed. If you chose Ask First before, that stays. <i>To be asked first instead: Settings &gt; About &gt; New Versions &gt; Ask First.</i></li>
+<li><b>Update Window in Front</b>: With Ask First, the window offering a new version now always opens in front of your other apps.</li>
+</ul>]]></description>
+      <sparkle:fullReleaseNotesLink>https://github.com/andrefongkc-cyber/mininotch/releases</sparkle:fullReleaseNotesLink>
+      <enclosure url="https://github.com/andrefongkc-cyber/mininotch/releases/download/v0.8.1/MiniNotch-0.8.1.dmg" sparkle:edSignature="ABDvokmlVY5WxctYaHpB5vX4ZBX/OebOIVY8FGWG0B805jLaXs0SVNySn60L9a0BkB5zNMxeX3jBhvtaxYSeBw==" length="8980641" type="application/x-apple-diskimage"/>
+    </item>
+    <item>
       <title>MiniNotch 0.8.0</title>
       <pubDate>Tue, 27 Oct 2026 03:12:32 GMT</pubDate>
       <sparkle:version>0.8.0</sparkle:version>
