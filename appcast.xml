@@ -6,6 +6,27 @@
     <description>MiniNotch updates</description>
     <language>en</language>
     <item>
+      <title>MiniNotch 0.8.0</title>
+      <pubDate>Tue, 27 Oct 2026 03:12:32 GMT</pubDate>
+      <sparkle:version>0.8.0</sparkle:version>
+      <sparkle:shortVersionString>0.8.0</sparkle:shortVersionString>
+      <sparkle:minimumSystemVersion>14.4</sparkle:minimumSystemVersion>
+      <description><![CDATA[<h3>New</h3>
+<ul>
+<li><b>The Time in the Notch</b>: A clock beside the camera, in your Mac&#x27;s 12 or 24 hour time, with the day if you like. <i>Settings &gt; Layout &gt; Closed Pill: drag Clock onto either side, with Show Indicators When Closed on. Clock Shows picks Time or Day and Time.</i></li>
+<li><b>Up Next</b>: A new button beside Next shows what plays after this song. Apple Music shares it for a playlist or album playing in order; for Spotify, connect your account once. <i>The button is added after Next for you; move it in Settings &gt; Layout. Connect Spotify in Settings &gt; Music &gt; Up Next.</i></li>
+<li><b>MiniNotch Has a Website</b>: Every feature, the six Notch Styles, and the easiest way to install, to share with friends. We plan to move it to mininotch.app soon. <i>andrefongkc-cyber.github.io/mininotch</i></li>
+</ul>
+<h3>Improved</h3>
+<ul>
+<li><b>Simpler Settings</b>: Settings is sorted by what you are changing: Music, Lock Screen, Weather, Timer, Shelf &amp; Notes and more. Each section shows what most people change, with the rest under More Options, and search still finds everything. <i>Open Settings from the menu bar icon.</i></li>
+<li><b>Drag Files to the Notch Again</b>: Dragging a file or a link to the closed notch opens the Shelf again, ready to keep it or send it with AirDrop.</li>
+<li><b>Play, Pause and Skip Right Away</b>: The buttons answer the moment you click them instead of half a second later, in the notch, the pop-out player and the lock screen.</li>
+</ul>]]></description>
+      <sparkle:fullReleaseNotesLink>https://github.com/andrefongkc-cyber/mininotch/releases</sparkle:fullReleaseNotesLink>
+      <enclosure url="https://github.com/andrefongkc-cyber/mininotch/releases/download/v0.8.0/MiniNotch-0.8.0.dmg" sparkle:edSignature="v0wxRQiKAQFyJbW24S86NiyN/B193alrhBqzwD8Ieim9e/HZfCDaFQyLR/GntiKSabH0OPi9N7O0d1Yia4B0BA==" length="8976114" type="application/x-apple-diskimage"/>
+    </item>
+    <item>
       <title>MiniNotch 0.7.7</title>
       <pubDate>Mon, 26 Oct 2026 18:08:43 GMT</pubDate>
       <sparkle:version>0.7.7</sparkle:version>
