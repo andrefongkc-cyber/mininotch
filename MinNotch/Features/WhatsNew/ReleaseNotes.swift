@@ -62,6 +62,12 @@ struct ReleaseNotes {
                 detail: "Dragging a file or a link to the closed notch opens the Shelf again, ready to keep it or send it with AirDrop.",
                 howTo: nil
             ),
+            ReleaseNote(
+                symbol: "playpause",
+                title: "Play, Pause and Skip Right Away",
+                detail: "The buttons answer the moment you click them instead of half a second later, in the notch, the pop-out player and the lock screen.",
+                howTo: nil
+            ),
         ],
         removed: []
     )
