@@ -2,6 +2,9 @@ import SwiftUI
 
 /// The Now Playing widget: artwork, metadata, scrubber, transport, and optional lyrics.
 struct NowPlayingCardView: View {
+    /// The panel's, for menus drawn in it; nil in the floating window, where menus are AppKit's.
+    var viewModel: NotchViewModel? = nil
+
     @Environment(\.notchStyle) private var surfaceTheme
     @Environment(AppEnvironment.self) private var environment
     @Environment(SettingsStore.self) private var settings
@@ -145,7 +148,7 @@ struct NowPlayingCardView: View {
     @ViewBuilder
     private var lyricStrip: some View {
         if let lyrics = controller.lyrics, !lyrics.isEmpty {
-            LyricsStripView(lyrics: lyrics)
+            LyricsStripView(lyrics: lyrics, viewModel: viewModel)
         } else {
             HStack(spacing: 6) {
                 Image(systemName: controller.lyricsStatus == .searching ? "ellipsis" : "quote.bubble")
@@ -186,7 +189,7 @@ struct NowPlayingCardView: View {
                 artwork(size: Self.compactArtworkSize)
                 metadata(track)
                 transportButtons(spacing: 8)
-                trailingCluster
+                trailingCluster()
             }
             .frame(height: Self.compactArtworkSize)
 
@@ -452,12 +455,15 @@ struct NowPlayingCardView: View {
         }
     }
 
-    /// Pop-out and effects.
-    private var trailingCluster: some View {
+    /// Pop-out and effects. The glow menu hangs from it, its right edge on the effects button's;
+    /// the invisible copy that balances the controls row passes `anchorsMenu: false`, or it
+    /// would claim the anchor and the menu would hang from empty space on the left.
+    private func trailingCluster(anchorsMenu: Bool = true) -> some View {
         HStack(spacing: 6) {
             popOutButton
             effectsButton
         }
+        .notchMenuAnchor(anchorsMenu ? "glowMenu" : "glowMenuBalance", in: viewModel)
     }
 
     /// The transport centred under the scrubber, with pop-out and effects at the right. An
@@ -474,7 +480,7 @@ struct NowPlayingCardView: View {
         // stands beside it (shuffle on one side and not the other used to push it off).
         return HStack(spacing: spacing) {
             HStack(spacing: spacing) {
-                trailingCluster.hidden().accessibilityHidden(true)
+                trailingCluster(anchorsMenu: false).hidden().accessibilityHidden(true)
                 Spacer(minLength: 0)
                 ForEach(before) { transportButton($0) }
             }
@@ -483,7 +489,7 @@ struct NowPlayingCardView: View {
             HStack(spacing: spacing) {
                 ForEach(after) { transportButton($0) }
                 Spacer(minLength: 0)
-                trailingCluster
+                trailingCluster()
             }
             .frame(maxWidth: .infinity)
         }
@@ -530,7 +536,7 @@ struct NowPlayingCardView: View {
             // Read at click time rather than tracked continuously: the modifier-change
             // modifier that would do the latter needs macOS 15, and this app targets 14.
             if NSEvent.modifierFlags.contains(.option) {
-                advanceGlowStyle()
+                NotchMenu.show(Self.glowMenuItems(settings: settings), anchor: "glowMenu", in: viewModel)
             } else {
                 settings.mediaEffectsMode = mode.next
             }
@@ -556,42 +562,33 @@ struct NowPlayingCardView: View {
         .animation(Motion.hover, value: mode)
         // Style and placement live behind the same button rather than in more of them: the
         // panel has no room, and both are changed far less often than the effects are turned
-        // on and off. Sections rather than bare dividers, because three unlabelled lists of
-        // checkmarks in one menu is not readable.
-        .contextMenu {
-            Button("Next Style") { advanceGlowStyle() }
-                .disabled(!mode.showsAmbient)
+        // on and off. In the notch the menu is drawn in the panel (option-click), because an
+        // AppKit menu, a right-click's included, opens underneath the notch where nobody sees
+        // it; the floating window, in the ordinary space, keeps the right-click too.
+        .modifier(GlowContextMenu(isEnabled: viewModel == nil) {
+            NotchMenu.show(Self.glowMenuItems(settings: settings))
+        })
+    }
 
-            Section("Style") {
-                ForEach(AmbientGlowStyleKind.offered) { style in
-                    Button {
-                        settings.appearance.ambientGlow.style = style
-                        settings.appearance.ambientGlow.isEnabled = true
-                    } label: {
-                        if style == settings.appearance.ambientGlow.style {
-                            Label(style.title, systemImage: "checkmark")
-                        } else {
-                            Text(style.title)
-                        }
-                    }
-                }
-            }
-
-            Section("Show Glow On") {
-                ForEach(AmbientGlowPlacement.allCases) { placement in
-                    Button {
-                        togglePlacement(placement)
-                    } label: {
-                        if settings.appearance.ambientGlow.placements.contains(placement) {
-                            Label(placement.title, systemImage: "checkmark")
-                        } else {
-                            Text(placement.title)
-                        }
-                    }
-                    .disabled(!mode.showsAmbient)
-                }
+    /// The glow's styles, then where it shows, ticked as they are. Static so `--capture-notch
+    /// --open-menu glowMenu` draws this menu, not a copy of it.
+    static func glowMenuItems(settings: SettingsStore) -> [NotchMenu.Item] {
+        let glow = settings.appearance.ambientGlow
+        let styles = AmbientGlowStyleKind.offered.map { style in
+            NotchMenu.Item(title: style.title, symbol: "sparkles", isOn: glow.isEnabled && glow.style == style) {
+                settings.appearance.ambientGlow.style = style
+                settings.appearance.ambientGlow.isEnabled = true
             }
         }
+        let placements = AmbientGlowPlacement.allCases.enumerated().map { index, placement in
+            NotchMenu.Item(title: "Glow on \(placement.title)", symbol: placement.symbolName,
+                           isOn: glow.placements.contains(placement), startsSection: index == 0) {
+                var placements = settings.appearance.ambientGlow.placements
+                if placements.contains(placement) { placements.remove(placement) } else { placements.insert(placement) }
+                settings.appearance.ambientGlow.placements = placements
+            }
+        }
+        return styles + placements
     }
 
     /// Turns one placement on or off from the notch itself.
@@ -615,7 +612,7 @@ struct NowPlayingCardView: View {
     }
 
     private func helpText(for mode: MediaEffectsMode) -> String {
-        let base = "\(mode.title) — click to change, option-click or right-click for glow style and placement"
+        let base = "\(mode.title) — click to change, option-click for glow style and where it shows"
         guard mode.showsAmbient else { return base }
         return "\(base)\nStyle: \(settings.appearance.ambientGlow.style.title)"
     }
@@ -749,6 +746,7 @@ struct NowPlayingCardView: View {
 struct LyricsStripView: View {
     @Environment(\.notchStyle) private var theme
     let lyrics: Lyrics
+    var viewModel: NotchViewModel? = nil
 
     @Environment(AppEnvironment.self) private var environment
     @Environment(SettingsStore.self) private var settings
@@ -802,8 +800,7 @@ struct LyricsStripView: View {
         let isOn = settings.media.showLyricsWhenClosed
 
         return Button {
-            settings.media.showLyricsWhenClosed.toggle()
-            Haptics.perform(enabled: settings.advanced.hapticFeedbackEnabled, strength: settings.advanced.hapticStrength)
+            NotchMenu.show(Self.closedLyricsMenuItems(settings: settings), anchor: "closedLyrics", in: viewModel)
         } label: {
             // Through `TransportSymbol`, not `Image(systemName:)` with a font: drawn that way the
             // glyph came out plain white on and off alike, so the button never showed its state.
@@ -816,9 +813,32 @@ struct LyricsStripView: View {
                 .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
-        .help(isOn ? "Stop showing lyrics when the notch is closed" : "Keep showing lyrics when the notch is closed")
-        .accessibilityLabel(isOn ? "Hide lyrics when closed" : "Show lyrics when closed")
+        .help("Lyrics when the notch is closed: off, or on which displays")
+        .accessibilityLabel(isOn ? "Lyrics when closed: on" : "Lyrics when closed: off")
         .animation(Motion.hover, value: isOn)
+        .notchMenuAnchor("closedLyrics", in: viewModel)
+    }
+
+    /// Off, or which displays show the lyrics with the notch closed: the same two settings as
+    /// Settings > Media, Show Lyrics When Closed and Show Lyrics On. Static so `--capture-notch
+    /// --open-menu closedLyrics` draws this menu.
+    static func closedLyricsMenuItems(settings: SettingsStore) -> [NotchMenu.Item] {
+        let isOn = settings.media.showLyricsWhenClosed
+        let haptic = { Haptics.perform(enabled: settings.advanced.hapticFeedbackEnabled, strength: settings.advanced.hapticStrength) }
+        let off = NotchMenu.Item(title: "Off", symbol: "text.badge.xmark", isOn: !isOn) {
+            settings.media.showLyricsWhenClosed = false
+            haptic()
+        }
+        let displays = DisplayChoice.allCases.enumerated().map { index, choice in
+            NotchMenu.Item(title: "On \(choice.title)", symbol: choice.symbolName,
+                           isOn: isOn && settings.media.closedLyricsDisplays == choice,
+                           startsSection: index == 0) {
+                settings.media.closedLyricsDisplays = choice
+                settings.media.showLyricsWhenClosed = true
+                haptic()
+            }
+        }
+        return [off] + displays
     }
 
     // MARK: Lines
@@ -1022,5 +1042,19 @@ enum TransportSymbol {
             .withSymbolConfiguration(configuration) else { return Image(systemName: name) }
         cache[key] = symbol
         return Image(nsImage: symbol)
+    }
+}
+
+/// The glow menu on a right-click, outside the notch only (see the effects button).
+private struct GlowContextMenu: ViewModifier {
+    let isEnabled: Bool
+    let open: () -> Void
+
+    func body(content: Content) -> some View {
+        if isEnabled {
+            content.contextMenu { Button("Glow Style and Placement…", action: open) }
+        } else {
+            content
+        }
     }
 }

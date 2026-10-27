@@ -4,14 +4,16 @@ import AppKit
 ///
 /// The item can be hidden entirely, which is why the global shortcut is registered
 /// unconditionally: hiding the icon must never leave the user without a way back into
-/// Settings.
+/// Settings. Its menu is built each time it opens, so the settings pinned to it
+/// (`GeneralSettings.menuBarPins`) show how they are set now.
 @MainActor
-final class MenuBarController {
+final class MenuBarController: NSObject, NSMenuDelegate {
     private unowned let environment: AppEnvironment
     private var statusItem: NSStatusItem?
 
     init(environment: AppEnvironment) {
         self.environment = environment
+        super.init()
     }
 
     /// Creates or removes the item to match the current setting.
@@ -32,7 +34,9 @@ final class MenuBarController {
             accessibilityDescription: "MiniNotch"
         )
         item.button?.image?.isTemplate = true
-        item.menu = makeMenu()
+        let menu = NSMenu()
+        menu.delegate = self
+        item.menu = menu
         statusItem = item
     }
 
@@ -42,8 +46,12 @@ final class MenuBarController {
         self.statusItem = nil
     }
 
-    private func makeMenu() -> NSMenu {
-        let menu = NSMenu()
+    func menuNeedsUpdate(_ menu: NSMenu) {
+        menu.removeAllItems()
+        fill(menu)
+    }
+
+    private func fill(_ menu: NSMenu) {
 
         let toggle = NSMenuItem(
             title: "Show or Hide Notch",
@@ -52,6 +60,19 @@ final class MenuBarController {
         )
         toggle.target = self
         menu.addItem(toggle)
+
+        // Settings pinned here from Settings > General > Menu Bar, ticked while on.
+        let pins = environment.settings.general.menuBarPins
+        if !pins.isEmpty {
+            menu.addItem(.separator())
+            for pin in pins {
+                let item = NSMenuItem(title: pin.title, action: #selector(togglePin(_:)), keyEquivalent: "")
+                item.target = self
+                item.representedObject = pin.rawValue
+                item.state = environment.settings[keyPath: pin.keyPath] ? .on : .off
+                menu.addItem(item)
+            }
+        }
 
         menu.addItem(.separator())
 
@@ -86,8 +107,11 @@ final class MenuBarController {
         let quit = NSMenuItem(title: "Quit MiniNotch", action: #selector(quit), keyEquivalent: "q")
         quit.target = self
         menu.addItem(quit)
+    }
 
-        return menu
+    @objc private func togglePin(_ sender: NSMenuItem) {
+        guard let raw = sender.representedObject as? String, let pin = MenuBarPin(rawValue: raw) else { return }
+        environment.settings[keyPath: pin.keyPath].toggle()
     }
 
     @objc private func toggleNotch() { environment.notchWindows.toggleFrontmost() }

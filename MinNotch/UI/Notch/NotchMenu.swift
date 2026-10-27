@@ -18,6 +18,8 @@ enum NotchMenu {
         var symbol: String
         /// Ticked, for the choice that is in force.
         var isOn = false
+        /// A divider above it, between one group of choices and the next.
+        var startsSection = false
         var action: () -> Void
     }
 
@@ -46,6 +48,7 @@ enum NotchMenu {
             let menuItem = ActionMenuItem(title: item.title, handler: item.action)
             menuItem.image = NSImage(systemSymbolName: item.symbol, accessibilityDescription: nil)
             menuItem.state = item.isOn ? .on : .off
+            if item.startsSection, !menu.items.isEmpty { menu.addItem(.separator()) }
             menu.addItem(menuItem)
         }
         menu.popUp(positioning: nil, at: NSEvent.mouseLocation, in: nil)
@@ -109,6 +112,7 @@ struct NotchMenuOverlay: View {
     }
 
     static let rowHeight: CGFloat = 24
+    static let dividerHeight: CGFloat = 9
 
     static func size(for items: [NotchMenu.Item]) -> CGSize {
         let font = NSFont.systemFont(ofSize: NSFont.smallSystemFontSize + 1)
@@ -117,7 +121,8 @@ struct NotchMenuOverlay: View {
         // cut short; the tick's column when one is ticked.
         let ticks: CGFloat = items.contains(where: \.isOn) ? 22 : 0
         return CGSize(width: max(140, ceil(widest) + 76 + ticks),
-                      height: CGFloat(items.count) * rowHeight + 8)
+                      height: CGFloat(items.count) * rowHeight
+                        + CGFloat(items.dropFirst().filter(\.startsSection).count) * dividerHeight + 8)
     }
 }
 
@@ -129,7 +134,14 @@ private struct NotchMenuPanel: View {
     var body: some View {
         let ticks = items.contains(where: \.isOn)
         VStack(spacing: 0) {
-            ForEach(Array(items.enumerated()), id: \.offset) { _, item in
+            ForEach(Array(items.enumerated()), id: \.offset) { index, item in
+                if item.startsSection, index > 0 {
+                    Rectangle()
+                        .fill(theme.ink.opacity(0.14))
+                        .frame(height: 1)
+                        .padding(.horizontal, 8)
+                        .frame(height: NotchMenuOverlay.dividerHeight)
+                }
                 NotchMenuRow(item: item, showsTick: ticks) {
                     close()
                     item.action()

@@ -124,6 +124,21 @@ struct MediaSettingsView: View {
                 ) {
                     SettingsToggle(isOn: $settings.media.showLyricsWhenClosed)
                 }
+
+                SettingsDivider()
+
+                SettingsRow(
+                    title: "Show Lyrics On",
+                    subtitle: "Which displays show the lyrics with the notch closed, when more than one is connected.",
+                    systemImage: "display.2",
+                    isEnabled: settings.media.enabled && settings.media.showLyrics && settings.media.showLyricsWhenClosed
+                ) {
+                    InlinePicker(selection: $settings.media.closedLyricsDisplays) {
+                        ForEach(DisplayChoice.allCases) { choice in
+                            Text(choice.title).tag(choice)
+                        }
+                    }
+                }
         }
     }
     private var lookCard: some View {

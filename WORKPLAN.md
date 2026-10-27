@@ -1,6 +1,6 @@
 # MiniNotch workplan
 
-Status: 0.8.0 prepared on branch settings-declutter (notes, version, drag-to-notch fix), in a PR for Andre to merge and release from his Mac; next: the user tries a drag to the notch and the Spotify sign-in.
+Status: 0.8.0 prepared on branch settings-declutter, now merged with 0.7.7 from main (0.7.7 notes moved to ReleaseHistory); in PR #3 for Andre to merge and release from his Mac; next: the user confirms play/pause no longer flickers, then push.
 
 Living document. Update the checkboxes as work lands. `CLAUDE.md` holds the architecture
 rules and the traps; this file holds the sequence.
@@ -181,6 +181,8 @@ The user plans to revamp every music-playing animation before 1.0.0. Collected h
       The window and the guard against real app switches are untried by hand. Add "Focus Timer" to
       SettingsNewRows at the next release.
 - [x] 0.7.5: What's New at launch lists every release since the one last seen (`ReleaseNotes.history`, `since`), and the feed links Sparkle's Version History.
+- [x] Pin settings to the menu bar icon's menu (General > Menu Bar > Pin Settings to the Menu), 2026-10-25.
+- [x] Show Lyrics On (all, built-in, other displays), from Settings > Media or the lyric strip's button, now a menu; glow placement Lyrics When Closed; the card's glow menu drawn in the panel, 2026-10-25. Untried by hand: the menu bar menu with pins, two real displays.
 - [ ] Revamp the Wave and Chase glow styles; hidden from the menus on 2026-10-19 (`AmbientGlowStyleKind.offered`), code kept.
 - [x] The top bar's What's New / Tutorial button opened a menu hidden under the notch (its own
       window server space is above AppKit's menus); menus in the notch are now drawn in the panel

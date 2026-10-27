@@ -6,6 +6,26 @@
     <description>MiniNotch updates</description>
     <language>en</language>
     <item>
+      <title>MiniNotch 0.7.7</title>
+      <pubDate>Mon, 26 Oct 2026 18:08:43 GMT</pubDate>
+      <sparkle:version>0.7.7</sparkle:version>
+      <sparkle:shortVersionString>0.7.7</sparkle:shortVersionString>
+      <sparkle:minimumSystemVersion>14.4</sparkle:minimumSystemVersion>
+      <description><![CDATA[<h3>New</h3>
+<ul>
+<li><b>Settings in the Menu Bar</b>: Pin the switches you use most to the menu bar icon&#x27;s menu, and turn them on and off without opening Settings. <i>Settings &gt; General &gt; Pin Settings to the Menu.</i></li>
+<li><b>Lyrics on Your Choice of Display</b>: Show the lyrics under the closed notch on every display, only the Mac&#x27;s own, or only the others. <i>The lyrics button on the music card, or Settings &gt; Media &gt; Show Lyrics On.</i></li>
+<li><b>Glow Around the Pop-Out Player</b>: Ambient Lighting now glows around the pop-out music window too, and can light the lyrics under the closed notch on their own. <i>Option-click the effects button on the music card, or Settings &gt; Appearance &gt; Ambient Lighting &gt; Where It Shows.</i></li>
+</ul>
+<h3>Improved</h3>
+<ul>
+<li><b>Opens Again</b>: 0.7.6 could close straight away every time it was opened while the Mac was plugged in, after it had last been quit on battery. Fixed. <i>If 0.7.6 will not open, it cannot update itself: download this version, or open 0.7.6 once with the Mac unplugged and it will update.</i></li>
+<li><b>Glow Menu You Can See</b>: The glow&#x27;s style and placement menu on the music card opens inside the notch, where it used to be hidden.</li>
+</ul>]]></description>
+      <sparkle:fullReleaseNotesLink>https://github.com/andrefongkc-cyber/mininotch/releases</sparkle:fullReleaseNotesLink>
+      <enclosure url="https://github.com/andrefongkc-cyber/mininotch/releases/download/v0.7.7/MiniNotch-0.7.7.dmg" sparkle:edSignature="yTumtvvHIDOWEuFgKuPA/xZznYIl0ET9kUA8lcJFsmZN2BT7t4rGwRDeZ+AYuGlMuIk+iSM7+bAd0a/uaGNeAw==" length="8634962" type="application/x-apple-diskimage"/>
+    </item>
+    <item>
       <title>MiniNotch 0.7.6</title>
       <pubDate>Mon, 19 Oct 2026 22:26:30 GMT</pubDate>
       <sparkle:version>0.7.6</sparkle:version>

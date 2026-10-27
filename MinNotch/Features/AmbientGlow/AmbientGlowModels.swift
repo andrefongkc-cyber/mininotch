@@ -46,21 +46,29 @@ enum AmbientGlowStyleKind: String, Codable, CaseIterable, Identifiable {
 /// files that still name it decode without it; see `AmbientGlowSettings.init(from:)`.
 enum AmbientGlowPlacement: String, Codable, CaseIterable, Identifiable, Hashable {
     case collapsedNotch
+    /// The closed notch while it shows the lyrics under it (Show Lyrics When Closed).
+    case closedLyrics
     case expandedPanel
+    /// The floating Now Playing window (Media > Floating Window, or the card's pop-out button).
+    case popOutWindow
 
     var id: String { rawValue }
 
     var title: String {
         switch self {
         case .collapsedNotch: return "Closed Notch"
+        case .closedLyrics: return "Lyrics When Closed"
         case .expandedPanel: return "Open Panel"
+        case .popOutWindow: return "Pop-Out Window"
         }
     }
 
     var symbolName: String {
         switch self {
         case .collapsedNotch: return "rectangle.topthird.inset.filled"
+        case .closedLyrics: return "text.below.photo"
         case .expandedPanel: return "rectangle.expand.vertical"
+        case .popOutWindow: return "pip"
         }
     }
 }
@@ -190,7 +198,13 @@ struct AmbientGlowSettings: Codable, Equatable {
     var isEnabled: Bool = false
     var style: AmbientGlowStyleKind = .rainbow
     /// Multi-select: each active placement renders the same style against its own geometry.
-    var placements: Set<AmbientGlowPlacement> = [.collapsedNotch, .expandedPanel]
+    var placements: Set<AmbientGlowPlacement> = [.collapsedNotch, .closedLyrics, .expandedPanel, .popOutWindow]
+    /// Whether the saved placements know about `closedLyrics`. A file from before it lit the
+    /// closed lyrics with the closed notch, so it gets `closedLyrics` wherever it had the notch.
+    var knowsLyricsPlacement = true
+    /// The same for `popOutWindow`: the pop-out shows the open panel's card, so a file from before
+    /// it gets the pop-out wherever it had the open panel.
+    var knowsPopOutPlacement = true
     var colorMode: GlowColorMode = .albumArt
     var staticColor: RGBAColor = .systemBlue
 
@@ -225,9 +239,17 @@ struct AmbientGlowSettings: Codable, Equatable {
         // back to the default, throwing away whichever of the other two the user had chosen.
         if let names = try? c.decodeIfPresent([String].self, forKey: .placements) {
             placements = Set(names.compactMap(AmbientGlowPlacement.init(rawValue:)))
+            if !c.value(.knowsLyricsPlacement, false), placements.contains(.collapsedNotch) {
+                placements.insert(.closedLyrics)
+            }
+            if !c.value(.knowsPopOutPlacement, false), placements.contains(.expandedPanel) {
+                placements.insert(.popOutWindow)
+            }
         } else {
-            placements = [.collapsedNotch, .expandedPanel]
+            placements = [.collapsedNotch, .closedLyrics, .expandedPanel, .popOutWindow]
         }
+        knowsLyricsPlacement = true
+        knowsPopOutPlacement = true
         colorMode = c.value(.colorMode, GlowColorMode.albumArt)
         staticColor = c.value(.staticColor, RGBAColor.systemBlue)
         isAudioReactive = c.value(.isAudioReactive, false)

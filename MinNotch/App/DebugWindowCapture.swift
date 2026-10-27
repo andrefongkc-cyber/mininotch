@@ -184,6 +184,10 @@ enum DebugWindowCapture {
         // either way, like the shadow, so a capture does not inherit it from the real settings.
         settings.media.showLyricsWhenClosed = arguments.contains("--closed-lyrics")
         if arguments.contains("--closed-lyrics") { settings.media.showLyrics = true }
+        // `--lyrics-on builtIn|others`: which displays show them (Media > Show Lyrics On); all
+        // otherwise, so a capture never inherits the real choice.
+        settings.media.closedLyricsDisplays = arguments.firstIndex(of: "--lyrics-on")
+            .flatMap { arguments.indices.contains($0 + 1) ? DisplayChoice(rawValue: arguments[$0 + 1]) : nil } ?? .all
         // Appearance > Panel Shadow, which is off by default and only exists while open.
         settings.appearance.showPanelShadow = arguments.contains("--shadow")
         // Layout > Displays > Hide Until Hovered, which only changes a virtual notch, so pair it with
@@ -197,7 +201,9 @@ enum DebugWindowCapture {
             let names = arguments[index + 1].split(separator: ",").map(String.init)
             var placements = Set<AmbientGlowPlacement>()
             if names.contains("closed") { placements.insert(.collapsedNotch) }
+            if names.contains("lyrics") { placements.insert(.closedLyrics) }
             if names.contains("open") { placements.insert(.expandedPanel) }
+            if names.contains("popout") { placements.insert(.popOutWindow) }
             settings.appearance.ambientGlow.placements = placements
         }
         // `--notch-style bento-light` draws in that Notch Style: a language, a dash, and dark or
@@ -292,15 +298,23 @@ enum DebugWindowCapture {
             settings.huds.dismissDelay = 10
             environment.hud.preview(.volume)
         }
-        // `--open-menu whatsNew|clockStyle`: that button's menu open in the panel, once the
+        // `--open-menu whatsNew|clockStyle|glowMenu|closedLyrics`: that button's menu open in the panel, once the
         // buttons have been laid out and so have said where they are.
         if expanded, let index = arguments.firstIndex(of: "--open-menu"), arguments.indices.contains(index + 1) {
             let anchor = arguments[index + 1]
             // The What's New button is a debug button, which captures leave out unless asked.
             if anchor == "whatsNew" { settings.advanced.showDebugButtons = true }
-            let items: [NotchMenu.Item] = anchor == "clockStyle"
-                ? TimerClockStyle.allCases.map { NotchMenu.Item(title: $0.title, symbol: $0.symbolName, isOn: $0 == settings.timer.clockStyle) {} }
-                : [NotchMenu.Item(title: "What's New", symbol: "sparkles") {}, NotchMenu.Item(title: "Tutorial", symbol: "graduationcap") {}]
+            let items: [NotchMenu.Item]
+            switch anchor {
+            case "clockStyle":
+                items = TimerClockStyle.allCases.map { NotchMenu.Item(title: $0.title, symbol: $0.symbolName, isOn: $0 == settings.timer.clockStyle) {} }
+            case "glowMenu":
+                items = NowPlayingCardView.glowMenuItems(settings: settings)
+            case "closedLyrics":
+                items = LyricsStripView.closedLyricsMenuItems(settings: settings)
+            default:
+                items = [NotchMenu.Item(title: "What's New", symbol: "sparkles") {}, NotchMenu.Item(title: "Tutorial", symbol: "graduationcap") {}]
+            }
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
                 viewModel.menu = NotchMenu.Open(anchor: anchor, items: items)
             }
@@ -335,9 +349,11 @@ enum DebugWindowCapture {
         var floating: FloatingNowPlayingController?
         if arguments.contains("--floating") {
             let controller = FloatingNowPlayingController(environment: environment)
+            controller.remembersFrame = false
             controller.show()
             controller.debugMove(to: CGPoint(x: geometry.windowFrame.minX + 10, y: geometry.windowFrame.maxY - 380))
             floating = controller
+            debugFloatingNowPlaying = controller
         }
         _ = floating
 
@@ -438,6 +454,7 @@ enum DebugWindowCapture {
     }
 
     private static var debugFloatingTimerEnvironment: AppEnvironment?
+    private static var debugFloatingNowPlaying: FloatingNowPlayingController?
 
     private static func writeCapture(of hosting: NSView, to path: String) {
         // `--floating-timer`: the pop-out timer window as well, beside the capture.
@@ -449,7 +466,14 @@ enum DebugWindowCapture {
             try? rep.representation(using: .png, properties: [:])?
                 .write(to: URL(fileURLWithPath: path.replacingOccurrences(of: ".png", with: "-floating.png")))
         }
-        guard let representation = hosting.bitmapImageRepForCachingDisplay(in: hosting.bounds) else {
+        // `--floating`: the floating Now Playing window, glow and all, beside the capture.
+        if let view = debugFloatingNowPlaying?.debugContentView,
+           let rep = view.bitmapImageRepForCachingDisplay(in: view.bounds) {
+            view.cacheDisplay(in: view.bounds, to: rep)
+            try? rep.representation(using: .png, properties: [:])?
+                .write(to: URL(fileURLWithPath: path.replacingOccurrences(of: ".png", with: "-nowplaying.png")))
+        }
+                guard let representation = hosting.bitmapImageRepForCachingDisplay(in: hosting.bounds) else {
             report("Could not create a bitmap"); exit(1)
         }
         hosting.cacheDisplay(in: hosting.bounds, to: representation)

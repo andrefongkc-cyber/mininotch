@@ -76,18 +76,18 @@ MiniNotch --render-previews <dir>                                  # what previe
 MiniNotch --capture-notch out.png [--collapsed] [--tab system] [--glow bars|off] [--debug]
                                  [--hold 12] [--midway 0.14] [--extended] [--virtual]
                                  [--timer 12] [--width 460] [--right timer,settings,battery]
-                                 [--paused] [--placements closed,open]
+                                 [--paused] [--placements closed,lyrics,open,popout] [--floating]
                                  [--sample-calendar] [--calendar-step 1] [--calendar-pick 2]
                                  [--card compact|fullArtwork] [--controls shuffle,playPause,repeatMode]
                                  [--lyrics-sheet] [--sample-stats] [--shadow] [--closed-lyrics]
-                                 [--sample-shelf] [--output-sheet] [--sample-weather]
+                                 [--sample-shelf] [--output-sheet] [--lyrics-on builtIn|others] [--sample-weather]
                                  [--sample-power] [--keep-open] [--hud-style floatingPill] [--no-media]
                                  [--sample-notes] [--blur-clipboard]
                                  [--notch-style bento-light] [--liquid-glass] [--builtin]
                                  [--no-visualizer] [--no-lyrics] [--swipe-to notes --midway 0.15]
                                  [--live grow|reopen|swipe --hold 7 [--was-active]]
                                  [--stopwatch] [--sample-laps] [--focus] [--floating-timer [--floating-expanded]]
-                                 [--clock-style flip|segments] [--no-fraction] [--open-menu whatsNew|clockStyle]
+                                 [--clock-style flip|segments] [--no-fraction] [--open-menu whatsNew|clockStyle|glowMenu|closedLyrics]
 MiniNotch --check-lyrics "Khalid" "8TEEN" 229                      # LRCLIBClient + LRCParser
 MiniNotch --check-lyric-sync [--out f]                             # matching lyrics to the audio, synthetic
 MiniNotch --check-lyric-sync --audio f.mp3 --lrc f.lrc --shifts 0,0.5 [--peaks]   # …and a real song, old method beside it
@@ -720,7 +720,7 @@ defaulting on only under `#if DEBUG`) for checking both at a glance. Review it w
 draw `ScrollView` content.
 
 `CFBundleVersion` is `$(MARKETING_VERSION)`, not a build number: Sparkle decides what is newer from
-it, and the build number had been 1 for every release. `ReleaseNotes.latest` is 0.8.0 and `MARKETING_VERSION` matches: prepared on 2026-10-22 on the branch `settings-declutter` (Settings by feature, Up Next, the pill's clock, drags to the notch, a line about the website and the planned mininotch.app), not yet published, since only Andre's Mac has the team signature and the Sparkle key. 0.7.6 (2026-10-19) fixes the Chrome tab lookup that held up every player. 0.7.5 (2026-10-19) takes Wave and Chase off the glow menus and shows every skipped release at launch. 0.7.4 (2026-10-19) brought clock styles in the notch and the pop-out, every lap, the bigger pop-out, Apps Using the Battery, Install Automatically, the stopwatch in the closed pill, the display settings in Layout and menus drawn in the panel; its release copy was launched and opened Settings before publishing. 0.7.3 (2026-10-14) brought the Timer tab's stopwatch, pop-out window and Focus, and the swipe fix over Clipboard and Notes. 0.7.2 (2026-10-14) fixes 0.7.1, which crashed whenever Settings opened: its `SettingsNewRows` listed seven titles twice, and a Swift dictionary literal with a repeated key traps when first read. The compiler warned and the build filter hid it; `Scripts/audit-search.sh` now refuses repeats, and **read every warning a release build prints**. 0.7.2 also lets people pick how often it checks (About > How Often, an hour to a week, `UpdateService.checkInterval`, kept by Sparkle in the defaults), defaulting to three hours (`SUScheduledCheckInterval` 10800). An hour is the floor because Sparkle will not schedule checks closer together; the user chose that over a timer of MiniNotch's own. 0.7.1 was released on 2026-10-12 (Tate's lock screen player and panel size, Spotify in Chrome, the Tabs pane), the first update installed copies find by themselves. 0.7.0 was released on 2026-10-08
+it, and the build number had been 1 for every release. `ReleaseNotes.latest` is 0.8.0 and `MARKETING_VERSION` matches: prepared on 2026-10-22 on the branch `settings-declutter`, merged with 0.7.7 on 2026-10-26 (Settings by feature, Up Next, the pill's clock, drags to the notch, a line about the website and the planned mininotch.app), not yet published, since only Andre's Mac has the team signature and the Sparkle key. 0.7.7 (2026-10-26) brought menu bar pins, Show Lyrics On, the glow around the pop-out player and on the closed lyrics, and the fix for 0.7.6 crashing at launch while plugged in. 0.7.6 (2026-10-19) fixes the Chrome tab lookup that held up every player. 0.7.5 (2026-10-19) takes Wave and Chase off the glow menus and shows every skipped release at launch. 0.7.4 (2026-10-19) brought clock styles in the notch and the pop-out, every lap, the bigger pop-out, Apps Using the Battery, Install Automatically, the stopwatch in the closed pill, the display settings in Layout and menus drawn in the panel; its release copy was launched and opened Settings before publishing. 0.7.3 (2026-10-14) brought the Timer tab's stopwatch, pop-out window and Focus, and the swipe fix over Clipboard and Notes. 0.7.2 (2026-10-14) fixes 0.7.1, which crashed whenever Settings opened: its `SettingsNewRows` listed seven titles twice, and a Swift dictionary literal with a repeated key traps when first read. The compiler warned and the build filter hid it; `Scripts/audit-search.sh` now refuses repeats, and **read every warning a release build prints**. 0.7.2 also lets people pick how often it checks (About > How Often, an hour to a week, `UpdateService.checkInterval`, kept by Sparkle in the defaults), defaulting to three hours (`SUScheduledCheckInterval` 10800). An hour is the floor because Sparkle will not schedule checks closer together; the user chose that over a timer of MiniNotch's own. 0.7.1 was released on 2026-10-12 (Tate's lock screen player and panel size, Spotify in Chrome, the Tabs pane), the first update installed copies find by themselves. 0.7.0 was released on 2026-10-08
 as the GitHub release `v0.7.0`, signed with the personal team like 0.2.0 to 0.6.0, at the user's
 request ("release on git"), and entered in `appcast.xml`: it is the first release with Sparkle, so the
 next one is the first that installed copies will find on their own. The next shared build needs new
@@ -1204,6 +1204,33 @@ scheme like `zoommtg:`, plain http, and a lookalike host must all be refused;
 15 second tick whenever it is switched on, not only once the calendar can be read, because access
 arrives from a dialog with no settings change to start a clock. A countdown swiped away stays
 away: `LiveActivityCenter.putAway` remembers the id, which is per occurrence.
+
+**Settings can be pinned to the menu bar icon's menu** (2026-10-25, the user's "add a way to pin
+settings here"). General > Menu Bar > Pin Settings to the Menu picks from `MenuBarPin`, switches that
+take effect by themselves (Open on Hover, Show Indicators When Closed, Show Lyrics When Closed, Sneak
+Peek, Ambient Glow, Follow the Beat, Focus Timer, Clipboard History, Haptic Feedback), each naming its
+setting by key path. Hide the System Overlay is left out on purpose: switching it on asks for
+Accessibility from the HUDs pane. `MenuBarController` is the menu's delegate and builds it in
+`menuNeedsUpdate`, so a pin's tick is how the setting is now, whoever changed it.
+
+**Lyrics with the notch closed can be kept to some displays, and the glow has a placement for them**
+(2026-10-25). Media > Show Lyrics On (`MediaSettings.closedLyricsDisplays`, `DisplayChoice`: All,
+Built-in, Other) is read in `NotchRootView.closedLyrics` against `CGDisplayIsBuiltin` of the surface's
+display. The lyric strip's button on the card is now a menu, Off or On one of the three, writing the same
+two settings. `AmbientGlowPlacement.closedLyrics` (Lyrics When Closed) is the closed notch while its
+lyrics show; a settings file from before it (`knowsLyricsPlacement` missing) gets it wherever it had
+Closed Notch, since the glow used to light the lyrics with the notch. The card's glow menu is drawn in
+the panel on option-click: its old right-click `contextMenu` was an AppKit menu, hidden under the notch
+like the What's New one, and only the floating window keeps a right-click. The controls row draws an
+invisible copy of pop-out and effects to centre play; that copy must not register the menu's anchor
+(`trailingCluster(anchorsMenu: false)`), or the menu hangs from empty space. `--capture-notch
+--open-menu glowMenu|closedLyrics` draws the real menus, `--placements lyrics` and `--lyrics-on`
+the rest. **The pop-out window is a glow placement too** (`popOutWindow`, the user's "glow not still around"
+on a screenshot of it): `FloatingNowPlayingView` overlays an `AmbientGlowView` on the clipped card, and
+the window always carries `FloatingNowPlayingController.glowRoom` (56) of transparent margin on every
+side so the blur has somewhere to go. Settings from before it (`knowsPopOutPlacement` missing) get it wherever they had Open Panel, since the user expected it on without asking. A frame saved at the old width moves out by the margin once, so
+the card stays put. The capture tools no longer save that window's frame (`remembersFrame`, as the
+timer's), and `--floating` now writes `<out>-nowplaying.png`.
 
 **Lyrics with the notch closed use the sneak peek's shape and size**, so a track change swaps what
 the strip says rather than resizing the notch. The lyric strip on the card has a button for it,

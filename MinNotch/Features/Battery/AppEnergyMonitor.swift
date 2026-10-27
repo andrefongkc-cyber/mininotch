@@ -84,8 +84,12 @@ final class AppEnergyMonitor {
         case (nil, true):
             // Plugged in while MiniNotch was not running: the saved stretch ended some time after
             // its last reading, which is the best there is.
-            if stretch != nil, stretch?.endedAt == nil {
-                stretch?.endedAt = stretch?.lastSampleAt
+            // Read before writing: `stretch?.endedAt = stretch?.lastSampleAt` reads `stretch`
+            // while assigning through it, which Swift stops the app for (0.7.6 crashed at every
+            // launch once a stretch was left open and the Mac was plugged in).
+            if let open = stretch, open.endedAt == nil {
+                let ended = open.lastSampleAt
+                stretch?.endedAt = ended
                 save()
             }
         case (true?, false):

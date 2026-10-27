@@ -28,6 +28,7 @@ enum SettingsSearchIndex {
     static let all: [SettingsSearchEntry] = [
         .init(tab: .general, section: "Startup", title: "Launch at Login", subtitle: "Start MiniNotch automatically when you log in.", symbolName: "power"),
         .init(tab: .general, section: "Startup", title: "Show Menu Bar Icon", subtitle: "Turn this off to run from the notch alone. The keyboard shortcut keeps working either way.", symbolName: "menubar.rectangle"),
+        .init(tab: .general, section: "Startup", title: "Pin Settings to the Menu", subtitle: "Pin switches to the menu bar icon's menu, to turn them on and off without opening Settings.", symbolName: "pin", keywords: ["pin", "menu bar", "quick", "toggle", "shortcut"]),
         .init(tab: .general, section: "Opening the Notch", title: "Open on Hover", subtitle: "Expand the panel when the pointer rests over the notch.", symbolName: "cursorarrow"),
         .init(tab: .general, section: "Opening and Closing", title: "Hover Delay", subtitle: "How long the pointer has to rest before the panel opens.", symbolName: "clock"),
         .init(tab: .general, section: "Opening the Notch", title: "Open on Click", subtitle: "Click the pill to expand it.", symbolName: "hand.tap"),
@@ -65,6 +66,7 @@ enum SettingsSearchIndex {
         .init(tab: .music, section: "Source", title: "Automation Permission", subtitle: "macOS is blocking MiniNotch from controlling Music and Spotify.", symbolName: "exclamationmark.triangle"),
         .init(tab: .music, section: "Lyrics", title: "Show Lyrics", subtitle: "Display the current line under the track info when lyrics are available.", symbolName: "quote.bubble"),
         .init(tab: .music, section: "Lyrics", title: "Show Lyrics When Closed", subtitle: "The line being sung, under the closed notch, while a song with synced lyrics plays.", symbolName: "text.below.photo"),
+        .init(tab: .music, section: "Lyrics", title: "Show Lyrics On", subtitle: "Which displays show the lyrics with the notch closed, when more than one is connected.", symbolName: "display.2", keywords: ["monitor", "external", "screen", "display", "built-in"]),
         .init(tab: .music, section: "Lyrics Timing", title: "Timing Offset", subtitle: "Shift lyrics earlier or later. Lyric files are timed by hand and disagree between sources.", symbolName: "timer"),
         .init(tab: .music, section: "Lyrics Timing", title: "Use Audio Clock", subtitle: "", symbolName: "waveform.badge.magnifyingglass"),
         .init(tab: .music, section: "Lyrics Timing", title: "Fix Timing Automatically", subtitle: "For lyrics that run early or late: listens for where the singing starts and moves the lyrics to match. Lyrics only; the glow's Follow the Beat is separate. Uses the system audio permission.", symbolName: "waveform.and.person.filled"),
