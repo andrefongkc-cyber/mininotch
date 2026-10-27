@@ -31,7 +31,7 @@ MiniNotch runs in the background: no Dock icon and nothing in ⌘-Tab, just the 
 optional menu bar icon. Quit it from that icon or from Settings > About.
 
 From 0.7 on, MiniNotch keeps itself up to date: it checks for a new version every three hours (or as often as you set in Settings > About > How Often) and installs
-it on its own once the notch is closed and no timer is running _(next)_, or asks first if you set Settings > About > New Versions to Ask First; check yourself from the menu bar icon. Earlier versions have to be
+it on its own once the notch is closed and no timer is running, or asks first if you set Settings > About > New Versions to Ask First; check yourself from the menu bar icon. Earlier versions have to be
 updated by hand once, to 0.7.
 
 Requires macOS 14.4 or later, Apple silicon or Intel; on anything older, macOS refuses to open
@@ -54,7 +54,7 @@ when they connect. What goes on which side is yours to arrange in Settings > Lay
 of the pill that shows what it is showing right now. It is off by default on a Mac with a notch,
 where the pill sits behind the camera housing; turn it on in Settings > Layout.
 
-**Up Next** _(next)_. A button beside Next peeks at what plays after this song. Apple Music shares it for a
+**Up Next**. A button beside Next peeks at what plays after this song. Apple Music shares it for a
 playlist or album playing in order; for Spotify, connect your account in Settings > Music.
 
 **Lyrics with the notch closed**. The line being sung, just under the closed pill, while a

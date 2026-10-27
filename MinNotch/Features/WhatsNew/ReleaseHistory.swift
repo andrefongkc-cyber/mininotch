@@ -7,8 +7,54 @@ import Foundation
 /// release goes out, its `latest` moves here under its own name and the new notes take its place.
 extension ReleaseNotes {
     static let history: [ReleaseNotes] = [
-        latest, v0_7_7, v0_7_6, v0_7_5, v0_7_4, v0_7_3, v0_7_2, v0_7_1, v0_7_0, v0_6_0, v0_5_0, v0_4_0, v0_3_0, v0_2_0,
+        latest, v0_8_0, v0_7_7, v0_7_6, v0_7_5, v0_7_4, v0_7_3, v0_7_2, v0_7_1, v0_7_0, v0_6_0, v0_5_0, v0_4_0, v0_3_0, v0_2_0,
     ]
+
+    static let v0_8_0 = ReleaseNotes(
+        id: "0.8.0",
+        version: "0.8.0",
+        added: [
+            ReleaseNote(
+                symbol: "clock",
+                title: "The Time in the Notch",
+                detail: "A clock beside the camera, in your Mac's 12 or 24 hour time, with the day if you like.",
+                howTo: "Settings > Layout > Closed Pill: drag Clock onto either side, with Show Indicators When Closed on. Clock Shows picks Time or Day and Time."
+            ),
+            ReleaseNote(
+                symbol: "text.line.first.and.arrowtriangle.forward",
+                title: "Up Next",
+                detail: "A new button beside Next shows what plays after this song. Apple Music shares it for a playlist or album playing in order; for Spotify, connect your account once.",
+                howTo: "The button is added after Next for you; move it in Settings > Layout. Connect Spotify in Settings > Music > Up Next."
+            ),
+            ReleaseNote(
+                symbol: "globe",
+                title: "MiniNotch Has a Website",
+                detail: "Every feature, the six Notch Styles, and the easiest way to install, to share with friends. We plan to move it to mininotch.app soon.",
+                howTo: "andrefongkc-cyber.github.io/mininotch"
+            ),
+        ],
+        improved: [
+            ReleaseNote(
+                symbol: "gearshape",
+                title: "Simpler Settings",
+                detail: "Settings is sorted by what you are changing: Music, Lock Screen, Weather, Timer, Shelf & Notes and more. Each section shows what most people change, with the rest under More Options, and search still finds everything.",
+                howTo: "Open Settings from the menu bar icon."
+            ),
+            ReleaseNote(
+                symbol: "tray.and.arrow.down",
+                title: "Drag Files to the Notch Again",
+                detail: "Dragging a file or a link to the closed notch opens the Shelf again, ready to keep it or send it with AirDrop.",
+                howTo: nil
+            ),
+            ReleaseNote(
+                symbol: "playpause",
+                title: "Play, Pause and Skip Right Away",
+                detail: "The buttons answer the moment you click them instead of half a second later, in the notch, the pop-out player and the lock screen.",
+                howTo: nil
+            ),
+        ],
+        removed: []
+    )
 
     static let v0_7_7 = ReleaseNotes(
         id: "0.7.7",

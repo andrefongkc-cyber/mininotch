@@ -27,45 +27,20 @@ struct ReleaseNotes {
     var removed: [ReleaseNote]
 
     static let latest = ReleaseNotes(
-        id: "0.8.0",
-        version: "0.8.0",
-        added: [
-            ReleaseNote(
-                symbol: "clock",
-                title: "The Time in the Notch",
-                detail: "A clock beside the camera, in your Mac's 12 or 24 hour time, with the day if you like.",
-                howTo: "Settings > Layout > Closed Pill: drag Clock onto either side, with Show Indicators When Closed on. Clock Shows picks Time or Day and Time."
-            ),
-            ReleaseNote(
-                symbol: "text.line.first.and.arrowtriangle.forward",
-                title: "Up Next",
-                detail: "A new button beside Next shows what plays after this song. Apple Music shares it for a playlist or album playing in order; for Spotify, connect your account once.",
-                howTo: "The button is added after Next for you; move it in Settings > Layout. Connect Spotify in Settings > Music > Up Next."
-            ),
-            ReleaseNote(
-                symbol: "globe",
-                title: "MiniNotch Has a Website",
-                detail: "Every feature, the six Notch Styles, and the easiest way to install, to share with friends. We plan to move it to mininotch.app soon.",
-                howTo: "andrefongkc-cyber.github.io/mininotch"
-            ),
-        ],
+        id: "0.8.1",
+        version: "0.8.1",
+        added: [],
         improved: [
             ReleaseNote(
-                symbol: "gearshape",
-                title: "Simpler Settings",
-                detail: "Settings is sorted by what you are changing: Music, Lock Screen, Weather, Timer, Shelf & Notes and more. Each section shows what most people change, with the rest under More Options, and search still finds everything.",
-                howTo: "Open Settings from the menu bar icon."
+                symbol: "arrow.down.app",
+                title: "Updates Install Themselves",
+                detail: "New versions now download and install on their own, once the notch is closed and no timer or stopwatch is running, and What's New tells you what changed. If you chose Ask First before, that stays.",
+                howTo: "To be asked first instead: Settings > About > New Versions > Ask First."
             ),
             ReleaseNote(
-                symbol: "tray.and.arrow.down",
-                title: "Drag Files to the Notch Again",
-                detail: "Dragging a file or a link to the closed notch opens the Shelf again, ready to keep it or send it with AirDrop.",
-                howTo: nil
-            ),
-            ReleaseNote(
-                symbol: "playpause",
-                title: "Play, Pause and Skip Right Away",
-                detail: "The buttons answer the moment you click them instead of half a second later, in the notch, the pop-out player and the lock screen.",
+                symbol: "macwindow.on.rectangle",
+                title: "Update Window in Front",
+                detail: "With Ask First, the window offering a new version now always opens in front of your other apps.",
                 howTo: nil
             ),
         ],
