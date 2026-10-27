@@ -40,6 +40,8 @@
 	<string>ECy84H60AnfMwzoHzTQkkqBkjXRp9tLH2QDLHs4JC5I=</string>
 	<key>SUEnableAutomaticChecks</key>
 	<true/>
+	<key>SUAutomaticallyUpdate</key>
+	<true/>
 	<key>SUScheduledCheckInterval</key>
 	<integer>10800</integer>
 	<key>LSMinimumSystemVersion</key>

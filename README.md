@@ -30,8 +30,8 @@ the app once.
 MiniNotch runs in the background: no Dock icon and nothing in ⌘-Tab, just the notch and an
 optional menu bar icon. Quit it from that icon or from Settings > About.
 
-From 0.7 on, MiniNotch keeps itself up to date: it checks for a new version every three hours (or as often as you set in Settings > About > How Often) and asks
-before installing it, or installs on its own if you set Settings > About > New Versions to Install Automatically; check yourself from the menu bar icon. Earlier versions have to be
+From 0.7 on, MiniNotch keeps itself up to date: it checks for a new version every three hours (or as often as you set in Settings > About > How Often) and installs
+it on its own once the notch is closed and no timer is running _(next)_, or asks first if you set Settings > About > New Versions to Ask First; check yourself from the menu bar icon. Earlier versions have to be
 updated by hand once, to 0.7.
 
 Requires macOS 14.4 or later, Apple silicon or Intel; on anything older, macOS refuses to open

@@ -776,9 +776,9 @@ made first, before the rename, and never used for anything; it can be deleted. S
 the new app's code signature to match the installed one's, so `--anonymous` and team-signed releases
 cannot update each other: pick one and keep it (the user has always chosen the team).
 
-**About > New Versions picks Ask First (the default) or Install Automatically** (2026-10-14,
+**About > New Versions picks Install Automatically (the default since 2026-10-27, `SUAutomaticallyUpdate` in `Config/Info.plist`, at the user's request after a friend never saw the Ask First window) or Ask First** (2026-10-14,
 `UpdateService.installsAutomatically`, Sparkle's `automaticallyDownloadsUpdates`, kept by Sparkle in
-the defaults). Ask First is Sparkle's own window, which lists the feed entry's release notes with
+the defaults, so anyone who picked Ask First keeps it and everyone who never chose gets the new default). Ask First is Sparkle's own window, which lists the feed entry's release notes with
 Install, Remind Me Later and Skip. Install Automatically downloads in the background; Sparkle would
 then install only when MiniNotch quits, which for a background app can be days, so the
 `willInstallUpdateOnQuit` delegate method keeps the immediate install block and calls it as soon as
