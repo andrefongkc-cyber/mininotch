@@ -1,6 +1,6 @@
 # MiniNotch workplan
 
-Status: 0.8.0 prepared on branch settings-declutter, now merged with 0.7.7 from main (0.7.7 notes moved to ReleaseHistory); in PR #3 for Andre to merge and release from his Mac; next: the user confirms play/pause no longer flickers, then push.
+Status: 0.8.0 released 2026-10-26 (Settings by feature, Up Next, the pill clock, drags to the notch, instant play/pause); next: the Wave and Chase revamp when the user asks.
 
 Living document. Update the checkboxes as work lands. `CLAUDE.md` holds the architecture
 rules and the traps; this file holds the sequence.
