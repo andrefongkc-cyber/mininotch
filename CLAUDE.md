@@ -101,6 +101,7 @@ MiniNotch --capture-whats-new <dir>                                # release not
 MiniNotch --capture-layout <dir> [--width 460]                     # Settings > Layout editors
 MiniNotch --check-permissions [--request] [--out f]                # TCC state
 MiniNotch --check-media [--scripts <dir>] [--out f]                # snapshot, shuffle, Up Next
+MiniNotch --check-transport                                        # pause, play and next on the sample song, without a player
 MiniNotch --check-keys [--simulate] [--control] [--out f]          # volume/brightness key tap
 MiniNotch --check-links "<url or text>" ...                        # link shelf: titles, icons, refusals
 MiniNotch --check-downloads [--out f]                              # download activities, in a scratch folder
@@ -627,6 +628,7 @@ open -n -a <path to MiniNotch.app> --args --check-permissions --out /tmp/perm.lo
 | Accessibility | `AXIsProcessTrustedWithOptions`, then a `CGEvent` tap | Switching on HUDs > Hide the System Overlay |
 | Notifications | `UNUserNotificationCenter` | First low-battery alert |
 | Downloads folder | Reading `~/Downloads` | Switching on Layout > Downloads |
+| Spotify sign-in (not a permission) | `ASWebAuthenticationSession`, then the Spotify Web API | Connect in Settings > Music > Up Next |
 | Location | `CLLocationManager`, then Open-Meteo | Weather on with Use My Location; Allow in Weather, the Weather tab, or the tutorial |
 | Touch ID or password (not a permission) | LocalAuthentication `deviceOwnerAuthentication` | Unlock in the Clipboard tab, with Blur Until Unlocked on |
 
@@ -634,6 +636,30 @@ None are requested at launch. The first-launch tutorial explains each one on its
 page, only for features that were ticked, and offers an "Allow Now" button for Calendar and
 Notifications. That is the one moment a prompt is welcome: the reason is on screen, and the
 tutorial window is frontmost, which this accessory app otherwise never is.
+
+## Settings layout
+
+Rebuilt on 2026-10-19 because the user found it "way too hard to find things and change them":
+about 150 rows in 11 panes, 26 of them in Media. The sidebar (`SettingsTab`) is now named after what
+is being changed, General, Appearance, Layout, then Music, Lock Screen, Calendar, Weather, Timer,
+Shelf & Notes, then Battery & System and Volume & Brightness, then Advanced and About, and each pane
+shows what most people touch and folds the rest under **More Options** (`SettingsMoreOptions`, open
+or closed remembered per pane in `settings.moreOptions.<pane>`). Panes are assembled in
+`UI/Settings/SettingsPanes.swift` from the card views in `Sections/`, which take a `part` (`main`,
+`more`, and for cards that live in another pane, e.g. `MediaSettingsView(part: .lockScreen)`,
+`AdvancedSettingsView(part: .gestures)`). Gestures and keyboard shortcuts are in General's fold; the
+Now Playing card's style is in Music; the volume indicator's lock screen switch is in Lock Screen.
+
+Folded rows are still in the view tree, at zero height and clipped, never left out: a search result
+has to reach them. A row a search lands on calls `settingsRevealMoreOptions` from the environment,
+which opens its fold before the pane scrolls. Anything in a fold that starts work on `onAppear`
+starts it while folded, which is why the glow's audio meter stays in Appearance's main card and only
+its tuning is folded. Moving a row between panes means changing its entry's `tab` (and `section`) in
+`SettingsSearchIndex`, since that is how search and the sidebar's New badge find it; the audit does
+not check that. `--capture-settings <dir> [--expanded] [--tab music] [--search "Timing Offset"]`
+draws each pane in a real window (the sidebar cannot be captured, a pane can); `--search` checks a
+folded row opens its fold. Text elsewhere names panes ("Settings > Music"); past release notes keep
+the names they had.
 
 ## Settings search
 
@@ -694,7 +720,7 @@ defaulting on only under `#if DEBUG`) for checking both at a glance. Review it w
 draw `ScrollView` content.
 
 `CFBundleVersion` is `$(MARKETING_VERSION)`, not a build number: Sparkle decides what is newer from
-it, and the build number had been 1 for every release. `ReleaseNotes.latest` is 0.7.7 and `MARKETING_VERSION` matches. 0.7.7 (2026-10-26) brought menu bar pins, Show Lyrics On, the glow around the pop-out player and on the closed lyrics, and the fix for 0.7.6 crashing at launch while plugged in. 0.7.6 (2026-10-19) fixes the Chrome tab lookup that held up every player. 0.7.5 (2026-10-19) takes Wave and Chase off the glow menus and shows every skipped release at launch. 0.7.4 (2026-10-19) brought clock styles in the notch and the pop-out, every lap, the bigger pop-out, Apps Using the Battery, Install Automatically, the stopwatch in the closed pill, the display settings in Layout and menus drawn in the panel; its release copy was launched and opened Settings before publishing. 0.7.3 (2026-10-14) brought the Timer tab's stopwatch, pop-out window and Focus, and the swipe fix over Clipboard and Notes. 0.7.2 (2026-10-14) fixes 0.7.1, which crashed whenever Settings opened: its `SettingsNewRows` listed seven titles twice, and a Swift dictionary literal with a repeated key traps when first read. The compiler warned and the build filter hid it; `Scripts/audit-search.sh` now refuses repeats, and **read every warning a release build prints**. 0.7.2 also lets people pick how often it checks (About > How Often, an hour to a week, `UpdateService.checkInterval`, kept by Sparkle in the defaults), defaulting to three hours (`SUScheduledCheckInterval` 10800). An hour is the floor because Sparkle will not schedule checks closer together; the user chose that over a timer of MiniNotch's own. 0.7.1 was released on 2026-10-12 (Tate's lock screen player and panel size, Spotify in Chrome, the Tabs pane), the first update installed copies find by themselves. 0.7.0 was released on 2026-10-08
+it, and the build number had been 1 for every release. `ReleaseNotes.latest` is 0.8.0 and `MARKETING_VERSION` matches: prepared on 2026-10-22 on the branch `settings-declutter`, merged with 0.7.7 on 2026-10-26 (Settings by feature, Up Next, the pill's clock, drags to the notch, a line about the website and the planned mininotch.app), not yet published, since only Andre's Mac has the team signature and the Sparkle key. 0.7.7 (2026-10-26) brought menu bar pins, Show Lyrics On, the glow around the pop-out player and on the closed lyrics, and the fix for 0.7.6 crashing at launch while plugged in. 0.7.6 (2026-10-19) fixes the Chrome tab lookup that held up every player. 0.7.5 (2026-10-19) takes Wave and Chase off the glow menus and shows every skipped release at launch. 0.7.4 (2026-10-19) brought clock styles in the notch and the pop-out, every lap, the bigger pop-out, Apps Using the Battery, Install Automatically, the stopwatch in the closed pill, the display settings in Layout and menus drawn in the panel; its release copy was launched and opened Settings before publishing. 0.7.3 (2026-10-14) brought the Timer tab's stopwatch, pop-out window and Focus, and the swipe fix over Clipboard and Notes. 0.7.2 (2026-10-14) fixes 0.7.1, which crashed whenever Settings opened: its `SettingsNewRows` listed seven titles twice, and a Swift dictionary literal with a repeated key traps when first read. The compiler warned and the build filter hid it; `Scripts/audit-search.sh` now refuses repeats, and **read every warning a release build prints**. 0.7.2 also lets people pick how often it checks (About > How Often, an hour to a week, `UpdateService.checkInterval`, kept by Sparkle in the defaults), defaulting to three hours (`SUScheduledCheckInterval` 10800). An hour is the floor because Sparkle will not schedule checks closer together; the user chose that over a timer of MiniNotch's own. 0.7.1 was released on 2026-10-12 (Tate's lock screen player and panel size, Spotify in Chrome, the Tabs pane), the first update installed copies find by themselves. 0.7.0 was released on 2026-10-08
 as the GitHub release `v0.7.0`, signed with the personal team like 0.2.0 to 0.6.0, at the user's
 request ("release on git"), and entered in `appcast.xml`: it is the first release with Sparkle, so the
 next one is the first that installed copies will find on their own. The next shared build needs new
@@ -916,6 +942,15 @@ Shelf, the Notes shortcut, the timer's URL) clears the mark, because those calle
 then expand. It used to choose the tab only in `init`, so the panel reopened on whatever was used
 last whichever way the switch was set. The real notch only; a virtual one keeps its own default.
 
+**The pill's clock is the Mac's own time, sized for its widest** (2026-10-20, `PillIndicator.clock`,
+placed in Layout > Closed Pill like any indicator, Clock Shows picks Time or Day and Time,
+`GeneralSettings.pillClockText`). Written with the template `Jmm` (`EEEJmm`), which follows the Mac's
+12 or 24 hour choice with no AM or PM. It redraws in a `TimelineView(.everyMinute)` and at no other
+time. Its width is measured at the widest the time gets (`PillClockText.widestSample`: every weekday at
+10 and 22 o'clock, two digits on either clock, cached per locale), for the reason under "Nothing may
+hardcode which indicator is the wide one": measured at 18:58 alone it was "6:58" on a 12-hour Mac and
+"10:58" did not fit.
+
 **The song is not a live activity.** It used to be presented as one, the lowest priority, which
 put the artist in the Live Activity slot with no choice of title and never took it down again, so
 the pill named an artist after the player had quit. `PillIndicator.song` reads the track directly
@@ -1122,6 +1157,16 @@ Advanced > Show Notes, on by default, and in the tutorial's Recommended set, sin
 costs nothing. A capture's sample note (`--sample-notes`) is never marked loaded, so it can never be
 saved over the real one; `--check-notes` proves it with a scratch file.
 
+**A drag reaches the closed notch through a global mouse monitor, not its drop target** (2026-10-22).
+Once the notch moved into its own window server space (`NotchSpace`), dragging a file to the closed
+notch no longer opened it ("when you drag a file to airdrop over it it doesn't open"). `NotchDragDetector`
+watches `leftMouseDown`, `leftMouseDragged` and `leftMouseUp` with global monitors (no permission) and
+the drag pasteboard's change count, as Boring Notch's `DragDetector` does; while a file or link is being
+dragged, `NotchWindowManager.dragMoved` opens any closed notch whose reach (the notch, 20 points wider
+each side and 24 below) holds the pointer, through `NotchViewModel.openForDrag`, which the old drop
+target now calls too. When the drag ends somewhere other than over the open panel, a notch it opened
+closes again. Confirmed by the user with a real drag on 2026-10-22.
+
 **What's New and the tutorial share one debug button.** `TopStripItem.whatsNew` opens a small menu
 (`NotchMenu`) offering either.
 
@@ -1324,6 +1369,21 @@ connection callbacks would mean the Bluetooth permission for something the user 
 just matched has usually not published it yet. The iterator has to be drained once when it is
 armed, or everything already connected arrives as news at launch.
 
+**Up Next is a peek, read only while it is open.** A transport control (`MediaControl.upNext`,
+added after Next to every arrangement once by settings schema 3) opens a row under the card with
+the next song (`NowPlayingController.isShowingUpNext`); nothing about the queue is read while it is
+closed. Apple Music: the playlist or album's order from the current track (`playlistReading`),
+read whatever `shuffle enabled` says, because Music says it is shuffling when it is not; the order
+is listed under a shuffle claim only after a track change matched it (`checkPlaylistPrediction`),
+until one does not, or shuffle is flipped. Spotify, app or Chrome: its Web API's
+`/v1/me/player/queue` (`SpotifyAccount`), 0.8 s after a track change because the server learns of a
+skip late. Sign-in is PKCE with the user's own Client ID (their app on developer.spotify.com, redirect
+`mininotch://spotify-callback`, caught by `ASWebAuthenticationSession`, so no URL type in the
+Info.plist); only the refresh token is stored, in the login keychain (`SpotifyKeychain`), and
+requests go through `BoundedHTTPClient`, which takes a POST body for the token endpoint only. The
+user chose sign-in over an Apple-Music-only peek (2026-10-19). Never tried against a real Spotify
+app or a real Music playlist yet; `--capture-notch --up-next` draws the sample.
+
 **A lyric search takes a length within 5 seconds, or failing that a synced sheet within 15.**
 `LRCLIBClient.fetchBestTextFromSearch` used to take only the 5-second matches, so a song whose
 streaming copy is a different master never had lyrics: Spotify's "I Want You Back" is 170 seconds
@@ -1343,6 +1403,21 @@ with one Apple Event** (`URL of tabs of windows`), never by asking each tab: tha
 per tab, 3.5 s with 32 tabs, and with nothing playing every refresh ran it on the queue all players
 share, so Music's artwork, lyrics and pause button waited (2026-10-19). `NowPlayingController.refresh`
 also keeps at most one refresh waiting behind the one on the queue (`isRefreshing`, `refreshAgain`).
+
+**Play, pause, next and previous show at once, then the player confirms** (2026-10-22, "there's a
+delay when I play or pause or skip", with Spotify). The button used to wait for the command, a 0.15 s
+pause and a whole refresh, sometimes queued behind one already under way, about half a second.
+`NowPlayingController.send` now flips `isPlaying` (rebasing the clock so a pause freezes the scrubber
+where it is) and sets a skip's position to zero before the command is sent. Any read that disagrees
+is overruled (`Expectation`) until one agrees, which ends the hold, or 1.5 s pass, after which a
+player that ignored the command is believed. Holding only reads from before the command was sent was
+not enough: Spotify still says "playing" for a moment after it has the command, and the button
+swapped between pause and play before settling. A skip
+is read again at 0.6 s for the new song's title. Every caller of `send` gets it: the card, the floating
+window, the lock screen, the shortcuts. **Never write `track?.x = f()` where `f` reads `track`**: the
+first version did (`track?.elapsed = elapsed(at:)`), which is two accesses to one property at once, and
+Swift stopped the app on the first click. Change a copy and assign it. `--check-transport` presses
+pause, play and next on the sample song and prints the result; run it after touching `send`.
 
 **Clicking a lyric line seeks by lyric time, not by track time.** The strip's clock is
 `elapsed + offset + audio correction - latency`, so seeking to a line's timestamp directly would

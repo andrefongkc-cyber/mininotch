@@ -1,167 +1,200 @@
 import SwiftUI
 
+/// Settings > Appearance's cards. `main` is what the pane shows and `more` what it folds under
+/// More Options; `cardStyle` and `visualizer` are the Now Playing card's look, which the Music
+/// pane shows. The panes are put together in `SettingsPanes`.
 struct AppearanceSettingsView: View {
+    enum Part { case main, more, cardStyle, visualizer }
+    var part: Part = .main
+
     @Environment(SettingsStore.self) private var settings
 
     var body: some View {
-        @Bindable var settings = settings
-
-        SettingsPane(
-            title: "Appearance",
-            subtitle: "How the notch looks: its style, accent, materials and size."
-        ) {
-            SettingsCard(
-                header: "Notch Style",
-                footer: "Every style has the same controls in the same places; only how they are drawn changes. On a Mac with a camera, the closed notch stays black in every style, so it disappears into the camera housing."
-            ) {
-                NotchStylePicker()
-            }
-
-            SettingsCard(header: "Accent") {
-                SettingsRow(
-                    title: "Accent Color",
-                    subtitle: "Used for active and selected states only.",
-                    systemImage: "paintpalette"
-                ) {
-                    InlinePicker(selection: $settings.appearance.accentMode) {
-                        ForEach(AccentMode.allCases) { mode in
-                            Text(mode.title).tag(mode)
-                        }
-                    }
-                }
-
-                if settings.appearance.accentMode == .custom {
-                    SettingsDivider()
-
-                    SettingsRow(title: "Custom Color", systemImage: "eyedropper") {
-                        ColorPicker(
-                            "",
-                            selection: Binding(
-                                get: { settings.appearance.customAccent.color },
-                                set: { settings.appearance.customAccent = RGBAColor($0) }
-                            ),
-                            supportsOpacity: false
-                        )
-                        .labelsHidden()
-                    }
-                }
-
-                SettingsDivider()
-
-                SettingsRow(
-                    title: "Scrubber Color",
-                    subtitle: "What tints the Now Playing progress bar.",
-                    systemImage: "slider.horizontal.below.rectangle"
-                ) {
-                    InlinePicker(selection: $settings.appearance.sliderColor) {
-                        ForEach(SliderColorStyle.allCases) { style in
-                            Text(style.title).tag(style)
-                        }
-                    }
-                }
-            }
-
-            SettingsCard(
-                header: "Materials",
-                footer: "Solid black matches your Mac's notch exactly. Translucency makes the panel lighter than the hardware around it, which is more noticeable on a display with a physical notch."
-            ) {
-                SettingsRow(
-                    title: "Translucent Panel",
-                    subtitle: "Let the desktop tint the notch instead of filling it solid. Minimal only: Glass is see-through already, and the other styles are solid by design.",
-                    systemImage: "square.stack.3d.up",
-                    isEnabled: settings.appearance.notchLanguage == .minimal
-                        && (settings.appearance.notchBackground == .solid || !NotchBackground.isLiquidGlassSupported)
-                ) {
-                    SettingsToggle(isOn: $settings.appearance.useVibrancy)
-                }
-
-                SettingsDivider()
-
-                SettingsRow(
-                    title: "Panel Shadow",
-                    subtitle: "Useful on a display with no notch. On a notched Mac it shows as a halo around the panel as it opens.",
-                    systemImage: "shadow"
-                ) {
-                    SettingsToggle(isOn: $settings.appearance.showPanelShadow)
-                }
-            }
-
-            SettingsCard(header: "Panel Size") {
-                SettingsRow(
-                    title: "Size",
-                    subtitle: "Fit to Top Bar gets narrower the fewer tabs your top bar has. The panel never goes narrower than its top bar needs.",
-                    systemImage: "rectangle.expand.vertical"
-                ) {
-                    InlinePicker(selection: $settings.appearance.panelSize) {
-                        ForEach(PanelSize.allCases) { size in
-                            Text(size.title).tag(size)
-                        }
-                    }
-                }
-
-                SettingsDivider()
-
-                SettingsRow(
-                    title: "Width",
-                    subtitle: "How wide the panel grows when it opens, with Size set to Custom.",
-                    systemImage: "arrow.left.and.right",
-                    isEnabled: settings.appearance.panelSize == .custom
-                ) {
-                    ValueSlider(
-                        value: $settings.appearance.expandedWidth,
-                        range: 460...820,
-                        step: 10
-                    ) { "\(Int($0)) pt" }
-                }
-
-                SettingsDivider()
-
-                SettingsRow(
-                    title: "Corner Radius",
-                    subtitle: "Match this to your display's physical notch for the cleanest join.",
-                    systemImage: "rectangle.roundedbottom"
-                ) {
-                    ValueSlider(
-                        value: $settings.appearance.panelCornerRadius,
-                        range: 8...32,
-                        step: 1
-                    ) { "\(Int($0)) pt" }
-                }
-
-            }
-
+        switch part {
+        case .main:
+            notchStyle
+            accent
+            panelSize
             AmbientLightingCard()
+        case .more:
+            AmbientLightingCard(part: .tuning)
+            scrubber
+            panelShape
+            materials
+        case .cardStyle:
+            cardStyle
+        case .visualizer:
+            visualizer
+        }
+    }
 
-            SettingsCard(header: "Media Card") {
-                SettingsRow(
-                    title: "Card Style",
-                    subtitle: settings.media.cardStyle.summary,
-                    systemImage: "rectangle.on.rectangle"
-                ) {
-                    InlinePicker(selection: $settings.media.cardStyle) {
-                        ForEach(NowPlayingCardStyle.allCases) { style in
-                            Text(style.title).tag(style)
-                        }
+    private var notchStyle: some View {
+        SettingsCard(
+            header: "Notch Style",
+            footer: "Every style has the same controls in the same places; only how they are drawn changes. On a Mac with a camera, the closed notch stays black in every style, so it disappears into the camera housing."
+        ) {
+            NotchStylePicker()
+        }
+    }
+
+    private var accent: some View {
+        @Bindable var settings = settings
+        return SettingsCard(header: "Accent") {
+            SettingsRow(
+                title: "Accent Color",
+                subtitle: "Used for active and selected states only.",
+                systemImage: "paintpalette"
+            ) {
+                InlinePicker(selection: $settings.appearance.accentMode) {
+                    ForEach(AccentMode.allCases) { mode in
+                        Text(mode.title).tag(mode)
                     }
                 }
+            }
 
+            if settings.appearance.accentMode == .custom {
                 SettingsDivider()
 
-                SettingsRow(
-                    title: "Custom Visualizer",
-                    subtitle: customVisualizerSubtitle,
-                    systemImage: "waveform.path.ecg",
-                    isEnabled: settings.media.showVisualizer
-                ) {
-                    HStack(spacing: 6) {
-                        if settings.media.customVisualizerPath != nil {
-                            Button("Clear") { settings.media.customVisualizerPath = nil }
-                                .controlSize(.small)
-                        }
-                        Button("Choose…", action: chooseVisualizer)
-                            .controlSize(.small)
+                SettingsRow(title: "Custom Color", systemImage: "eyedropper") {
+                    ColorPicker(
+                        "",
+                        selection: Binding(
+                            get: { settings.appearance.customAccent.color },
+                            set: { settings.appearance.customAccent = RGBAColor($0) }
+                        ),
+                        supportsOpacity: false
+                    )
+                    .labelsHidden()
+                }
+            }
+        }
+    }
+
+    private var scrubber: some View {
+        @Bindable var settings = settings
+        return SettingsCard(header: "Progress Bar") {
+            SettingsRow(
+                title: "Scrubber Color",
+                subtitle: "What tints the Now Playing progress bar.",
+                systemImage: "slider.horizontal.below.rectangle"
+            ) {
+                InlinePicker(selection: $settings.appearance.sliderColor) {
+                    ForEach(SliderColorStyle.allCases) { style in
+                        Text(style.title).tag(style)
                     }
                 }
+            }
+        }
+    }
+
+    private var materials: some View {
+        @Bindable var settings = settings
+        return SettingsCard(
+            header: "Materials",
+            footer: "Solid black matches your Mac's notch exactly. Translucency makes the panel lighter than the hardware around it, which is more noticeable on a display with a physical notch."
+        ) {
+            SettingsRow(
+                title: "Translucent Panel",
+                subtitle: "Let the desktop tint the notch instead of filling it solid. Minimal only: Glass is see-through already, and the other styles are solid by design.",
+                systemImage: "square.stack.3d.up",
+                isEnabled: settings.appearance.notchLanguage == .minimal
+                    && (settings.appearance.notchBackground == .solid || !NotchBackground.isLiquidGlassSupported)
+            ) {
+                SettingsToggle(isOn: $settings.appearance.useVibrancy)
+            }
+
+            SettingsDivider()
+
+            SettingsRow(
+                title: "Panel Shadow",
+                subtitle: "Useful on a display with no notch. On a notched Mac it shows as a halo around the panel as it opens.",
+                systemImage: "shadow"
+            ) {
+                SettingsToggle(isOn: $settings.appearance.showPanelShadow)
+            }
+        }
+    }
+
+    private var panelSize: some View {
+        @Bindable var settings = settings
+        return SettingsCard(header: "Panel Size") {
+            SettingsRow(
+                title: "Size",
+                subtitle: "Fit to Top Bar gets narrower the fewer tabs your top bar has. The panel never goes narrower than its top bar needs.",
+                systemImage: "rectangle.expand.vertical"
+            ) {
+                InlinePicker(selection: $settings.appearance.panelSize) {
+                    ForEach(PanelSize.allCases) { size in
+                        Text(size.title).tag(size)
+                    }
+                }
+            }
+        }
+    }
+
+    private var panelShape: some View {
+        @Bindable var settings = settings
+        return SettingsCard(header: "Panel Shape") {
+            SettingsRow(
+                title: "Width",
+                subtitle: "How wide the panel grows when it opens, with Size set to Custom.",
+                systemImage: "arrow.left.and.right",
+                isEnabled: settings.appearance.panelSize == .custom
+            ) {
+                ValueSlider(
+                    value: $settings.appearance.expandedWidth,
+                    range: 460...820,
+                    step: 10
+                ) { "\(Int($0)) pt" }
+            }
+
+            SettingsDivider()
+
+            SettingsRow(
+                title: "Corner Radius",
+                subtitle: "Match this to your display's physical notch for the cleanest join.",
+                systemImage: "rectangle.roundedbottom"
+            ) {
+                ValueSlider(
+                    value: $settings.appearance.panelCornerRadius,
+                    range: 8...32,
+                    step: 1
+                ) { "\(Int($0)) pt" }
+            }
+        }
+    }
+
+    /// One row, for a card the Music pane builds.
+    private var cardStyle: some View {
+        @Bindable var settings = settings
+        return SettingsRow(
+            title: "Card Style",
+            subtitle: settings.media.cardStyle.summary,
+            systemImage: "rectangle.on.rectangle"
+        ) {
+            InlinePicker(selection: $settings.media.cardStyle) {
+                ForEach(NowPlayingCardStyle.allCases) { style in
+                    Text(style.title).tag(style)
+                }
+            }
+        }
+    }
+
+    /// One row, for a card the Music pane builds.
+    private var visualizer: some View {
+        SettingsRow(
+            title: "Custom Visualizer",
+            subtitle: customVisualizerSubtitle,
+            systemImage: "waveform.path.ecg",
+            isEnabled: settings.media.showVisualizer
+        ) {
+            HStack(spacing: 6) {
+                if settings.media.customVisualizerPath != nil {
+                    Button("Clear") { settings.media.customVisualizerPath = nil }
+                        .controlSize(.small)
+                }
+                Button("Choose…", action: chooseVisualizer)
+                    .controlSize(.small)
             }
         }
     }

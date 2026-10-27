@@ -239,20 +239,7 @@ struct SettingsRootView: View {
         .padding(.vertical, 1)
     }
 
-    @ViewBuilder
     private var detail: some View {
-        switch selection {
-        case .general: GeneralSettingsView()
-        case .appearance: AppearanceSettingsView()
-        case .layout: LayoutSettingsView()
-        case .media: MediaSettingsView()
-        case .calendar: CalendarSettingsView()
-        case .huds: HUDSettingsView()
-        case .battery: BatterySettingsView()
-        case .tabs: TabsSettingsView()
-        case .shortcuts: ShortcutsSettingsView()
-        case .advanced: AdvancedSettingsView()
-        case .about: AboutSettingsView()
-        }
+        SettingsPanes(tab: selection)
     }
 }

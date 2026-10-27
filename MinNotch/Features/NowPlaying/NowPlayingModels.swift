@@ -78,10 +78,20 @@ struct UpNextItem: Equatable, Identifiable {
     let id = UUID()
     var title: String
     var artist: String
+    /// The cover, where the source says where it is (Spotify).
+    var artworkURL: URL? = nil
 
     static func == (lhs: UpNextItem, rhs: UpNextItem) -> Bool {
         lhs.title == rhs.title && lhs.artist == rhs.artist
     }
+}
+
+/// Music's playlist order around the current track, and what Music claims about shuffle.
+struct PlaylistReading: Equatable {
+    var items: [UpNextItem]
+    var claimsShuffle: Bool
+    /// The playlist or album's name.
+    var source: String
 }
 
 /// What the Up Next row has to show.
@@ -199,7 +209,7 @@ enum LyricsStatus: Equatable {
         switch self {
         case .idle, .loaded: return nil
         case .searching: return "Looking for lyrics…"
-        case .noneStoredLocally: return "No lyrics stored for this track. Turn on Look Up Online in Settings > Media."
+        case .noneStoredLocally: return "No lyrics stored for this track. Turn on Look Up Online in Settings > Music."
         case .notFound: return "No lyrics found for this track."
         case .needsChromeJavaScript:
             return "For the cover, time and lyrics, turn on View > Developer > Allow JavaScript from Apple Events in Chrome."

@@ -1,7 +1,12 @@
 import SwiftUI
 import UniformTypeIdentifiers
 
+/// Settings > Advanced's cards (`main`), and the Gestures card, which General shows under More
+/// Options (`gestures`). The panes are put together in `SettingsPanes`.
 struct AdvancedSettingsView: View {
+    enum Part { case main, gestures }
+    var part: Part = .main
+
     @Environment(SettingsStore.self) private var settings
     @Environment(AppEnvironment.self) private var environment
 
@@ -11,8 +16,9 @@ struct AdvancedSettingsView: View {
     var body: some View {
         @Bindable var settings = settings
 
-        SettingsPane(title: "Advanced") {
-            SettingsCard(header: "Interaction") {
+        switch part {
+        case .gestures:
+            SettingsCard(header: "Gestures") {
                 SettingsRow(
                     title: "Two-Finger Gestures",
                     subtitle: "Swipe sideways over the notch to change tab, or up and down to close and open it.",
@@ -60,7 +66,14 @@ struct AdvancedSettingsView: View {
                 }
 
             }
+        case .main:
+            fileAndDiagnostics
+        }
+    }
 
+    private var fileAndDiagnostics: some View {
+        @Bindable var settings = settings
+        return Group {
             SettingsCard(
                 header: "Settings File",
                 footer: importError

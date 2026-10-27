@@ -79,6 +79,7 @@ struct SettingsRow<Control: View>: View {
     @ViewBuilder var control: Control
 
     @Environment(\.settingsSearchTarget) private var searchTarget
+    @Environment(\.settingsRevealMoreOptions) private var revealMoreOptions
     @State private var isFlashing = false
 
     var body: some View {
@@ -137,6 +138,8 @@ struct SettingsRow<Control: View>: View {
 
     private func flashIfTargeted() {
         guard let searchTarget, searchTarget.title == title else { return }
+        // A row folded under More Options opens its fold first, so the search lands on it.
+        revealMoreOptions?()
         withAnimation(.easeOut(duration: 0.2)) { isFlashing = true }
         // Long enough to find with the eye after the scroll settles, short enough that the
         // pane does not look permanently selected.
@@ -201,5 +204,86 @@ struct SettingsPane<Content: View>: View {
         }
         .navigationTitle(title)
         .background(Palette.paneBackground)
+    }
+}
+
+private struct SettingsRevealMoreOptionsKey: EnvironmentKey {
+    static let defaultValue: (@MainActor @Sendable () -> Void)? = nil
+}
+
+extension EnvironmentValues {
+    /// Opens the More Options fold a row sits in. Set by `SettingsMoreOptions`, called by a row
+    /// when a search lands on it.
+    var settingsRevealMoreOptions: (@MainActor @Sendable () -> Void)? {
+        get { self[SettingsRevealMoreOptionsKey.self] }
+        set { self[SettingsRevealMoreOptionsKey.self] = newValue }
+    }
+}
+
+/// The settings fewer people change, folded under More Options at the foot of a pane.
+///
+/// Settings showed every row it had, about 150 of them, and the user found it "way too hard to
+/// find things and change them" (2026-10-19). Each pane now shows what most people touch and
+/// folds the rest here. Whether a pane's fold is open is remembered.
+///
+/// Folded rows stay in the view tree, at no height, rather than being left out: a search
+/// result has to reach them. A row a search lands on calls `settingsRevealMoreOptions`, which
+/// opens the fold before the pane scrolls to it.
+struct SettingsMoreOptions<Content: View>: View {
+    @ViewBuilder var content: Content
+    @AppStorage private var isExpanded: Bool
+    /// Debug captures draw the folds open without writing to the remembered state.
+    @Environment(\.settingsMoreOptionsForcedOpen) private var forcedOpen
+
+    private var isOpen: Bool { isExpanded || forcedOpen }
+
+    /// `id` names the pane, for remembering whether its fold is open.
+    init(_ id: String, @ViewBuilder content: () -> Content) {
+        self.content = content()
+        _isExpanded = AppStorage(wrappedValue: false, "settings.moreOptions.\(id)")
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: Metrics.cardSpacing) {
+            Button {
+                withAnimation(.easeInOut(duration: 0.25)) { isExpanded.toggle() }
+            } label: {
+                HStack(spacing: 6) {
+                    Image(systemName: "chevron.right")
+                        .font(.system(size: 10, weight: .semibold))
+                        .rotationEffect(.degrees(isOpen ? 90 : 0))
+                    Text(isOpen ? "Fewer Options" : "More Options")
+                        .font(Typography.sectionHeader)
+                }
+                .foregroundStyle(Palette.controlAccent)
+                .padding(.leading, 2)
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .accessibilityValue(isOpen ? "Expanded" : "Collapsed")
+
+            VStack(alignment: .leading, spacing: Metrics.cardSpacing) { content }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .frame(height: isOpen ? nil : 0, alignment: .top)
+                .clipped()
+                .opacity(isOpen ? 1 : 0)
+                .allowsHitTesting(isOpen)
+                .accessibilityHidden(!isOpen)
+        }
+        .environment(\.settingsRevealMoreOptions, { [binding = $isExpanded] in
+            if !binding.wrappedValue { binding.wrappedValue = true }
+        })
+    }
+}
+
+private struct SettingsMoreOptionsForcedOpenKey: EnvironmentKey {
+    static let defaultValue = false
+}
+
+extension EnvironmentValues {
+    /// Draws every More Options fold open, for `--capture-settings --expanded`.
+    var settingsMoreOptionsForcedOpen: Bool {
+        get { self[SettingsMoreOptionsForcedOpenKey.self] }
+        set { self[SettingsMoreOptionsForcedOpenKey.self] = newValue }
     }
 }

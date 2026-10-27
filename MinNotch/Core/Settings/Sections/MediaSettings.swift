@@ -76,6 +76,8 @@ enum MediaControl: String, Codable, CaseIterable, Identifiable {
     case next
     case repeatMode
     case favorite
+    /// Opens the Up Next peek: what plays after this. Between Next and the pop-out by default.
+    case upNext
 
     var id: String { rawValue }
 
@@ -87,6 +89,7 @@ enum MediaControl: String, Codable, CaseIterable, Identifiable {
         case .next: return "Next"
         case .repeatMode: return "Repeat"
         case .favorite: return "Favorite"
+        case .upNext: return "Up Next"
         }
     }
 
@@ -98,10 +101,11 @@ enum MediaControl: String, Codable, CaseIterable, Identifiable {
         case .next: return "forward.fill"
         case .repeatMode: return "repeat"
         case .favorite: return "heart"
+        case .upNext: return "text.line.first.and.arrowtriangle.forward"
         }
     }
 
-    static let defaultOrder: [MediaControl] = [.shuffle, .previous, .playPause, .next]
+    static let defaultOrder: [MediaControl] = [.shuffle, .previous, .playPause, .next, .upNext]
 }
 
 extension MediaControl: LayoutArrangeable {
@@ -271,6 +275,10 @@ struct MediaSettings: Codable, Equatable {
     /// The song and its controls on the lock screen. See `LockScreenController`.
     var showOnLockScreen: Bool = true
     /// Where on the lock screen, and in what arrangement.
+    /// The Client ID of the user's own Spotify app, for signing in so the Up Next peek can read
+    /// Spotify's queue. See `SpotifyAccount`. Not a secret: PKCE needs no client secret.
+    var spotifyClientID: String = ""
+
     var lockScreenLayout: LockScreenMediaLayout = .playerLeft
     /// The card with the cover, title, scrubber and controls. Player layouts only.
     var lockScreenShowsPlayer: Bool = true
@@ -300,9 +308,6 @@ struct MediaSettings: Codable, Equatable {
     /// Which displays show them: the Mac's own screen, the others, or all.
     var closedLyricsDisplays: DisplayChoice = .all
 
-    /// Show the next few tracks under the current one. Apple Music only: Spotify's scripting
-    /// dictionary has no queue to read.
-    var showUpNext: Bool = true
     /// Audio visualiser keyed to the artwork's colours.
     var showVisualizer: Bool = false
     /// Replace the built-in visualiser with a user-supplied Lottie animation.
@@ -334,6 +339,7 @@ struct MediaSettings: Codable, Equatable {
         closedLyricsDisplays = c.value(.closedLyricsDisplays, DisplayChoice.all)
         showOutputButton = c.value(.showOutputButton, true)
         showOnLockScreen = c.value(.showOnLockScreen, true)
+        spotifyClientID = c.value(.spotifyClientID, "")
         lockScreenLayout = c.value(.lockScreenLayout, LockScreenMediaLayout.playerLeft)
         lockScreenShowsPlayer = c.value(.lockScreenShowsPlayer, true)
         lockScreenShowsLyrics = c.value(.lockScreenShowsLyrics, true)
@@ -341,7 +347,6 @@ struct MediaSettings: Codable, Equatable {
         lockScreenBackgroundStrength = c.value(.lockScreenBackgroundStrength, 0.7, in: Self.lockScreenBackgroundStrengthRange)
         // Both parts off would leave nothing to draw.
         if !lockScreenShowsPlayer && !lockScreenShowsLyrics { lockScreenShowsPlayer = true }
-        showUpNext = c.value(.showUpNext, true)
         showVisualizer = c.value(.showVisualizer, false)
         customVisualizerPath = c.value(.customVisualizerPath, nil as String?)
         pollInterval = c.value(.pollInterval, 1.0, in: 0.5...5)

@@ -7,8 +7,48 @@ import Foundation
 /// release goes out, its `latest` moves here under its own name and the new notes take its place.
 extension ReleaseNotes {
     static let history: [ReleaseNotes] = [
-        latest, v0_7_6, v0_7_5, v0_7_4, v0_7_3, v0_7_2, v0_7_1, v0_7_0, v0_6_0, v0_5_0, v0_4_0, v0_3_0, v0_2_0,
+        latest, v0_7_7, v0_7_6, v0_7_5, v0_7_4, v0_7_3, v0_7_2, v0_7_1, v0_7_0, v0_6_0, v0_5_0, v0_4_0, v0_3_0, v0_2_0,
     ]
+
+    static let v0_7_7 = ReleaseNotes(
+        id: "0.7.7",
+        version: "0.7.7",
+        added: [
+            ReleaseNote(
+                symbol: "pin",
+                title: "Settings in the Menu Bar",
+                detail: "Pin the switches you use most to the menu bar icon's menu, and turn them on and off without opening Settings.",
+                howTo: "Settings > General > Pin Settings to the Menu."
+            ),
+            ReleaseNote(
+                symbol: "display.2",
+                title: "Lyrics on Your Choice of Display",
+                detail: "Show the lyrics under the closed notch on every display, only the Mac's own, or only the others.",
+                howTo: "The lyrics button on the music card, or Settings > Media > Show Lyrics On."
+            ),
+            ReleaseNote(
+                symbol: "pip",
+                title: "Glow Around the Pop-Out Player",
+                detail: "Ambient Lighting now glows around the pop-out music window too, and can light the lyrics under the closed notch on their own.",
+                howTo: "Option-click the effects button on the music card, or Settings > Appearance > Ambient Lighting > Where It Shows."
+            ),
+        ],
+        improved: [
+            ReleaseNote(
+                symbol: "exclamationmark.triangle",
+                title: "Opens Again",
+                detail: "0.7.6 could close straight away every time it was opened while the Mac was plugged in, after it had last been quit on battery. Fixed.",
+                howTo: "If 0.7.6 will not open, it cannot update itself: download this version, or open 0.7.6 once with the Mac unplugged and it will update."
+            ),
+            ReleaseNote(
+                symbol: "sparkles",
+                title: "Glow Menu You Can See",
+                detail: "The glow's style and placement menu on the music card opens inside the notch, where it used to be hidden.",
+                howTo: nil
+            ),
+        ],
+        removed: []
+    )
 
     static let v0_7_6 = ReleaseNotes(
         id: "0.7.6",

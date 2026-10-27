@@ -263,7 +263,7 @@ private struct FloatingNowPlayingView: View {
         .padding(9)
         .opacity(isHovering ? 1 : 0)
         .animation(Motion.hover, value: isHovering)
-        .help("Close. Reopen from Settings > Media.")
+        .help("Close. Reopen from Settings > Music.")
         .accessibilityLabel("Close the floating Now Playing window")
     }
 }

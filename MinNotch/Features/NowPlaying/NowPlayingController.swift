@@ -41,8 +41,49 @@ final class NowPlayingController {
     /// Why the lyric strip looks the way it does. Without this the strip silently renders
     /// nothing when a lookup fails, which is indistinguishable from the feature being broken.
     private(set) var lyricsStatus: LyricsStatus = .idle
-    /// The next few tracks, or why they cannot be listed. Apple Music only.
+    /// The next few tracks, or why they cannot be listed, while the Up Next peek is open.
     private(set) var upNext: UpNextState = .idle
+    /// The next track's cover, where the source says where it is (Spotify).
+    private(set) var upNextArtwork: NSImage?
+
+    /// The Up Next peek, opened from its button in the transport row. Nothing about the queue
+    /// is read while it is closed: Music's read walks a playlist over Apple Events, and
+    /// Spotify's is a request to Spotify.
+    var isShowingUpNext = false {
+        didSet {
+            guard oldValue != isShowingUpNext else { return }
+            if isShowingUpNext { refreshUpNext() } else { upNext = .idle; upNextArtwork = nil }
+        }
+    }
+
+    /// Reads Spotify's queue, for Spotify in the app and in Chrome. Wired by `AppEnvironment`
+    /// to `SpotifyAccount`, so the media layer does not depend on how the account signs in.
+    @ObservationIgnored var spotifyQueue: ((Int, @escaping @MainActor (UpNextState) -> Void) -> Void)?
+    /// Loads a cover from Spotify's image host. Wired with `spotifyQueue`.
+    @ObservationIgnored var spotifyImage: ((URL, @escaping @MainActor (NSImage?) -> Void) -> Void)?
+
+    /// What the last playlist read said comes next, to check against what does, and the
+    /// playlist whose order a track change has confirmed. Music's `shuffle enabled` can claim a
+    /// shuffle that is not happening; once the song that plays is the one the order named, the
+    /// order is listed whatever the claim says, until a change does not match.
+    /// What the last play, pause or skip showed, held until the player agrees or `until` passes.
+    ///
+    /// A player takes a moment to act on a command, and reads in that moment still say the old
+    /// state: holding only reads from before the command was sent let the next ones through, and
+    /// the button swapped between pause and play before settling (2026-10-22). Now any read that
+    /// disagrees is overruled until one agrees, which ends the hold, or the time runs out, in which
+    /// case the player ignored the command and what it says is shown.
+    private struct Expectation {
+        var isPlaying: Bool?
+        var restarted: Bool
+        var until: Date
+    }
+    @ObservationIgnored private var expectation: Expectation?
+    private static let expectationHold: TimeInterval = 1.5
+
+    @ObservationIgnored private var predictedNextTitle: String?
+    @ObservationIgnored private var predictedFrom: String?
+    @ObservationIgnored private var confirmedOrderSource: String?
 
     /// The user's choice of the full lyrics list over the two-line strip. Shared by the notch
     /// and the floating window, since both size themselves from it.
@@ -240,6 +281,24 @@ final class NowPlayingController {
             || snapshot.artworkKey != track?.artworkKey
 
         var published = snapshot
+        if let expected = expectation {
+            if isNewTrack || capturedAt > expected.until {
+                expectation = nil
+            } else {
+                var agrees = true
+                if let playing = expected.isPlaying, snapshot.isPlaying != playing {
+                    agrees = false
+                    published.isPlaying = playing
+                    published.elapsed = elapsed(at: capturedAt)
+                }
+                // A restart reads as a position near the start; one still far in is from before.
+                if expected.restarted, snapshot.elapsed > 3 {
+                    agrees = false
+                    published.elapsed = elapsed(at: capturedAt)
+                }
+                if agrees { expectation = nil }
+            }
+        }
         if !isNewTrack, let current = track, current.isPlaying, snapshot.isPlaying, !isScrubbing {
             published.elapsed = Self.smoothedPosition(reported: snapshot.elapsed, predicted: elapsed(at: capturedAt))
         }
@@ -247,10 +306,11 @@ final class NowPlayingController {
         // Hold the user's drag position until the seek round-trips.
         if isScrubbing, let scrubTarget { published.elapsed = scrubTarget }
         track = published
-        reportPlaying(snapshot.isPlaying)
+        reportPlaying(published.isPlaying)
 
         guard isNewTrack else { return }
         lastTrackIdentity = snapshot.trackIdentity
+        checkPlaylistPrediction(against: snapshot)
         onTrackChange?(snapshot)
         loadArtwork(from: source, for: snapshot)
         loadLyrics(for: snapshot)
@@ -293,30 +353,93 @@ final class NowPlayingController {
     /// Read by the card and by both surfaces that size it, so the row's height is only ever
     /// counted when the row is actually there.
     var showsUpNext: Bool {
-        guard FeatureFlag.upNext.isEnabled,
-              let settings, settings.media.showUpNext, settings.media.enabled else { return false }
-        return track?.sourceKind == .appleMusic
+        guard isShowingUpNext, let settings, settings.media.enabled else { return false }
+        return supports(.upNext)
     }
 
-    /// Reads the queue once per track, not once per poll.
+    /// Reads the queue again now, for the peek being opened or the shuffle being flipped.
+    func refreshUpNext() {
+        // A capture's sample queue stays as it is rather than being read from a real player.
+        guard let track, track.trackIdentity != "sample" else { return }
+        loadUpNext(from: sourceFor(track.sourceKind), for: track)
+    }
+
+    /// Reads the queue once per track, not once per poll, and only while the peek is open.
     ///
-    /// The read is a separate Apple Event round trip that walks the playlist, so doing it on
-    /// every position poll would cost a tenth of a second on the queue every media read
-    /// shares. The queue only changes when the track does, or when shuffle is flipped.
+    /// Music's read is a separate Apple Event round trip that walks the playlist, so doing it on
+    /// every position poll would cost a tenth of a second on the queue every media read shares.
+    /// Spotify's is a request to Spotify, made a moment after the change because its servers
+    /// learn of a skip a little after the app makes it.
     private func loadUpNext(from source: MediaSource, for snapshot: NowPlayingTrack) {
         guard showsUpNext else {
             upNext = .idle
+            upNextArtwork = nil
             return
         }
         let key = snapshot.artworkKey
         let limit = Self.upNextLimit
-        AppleScriptRunner.shared.queue.async {
-            let state = source.upNext(limit: limit)
-            DispatchQueue.main.async { [weak self] in
-                guard let self, self.track?.artworkKey == key else { return }
-                self.upNext = state
+
+        switch snapshot.sourceKind {
+        case .spotify, .chromeSpotify:
+            guard let spotifyQueue else { upNext = .idle; return }
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) { [weak self] in
+                guard let self, self.track?.artworkKey == key, self.showsUpNext else { return }
+                spotifyQueue(limit) { [weak self] state in
+                    guard let self, self.track?.artworkKey == key else { return }
+                    self.setUpNext(state)
+                }
             }
+        case .appleMusic:
+            let music = appleMusic
+            AppleScriptRunner.shared.queue.async {
+                let reading = music.playlistReading(limit: limit)
+                let running = music.isAvailable
+                DispatchQueue.main.async { [weak self] in
+                    guard let self, self.track?.artworkKey == key else { return }
+                    self.setUpNext(self.resolve(reading, musicRunning: running))
+                }
+            }
+        default:
+            upNext = .idle
         }
+    }
+
+    private func setUpNext(_ state: UpNextState) {
+        upNext = state
+        upNextArtwork = nil
+        guard case .loaded(let items) = state, let url = items.first?.artworkURL, let spotifyImage else { return }
+        let title = items.first?.title
+        spotifyImage(url) { [weak self] image in
+            guard let self, case .loaded(let current) = self.upNext, current.first?.title == title else { return }
+            self.upNextArtwork = image
+        }
+    }
+
+    /// What to show for a playlist read, believing a shuffle claim unless a track change has
+    /// shown the order to be the play order.
+    private func resolve(_ reading: PlaylistReading?, musicRunning: Bool) -> UpNextState {
+        guard let reading else {
+            predictedNextTitle = nil
+            return .unavailable(musicRunning ? "Up Next is only known when playing from a playlist or album." : "Music is not running.")
+        }
+        predictedNextTitle = reading.items.first?.title
+        predictedFrom = reading.source
+        if reading.claimsShuffle, confirmedOrderSource != reading.source {
+            return .unavailable(
+                reading.source.isEmpty
+                    ? "Shuffling. Music doesn't share the shuffled order."
+                    : "Shuffling \u{201C}\(reading.source)\u{201D}. Music doesn't share the order."
+            )
+        }
+        return reading.items.isEmpty ? .unavailable("Nothing after this in the current playlist.") : .loaded(reading.items)
+    }
+
+    /// A track change either matches what the playlist order said came next, confirming that
+    /// order for the playlist, or it does not, and the order is no longer trusted under a shuffle.
+    private func checkPlaylistPrediction(against snapshot: NowPlayingTrack) {
+        guard snapshot.sourceKind == .appleMusic, let predicted = predictedNextTitle else { return }
+        confirmedOrderSource = snapshot.title == predicted ? predictedFrom : nil
+        predictedNextTitle = nil
     }
 
     private func reportPlaying(_ isPlaying: Bool) {
@@ -328,6 +451,7 @@ final class NowPlayingController {
     private func clear() {
         reportPlaying(false)
         upNext = .idle
+        upNextArtwork = nil
         track = nil
         artwork = nil
         palette = .fallback
@@ -544,8 +668,33 @@ final class NowPlayingController {
 
         // Shuffle, repeat and favourite are shown changed at once and confirmed by the
         // read-back below. Waiting for the round trip left the button looking unresponsive for
-        // a noticeable beat.
+        // a noticeable beat. Play, pause, next and previous too (2026-10-22, "there's a delay
+        // when I play or pause or skip"): the button waited for the command, a pause, and a
+        // whole refresh, sometimes behind one already on the queue.
+        let now = Date()
         switch command {
+        case .playPause:
+            if var changed = track {
+                // The clock is rebased to now, so pausing freezes the scrubber where it is and
+                // playing carries on from there. Worked out before `track` is written: reading
+                // it inside an assignment to it is two accesses at once, which Swift stops the
+                // app for (it crashed on the first click, 2026-10-22).
+                changed.elapsed = elapsed(at: now)
+                changed.isPlaying.toggle()
+                snapshotDate = now
+                track = changed
+                reportPlaying(changed.isPlaying)
+                expectation = Expectation(isPlaying: changed.isPlaying, restarted: false, until: now + Self.expectationHold)
+            }
+        case .nextTrack, .previousTrack:
+            // Both land at the start of a song: the next one, or this one again (previous more
+            // than a few seconds in). The title follows when the player says what it is.
+            if var changed = track {
+                changed.elapsed = 0
+                snapshotDate = now
+                track = changed
+                expectation = Expectation(isPlaying: nil, restarted: true, until: now + Self.expectationHold)
+            }
         case .toggleShuffle:
             if let current = track?.isShuffling { track?.isShuffling = !current }
         case .cycleRepeat:
@@ -560,12 +709,18 @@ final class NowPlayingController {
 
         AppleScriptRunner.shared.queue.async {
             source.send(command)
-            // Read back promptly so the button state reflects reality rather than a guess.
+            // Read back promptly so the button state reflects reality rather than a guess. A
+            // skip is read again a moment later too, since a player can take that long to say
+            // what the new song is.
+            if command == .nextTrack || command == .previousTrack {
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) { [weak self] in self?.refresh() }
+            }
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) { [weak self] in
                 guard let self else { return }
                 self.refresh()
                 // Shuffle changes what plays next, so the queue has to be read again.
                 if command == .toggleShuffle, let track = self.track {
+                    self.confirmedOrderSource = nil
                     self.loadUpNext(from: source, for: track)
                 }
             }
@@ -605,6 +760,11 @@ final class NowPlayingController {
             return track?.sourceKind == .appleMusic
         case .playPause, .previous, .next:
             return true
+        case .upNext:
+            // Music's playlist order, or Spotify's queue through its Web API; nothing else
+            // shares what plays next.
+            guard FeatureFlag.upNext.isEnabled else { return false }
+            return track?.sourceKind == .appleMusic || scriptable
         }
     }
 
@@ -632,6 +792,16 @@ extension NowPlayingController {
     /// `settings` is attached without starting anything, so a capture can see the settings-
     /// dependent parts of the card, such as whether Up Next shows, without the controller
     /// polling the real player and replacing the sample with whatever is actually playing.
+    #if DEBUG
+    /// Hands the controller a read as if the player had just answered, for `--check-transport`.
+    func simulateRead(isPlaying: Bool, elapsed: TimeInterval, at date: Date = Date()) {
+        guard var snapshot = track else { return }
+        snapshot.isPlaying = isPlaying
+        snapshot.elapsed = elapsed
+        publish((appleMusic, snapshot), capturedAt: date)
+    }
+    #endif
+
     func applySample(settings: SettingsStore? = nil, isPlaying: Bool = true) {
         if let settings { self.settings = settings }
         track = NowPlayingTrack(
@@ -668,6 +838,7 @@ extension NowPlayingController {
 
         snapshotDate = Date()
         artwork = image
+        upNextArtwork = image
         palette = ArtworkPalette.extract(from: image)
         // Parsed from LRC rather than built by hand, so a preview exercises the same word
         // timing path a real track goes through.

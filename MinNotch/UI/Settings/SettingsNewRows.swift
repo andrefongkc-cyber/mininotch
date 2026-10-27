@@ -34,7 +34,7 @@ enum SettingsNewRows {
         "Song Shows": "0.4",
         "Sneak Peek Length": "0.4",
         "Show Lyrics When Closed": "0.4",
-        "Show on the Lock Screen": "0.4",
+        "Volume and Brightness": "0.4",
         "Upcoming Meetings": "0.4",
         "Minutes Before": "0.4",
         "Show Output Button": "0.4",
@@ -80,6 +80,11 @@ enum SettingsNewRows {
         // 0.7.7
         "Pin Settings to the Menu": "0.7.7",
         "Show Lyrics On": "0.7.7",
+
+        // 0.8.0
+        "Spotify Client ID": "0.8.0",
+        "Spotify Account": "0.8.0",
+        "Clock Shows": "0.8.0",
     ]
 
     static func isNew(_ title: String) -> Bool {
