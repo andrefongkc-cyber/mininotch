@@ -128,9 +128,24 @@ extension UpdateService: @preconcurrency SPUStandardUserDriverDelegate {
     /// window forward itself; saying so also stops Sparkle warning that a background app should.
     var supportsGentleScheduledUpdateReminders: Bool { true }
 
+    /// Asking to be activated is not enough: since macOS 14 an app in the background is refused
+    /// focus it did not get from a click, and Sparkle then shows the update window as an inactive
+    /// app's window, behind whatever is in front, where nobody sees it. So once Sparkle has shown
+    /// it (just after this returns), its window is ordered in front of every app's regardless.
     func standardUserDriverWillHandleShowingUpdate(_ handleShowingUpdate: Bool, forUpdate update: SUAppcastItem, state: SPUUserUpdateState) {
-        if handleShowingUpdate {
-            NSApp.activate(ignoringOtherApps: true)
+        guard handleShowingUpdate else { return }
+        NSApp.activate(ignoringOtherApps: true)
+        DispatchQueue.main.async {
+            Self.bringUpdateWindowForward()
+        }
+    }
+
+    /// Sparkle's update window, found by its controller's class, since Sparkle does not hand it out.
+    static func bringUpdateWindowForward() {
+        for window in NSApp.windows where window.windowController.map({ String(describing: type(of: $0)) }) == "SUUpdateAlert" {
+            window.collectionBehavior.insert(.moveToActiveSpace)
+            window.orderFrontRegardless()
+            window.makeKey()
         }
     }
 }

@@ -119,6 +119,7 @@ MiniNotch --check-power [seconds]                                  # charger in,
 MiniNotch --check-keep-open                                        # Keep the Notch Open: holds, lets go, pin, shortcut default
 MiniNotch --check-notes                                            # the note is saved, read back, never overwritten by a capture
 MiniNotch --check-update --feed <url> [--out f]                   # a whole Sparkle update, test builds only (see Releases)
+MiniNotch --check-update --ask [--key-window] [--no-raise] --feed <url> --out f   # where a scheduled Ask First window lands among every app's windows
 MiniNotch --check-clipboard                                        # what the history records, and when it is blurred
 MiniNotch --check-focus                                            # Focus Timer: which app switches restart the interval
 MiniNotch --clock-frames [seconds]                                 # the pop-out's clock styles mid-movement, in a window for screencapture -l
@@ -796,6 +797,15 @@ reference and product dependency, and `LD_RUNPATH_SEARCH_PATHS = @executable_pat
 which the app linked Sparkle and then failed to launch (`Library not loaded: @rpath/Sparkle.framework`).
 Xcode copies and signs a binary package's framework into the app by itself; an explicit Embed
 Frameworks phase on top of that broke the build with "The file Sparkle couldn't be opened".
+
+**Where the Ask First window lands** (2026-10-27, a friend saw "no popup"): `--check-update --ask`, from a
+`.updatetest` build launched with `open -g`, waits past Sparkle's launch grace, checks the real feed and
+reads the window order. Inactive, and active with a key window of its own (when Sparkle sends a
+scheduled window to the back), it landed in front on this Mac with and without
+`UpdateService.bringUpdateWindowForward`, which orders it in front regardless as a safeguard. Sparkle
+abandons a scheduled check without a word when the app runs from the disk image or a translocated
+copy (`SPUBasicUpdateDriver`); only Check Now says so. Sparkle logs its errors under the subsystem
+`org.sparkle-project.Sparkle`.
 
 **Testing an update end to end** (`--check-update --feed <url> --out <file>`, DEBUG): build two
 versions with `PRODUCT_BUNDLE_IDENTIFIER=com.minnotch.MinNotch.updatetest` and `MARKETING_VERSION`
