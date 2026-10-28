@@ -47,8 +47,14 @@ struct NotesWidgetView: View {
             .background {
                 if theme.boxesTextFields {
                     NotchElementView(.tile, shape: .rounded(8), emphasis: isFocused ? 0.1 : 0.06)
+                } else {
+                    // No box to see, but still something under the text to click: without it the
+                    // note could not be clicked into (Clear, 2026-10-28). Too faint to show.
+                    RoundedRectangle(cornerRadius: 8, style: .continuous)
+                        .fill(theme.ink.opacity(0.012))
                 }
             }
+            .contentShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
             // Alongside the text view's own click, not instead of it, so the click still places
             // the cursor where it lands.
             .simultaneousGesture(TapGesture().onEnded { focus() })
