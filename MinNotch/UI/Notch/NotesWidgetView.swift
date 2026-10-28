@@ -44,9 +44,11 @@ struct NotesWidgetView: View {
                 }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .background(
-                NotchElementView(.tile, shape: .rounded(8), emphasis: isFocused ? 0.1 : 0.06)
-            )
+            .background {
+                if theme.boxesTextFields {
+                    NotchElementView(.tile, shape: .rounded(8), emphasis: isFocused ? 0.1 : 0.06)
+                }
+            }
             // Alongside the text view's own click, not instead of it, so the click still places
             // the cursor where it lands.
             .simultaneousGesture(TapGesture().onEnded { focus() })

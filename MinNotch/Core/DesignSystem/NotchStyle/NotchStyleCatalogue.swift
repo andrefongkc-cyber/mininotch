@@ -134,7 +134,8 @@ extension NotchStyle {
                 border: NotchBorder(top: ink.opacity(0.12), bottom: ink.opacity(0.12), width: 0.5),
                 shadow: NotchShadow(color: .black.opacity(0.3), radius: 6, y: 3)
             ),
-            glow: NotchGlowStyle()
+            glow: NotchGlowStyle(),
+            boxesTextFields: false
         )
     }
 
