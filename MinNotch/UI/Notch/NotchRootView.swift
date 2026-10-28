@@ -555,6 +555,8 @@ struct NotchRootView: View {
             height = TimerWidgetView.preferredHeight
         case .notes:
             height = NotesWidgetView.preferredHeight
+        case .answers:
+            height = ScreenAnswersWidgetView.preferredHeight
         case .weather:
             height = WeatherWidgetView.preferredHeight
         }

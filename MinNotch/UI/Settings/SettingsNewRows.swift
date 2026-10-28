@@ -85,6 +85,8 @@ enum SettingsNewRows {
         "Spotify Client ID": "0.8.0",
         "Spotify Account": "0.8.0",
         "Clock Shows": "0.8.0",
+        // 0.8.2
+        "Show Answers": "0.8.2",
     ]
 
     static func isNew(_ title: String) -> Bool {

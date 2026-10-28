@@ -16,6 +16,7 @@ enum HotkeyAction: String, CaseIterable, Identifiable {
     case quickNote
     case startTimer
     case keepOpen
+    case answerScreen
 
     var id: String { rawValue }
 
@@ -30,6 +31,7 @@ enum HotkeyAction: String, CaseIterable, Identifiable {
         case .quickNote: return "Open Notes"
         case .startTimer: return "Start Timer"
         case .keepOpen: return "Keep the Notch Open"
+        case .answerScreen: return "Answer What's on Screen"
         }
     }
 
@@ -44,6 +46,7 @@ enum HotkeyAction: String, CaseIterable, Identifiable {
         case .quickNote: return "note.text"
         case .startTimer: return "timer"
         case .keepOpen: return "pin"
+        case .answerScreen: return "text.viewfinder"
         }
     }
 
@@ -55,6 +58,7 @@ enum HotkeyAction: String, CaseIterable, Identifiable {
         case .toggleShelf: return .shelf
         case .quickNote: return .quickNotes
         case .startTimer: return .pomodoro
+        case .answerScreen: return .screenAnswers
         }
     }
 

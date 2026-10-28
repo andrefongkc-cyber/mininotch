@@ -25,6 +25,37 @@ struct NotesTabSettings: View {
     }
 }
 
+struct ScreenAnswersTabSettings: View {
+    @Environment(SettingsStore.self) private var settings
+    var body: some View {
+        @Bindable var settings = settings
+        TabSettingsSection(title: "Answers", subtitle: "The questions on your screen, answered on this Mac.") {
+                SettingsCard(
+                    header: "Answers",
+                    footer: footer
+                ) {
+                    SettingsRow(
+                        title: "Show Answers",
+                        subtitle: "An Answers tab in the open panel. Read Screen reads the window in front and answers the questions in it with Apple Intelligence. The Answer What's on Screen shortcut in General > Keyboard Shortcuts does it in one press.",
+                        systemImage: "text.viewfinder",
+                        badge: FeatureFlag.screenAnswers.badge
+                    ) {
+                        SettingsToggle(isOn: $settings.advanced.screenAnswersEnabled)
+                    }
+                }
+
+        }
+    }
+
+    private var footer: String {
+        let privacy = "Needs Screen Recording, asked for the first time you read the screen. The window is read and answered on this Mac by Apple's own model; nothing is sent anywhere, and neither the picture nor its text is kept."
+        if case .unavailable(let reason) = ScreenAnswersService.modelAvailability {
+            return reason + " " + privacy
+        }
+        return privacy
+    }
+}
+
 struct ClipboardTabSettings: View {
     @Environment(SettingsStore.self) private var settings
     @Environment(AppEnvironment.self) private var environment

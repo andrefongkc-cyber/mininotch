@@ -295,6 +295,16 @@ final class NotchWindowManager {
         controller.takeKeyboard()
     }
 
+    /// Opens the Answers tab on the panel that is open or the one under the pointer, and returns its
+    /// display, whose front window is the one to read.
+    func openAnswers() -> CGDirectDisplayID? {
+        let open = controllers.values.first { $0.viewModel.state == .expanded }
+        guard let controller = open ?? preferredController() else { return nil }
+        controller.viewModel.selectedTab = .answers
+        controller.viewModel.expand()
+        return controller.displayID
+    }
+
     func peekAll(duration: TimeInterval = 2.0) {
         controllers.values.forEach { $0.viewModel.peek(for: duration) }
     }

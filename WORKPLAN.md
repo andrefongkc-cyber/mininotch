@@ -1,6 +1,6 @@
 # MiniNotch workplan
 
-Status: 0.8.0 released 2026-10-26 (Settings by feature, Up Next, the pill clock, drags to the notch, instant play/pause); next: the Wave and Chase revamp when the user asks.
+Status: Screen Answers built on main, not released (needs the user to try Read Screen by hand); next: the Wave and Chase revamp when the user asks.
 
 Living document. Update the checkboxes as work lands. `CLAUDE.md` holds the architecture
 rules and the traps; this file holds the sequence.
@@ -41,6 +41,15 @@ at last. Notarisation still needs a paid membership nobody is buying.
    actually plays next, was offered and not answered.
 
 ---
+
+## Screen Answers (asked 2026-10-28)
+
+- [x] An Answers tab: Read Screen captures the window in front (ScreenCaptureKit, Screen Recording),
+  reads its text (Vision), and answers the questions in it with Apple's on-Mac model
+  (FoundationModels, macOS 26 with Apple Intelligence). Nothing leaves the Mac. Off by default.
+- [x] A shortcut that opens the tab and reads the screen at once.
+- [x] `--check-answers` runs the reading and answering on a rendered page, without the screen.
+- [ ] The user tries Read Screen for real: Screen Recording granted, the right window read.
 
 ## Notch Visual Style System (asked 2026-10-05)
 

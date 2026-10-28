@@ -404,6 +404,7 @@ struct WidgetTiles: View {
         case .timer: return { settings.timer.enabled.toggle() }
         case .weather: return { settings.weather.enabled.toggle() }
         case .notes: return { settings.advanced.notesEnabled.toggle() }
+        case .answers: return { settings.advanced.screenAnswersEnabled.toggle() }
         }
     }
 }

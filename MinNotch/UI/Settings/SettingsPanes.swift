@@ -78,6 +78,7 @@ struct SettingsPanes: View {
             SettingsPane(title: tab.title, subtitle: "Files, links, a scratchpad, and what you copy, kept in the notch.") {
                 ShelfSettingsView()
                 NotesTabSettings()
+                ScreenAnswersTabSettings()
                 ClipboardTabSettings()
                 SettingsMoreOptions(tab.rawValue) {
                     ShelfSettingsView(part: .more)

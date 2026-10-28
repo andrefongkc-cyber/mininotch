@@ -94,6 +94,10 @@ struct AdvancedSettings: Codable, Equatable {
     /// The Notes tab: one scratchpad, kept on this Mac.
     var notesEnabled: Bool = true
 
+    /// The Answers tab: reads the window in front and answers its questions with Apple's on-Mac
+    /// model. Off by default, because it needs Screen Recording and Apple Intelligence.
+    var screenAnswersEnabled: Bool = false
+
     /// Show the CPU, GPU, memory, and network readout in the System tab.
     var showSystemStats: Bool = true
 
@@ -159,6 +163,7 @@ struct AdvancedSettings: Codable, Equatable {
         linkShelfEnabled = c.value(.linkShelfEnabled, false)
         linkShelfLimit = c.value(.linkShelfLimit, 25, in: 5...100)
         notesEnabled = c.value(.notesEnabled, true)
+        screenAnswersEnabled = c.value(.screenAnswersEnabled, false)
         showSystemStats = c.value(.showSystemStats, true)
         statsRefreshInterval = c.value(.statsRefreshInterval, 2, in: 0.5...5)
         showTemperatures = c.value(.showTemperatures, true)

@@ -279,6 +279,11 @@ enum DebugWindowCapture {
             // `--floating-expanded`: the window at its large size, as its expand button leaves it.
             if arguments.contains("--floating-expanded") { environment.floatingTimer.setExpanded(true) }
         }
+                // `--sample-answers` shows the Answers tab with a fixed answer; `--answers-idle` with none.
+                if arguments.contains("--sample-answers") || arguments.contains("--answers-idle") {
+            settings.advanced.screenAnswersEnabled = true
+            if arguments.contains("--sample-answers") { environment.screenAnswers.applySample() }
+        }
                 if arguments.contains("--sample-notes") {
             settings.advanced.notesEnabled = true
             environment.notes.applySample()

@@ -109,6 +109,9 @@ Also:
   Settings > Appearance.
 - **Keep the notch open** with ⌃⌥P, on whichever display it is on, while you work on another.
 - **Notes**: a scratchpad in its own tab, kept on your Mac between opens.
+- **Answers** _(next)_: Read Screen reads the window in front and answers the questions in it with
+  Apple Intelligence, on your Mac. Off by default; turn on Show Answers in Settings > Shelf & Notes.
+  Needs macOS 26 with Apple Intelligence, and Screen Recording.
 - **Sound output**: switch between speakers, AirPods and displays, and set the volume, from
   the Now Playing card.
 - **System stats**: CPU, GPU, memory, network, and the charge of connected AirPods and accessories,
@@ -172,6 +175,7 @@ there and then; otherwise each is requested the first time a feature needs it:
 | System audio recording | Only for ambient lighting that follows the beat, and fixing lyric timing |
 | Accessibility | Only to hide Apple's volume and brightness overlay |
 | Location | Only for weather where you are; a city you type needs none |
+| Screen Recording | Only for the Answers tab, to read the window in front |
 
 Everything stays on your Mac, with three exceptions, all off by default: setting **Music > Lyrics
 Source** to look up online sends the current title, artist, album and length to `lrclib.net`;

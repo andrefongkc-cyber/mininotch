@@ -82,7 +82,7 @@ MiniNotch --capture-notch out.png [--collapsed] [--tab system] [--glow bars|off]
                                  [--lyrics-sheet] [--sample-stats] [--shadow] [--closed-lyrics]
                                  [--sample-shelf] [--output-sheet] [--lyrics-on builtIn|others] [--sample-weather]
                                  [--sample-power] [--keep-open] [--hud-style floatingPill] [--no-media]
-                                 [--sample-notes] [--blur-clipboard]
+                                 [--sample-notes] [--blur-clipboard] [--sample-answers] [--answers-idle]
                                  [--notch-style bento-light] [--liquid-glass] [--builtin]
                                  [--no-visualizer] [--no-lyrics] [--swipe-to notes --midway 0.15]
                                  [--live grow|reopen|swipe --hold 7 [--was-active]]
@@ -118,6 +118,7 @@ MiniNotch --check-stats-history                                    # the graphs'
 MiniNotch --check-power [seconds]                                  # charger in, Mac use, battery, from the SMC
 MiniNotch --check-keep-open                                        # Keep the Notch Open: holds, lets go, pin, shortcut default
 MiniNotch --check-notes                                            # the note is saved, read back, never overwritten by a capture
+MiniNotch --check-answers [--image f.png | --text "page"]          # Answers: Vision reads a page, Apple's model answers it
 MiniNotch --check-update --feed <url> [--out f]                   # a whole Sparkle update, test builds only (see Releases)
 MiniNotch --check-update --ask [--key-window] [--no-raise] --feed <url> --out f   # where a scheduled Ask First window lands among every app's windows
 MiniNotch --check-clipboard                                        # what the history records, and when it is blurred
@@ -631,6 +632,7 @@ open -n -a <path to MiniNotch.app> --args --check-permissions --out /tmp/perm.lo
 | Downloads folder | Reading `~/Downloads` | Switching on Layout > Downloads |
 | Spotify sign-in (not a permission) | `ASWebAuthenticationSession`, then the Spotify Web API | Connect in Settings > Music > Up Next |
 | Location | `CLLocationManager`, then Open-Meteo | Weather on with Use My Location; Allow in Weather, the Weather tab, or the tutorial |
+| Screen Recording | ScreenCaptureKit `SCScreenshotManager` | Read Screen in the Answers tab (off by default); `CGRequestScreenCaptureAccess` from the foreground, then System Settings |
 | Touch ID or password (not a permission) | LocalAuthentication `deviceOwnerAuthentication` | Unlock in the Clipboard tab, with Blur Until Unlocked on |
 
 None are requested at launch. The first-launch tutorial explains each one on its permissions
@@ -1175,6 +1177,25 @@ that panel key (`NotchWindowController.takeKeyboard`) and asks for focus (`Notes
 Advanced > Show Notes, on by default, and in the tutorial's Recommended set, since it is local and
 costs nothing. A capture's sample note (`--sample-notes`) is never marked loaded, so it can never be
 saved over the real one; `--check-notes` proves it with a scratch file.
+
+**Answers reads the window in front and answers it on this Mac** (2026-10-28, the user's "answers to
+questions on the screen, on mac would be fine"). Shelf & Notes > Show Answers (`screenAnswersEnabled`,
+off) adds an Answers tab; Read Screen, or the Answer What's on Screen shortcut (unbound), runs
+`ScreenAnswersService.ask(on:)`: ScreenCaptureKit takes one picture of the frontmost app's front window
+on that display (from `CGWindowListCopyWindowInfo`, front to back; the panel never activates, so the
+app in front is the one the user was in), or the display less MiniNotch; Vision reads it
+(`usesLanguageCorrection` off); Apple's on-device model (FoundationModels, macOS 26, Apple Intelligence
+on) answers. Nothing is kept or sent. **The model is small, and three things were needed to make it
+right**, each found with `--check-answers`: asked about four questions at once it gave the Australia
+question the letter of the options under the next one, so `QuestionSplitter` cuts the page into
+questions (a line with "?" or a number starts one, the lines under it are its options) and each gets a
+session of its own; greedy sampling made it repeat itself until the 4,096-token context was full, even
+on one short question, so it is temperature 0.2 with 160 tokens per reply; and telling it about options
+made it invent a list A to Z for a question with none, so only a question with lettered options gets
+`choiceInstructions`. `QuestionSplitter.tidy` drops the stray "Answer: C" lines it still adds. A page
+with no question gets two sentences on what it is. On the sample quiz every answer is right in about 2.5
+s. The screen capture itself has only been reasoned through: Screen Recording takes a relaunch after
+it is granted, and macOS 15 and later re-confirm it from time to time.
 
 **A drag reaches the closed notch through a global mouse monitor, not its drop target** (2026-10-22).
 Once the notch moved into its own window server space (`NotchSpace`), dragging a file to the closed

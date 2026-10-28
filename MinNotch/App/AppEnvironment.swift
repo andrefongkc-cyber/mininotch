@@ -37,6 +37,7 @@ final class AppEnvironment {
     let systemAppearance = SystemAppearance()
     let linkShelf = LinkShelfService()
     let notes = NotesService()
+    let screenAnswers = ScreenAnswersService()
     let updates = UpdateService()
     let timer = TimerService()
     let stopwatch = Stopwatch()
@@ -509,6 +510,9 @@ final class AppEnvironment {
             guard settings.advanced.notesEnabled else { return }
             notchWindows.openNotes()
             notes.requestFocus()
+        case .answerScreen:
+            guard settings.advanced.screenAnswersEnabled else { return }
+            if let displayID = notchWindows.openAnswers() { screenAnswers.ask(on: displayID) }
         case .toggleShelf, .startTimer:
             // Handled once the matching feature lands; the binding is already recordable.
             AppLog.app.debug("Action \(action.rawValue, privacy: .public) is not implemented yet")

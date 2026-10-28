@@ -182,6 +182,7 @@ enum TopStripItem: String, Codable, CaseIterable, Identifiable, LayoutArrangeabl
     case timer
     case weather
     case notes
+    case answers
     case settings
     case battery
     /// Keeps the open panel open until pressed again. Not placed by default: it appears by
@@ -209,6 +210,7 @@ enum TopStripItem: String, Codable, CaseIterable, Identifiable, LayoutArrangeabl
         case .timer: self = .timer
         case .weather: self = .weather
         case .notes: self = .notes
+        case .answers: self = .answers
         }
     }
 

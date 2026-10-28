@@ -26,7 +26,8 @@ enum NotchWidgetRegistry {
         NotchWidgetDescriptor(tab: .links, flag: .linkShelf) { $0.advanced.linkShelfEnabled },
         NotchWidgetDescriptor(tab: .timer, flag: .pomodoro) { $0.timer.enabled },
         NotchWidgetDescriptor(tab: .weather, flag: .weather) { $0.weather.enabled },
-        NotchWidgetDescriptor(tab: .notes, flag: .quickNotes) { $0.advanced.notesEnabled }
+        NotchWidgetDescriptor(tab: .notes, flag: .quickNotes) { $0.advanced.notesEnabled },
+        NotchWidgetDescriptor(tab: .answers, flag: .screenAnswers) { $0.advanced.screenAnswersEnabled }
     ]
 
     /// Tabs the panel should currently render, in display order. `all` lists features, and two

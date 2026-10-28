@@ -42,6 +42,8 @@ enum FeatureFlag: String, CaseIterable {
     /// said a playlist playing in order was shuffling; back on 2026-10-19 with the order checked
     /// against what plays, and Spotify's queue read through its Web API.
     case upNext
+    /// The Answers tab: the window in front read and its questions answered on this Mac.
+    case screenAnswers
 
     var availability: FeatureAvailability {
         switch self {
@@ -50,7 +52,7 @@ enum FeatureFlag: String, CaseIterable {
         case .lyrics:
             return .beta
         case .gestures, .haptics, .shelf, .hud, .reminders, .customVisualizers, .audioReactiveGlow,
-             .clipboardHistory, .pomodoro, .liveActivities, .linkShelf, .weather, .quickNotes, .upNext:
+             .clipboardHistory, .pomodoro, .liveActivities, .linkShelf, .weather, .quickNotes, .upNext, .screenAnswers:
             return .beta
         case .shortcutsWidget, .focusMode, .mirror:
             return .hidden
