@@ -997,7 +997,7 @@ button reads the list before opening so the card is the right height on its firs
 the card with the list open.
 
 **Notch Styles are data, drawn by one set of views.** Settings > Appearance > Notch Style picks a
-design language (Minimal, Bento, Glass, Neumorphic, Clay, Skeuomorphic) and Dark, Light or Match
+design language (Minimal, Bento, Glass, Neumorphic, Clay, Skeuomorphic, Clear) and Dark, Light or Match
 System, labelled Auto as macOS's own Appearance settings do (`AppearanceSettings.notchLanguage`, `notchVariant`, decoded leniently, so a file from before
 lands on Minimal Dark). `NotchStyle` is a plain value resolved from them (`AppEnvironment.notchStyle()`,
 with `SystemAppearance` for Match System) and read from the environment: `ink`, the surface, and a
@@ -1009,6 +1009,14 @@ bar's groove `.groove` and its fill `NotchTrackFill`, a group of content `.notch
 emphasis is the white opacity the site always used. A plain element draws exactly that fill; a
 styled one reads it as how much to light up. Shadows and highlights are blurred shapes flattened with
 `drawingGroup` and given room, because a layer filter does not appear in `--capture-notch`.
+
+**Clear draws no panel, only what is on it** (2026-10-27, the user's "completely transparent so just
+the features show"). Its surface is black at 0.005, one step of alpha in 255: the window passes
+clicks and scrolling through wherever it draws nothing, so a truly empty panel would miss every click
+between its controls, as the swipe catcher found. `NotchSurfaceStyle.contentHalo` puts a soft shadow of
+the opposite tone behind everything `NotchRootView.contentLayer` draws, so text reads on any wallpaper;
+it does show in `--capture-notch`. Dim labels (ink at 0.4) are still faint over a busy bright window,
+which is the cost of no panel. Over a camera housing the closed notch stays black, as in every style.
 
 **Minimal Dark is the notch as it always was, and that is checked, not assumed.** Its catalogue entry
 holds the old literal values, and `Scripts/style-diff.sh <a build from before>` captures 25 still
@@ -1217,7 +1225,8 @@ away: `LiveActivityCenter.putAway` remembers the id, which is per occurrence.
 
 **Settings can be pinned to the menu bar icon's menu** (2026-10-25, the user's "add a way to pin
 settings here"). General > Menu Bar > Pin Settings to the Menu picks from `MenuBarPin`, switches that
-take effect by themselves (Open on Hover, Show Indicators When Closed, Show Lyrics When Closed, Sneak
+take effect by themselves (Open on Hover, Show Indicators When Closed, Show on Displays Without a Notch
+(added 2026-10-27), Show Lyrics When Closed, Sneak
 Peek, Ambient Glow, Follow the Beat, Focus Timer, Clipboard History, Haptic Feedback), each naming its
 setting by key path. Hide the System Overlay is left out on purpose: switching it on asks for
 Accessibility from the HUDs pane. `MenuBarController` is the menu's delegate and builds it in

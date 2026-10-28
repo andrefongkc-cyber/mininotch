@@ -104,7 +104,7 @@ Spotify's own buttons. macOS also asks once whether MiniNotch may control Chrome
 
 Also:
 
-- **Notch Style**: six design languages, Minimal, Bento, Glass, Neumorphic, Clay and Skeuomorphic,
+- **Notch Style**: seven design languages, Minimal, Bento, Glass, Neumorphic, Clay, Skeuomorphic and Clear (no panel at all, just what is on it) _(next)_,
   each dark or light or matching your Mac, and any of them on Liquid Glass, as see-through as you like, on macOS 26, in
   Settings > Appearance.
 - **Keep the notch open** with ⌃⌥P, on whichever display it is on, while you work on another.

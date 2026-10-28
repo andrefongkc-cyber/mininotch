@@ -8,6 +8,7 @@ import Foundation
 enum MenuBarPin: String, Codable, CaseIterable, Identifiable {
     case openOnHover
     case indicatorsWhenClosed
+    case notchOnOtherDisplays
     case lyricsWhenClosed
     case sneakPeek
     case ambientGlow
@@ -23,6 +24,7 @@ enum MenuBarPin: String, Codable, CaseIterable, Identifiable {
         switch self {
         case .openOnHover: return "Open on Hover"
         case .indicatorsWhenClosed: return "Show Indicators When Closed"
+        case .notchOnOtherDisplays: return "Show on Displays Without a Notch"
         case .lyricsWhenClosed: return "Show Lyrics When Closed"
         case .sneakPeek: return "Sneak Peek on Track Change"
         case .ambientGlow: return "Ambient Glow"
@@ -37,6 +39,7 @@ enum MenuBarPin: String, Codable, CaseIterable, Identifiable {
         switch self {
         case .openOnHover: return \.general.hoverToOpen
         case .indicatorsWhenClosed: return \.general.extendPillForIndicators
+        case .notchOnOtherDisplays: return \.advanced.showOnNonNotchDisplays
         case .lyricsWhenClosed: return \.media.showLyricsWhenClosed
         case .sneakPeek: return \.media.sneakPeekOnTrackChange
         case .ambientGlow: return \.appearance.ambientGlow.isEnabled

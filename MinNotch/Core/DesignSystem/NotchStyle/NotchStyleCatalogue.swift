@@ -16,6 +16,7 @@ extension NotchStyle {
         case .neumorphism: style = neumorphism(isDark: isDark)
         case .clay: style = clay(isDark: isDark)
         case .skeuomorphism: style = skeuomorphism(isDark: isDark)
+        case .clear: style = clear(isDark: isDark)
         }
         style.surface.isDark = isDark
         return style
@@ -99,6 +100,39 @@ extension NotchStyle {
             artwork: NotchArtworkStyle(
                 border: NotchBorder(top: .black.opacity(0.08), bottom: .black.opacity(0.08), width: 0.5),
                 shadow: NotchShadow(color: .black.opacity(0.16), radius: 6, y: 3)
+            ),
+            glow: NotchGlowStyle()
+        )
+    }
+
+    // MARK: Clear
+
+    /// No panel: the desktop shows straight through and only what is on the notch is drawn, the
+    /// text, buttons, artwork and bars, each over a soft halo of the opposite tone so it reads on
+    /// any wallpaper or window. The surface is not quite nothing: one step of alpha in 255, too
+    /// faint to see, because the window passes clicks and scrolling through wherever it draws
+    /// nothing, and the panel would then miss every click between its controls. Over a camera
+    /// housing the closed notch stays black as in every style (`isHousingBlack` is false).
+    private static func clear(isDark: Bool) -> NotchStyle {
+        let ink: Color = isDark ? .white : Color(red: 0.08, green: 0.08, blue: 0.09)
+        let halo: Color = isDark ? .black : .white
+        return NotchStyle(
+            language: .clear,
+            isDark: isDark,
+            ink: ink,
+            surface: NotchSurfaceStyle(
+                base: .black.opacity(0.005),
+                vibrancyMaterial: isDark ? .hudWindow : .popover,
+                contentHalo: NotchShadow(color: halo.opacity(isDark ? 0.75 : 0.85), radius: 3)
+            ),
+            tile: .plain,
+            button: .plain,
+            module: nil,
+            transport: NotchTransportStyle(),
+            track: NotchTrackStyle(),
+            artwork: NotchArtworkStyle(
+                border: NotchBorder(top: ink.opacity(0.12), bottom: ink.opacity(0.12), width: 0.5),
+                shadow: NotchShadow(color: .black.opacity(0.3), radius: 6, y: 3)
             ),
             glow: NotchGlowStyle()
         )

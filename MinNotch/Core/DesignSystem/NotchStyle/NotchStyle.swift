@@ -1,7 +1,7 @@
 import AppKit
 import SwiftUI
 
-/// The six design languages the notch can be drawn in. Settings > Appearance > Notch Style.
+/// The seven design languages the notch can be drawn in. Settings > Appearance > Notch Style.
 enum NotchDesignLanguage: String, Codable, CaseIterable, Identifiable {
     case minimal
     case bento
@@ -9,6 +9,7 @@ enum NotchDesignLanguage: String, Codable, CaseIterable, Identifiable {
     case neumorphism
     case clay
     case skeuomorphism
+    case clear
 
     var id: String { rawValue }
 
@@ -20,6 +21,7 @@ enum NotchDesignLanguage: String, Codable, CaseIterable, Identifiable {
         case .neumorphism: return "Neumorphic"
         case .clay: return "Clay"
         case .skeuomorphism: return "Skeuomorphic"
+        case .clear: return "Clear"
         }
     }
 
@@ -32,6 +34,7 @@ enum NotchDesignLanguage: String, Codable, CaseIterable, Identifiable {
         case .neumorphism: return "Soft shapes pressed from one material."
         case .clay: return "Puffy, rounded and tactile."
         case .skeuomorphism: return "Physical keys, bevels and grain."
+        case .clear: return "No panel at all, just what is on it."
         }
     }
 }
@@ -150,6 +153,9 @@ struct NotchSurfaceStyle: Equatable {
     var liquidTint: Double = 0.4
     /// Which appearance glass draws in: the style's variant, not the system's.
     var isDark = true
+    /// A soft shadow behind everything drawn on the surface, so text and glyphs stay legible with
+    /// no panel behind them (Clear). `nil` draws none, never one at zero opacity.
+    var contentHalo: NotchShadow?
 
     static let housing = NotchSurfaceStyle(base: .black)
 }

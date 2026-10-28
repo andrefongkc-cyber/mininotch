@@ -302,6 +302,8 @@ struct NotchRootView: View {
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+        // Clear's halo: with no panel behind it, everything drawn needs a ground of its own.
+        .notchShadow(contentTheme.surface.contentHalo)
     }
 
     /// A wash of the album's dominant colour across the top of the panel.
