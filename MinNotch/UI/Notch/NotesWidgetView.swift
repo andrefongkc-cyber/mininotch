@@ -30,6 +30,9 @@ struct NotesWidgetView: View {
                     .scrollContentBackground(.hidden)
                     .scrollIndicators(.never)
                     .focused($isFocused)
+                    // No ring round the note while typing: in Clear it was the one box left, and in
+                    // the other styles the box lighting up already says it has focus.
+                    .focusEffectDisabled()
                     .environment(\.colorScheme, theme.isDark ? .dark : .light)
                     .padding(.horizontal, 6)
                     .padding(.vertical, 6)
@@ -99,7 +102,7 @@ struct NotesWidgetView: View {
 
     private var summary: String {
         let words = notes.text.split(whereSeparator: \.isWhitespace).count
-        guard words > 0 else { return "Kept on this Mac, between opens" }
+        guard words > 0 else { return "" }
         return words == 1 ? "1 word" : "\(words) words"
     }
 
