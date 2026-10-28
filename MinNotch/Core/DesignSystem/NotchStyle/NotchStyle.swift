@@ -114,9 +114,9 @@ struct NotchStyle: Equatable {
     /// Extra room between modules, and above the first, for a style that draws them. The panel
     /// grows by it; Minimal has none, so its layout is exactly what it always was.
     var moduleGap: CGFloat = 0
-    /// Whether a text box, such as the note, is drawn with a box around it. Clear draws none: it
-    /// has no panel, and a box would be the only one left on the desktop.
-    var boxesTextFields: Bool = true
+    /// Whether the note has a box around it and its word count and Copy under it. Clear has
+    /// neither: no panel, so a box would be the only one left on the desktop, and only the words.
+    var showsNoteChrome: Bool = true
 
     /// This language's dark variant. The closed notch uses it on a Mac with a camera housing,
     /// over a black surface (`NotchRootView` covers the fill), because the housing is black

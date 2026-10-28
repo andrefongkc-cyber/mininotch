@@ -135,7 +135,7 @@ extension NotchStyle {
                 shadow: NotchShadow(color: .black.opacity(0.3), radius: 6, y: 3)
             ),
             glow: NotchGlowStyle(),
-            boxesTextFields: false
+            showsNoteChrome: false
         )
     }
 

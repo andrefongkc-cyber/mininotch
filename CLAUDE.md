@@ -1019,7 +1019,10 @@ between its controls, as the swipe catcher found. `NotchSurfaceStyle.contentHalo
 the opposite tone behind everything `NotchRootView.contentLayer` draws, so text reads on any wallpaper;
 it does show in `--capture-notch`. Dim labels (ink at 0.4) are still faint over a busy bright window,
 which is the cost of no panel. Over a camera housing the closed notch stays black, as in every style.
-The note has no box either (`NotchStyle.boxesTextFields`, the user's "make the note box also clear").
+The note has no box, word count or Copy either (`NotchStyle.showsNoteChrome`, the user's "make the note
+box also clear"), but keeps an invisible fill (ink at 0.012) under it: without one it could not be
+clicked into. In every style the placeholder fades out once the note has focus, and the text view's
+focus ring is off.
 
 **Minimal Dark is the notch as it always was, and that is checked, not assumed.** Its catalogue entry
 holds the old literal values, and `Scripts/style-diff.sh <a build from before>` captures 25 still

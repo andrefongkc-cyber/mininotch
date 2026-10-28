@@ -37,18 +37,20 @@ struct NotesWidgetView: View {
                     .padding(.horizontal, 6)
                     .padding(.vertical, 6)
 
+                // Gone once the note is clicked into, leaving the caret alone.
                 if notes.text.isEmpty {
                     Text("Jot something down…")
                         .font(.system(size: 12))
                         .foregroundStyle(theme.ink.opacity(0.35))
                         .padding(.leading, 11)
                         .padding(.top, 6)
+                        .opacity(isFocused ? 0 : 1)
                         .allowsHitTesting(false)
                 }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .background {
-                if theme.boxesTextFields {
+                if theme.showsNoteChrome {
                     NotchElementView(.tile, shape: .rounded(8), emphasis: isFocused ? 0.1 : 0.06)
                 } else {
                     // No box to see, but still something under the text to click: without it the
@@ -62,7 +64,9 @@ struct NotesWidgetView: View {
             // the cursor where it lands.
             .simultaneousGesture(TapGesture().onEnded { focus() })
 
-            footer
+            if theme.showsNoteChrome {
+                footer
+            }
         }
         .animation(Motion.hover, value: isFocused)
         .onChange(of: isFocused) { _, focused in
