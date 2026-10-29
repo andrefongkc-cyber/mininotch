@@ -1,6 +1,6 @@
 # MiniNotch workplan
 
-Status: Screen Answers built on main, not released (needs the user to try Read Screen by hand); next: the Wave and Chase revamp when the user asks.
+Status: panel styles: Aurora and Minimalist built on main, waiting for the user's pick before Brutalism, Retro Web and Bento Grid; next: the Wave and Chase revamp when the user asks.
 
 Living document. Update the checkboxes as work lands. `CLAUDE.md` holds the architecture
 rules and the traps; this file holds the sequence.
@@ -41,6 +41,20 @@ at last. Notarisation still needs a paid membership nobody is buying.
    actually plays next, was offered and not answered.
 
 ---
+
+## Panel styles (asked 2026-10-29)
+
+Five new Notch Styles (`NotchDesignLanguage`), Aurora and Minimalist first as the two extremes,
+then the user picks before the other three are built.
+
+- [x] Aurora: blurred bands in the song's colours, drifting only while open and playing.
+- [x] Minimalist: black, no hairline or shadow, fills at half.
+- [x] Both always dark; Reduce Transparency / Increase Contrast fall back to Minimal; Reduce Motion stills Aurora.
+- [x] Captures open, closed, `--virtual`, Light and Dark; `Scripts/style-diff.sh` identical; CPU measured.
+- [ ] The user's pick from the captures.
+- [ ] Brutalism.
+- [ ] Retro Web.
+- [ ] Bento Grid (the existing Bento is close: decide with the user whether it replaces or extends it).
 
 ## Screen Answers (asked 2026-10-28)
 

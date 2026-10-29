@@ -1,7 +1,7 @@
 import AppKit
 import SwiftUI
 
-/// The seven design languages the notch can be drawn in. Settings > Appearance > Notch Style.
+/// The design languages the notch can be drawn in. Settings > Appearance > Notch Style.
 enum NotchDesignLanguage: String, Codable, CaseIterable, Identifiable {
     case minimal
     case bento
@@ -10,8 +10,22 @@ enum NotchDesignLanguage: String, Codable, CaseIterable, Identifiable {
     case clay
     case skeuomorphism
     case clear
+    case aurora
+    case minimalist
 
     var id: String { rawValue }
+
+    /// Drawn over black whatever Light or Dark says (Aurora, Minimalist): their whole look is
+    /// light and white on a black panel, so the Light or Dark control is switched off for them.
+    var isAlwaysDark: Bool {
+        self == .aurora || self == .minimalist
+    }
+
+    /// Falls back to Minimal under Reduce Transparency or Increase Contrast, which ask for plain
+    /// surfaces and strong edges: a fill of drifting, blurred colour is neither.
+    var fallsBackForAccessibility: Bool {
+        self == .aurora || self == .minimalist
+    }
 
     var title: String {
         switch self {
@@ -22,6 +36,8 @@ enum NotchDesignLanguage: String, Codable, CaseIterable, Identifiable {
         case .clay: return "Clay"
         case .skeuomorphism: return "Skeuomorphic"
         case .clear: return "Clear"
+        case .aurora: return "Aurora"
+        case .minimalist: return "Minimalist"
         }
     }
 
@@ -35,6 +51,8 @@ enum NotchDesignLanguage: String, Codable, CaseIterable, Identifiable {
         case .clay: return "Puffy, rounded and tactile."
         case .skeuomorphism: return "Physical keys, bevels and grain."
         case .clear: return "No panel at all, just what is on it."
+        case .aurora: return "Soft colour drifting behind the panel."
+        case .minimalist: return "Black, white and nothing else."
         }
     }
 }
@@ -159,8 +177,16 @@ struct NotchSurfaceStyle: Equatable {
     /// A soft shadow behind everything drawn on the surface, so text and glyphs stay legible with
     /// no panel behind them (Clear). `nil` draws none, never one at zero opacity.
     var contentHalo: NotchShadow?
+    /// Bands of blurred colour behind the content (Aurora), drawn by `NotchAuroraLayer`.
+    var aurora: NotchAurora?
 
     static let housing = NotchSurfaceStyle(base: .black)
+}
+
+/// Aurora's light: how strong the bands are over the black, kept low enough that white text keeps
+/// its contrast.
+struct NotchAurora: Equatable {
+    var strength: Double = 0.42
 }
 
 struct NotchGlass: Equatable {

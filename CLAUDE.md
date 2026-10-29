@@ -1025,6 +1025,26 @@ box also clear"), but keeps an invisible fill (ink at 0.012) under it: without o
 clicked into. In every style the placeholder fades out once the note has focus, and the text view's
 focus ring is off.
 
+**Aurora and Minimalist are always dark, and step back for accessibility** (2026-10-29, the user's
+five "panel styles", these two first as the extremes; Brutalism, Retro Web and Bento Grid wait for the
+user's pick). They are `NotchDesignLanguage` cases like the rest: that enum is the panel style setting,
+with its miniatures in the picker. `isAlwaysDark` makes `make` ignore Light, and the Light or Dark row
+is switched off with the reason while one is chosen. `fallsBackForAccessibility`: under Reduce
+Transparency or Increase Contrast (`SystemAppearance.prefersPlainSurfaces`, watched through
+`accessibilityDisplayOptionsDidChangeNotification`) `resolve` draws Minimal instead. Aurora is
+`surface.aurora`, drawn by `NotchAuroraLayer` inside `NotchSurfaceView`, so inside the surface's one
+clip and under the housing cover, which keeps a closed notch over a camera black: three blurred
+ellipses and a band along the edge, Shapes in a padded `drawingGroup`, in the song's
+`glowPrimary`/`glowSecondary` (teal, violet, magenta with nothing playing). It drifts at 15 fps only
+while open and playing and never under Reduce Motion (`NotchRootView.auroraState`); otherwise the
+timeline is paused and the bands hold where they were, resuming from there rather than jumping. The
+edge band is left out while Ambient Lighting lights the same outline. Measured with `--hold 12`:
+open and playing 15.6% against Minimal's 13.3%; System tab, playing, 1.3% against 0%; closed 0%.
+Minimalist is Minimal Dark's black with no hairline or shadow on the artwork and the fills behind
+rows, buttons and bars at about half (`.color(.clear, lift:)`); font weights and padding are the
+widgets' own and were not touched. `--check-settings-search aurora` lands on Light or Dark, whose
+keywords carry every style's name.
+
 **Minimal Dark is the notch as it always was, and that is checked, not assumed.** Its catalogue entry
 holds the old literal values, and `Scripts/style-diff.sh <a build from before>` captures 25 still
 states and the Layout miniatures with both builds and compares every pixel (`png-diff.swift`). It
@@ -1117,11 +1137,6 @@ off as with it on (they used to come out backwards with it off). Up and down ove
 text view belong to it (a hit test up to an `NSScrollView` or `NSTextView`), full or not: scrolling the
 clipboard used to close the notch, and later a short Clipboard list or a Notes page that fitted still
 did, because the check wanted more content than showed. Then a scroll down over the note closed the notch again
-(2026-10-29): the check handed `hitTest` a point in the content view's own coordinates, which it reads
-as the superview's, and the content view is flipped, so the point was mirrored into the empty bottom
-of the 532-point window and nothing there was a text view. `--capture-notch --hit-test x,y` prints
-the real hit and what `isOverScrollableList(atScreenPoint:in:)` says for the same point; they must
-agree (`--scroll-up` and `--long-note` scroll a long note too). Then a scroll down over the note closed the notch again
 (2026-10-29): the check handed `hitTest` a point in the content view's own coordinates, which it reads
 as the superview's, and the content view is flipped, so the point was mirrored into the empty bottom
 of the 532-point window and nothing there was a text view. `--capture-notch --hit-test x,y` prints

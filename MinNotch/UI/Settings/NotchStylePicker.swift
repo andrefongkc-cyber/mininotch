@@ -25,10 +25,15 @@ struct NotchStylePicker: View {
 
             SettingsDivider()
 
+            // Switched off, with the reason, for a style that is always dark, rather than left to
+            // change nothing.
             SettingsRow(
                 title: "Light or Dark",
-                subtitle: "Auto follows your Mac's appearance.",
-                systemImage: "circle.lefthalf.filled"
+                subtitle: settings.appearance.notchLanguage.isAlwaysDark
+                    ? "\(settings.appearance.notchLanguage.title) is always dark."
+                    : "Auto follows your Mac's appearance.",
+                systemImage: "circle.lefthalf.filled",
+                isEnabled: !settings.appearance.notchLanguage.isAlwaysDark
             ) {
                 Picker("", selection: $settings.appearance.notchVariant) {
                     ForEach(NotchStyleVariant.allCases) { variant in

@@ -15,6 +15,9 @@ struct NotchSurfaceView<Edge: Shape>: View {
     /// False for a preview drawn offscreen, where an `NSVisualEffectView` cannot be drawn: glass
     /// keeps its tint, and nothing else needs a material.
     var drawsMaterials = true
+    /// Aurora's colours and whether they drift; still, in the default colours, unless the notch
+    /// says otherwise.
+    var aurora: NotchAuroraState = .still
 
     var body: some View {
         if style == .housing {
@@ -54,6 +57,9 @@ struct NotchSurfaceView<Edge: Shape>: View {
             }
             if !style.gradient.isEmpty {
                 LinearGradient(colors: style.gradient, startPoint: .top, endPoint: .bottom)
+            }
+            if let light = style.aurora, !style.liquidGlass {
+                NotchAuroraLayer(strength: light.strength, state: aurora, edge: edge)
             }
             if style.grain > 0, !style.liquidGlass {
                 NotchGrain.image

@@ -167,7 +167,8 @@ struct NotchRootView: View {
                 shoulderRadius: shapeStyle.shoulderRadius,
                 bottomRadius: shapeStyle.bottomRadius,
                 closesTop: false
-            )
+            ),
+            aurora: auroraState
         )
         if geometry.hasPhysicalNotch, !theme.isHousingBlack {
             ZStack(alignment: .top) {
@@ -181,6 +182,22 @@ struct NotchRootView: View {
         } else {
             surface
         }
+    }
+
+    /// Aurora's colours and drift (only read by a style with `surface.aurora`): the playing song's
+    /// colours, moving only while open and playing, never under Reduce Motion, and without the
+    /// band along the edge while Ambient Lighting lights the open panel's edge already.
+    private var auroraState: NotchAuroraState {
+        guard theme.surface.aurora != nil else { return .still }
+        let playing = environment.nowPlaying.track?.isPlaying ?? false
+        let glow = settings.appearance.ambientGlow
+        let glowOnEdge = glow.isActive(isLowPower: environment.battery.status.isLowPowerMode)
+            && glow.placements.contains(isExpanded ? .expandedPanel : .collapsedNotch)
+        return NotchAuroraState(
+            colors: NotchAuroraState.colors(for: environment.nowPlaying.track == nil ? nil : environment.nowPlaying.palette),
+            moves: isExpanded && playing && !environment.systemAppearance.reducesMotion,
+            drawsEdge: !glowOnEdge
+        )
     }
 
     /// Fill and content in one stack, clipped exactly once.

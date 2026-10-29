@@ -245,7 +245,11 @@ final class AppEnvironment {
     /// The Notch Style the user chose, resolved against the system appearance for Match System.
     /// Read inside a view's body, so a change to either redraws it.
     func notchStyle() -> NotchStyle {
-        NotchStyle.resolve(settings.appearance, systemIsDark: systemAppearance.isDark)
+        NotchStyle.resolve(
+            settings.appearance,
+            systemIsDark: systemAppearance.isDark,
+            prefersPlain: systemAppearance.prefersPlainSurfaces
+        )
     }
 
     func glowTempo(at date: Date = Date()) -> GlowTempo? {

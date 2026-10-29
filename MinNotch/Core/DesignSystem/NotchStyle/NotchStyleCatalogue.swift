@@ -7,7 +7,8 @@ import SwiftUI
 /// ink, a black surface, plain fills, the artwork's old border and shadow. Change nothing about it
 /// without running `Scripts/style-diff.sh` against a build from before the change.
 extension NotchStyle {
-    static func make(_ language: NotchDesignLanguage, isDark: Bool) -> NotchStyle {
+    static func make(_ language: NotchDesignLanguage, isDark requestedDark: Bool) -> NotchStyle {
+        let isDark = language.isAlwaysDark || requestedDark
         var style: NotchStyle
         switch language {
         case .minimal: style = minimal(isDark: isDark)
@@ -17,6 +18,8 @@ extension NotchStyle {
         case .clay: style = clay(isDark: isDark)
         case .skeuomorphism: style = skeuomorphism(isDark: isDark)
         case .clear: style = clear(isDark: isDark)
+        case .aurora: style = aurora()
+        case .minimalist: style = minimalist()
         }
         style.surface.isDark = isDark
         return style
@@ -27,15 +30,17 @@ extension NotchStyle {
         true
     }
 
-    /// Resolves the user's choice. `systemIsDark` answers Match System.
-    static func resolve(_ settings: AppearanceSettings, systemIsDark: Bool) -> NotchStyle {
+    /// Resolves the user's choice. `systemIsDark` answers Match System; `prefersPlain` is Reduce
+    /// Transparency or Increase Contrast, under which a style that asks for it is Minimal instead.
+    static func resolve(_ settings: AppearanceSettings, systemIsDark: Bool, prefersPlain: Bool = false) -> NotchStyle {
         let isDark: Bool
         switch settings.notchVariant {
         case .dark: isDark = true
         case .light: isDark = false
         case .system: isDark = systemIsDark
         }
-        let language = isOffered(settings.notchLanguage) ? settings.notchLanguage : .minimal
+        var language = isOffered(settings.notchLanguage) ? settings.notchLanguage : .minimal
+        if prefersPlain, language.fallsBackForAccessibility { language = .minimal }
         var style = make(language, isDark: isDark)
         if settings.notchBackground == .liquidGlass, NotchBackground.isLiquidGlassSupported {
             style.surface.liquidGlass = true
@@ -136,6 +141,49 @@ extension NotchStyle {
             ),
             glow: NotchGlowStyle(),
             showsNoteChrome: false
+        )
+    }
+
+    // MARK: Aurora
+
+    /// Black, with soft bands of colour drifting inside the panel and along its edge, in the
+    /// colours of what is playing (`NotchAuroraLayer`). Everything on it is Minimal's: white ink,
+    /// plain fills, so the colour is the only thing that changes. Always dark.
+    private static func aurora() -> NotchStyle {
+        NotchStyle(
+            language: .aurora,
+            isDark: true,
+            ink: .white,
+            surface: NotchSurfaceStyle(base: .black, aurora: NotchAurora()),
+            tile: .plain,
+            button: .plain,
+            module: nil,
+            transport: NotchTransportStyle(),
+            track: NotchTrackStyle(),
+            artwork: NotchArtworkStyle(),
+            glow: NotchGlowStyle()
+        )
+    }
+
+    // MARK: Minimalist
+
+    /// The quietest style: a black fill with nothing on it, no hairline round the artwork, no
+    /// shadow under it, and the fills behind rows, buttons and bars at about half of Minimal's,
+    /// so hierarchy is the white's opacity and the space between things. Always dark.
+    private static func minimalist() -> NotchStyle {
+        let faint = NotchElementStyle(fill: .color(.clear, lift: 0.5))
+        return NotchStyle(
+            language: .minimalist,
+            isDark: true,
+            ink: .white,
+            surface: .housing,
+            tile: faint,
+            button: NotchElementStyle(fill: .color(.clear, lift: 0.6)),
+            module: nil,
+            transport: NotchTransportStyle(),
+            track: NotchTrackStyle(groove: NotchElementStyle(fill: .color(.clear, lift: 0.55))),
+            artwork: NotchArtworkStyle(border: nil, shadow: nil),
+            glow: NotchGlowStyle()
         )
     }
 
