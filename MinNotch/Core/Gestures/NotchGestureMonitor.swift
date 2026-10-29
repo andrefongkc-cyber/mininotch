@@ -191,11 +191,19 @@ final class NotchGestureMonitor {
     /// shows. It used to need more than shows, so over a short Clipboard list or a Notes page
     /// that fitted, scrolling down (fingers moving up) closed the notch, as the user reported.
     private static func isOverScrollableList(_ event: NSEvent, in window: NSWindow) -> Bool {
-        guard let content = window.contentView else { return false }
         // From the pointer, not the event: an event from the tap belongs to no window, so its
         // location is not in this one's coordinates.
-        let point = content.convert(window.convertPoint(fromScreen: NSEvent.mouseLocation), from: nil)
-        var view = content.hitTest(point)
+        isOverScrollableList(atScreenPoint: NSEvent.mouseLocation, in: window)
+    }
+
+    static func isOverScrollableList(atScreenPoint screenPoint: CGPoint, in window: NSWindow) -> Bool {
+        guard let content = window.contentView else { return false }
+        // `hitTest` takes a point in the superview's coordinates, not the view's own. The content
+        // view is flipped, so a point in its own coordinates was mirrored top to bottom: in a
+        // window 532 points tall the check landed in the empty bottom of the window, never on the
+        // note, and a scroll there closed the notch (2026-10-29).
+        let inWindow = window.convertPoint(fromScreen: screenPoint)
+        var view = content.hitTest(content.superview?.convert(inWindow, from: nil) ?? inWindow)
         while let current = view {
             if current is NSScrollView || current is NSTextView {
                 return true

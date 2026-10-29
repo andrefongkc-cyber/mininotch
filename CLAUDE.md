@@ -1121,6 +1121,11 @@ did, because the check wanted more content than showed. Then a scroll down over 
 as the superview's, and the content view is flipped, so the point was mirrored into the empty bottom
 of the 532-point window and nothing there was a text view. `--capture-notch --hit-test x,y` prints
 the real hit and what `isOverScrollableList(atScreenPoint:in:)` says for the same point; they must
+agree (`--scroll-up` and `--long-note` scroll a long note too). Then a scroll down over the note closed the notch again
+(2026-10-29): the check handed `hitTest` a point in the content view's own coordinates, which it reads
+as the superview's, and the content view is flipped, so the point was mirrored into the empty bottom
+of the 532-point window and nothing there was a text view. `--capture-notch --hit-test x,y` prints
+the real hit and what `isOverScrollableList(atScreenPoint:in:)` says for the same point; they must
 agree (`--scroll-up` and `--long-note` scroll a long note too). A mouse wheel has no phases, so a pause of 0.35 s starts a new gesture.
 Momentum (the coast after the fingers lift) counts towards the swipe it belongs to, which still fires
 once: a quick flick does most of its travel there, and ignoring it dropped flicks. A gesture is over

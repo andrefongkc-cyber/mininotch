@@ -477,6 +477,12 @@ enum DebugWindowCapture {
                 let owned = chain.contains { $0.contains("NSTextView") || $0.contains("ScrollView") }
                 report("hit \(parts[0]),\(parts[1]): " + chain.joined(separator: " < "))
                 report(owned ? "scroll belongs to the text or list" : "scroll goes to the notch gesture")
+                if let window = hosting.window {
+                    let inWindow = hosting.convert(local, to: nil)
+                    let screen = window.convertPoint(toScreen: inWindow)
+                    report("the swipe monitor says: " + (NotchGestureMonitor.isOverScrollableList(atScreenPoint: screen, in: window) ? "text or list" : "notch gesture")
+                           + " (content flipped: \(window.contentView?.isFlipped ?? false), window height \(window.frame.height))")
+                }
 
                 // `--scroll-up`: scrolls that list to its end, then sends it wheel events upwards the
                 // way a trackpad does, and reports where it ended up.
