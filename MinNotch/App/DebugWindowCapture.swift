@@ -462,6 +462,44 @@ enum DebugWindowCapture {
     private static var debugFloatingNowPlaying: FloatingNowPlayingController?
 
     private static func writeCapture(of hosting: NSView, to path: String) {
+        // `--hit-test x,y` (points, from the top left): the views under that point, innermost first,
+        // as the two-finger swipe sees them when it decides whether a scroll belongs to a list.
+        if let index = CommandLine.arguments.firstIndex(of: "--hit-test"), index + 1 < CommandLine.arguments.count {
+            let parts = CommandLine.arguments[index + 1].split(separator: ",").compactMap { Double($0) }
+            if parts.count == 2 {
+                let local = CGPoint(x: parts[0], y: hosting.isFlipped ? parts[1] : hosting.bounds.height - parts[1])
+                var view = hosting.hitTest(hosting.convert(local, to: hosting.superview))
+                var chain: [String] = []
+                while let current = view, current !== hosting.superview {
+                    chain.append(String(describing: type(of: current)))
+                    view = current.superview
+                }
+                let owned = chain.contains { $0.contains("NSTextView") || $0.contains("ScrollView") }
+                report("hit \(parts[0]),\(parts[1]): " + chain.joined(separator: " < "))
+                report(owned ? "scroll belongs to the text or list" : "scroll goes to the notch gesture")
+
+                // `--scroll-up`: scrolls that list to its end, then sends it wheel events upwards the
+                // way a trackpad does, and reports where it ended up.
+                if CommandLine.arguments.contains("--scroll-up"),
+                   let scroll = sequence(first: hosting.hitTest(hosting.convert(local, to: hosting.superview)), next: { $0?.superview })
+                       .compactMap({ $0 as? NSScrollView }).first {
+                    let clip = scroll.contentView
+                    let bottom = max(0, (scroll.documentView?.frame.height ?? 0) - clip.bounds.height)
+                    clip.scroll(to: CGPoint(x: 0, y: bottom))
+                    scroll.reflectScrolledClipView(clip)
+                    RunLoop.main.run(until: Date().addingTimeInterval(0.2))
+                    report("scrolled to the end: y \(clip.bounds.origin.y) of \(bottom)")
+                    for step in 0..<20 {
+                        guard let cg = CGEvent(scrollWheelEvent2Source: nil, units: .pixel, wheelCount: 1, wheel1: 30, wheel2: 0, wheel3: 0) else { continue }
+                        cg.setIntegerValueField(.scrollWheelEventScrollPhase, value: Int64(step == 0 ? 1 : 2))
+                        if let event = NSEvent(cgEvent: cg) { scroll.scrollWheel(with: event) }
+                        RunLoop.main.run(until: Date().addingTimeInterval(0.02))
+                    }
+                    RunLoop.main.run(until: Date().addingTimeInterval(0.4))
+                    report("after scrolling up: y \(clip.bounds.origin.y)")
+                }
+            }
+        }
         // `--floating-timer`: the pop-out timer window as well, beside the capture.
         if CommandLine.arguments.contains("--floating-timer"),
            let environment = debugFloatingTimerEnvironment,

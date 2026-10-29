@@ -109,6 +109,10 @@ final class NotesService {
     func applySample() {
         isLoaded = false
         text = "Groceries: oat milk, limes, coffee\nCall the dentist before Friday\n\nIdeas\n- a sneak peek for calendar events\n- pin the Shelf open while dragging"
+        // `--long-note`: long enough to scroll.
+        if CommandLine.arguments.contains("--long-note") {
+            text += (1...40).map { "\nLine \($0)" }.joined()
+        }
     }
     #endif
 }
