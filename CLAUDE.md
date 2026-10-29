@@ -119,6 +119,7 @@ MiniNotch --check-power [seconds]                                  # charger in,
 MiniNotch --check-keep-open                                        # Keep the Notch Open: holds, lets go, pin, shortcut default
 MiniNotch --check-notes                                            # the note is saved, read back, never overwritten by a capture
 MiniNotch --check-answers [--image f.png | --text "page"]          # Answers: Vision reads a page, Apple's model answers it
+MiniNotch --check-bluetooth [--watch 60] [--out f]                 # headphones' charge and connections, as the popup sees them
 MiniNotch --check-update --feed <url> [--out f]                   # a whole Sparkle update, test builds only (see Releases)
 MiniNotch --check-update --ask [--key-window] [--no-raise] --feed <url> --out f   # where a scheduled Ask First window lands among every app's windows
 MiniNotch --check-clipboard                                        # what the history records, and when it is blurred
@@ -1115,7 +1116,12 @@ needs no permission because it only listens, and returns at once unless a panel 
 off as with it on (they used to come out backwards with it off). Up and down over any scroll view or
 text view belong to it (a hit test up to an `NSScrollView` or `NSTextView`), full or not: scrolling the
 clipboard used to close the notch, and later a short Clipboard list or a Notes page that fitted still
-did, because the check wanted more content than showed. A mouse wheel has no phases, so a pause of 0.35 s starts a new gesture.
+did, because the check wanted more content than showed. Then a scroll down over the note closed the notch again
+(2026-10-29): the check handed `hitTest` a point in the content view's own coordinates, which it reads
+as the superview's, and the content view is flipped, so the point was mirrored into the empty bottom
+of the 532-point window and nothing there was a text view. `--capture-notch --hit-test x,y` prints
+the real hit and what `isOverScrollableList(atScreenPoint:in:)` says for the same point; they must
+agree (`--scroll-up` and `--long-note` scroll a long note too). A mouse wheel has no phases, so a pause of 0.35 s starts a new gesture.
 Momentum (the coast after the fingers lift) counts towards the swipe it belongs to, which still fires
 once: a quick flick does most of its travel there, and ignoring it dropped flicks. A gesture is over
 only when the next begins. A swipe to another tab (`NotchViewModel.swipe(to:)`) changes the height at
@@ -1411,7 +1417,13 @@ connection callbacks would mean the Bluetooth permission for something the user 
 `IOServiceAddMatchingNotification` on the same charge-reporting classes the System tab reads says
 "a device appeared" for free, and the charge is read two seconds later because a service that has
 just matched has usually not published it yet. The iterator has to be drained once when it is
-armed, or everything already connected arrives as news at launch.
+armed, or everything already connected arrives as news at launch. **AirPods are not in that registry
+at all** (2026-10-29, "connecting airpods doesnt popup"): headphones report to `bluetoothd`. They are
+heard connecting from Core Audio, as a new Bluetooth audio device (twice, speakers and microphone, so
+names are de-duplicated), and their charge is read from `system_profiler SPBluetoothDataType -json`
+(`BluetoothProfiler`, 0.2 s, off main, no permission when run as the app) two seconds later, again at
+five if nothing yet. The System tab's list merges the same report. `--check-bluetooth [--watch 60]`,
+launched with `open`, prints both and any popup a connection raises.
 
 **Up Next is a peek, read only while it is open.** A transport control (`MediaControl.upNext`,
 added after Next to every arrangement once by settings schema 3) opens a row under the card with

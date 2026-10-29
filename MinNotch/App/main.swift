@@ -39,6 +39,7 @@ if MainActor.assumeIsolated({ DebugPowerCheck.runIfRequested() }) { exit(0) }
 if MainActor.assumeIsolated({ DebugKeepOpenCheck.runIfRequested() }) { exit(0) }
 if MainActor.assumeIsolated({ DebugNotesCheck.runIfRequested() }) { exit(0) }
 if MainActor.assumeIsolated({ DebugAnswersCheck.runIfRequested() }) { exit(0) }
+if MainActor.assumeIsolated({ DebugBluetoothCheck.runIfRequested() }) { exit(0) }
 if MainActor.assumeIsolated({ DebugUpdateCheck.runIfRequested() }) { exit(0) }
 if MainActor.assumeIsolated({ DebugClipboardCheck.runIfRequested() }) { exit(0) }
 if MainActor.assumeIsolated({ DebugFocusCheck.runIfRequested() }) { exit(0) }
