@@ -6,6 +6,26 @@
     <description>MiniNotch updates</description>
     <language>en</language>
     <item>
+      <title>MiniNotch 0.8.2</title>
+      <pubDate>Fri, 30 Oct 2026 16:53:29 GMT</pubDate>
+      <sparkle:version>0.8.2</sparkle:version>
+      <sparkle:shortVersionString>0.8.2</sparkle:shortVersionString>
+      <sparkle:minimumSystemVersion>14.4</sparkle:minimumSystemVersion>
+      <description><![CDATA[<h3>New</h3>
+<ul>
+<li><b>Four New Notch Styles</b>: Clear draws no panel at all, only what is on it. Aurora has soft colour drifting behind the panel in the colours of the song, Brutalism hard outlines and loud yellow, Retro Web bevelled buttons and scanlines. The last three are always dark, and turn plain under Reduce Transparency or Increase Contrast. <i>Settings &gt; Appearance &gt; Notch Style.</i></li>
+<li><b>Answers</b>: Read Screen reads the window in front and answers the questions in it, using Apple Intelligence on your Mac. Nothing leaves your Mac. Needs macOS 26 with Apple Intelligence on, and Screen Recording. <i>Settings &gt; Shelf &amp; Notes &gt; Show Answers, then the Answers tab. A shortcut can do it in one go: Settings &gt; General &gt; Keyboard Shortcuts.</i></li>
+</ul>
+<h3>Improved</h3>
+<ul>
+<li><b>AirPods When They Connect</b>: Connecting AirPods or other Bluetooth headphones now shows their charge in the notch, and the System tab lists each accessory once, with left, right and case together.</li>
+<li><b>Tidier Notes</b>: Scrolling a long note or a list no longer closes the notch or switches tabs. The hint in an empty note fades as you click in, and there is no ring round the note while you type.</li>
+<li><b>Another Menu Bar Pin</b>: Show on Displays Without a Notch can now be pinned to the menu bar icon&#x27;s menu. <i>Settings &gt; General &gt; Menu Bar &gt; Pin Settings to the Menu.</i></li>
+</ul>]]></description>
+      <sparkle:fullReleaseNotesLink>https://github.com/andrefongkc-cyber/mininotch/releases</sparkle:fullReleaseNotesLink>
+      <enclosure url="https://github.com/andrefongkc-cyber/mininotch/releases/download/v0.8.2/MiniNotch-0.8.2.dmg" sparkle:edSignature="MD1NI3lufQTkZtvN+VHQ400i2u22GmNfONkj0t71w9EXtwwTs3mky64fhdbBdzVqtiQ3uLJQp8uXULaTJXzNAA==" length="9257125" type="application/x-apple-diskimage"/>
+    </item>
+    <item>
       <title>MiniNotch 0.8.1</title>
       <pubDate>Tue, 27 Oct 2026 18:21:50 GMT</pubDate>
       <sparkle:version>0.8.1</sparkle:version>
