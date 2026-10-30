@@ -430,7 +430,7 @@ struct SystemWidgetView: View {
                 .minimumScaleFactor(0.8)
                 .contentTransition(.numericText())
 
-            StatChart(values: history, tint: chartTint ?? settings.appearance.resolvedAccent)
+            StatChart(values: history, tint: chartTint ?? theme.accentColor(settings.appearance.resolvedAccent))
                 .padding(.horizontal, 8)
                 .padding(.top, StatChart.spacing - 2)
         }
@@ -441,7 +441,7 @@ struct SystemWidgetView: View {
     /// Green through amber to red as load climbs, so a glance is enough.
     private func tint(for fraction: Double) -> Color {
         switch fraction {
-        case ..<0.6: return settings.appearance.resolvedAccent
+        case ..<0.6: return theme.accentColor(settings.appearance.resolvedAccent)
         case ..<0.85: return Color(nsColor: .systemOrange)
         default: return Color(nsColor: .systemRed)
         }

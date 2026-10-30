@@ -45,14 +45,14 @@ struct ScreenAnswersWidgetView: View {
 
             if service.phase.isBusy {
                 Button("Stop") { service.cancel() }
-                    .buttonStyle(NotchAccentButtonStyle(accent: settings.appearance.resolvedAccent))
+                    .buttonStyle(NotchAccentButtonStyle(accent: theme.accentColor(settings.appearance.resolvedAccent)))
             } else {
                 Button {
                     service.ask(on: viewModel.geometry.displayID)
                 } label: {
                     Label("Read Screen", systemImage: "text.viewfinder")
                 }
-                .buttonStyle(NotchAccentButtonStyle(accent: settings.appearance.resolvedAccent))
+                .buttonStyle(NotchAccentButtonStyle(accent: theme.accentColor(settings.appearance.resolvedAccent)))
                 .help("Read the window in front and answer its questions")
             }
         }
@@ -89,7 +89,7 @@ struct ScreenAnswersWidgetView: View {
                     symbol: "lock"
                 )
                 Button("Allow…") { service.requestPermission() }
-                    .buttonStyle(NotchAccentButtonStyle(accent: settings.appearance.resolvedAccent))
+                    .buttonStyle(NotchAccentButtonStyle(accent: theme.accentColor(settings.appearance.resolvedAccent)))
             }
         case .failed(let reason):
             message(reason, symbol: "exclamationmark.triangle")

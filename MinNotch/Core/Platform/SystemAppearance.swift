@@ -8,7 +8,7 @@ import Observation
 /// System Settings > Appearance, including Auto as the day changes.
 ///
 /// Also the accessibility display options a style answers to: Reduce Transparency or Increase
-/// Contrast (`prefersPlainSurfaces`) put Aurora and Minimalist back to Minimal, and Reduce Motion
+/// Contrast (`prefersPlainSurfaces`) put the panel styles that ask for it back to Minimal, and Reduce Motion
 /// stops Aurora drifting.
 @Observable
 @MainActor

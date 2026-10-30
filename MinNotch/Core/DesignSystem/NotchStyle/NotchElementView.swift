@@ -77,7 +77,7 @@ struct NotchElementView: View {
     }
 
     private func styled(_ element: NotchElementStyle) -> some View {
-        let outline = ElementOutline(shape: shape, cornerScale: element.cornerScale)
+        let outline = ElementOutline(shape: shape, cornerScale: element.cornerScale, squaresPills: element.squaresPills)
         let room = element.outer.map { $0.radius * 2 + max(abs($0.x), abs($0.y)) }.max() ?? 0
 
         return ZStack {
@@ -149,6 +149,8 @@ struct NotchElementView: View {
 struct ElementOutline: InsettableShape {
     let shape: NotchElementShape
     var cornerScale: CGFloat = 1
+    /// Draws a capsule as a rectangle with the style's small corners.
+    var squaresPills = false
     var inset: CGFloat = 0
 
     func path(in rect: CGRect) -> Path {
@@ -158,9 +160,16 @@ struct ElementOutline: InsettableShape {
             let scaled = min(max(radius * cornerScale - inset, 0), min(rect.width, rect.height) / 2)
             return RoundedRectangle(cornerRadius: scaled, style: style).path(in: rect)
         case .capsule:
-            return Capsule().path(in: rect)
+            // A style with square-ish corners (Brutalism, Retro Web) squares its pills off too.
+            guard squaresPills else { return Capsule().path(in: rect) }
+            let radius = min(rect.width, rect.height) / 2 * cornerScale * 1.4
+            return RoundedRectangle(cornerRadius: radius, style: .continuous).path(in: rect)
         case .circle:
-            return Circle().path(in: rect)
+            // Square buttons too, the way 1995 drew them (Retro Web).
+            guard squaresPills else { return Circle().path(in: rect) }
+            let side = min(rect.width, rect.height)
+            let square = CGRect(x: rect.midX - side / 2, y: rect.midY - side / 2, width: side, height: side)
+            return RoundedRectangle(cornerRadius: side * 0.12, style: .continuous).path(in: square)
         }
     }
 

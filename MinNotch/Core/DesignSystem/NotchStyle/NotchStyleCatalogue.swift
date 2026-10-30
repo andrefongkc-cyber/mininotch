@@ -19,7 +19,9 @@ extension NotchStyle {
         case .skeuomorphism: style = skeuomorphism(isDark: isDark)
         case .clear: style = clear(isDark: isDark)
         case .aurora: style = aurora()
-        case .minimalist: style = minimalist()
+        case .bentoGrid: style = bentoGrid()
+        case .brutalism: style = brutalism()
+        case .retroWeb: style = retroWeb()
         }
         style.surface.isDark = isDark
         return style
@@ -165,25 +167,88 @@ extension NotchStyle {
         )
     }
 
-    // MARK: Minimalist
+    // MARK: Bento Grid
 
-    /// The quietest style: a black fill with nothing on it, no hairline round the artwork, no
-    /// shadow under it, and the fills behind rows, buttons and bars at about half of Minimal's,
-    /// so hierarchy is the white's opacity and the space between things. Always dark.
-    private static func minimalist() -> NotchStyle {
-        let faint = NotchElementStyle(fill: .color(.clear, lift: 0.5))
+    /// Bento with nothing but the tiles: every module and row a flat grey a step up from black
+    /// (white at about 8%), no borders, one corner radius, even gutters from `moduleGap`. The
+    /// surface is plain black, so the closed notch is too: a grid means nothing at that size.
+    /// Always dark.
+    private static func bentoGrid() -> NotchStyle {
+        let tile = Color(white: 0.08)
         return NotchStyle(
-            language: .minimalist,
+            language: .bentoGrid,
             isDark: true,
             ink: .white,
             surface: .housing,
-            tile: faint,
-            button: NotchElementStyle(fill: .color(.clear, lift: 0.6)),
-            module: nil,
+            tile: NotchElementStyle(fill: .color(Color(white: 0.11), lift: 0.6)),
+            button: .plain,
+            module: NotchElementStyle(fill: .color(tile, lift: 0), drawsWhenIdle: true),
             transport: NotchTransportStyle(),
-            track: NotchTrackStyle(groove: NotchElementStyle(fill: .color(.clear, lift: 0.55))),
+            track: NotchTrackStyle(groove: NotchElementStyle(fill: .color(Color(white: 0.16), lift: 0))),
             artwork: NotchArtworkStyle(border: nil, shadow: nil),
-            glow: NotchGlowStyle()
+            glow: NotchGlowStyle(),
+            moduleGap: 8
+        )
+    }
+
+    // MARK: Brutalism
+
+    /// Flat black, hard 2 point off-white outlines on every card and control, small corners,
+    /// shadows that are the same shape offset with no blur, one loud yellow, and monospaced type.
+    /// No gradient, blur or material anywhere. Always dark.
+    private static func brutalism() -> NotchStyle {
+        let line = Color(red: 0.96, green: 0.95, blue: 0.9)
+        let edge = NotchBorder(top: line, bottom: line, width: 2)
+        let drop = [NotchShadow(color: line.opacity(0.85), radius: 0, x: 3, y: 3)]
+        return NotchStyle(
+            language: .brutalism,
+            isDark: true,
+            ink: line,
+            surface: NotchSurfaceStyle(base: .black),
+            tile: NotchElementStyle(fill: .color(Color(white: 0.07), lift: 0.8), border: edge, cornerScale: 0.35, squaresPills: true),
+            button: NotchElementStyle(fill: .color(.black, lift: 1), border: NotchBorder(top: line.opacity(0.6), bottom: line.opacity(0.6), width: 2), cornerScale: 0.35, squaresPills: true),
+            module: NotchElementStyle(fill: .color(Color(white: 0.05), lift: 0), border: edge, outer: drop, cornerScale: 0.3, drawsWhenIdle: true, squaresPills: true),
+            transport: NotchTransportStyle(
+                primaryDisc: NotchElementStyle(fill: .color(.black, lift: 0.6), border: edge, outer: [NotchShadow(color: line.opacity(0.85), radius: 0, x: 2, y: 2)])
+            ),
+            track: NotchTrackStyle(groove: NotchElementStyle(fill: .color(Color(white: 0.12), lift: 0), border: NotchBorder(top: line.opacity(0.7), bottom: line.opacity(0.7), width: 1), cornerScale: 0.3, squaresPills: true)),
+            artwork: NotchArtworkStyle(cornerScale: 0.3, border: NotchBorder(top: line, bottom: line, width: 2), shadow: NotchShadow(color: line.opacity(0.85), radius: 0, x: 3, y: 3)),
+            glow: NotchGlowStyle(),
+            moduleGap: 10,
+            accent: Color(red: 1, green: 0.9, blue: 0),
+            fontDesign: .monospaced
+        )
+    }
+
+    // MARK: Retro Web
+
+    /// A 1996 home page on a navy-black screen: cards and buttons bevelled the Windows 95 way,
+    /// light on the top edge and dark on the bottom, drawn as plain strokes; small corners;
+    /// monospaced type; phosphor green; and a faint still scanline pattern over the surface, the
+    /// same open and closed. The surface itself has no bevel, so nothing bright is drawn in the
+    /// shoulder band. Always dark.
+    private static func retroWeb() -> NotchStyle {
+        let raised = NotchBorder(top: Color(white: 0.78).opacity(0.75), bottom: .black, width: 1.5)
+        let sunken = NotchBorder(top: .black, bottom: Color(white: 0.78).opacity(0.55), width: 1.5)
+        let panel = Color(red: 0.09, green: 0.1, blue: 0.17)
+        return NotchStyle(
+            language: .retroWeb,
+            isDark: true,
+            ink: Color(red: 0.88, green: 0.92, blue: 0.9),
+            surface: NotchSurfaceStyle(base: Color(red: 0.02, green: 0.025, blue: 0.06), scanlines: 0.05),
+            tile: NotchElementStyle(fill: .color(panel, lift: 0.5), border: raised, cornerScale: 0.25, squaresPills: true),
+            button: NotchElementStyle(fill: .color(panel, lift: 0.8), border: raised, cornerScale: 0.25, squaresPills: true),
+            module: NotchElementStyle(fill: .color(Color(red: 0.06, green: 0.07, blue: 0.13), lift: 0), border: raised, cornerScale: 0.2, drawsWhenIdle: true, squaresPills: true),
+            transport: NotchTransportStyle(
+                disc: NotchElementStyle(fill: .color(panel, lift: 0.5), border: raised, cornerScale: 0.25, drawsWhenIdle: true, squaresPills: true),
+                primaryDisc: NotchElementStyle(fill: .color(panel, lift: 0.5), border: raised, cornerScale: 0.25, drawsWhenIdle: true, squaresPills: true)
+            ),
+            track: NotchTrackStyle(groove: NotchElementStyle(fill: .color(.black, lift: 0), border: sunken, cornerScale: 0.2, squaresPills: true), fillGlow: NotchShadow(color: Color(red: 0.25, green: 1, blue: 0.45).opacity(0.5), radius: 3)),
+            artwork: NotchArtworkStyle(cornerScale: 0.2, border: raised, shadow: nil),
+            glow: NotchGlowStyle(),
+            moduleGap: 10,
+            accent: Color(red: 0.25, green: 1, blue: 0.45),
+            fontDesign: .monospaced
         )
     }
 

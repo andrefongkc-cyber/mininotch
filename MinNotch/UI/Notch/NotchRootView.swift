@@ -290,7 +290,7 @@ struct NotchRootView: View {
                     geometry: geometry,
                     style: settings.huds.style,
                     showsNumericValue: settings.huds.showNumericValue,
-                    accent: settings.appearance.resolvedAccent
+                    accent: theme.accentColor(settings.appearance.resolvedAccent)
                 )
                 .environment(\.notchStyle, contentTheme)
                 .environment(\.colorScheme, contentTheme.isDark ? .dark : .light)
@@ -319,6 +319,9 @@ struct NotchRootView: View {
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+        // A style's own typeface (monospaced for Brutalism and Retro Web), for every system font
+        // that does not name a design of its own.
+        .fontDesign(theme.fontDesign)
         // Clear's halo: with no panel behind it, everything drawn needs a ground of its own.
         .notchShadow(contentTheme.surface.contentHalo)
     }

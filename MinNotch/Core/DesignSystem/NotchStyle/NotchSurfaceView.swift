@@ -58,6 +58,11 @@ struct NotchSurfaceView<Edge: Shape>: View {
             if !style.gradient.isEmpty {
                 LinearGradient(colors: style.gradient, startPoint: .top, endPoint: .bottom)
             }
+            if style.scanlines > 0, !style.liquidGlass {
+                NotchScanlines.image
+                    .resizable(resizingMode: .tile)
+                    .opacity(style.scanlines)
+            }
             if let light = style.aurora, !style.liquidGlass {
                 NotchAuroraLayer(strength: light.strength, state: aurora, edge: edge)
             }
@@ -133,6 +138,20 @@ struct NotchSurfaceView<Edge: Shape>: View {
         // style over a dark Mac drew dark glass under dark text.
         .environment(\.colorScheme, dark ? .dark : .light)
     }
+}
+
+/// Retro Web's scanlines: a light line every third point, as a tile, made once. Light, because a
+/// dark line on a near-black screen is not there at all.
+@MainActor
+enum NotchScanlines {
+    static let image: Image = {
+        let image = NSImage(size: NSSize(width: 1, height: 3), flipped: false) { rect in
+            NSColor.white.setFill()
+            NSRect(x: 0, y: 0, width: rect.width, height: 1).fill()
+            return true
+        }
+        return Image(nsImage: image)
+    }()
 }
 
 /// Fine noise, as a tile, for a surface with a material to it. Made once, from a fixed seed, so

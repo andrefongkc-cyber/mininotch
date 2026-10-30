@@ -114,7 +114,7 @@ struct WeatherWidgetView: View {
                 .fixedSize(horizontal: false, vertical: true)
             if service.status == .needsLocationAccess {
                 Button("Allow Location") { service.requestLocationAccess() }
-                    .buttonStyle(NotchAccentButtonStyle(accent: settings.appearance.resolvedAccent))
+                    .buttonStyle(NotchAccentButtonStyle(accent: theme.accentColor(settings.appearance.resolvedAccent)))
             }
         }
         .padding(.horizontal, 24)

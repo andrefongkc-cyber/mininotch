@@ -362,7 +362,7 @@ struct NowPlayingCardView: View {
             controller.isShowingOutputSheet.toggle()
         } label: {
             TransportSymbol.image("airplayaudio", pointSize: 12, weight: .medium)
-                .foregroundStyle(isOpen ? settings.appearance.resolvedAccent : theme.ink.opacity(0.45))
+                .foregroundStyle(isOpen ? theme.accentColor(settings.appearance.resolvedAccent) : theme.ink.opacity(0.45))
                 .frame(width: 24, height: 22)
                 .background(
                     NotchElementView(.button, shape: .rounded(6), emphasis: isOpen ? 0.12 : 0)
@@ -438,7 +438,7 @@ struct NowPlayingCardView: View {
 
     private var scrubberTint: Color {
         switch settings.appearance.sliderColor {
-        case .accent: return settings.appearance.resolvedAccent
+        case .accent: return theme.accentColor(settings.appearance.resolvedAccent)
         case .albumArt: return controller.palette.primary
         case .monochrome: return theme.ink.opacity(0.85)
         }
@@ -511,7 +511,7 @@ struct NowPlayingCardView: View {
         } label: {
             Image(systemName: isOpen ? "pip.exit" : "pip.enter")
                 .font(.system(size: 13, weight: .medium))
-                .foregroundStyle(isOpen ? settings.appearance.resolvedAccent : theme.ink.opacity(0.35))
+                .foregroundStyle(isOpen ? theme.accentColor(settings.appearance.resolvedAccent) : theme.ink.opacity(0.35))
                 .frame(width: 26, height: 24)
                 .background(
                     NotchElementView(.button, shape: .rounded(6), emphasis: isOpen ? 0.12 : 0)
@@ -548,7 +548,7 @@ struct NowPlayingCardView: View {
                 .foregroundStyle(
                     mode == .off
                         ? theme.ink.opacity(0.35)
-                        : settings.appearance.resolvedAccent
+                        : theme.accentColor(settings.appearance.resolvedAccent)
                 )
                 .frame(width: 26, height: 24)
                 .background(
@@ -671,7 +671,7 @@ struct NowPlayingCardView: View {
     /// Shuffle, repeat and favourite are states, not actions, so they show which state they
     /// are in: the accent when on, dim when off. The others are plain actions and stay white.
     private func foreground(for control: MediaControl) -> Color {
-        let accent = settings.appearance.resolvedAccent
+        let accent = theme.accentColor(settings.appearance.resolvedAccent)
         let track = controller.track
         switch control {
         case .playPause: return theme.ink
@@ -805,7 +805,7 @@ struct LyricsStripView: View {
             // Through `TransportSymbol`, not `Image(systemName:)` with a font: drawn that way the
             // glyph came out plain white on and off alike, so the button never showed its state.
             TransportSymbol.image("text.below.photo", pointSize: 10, weight: .semibold)
-                .foregroundStyle(isOn ? settings.appearance.resolvedAccent : theme.ink.opacity(0.55))
+                .foregroundStyle(isOn ? theme.accentColor(settings.appearance.resolvedAccent) : theme.ink.opacity(0.55))
                 .frame(width: 22, height: 20)
                 .background(
                     NotchElementView(.button, shape: .rounded(5), emphasis: isOn ? 0.14 : 0.08)

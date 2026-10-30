@@ -29,7 +29,7 @@ struct OutputSheetView: View {
     }
 
     private var service: AudioOutputService { environment.audioOutputs }
-    private var accent: Color { settings.appearance.resolvedAccent }
+    private var accent: Color { theme.accentColor(settings.appearance.resolvedAccent) }
 
     var body: some View {
         VStack(alignment: .leading, spacing: Self.spacing) {

@@ -118,7 +118,7 @@ struct CalendarWidgetView: View {
                             }
                             Text("Today")
                                 .fontWeight(.semibold)
-                                .foregroundStyle(settings.appearance.resolvedAccent)
+                                .foregroundStyle(theme.accentColor(settings.appearance.resolvedAccent))
                         }
                         .font(Typography.helper)
                         .contentShape(Rectangle())
@@ -166,7 +166,7 @@ struct CalendarWidgetView: View {
     }
 
     private func dayCell(_ day: CalendarDay) -> some View {
-        let accent = settings.appearance.resolvedAccent
+        let accent = theme.accentColor(settings.appearance.resolvedAccent)
         return Button {
             select(day)
         } label: {
@@ -311,7 +311,7 @@ struct CalendarWidgetView: View {
                         .font(.system(size: 13))
                         .foregroundStyle(
                             (item.isCompleted ?? false)
-                                ? settings.appearance.resolvedAccent
+                                ? theme.accentColor(settings.appearance.resolvedAccent)
                                 : theme.ink.opacity(0.4)
                         )
                         .contentShape(Rectangle())
@@ -323,10 +323,10 @@ struct CalendarWidgetView: View {
             } else if item.isInProgress {
                 Text("Now")
                     .font(.system(size: 9, weight: .bold))
-                    .foregroundStyle(settings.appearance.resolvedAccent)
+                    .foregroundStyle(theme.accentColor(settings.appearance.resolvedAccent))
                     .padding(.horizontal, 5)
                     .padding(.vertical, 2)
-                    .background(Capsule().fill(settings.appearance.resolvedAccent.opacity(0.18)))
+                    .background(Capsule().fill(theme.accentColor(settings.appearance.resolvedAccent).opacity(0.18)))
             }
         }
     }
@@ -347,7 +347,7 @@ struct CalendarWidgetView: View {
                 .foregroundStyle(.white)
                 .padding(.horizontal, 7)
                 .padding(.vertical, 3)
-                .background(Capsule().fill(settings.appearance.resolvedAccent))
+                .background(Capsule().fill(theme.accentColor(settings.appearance.resolvedAccent)))
                 .contentShape(Capsule())
         }
         .buttonStyle(.plain)
@@ -480,7 +480,7 @@ struct CalendarWidgetView: View {
                     service.requestAccess()
                 }
             }
-            .buttonStyle(NotchAccentButtonStyle(accent: settings.appearance.resolvedAccent))
+            .buttonStyle(NotchAccentButtonStyle(accent: theme.accentColor(settings.appearance.resolvedAccent)))
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .padding(.horizontal, 16)

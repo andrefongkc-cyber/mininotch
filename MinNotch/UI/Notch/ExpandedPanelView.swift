@@ -136,7 +136,7 @@ struct ExpandedPanelView: View {
             NotchIconButton(
                 systemImage: tab.symbolName,
                 help: tab.title,
-                accent: settings.appearance.resolvedAccent,
+                accent: theme.accentColor(settings.appearance.resolvedAccent),
                 isActive: viewModel.selectedTab == tab,
                 width: buttonWidth
             ) {
@@ -147,7 +147,7 @@ struct ExpandedPanelView: View {
             NotchIconButton(
                 systemImage: "gearshape",
                 help: "MiniNotch Settings",
-                accent: settings.appearance.resolvedAccent,
+                accent: theme.accentColor(settings.appearance.resolvedAccent),
                 width: buttonWidth
             ) {
                 environment.openSettings()
@@ -159,7 +159,7 @@ struct ExpandedPanelView: View {
             NotchIconButton(
                 systemImage: viewModel.isKeptOpen ? "pin.fill" : "pin",
                 help: viewModel.isKeptOpen ? "Let the notch close again" : "Keep the notch open",
-                accent: settings.appearance.resolvedAccent,
+                accent: theme.accentColor(settings.appearance.resolvedAccent),
                 isActive: viewModel.isKeptOpen,
                 width: buttonWidth
             ) {
@@ -170,7 +170,7 @@ struct ExpandedPanelView: View {
             NotchIconButton(
                 systemImage: item.layoutSymbol,
                 help: "What's New or the tutorial (debug)",
-                accent: settings.appearance.resolvedAccent,
+                accent: theme.accentColor(settings.appearance.resolvedAccent),
                 width: buttonWidth
             ) {
                 NotchMenu.show([

@@ -1,6 +1,6 @@
 # MiniNotch workplan
 
-Status: panel styles: Aurora and Minimalist built on main, waiting for the user's pick before Brutalism, Retro Web and Bento Grid; next: the Wave and Chase revamp when the user asks.
+Status: panel styles on main (Aurora, Bento Grid, Brutalism, Retro Web; Minimalist removed), waiting for the user's look; next: the Wave and Chase revamp when the user asks.
 
 Living document. Update the checkboxes as work lands. `CLAUDE.md` holds the architecture
 rules and the traps; this file holds the sequence.
@@ -48,13 +48,14 @@ Five new Notch Styles (`NotchDesignLanguage`), Aurora and Minimalist first as th
 then the user picks before the other three are built.
 
 - [x] Aurora: blurred bands in the song's colours, drifting only while open and playing.
-- [x] Minimalist: black, no hairline or shadow, fills at half.
+- [x] Minimalist: built, then removed at the user's word ("looks the same" as Minimal).
 - [x] Both always dark; Reduce Transparency / Increase Contrast fall back to Minimal; Reduce Motion stills Aurora.
 - [x] Captures open, closed, `--virtual`, Light and Dark; `Scripts/style-diff.sh` identical; CPU measured.
-- [ ] The user's pick from the captures.
-- [ ] Brutalism.
-- [ ] Retro Web.
-- [ ] Bento Grid (the existing Bento is close: decide with the user whether it replaces or extends it).
+- [x] The user's pick: remove Minimalist, keep Bento and Bento Grid both.
+- [x] Brutalism.
+- [x] Retro Web.
+- [x] Bento Grid, beside Bento.
+- [ ] The user's report of a bugged "memory tab" in Aurora: not reproduced in captures, awaiting a screenshot.
 
 ## Screen Answers (asked 2026-10-28)
 

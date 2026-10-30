@@ -144,7 +144,7 @@ struct TimerWidgetView: View {
                 Label("Start", systemImage: "play.fill")
                     .lineLimit(1)
             }
-            .buttonStyle(NotchAccentButtonStyle(accent: settings.appearance.resolvedAccent))
+            .buttonStyle(NotchAccentButtonStyle(accent: theme.accentColor(settings.appearance.resolvedAccent)))
             .fixedSize()
             .help("Start a Pomodoro set: \(settings.timer.pomodoroPreset.summary(custom: settings.timer))")
         }
@@ -316,7 +316,7 @@ struct TimerWidgetView: View {
         VStack(spacing: 6) {
             statusLine {
                 TransportSymbol.image("stopwatch", pointSize: 10)
-                    .foregroundStyle(settings.appearance.resolvedAccent)
+                    .foregroundStyle(theme.accentColor(settings.appearance.resolvedAccent))
                 if latestLapInStatus, let latest = stopwatch.laps.first {
                     // The lap's own length, not the running total.
                     let split = latest - (stopwatch.laps.count > 1 ? stopwatch.laps[1] : 0)
@@ -377,7 +377,7 @@ struct TimerWidgetView: View {
                 // The lap being run now, ticking with the big number.
                 ticking(from: laps.first ?? 0, precision) { current in
                     lapRow(laps.count + 1, Stopwatch.format(current, precision: precision),
-                           tint: settings.appearance.resolvedAccent)
+                           tint: theme.accentColor(settings.appearance.resolvedAccent))
                 }
                 ForEach(Array(splits.enumerated()), id: \.offset) { index, split in
                     lapRow(laps.count - index, Stopwatch.format(split, precision: lapPrecision), tint: {
@@ -589,7 +589,7 @@ private struct Chip: View {
                 Text(label)
             }
                 .font(isActive ? Typography.helper.weight(.semibold) : Typography.helper)
-                .foregroundStyle(isActive ? settings.appearance.resolvedAccent : theme.ink.opacity(0.85))
+                .foregroundStyle(isActive ? theme.accentColor(settings.appearance.resolvedAccent) : theme.ink.opacity(0.85))
                 .padding(.horizontal, 9)
                 .padding(.vertical, 4)
                 .background(

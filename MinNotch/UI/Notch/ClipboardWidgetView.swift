@@ -154,7 +154,7 @@ struct ClipboardWidgetView: View {
         let isBlurred = service.isBlurred(in: settings)
         return ClipboardRow(
             item: item,
-            accent: settings.appearance.resolvedAccent,
+            accent: theme.accentColor(settings.appearance.resolvedAccent),
             isBlurred: isBlurred,
             onCopy: { isBlurred ? unlock(thenCopy: item) : service.copyToPasteboard(item) },
             onPin: { service.togglePin(item) }

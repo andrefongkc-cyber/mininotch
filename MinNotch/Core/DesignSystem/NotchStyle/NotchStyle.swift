@@ -11,21 +11,24 @@ enum NotchDesignLanguage: String, Codable, CaseIterable, Identifiable {
     case skeuomorphism
     case clear
     case aurora
-    case minimalist
+    case bentoGrid
+    case brutalism
+    case retroWeb
 
     var id: String { rawValue }
 
-    /// Drawn over black whatever Light or Dark says (Aurora, Minimalist): their whole look is
-    /// light and white on a black panel, so the Light or Dark control is switched off for them.
+    /// The panel styles added on 2026-10-29. Each is drawn over black, or near-black, whatever
+    /// Light or Dark says, so that control is switched off for them.
     var isAlwaysDark: Bool {
-        self == .aurora || self == .minimalist
+        switch self {
+        case .aurora, .bentoGrid, .brutalism, .retroWeb: return true
+        default: return false
+        }
     }
 
     /// Falls back to Minimal under Reduce Transparency or Increase Contrast, which ask for plain
-    /// surfaces and strong edges: a fill of drifting, blurred colour is neither.
-    var fallsBackForAccessibility: Bool {
-        self == .aurora || self == .minimalist
-    }
+    /// surfaces and strong edges: drifting colour, bevels and scanlines are none of those.
+    var fallsBackForAccessibility: Bool { isAlwaysDark }
 
     var title: String {
         switch self {
@@ -37,7 +40,9 @@ enum NotchDesignLanguage: String, Codable, CaseIterable, Identifiable {
         case .skeuomorphism: return "Skeuomorphic"
         case .clear: return "Clear"
         case .aurora: return "Aurora"
-        case .minimalist: return "Minimalist"
+        case .bentoGrid: return "Bento Grid"
+        case .brutalism: return "Brutalism"
+        case .retroWeb: return "Retro Web"
         }
     }
 
@@ -52,7 +57,9 @@ enum NotchDesignLanguage: String, Codable, CaseIterable, Identifiable {
         case .skeuomorphism: return "Physical keys, bevels and grain."
         case .clear: return "No panel at all, just what is on it."
         case .aurora: return "Soft colour drifting behind the panel."
-        case .minimalist: return "Black, white and nothing else."
+        case .bentoGrid: return "Flat grey tiles on black, evenly spaced."
+        case .brutalism: return "Hard outlines, hard shadows, loud yellow."
+        case .retroWeb: return "Bevelled buttons and scanlines, 1996."
         }
     }
 }
@@ -135,6 +142,17 @@ struct NotchStyle: Equatable {
     /// Whether the note has a box around it and its word count and Copy under it. Clear has
     /// neither: no panel, so a box would be the only one left on the desktop, and only the words.
     var showsNoteChrome: Bool = true
+    /// The style's own accent, over the user's (Brutalism's yellow, Retro Web's phosphor green).
+    /// Read through `accentColor(_:)`, never directly.
+    var accent: Color? = nil
+    /// The type the panel's text is set in, for a style with a typeface of its own (monospaced
+    /// for Brutalism and Retro Web). Applied once at the root of the content.
+    var fontDesign: Font.Design? = nil
+
+    /// The style's accent if it has one, else the user's.
+    func accentColor(_ fallback: Color) -> Color {
+        accent ?? fallback
+    }
 
     /// This language's dark variant. The closed notch uses it on a Mac with a camera housing,
     /// over a black surface (`NotchRootView` covers the fill), because the housing is black
@@ -179,6 +197,9 @@ struct NotchSurfaceStyle: Equatable {
     var contentHalo: NotchShadow?
     /// Bands of blurred colour behind the content (Aurora), drawn by `NotchAuroraLayer`.
     var aurora: NotchAurora?
+    /// A still pattern of faint light lines across the surface, as opacity (Retro Web). The same open
+    /// and closed, and never animated.
+    var scanlines: Double = 0
 
     static let housing = NotchSurfaceStyle(base: .black)
 }
@@ -275,6 +296,8 @@ struct NotchElementStyle: Equatable {
     var cornerScale: CGFloat = 1
     /// Whether an element at zero emphasis, an idle button, is drawn at all.
     var drawsWhenIdle = false
+    /// Pills drawn as rectangles with the small corners (Brutalism, Retro Web).
+    var squaresPills = false
 
     /// True when the element is a plain fill, drawn exactly as Minimal draws it.
     var isPlain: Bool { border == nil && outer.isEmpty && inner.isEmpty }

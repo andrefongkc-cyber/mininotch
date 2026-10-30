@@ -59,7 +59,7 @@ struct ShelfView: View {
         HStack(spacing: 8) {
             Image(systemName: service.isDropTargeted ? "tray.and.arrow.down.fill" : "tray.and.arrow.down")
                 .font(.system(size: 17))
-                .foregroundStyle(service.isDropTargeted ? settings.appearance.resolvedAccent : theme.ink.opacity(0.35))
+                .foregroundStyle(service.isDropTargeted ? theme.accentColor(settings.appearance.resolvedAccent) : theme.ink.opacity(0.35))
             Text(service.isDropTargeted ? "Drop to hold" : "Drag files here to hold them, then drag them out where they need to go.")
                 .font(Typography.helper)
                 .foregroundStyle(theme.ink.opacity(0.5))
@@ -70,7 +70,7 @@ struct ShelfView: View {
         .overlay(
             RoundedRectangle(cornerRadius: 10, style: .continuous)
                 .strokeBorder(
-                    service.isDropTargeted ? settings.appearance.resolvedAccent : theme.ink.opacity(0.18),
+                    service.isDropTargeted ? theme.accentColor(settings.appearance.resolvedAccent) : theme.ink.opacity(0.18),
                     style: StrokeStyle(lineWidth: service.isDropTargeted ? 1.5 : 1, dash: [4, 4])
                 )
         )
@@ -92,7 +92,7 @@ struct ShelfView: View {
                 .font(.system(size: 24))
                 .foregroundStyle(
                     service.isDropTargeted
-                        ? settings.appearance.resolvedAccent
+                        ? theme.accentColor(settings.appearance.resolvedAccent)
                         : theme.ink.opacity(0.35)
                 )
 
@@ -111,7 +111,7 @@ struct ShelfView: View {
             RoundedRectangle(cornerRadius: 10, style: .continuous)
                 .strokeBorder(
                     service.isDropTargeted
-                        ? settings.appearance.resolvedAccent
+                        ? theme.accentColor(settings.appearance.resolvedAccent)
                         : theme.ink.opacity(0.18),
                     style: StrokeStyle(lineWidth: service.isDropTargeted ? 1.5 : 1, dash: [4, 4])
                 )
@@ -134,7 +134,7 @@ struct ShelfView: View {
         .overlay(
             RoundedRectangle(cornerRadius: 10, style: .continuous)
                 .strokeBorder(
-                    service.isDropTargeted ? settings.appearance.resolvedAccent : .clear,
+                    service.isDropTargeted ? theme.accentColor(settings.appearance.resolvedAccent) : .clear,
                     style: StrokeStyle(lineWidth: 1.5, dash: [4, 4])
                 )
         )
@@ -143,7 +143,7 @@ struct ShelfView: View {
 
     private func chip(_ item: ShelfItem) -> some View {
         let isSelected = service.selection.contains(item.id)
-        let accent = settings.appearance.resolvedAccent
+        let accent = theme.accentColor(settings.appearance.resolvedAccent)
 
         return VStack(spacing: 4) {
             Image(nsImage: item.icon)
@@ -209,7 +209,7 @@ struct ShelfView: View {
     @ViewBuilder
     private var airDropTile: some View {
         if AirDropSender.shared.isAvailable {
-            let accent = settings.appearance.resolvedAccent
+            let accent = theme.accentColor(settings.appearance.resolvedAccent)
             let targeted = isAirDropTargeted
             let toSend = service.itemsToSend.map(\.url)
 

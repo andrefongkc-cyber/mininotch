@@ -61,7 +61,7 @@ struct LinkShelfWidgetView: View {
         HStack(spacing: 8) {
             Image(systemName: service.isDropTargeted ? "link.badge.plus" : "link")
                 .font(.system(size: 15))
-                .foregroundStyle(service.isDropTargeted ? settings.appearance.resolvedAccent : theme.ink.opacity(0.35))
+                .foregroundStyle(service.isDropTargeted ? theme.accentColor(settings.appearance.resolvedAccent) : theme.ink.opacity(0.35))
             Text(service.isDropTargeted ? "Drop to keep the link" : "Drop a link here or press ⌘V. Click one to open it.")
                 .font(Typography.helper)
                 .foregroundStyle(theme.ink.opacity(0.5))
@@ -70,7 +70,7 @@ struct LinkShelfWidgetView: View {
         .overlay(
             RoundedRectangle(cornerRadius: 10, style: .continuous)
                 .strokeBorder(
-                    service.isDropTargeted ? settings.appearance.resolvedAccent : theme.ink.opacity(0.18),
+                    service.isDropTargeted ? theme.accentColor(settings.appearance.resolvedAccent) : theme.ink.opacity(0.18),
                     style: StrokeStyle(lineWidth: service.isDropTargeted ? 1.5 : 1, dash: [4, 4])
                 )
         )
@@ -152,7 +152,7 @@ struct LinkShelfWidgetView: View {
         VStack(spacing: 6) {
             Image(systemName: service.isDropTargeted ? "link.badge.plus" : "link")
                 .font(.system(size: 22))
-                .foregroundStyle(service.isDropTargeted ? settings.appearance.resolvedAccent : theme.ink.opacity(0.35))
+                .foregroundStyle(service.isDropTargeted ? theme.accentColor(settings.appearance.resolvedAccent) : theme.ink.opacity(0.35))
             Text(service.isDropTargeted ? "Drop to keep it" : "Drop or paste a link")
                 .font(Typography.body)
                 .foregroundStyle(theme.ink.opacity(0.7))
@@ -166,7 +166,7 @@ struct LinkShelfWidgetView: View {
         .overlay(
             RoundedRectangle(cornerRadius: 10, style: .continuous)
                 .strokeBorder(
-                    service.isDropTargeted ? settings.appearance.resolvedAccent : theme.ink.opacity(0.18),
+                    service.isDropTargeted ? theme.accentColor(settings.appearance.resolvedAccent) : theme.ink.opacity(0.18),
                     style: StrokeStyle(lineWidth: service.isDropTargeted ? 1.5 : 1, dash: [4, 4])
                 )
         )
@@ -192,7 +192,7 @@ struct LinkShelfWidgetView: View {
         .frame(height: isCombined ? Self.combinedListHeight : Self.listHeight)
         .overlay(
             RoundedRectangle(cornerRadius: 8, style: .continuous)
-                .strokeBorder(settings.appearance.resolvedAccent, lineWidth: 1.5)
+                .strokeBorder(theme.accentColor(settings.appearance.resolvedAccent), lineWidth: 1.5)
                 .opacity(service.isDropTargeted ? 1 : 0)
                 .allowsHitTesting(false)
         )

@@ -1025,25 +1025,33 @@ box also clear"), but keeps an invisible fill (ink at 0.012) under it: without o
 clicked into. In every style the placeholder fades out once the note has focus, and the text view's
 focus ring is off.
 
-**Aurora and Minimalist are always dark, and step back for accessibility** (2026-10-29, the user's
-five "panel styles", these two first as the extremes; Brutalism, Retro Web and Bento Grid wait for the
-user's pick). They are `NotchDesignLanguage` cases like the rest: that enum is the panel style setting,
-with its miniatures in the picker. `isAlwaysDark` makes `make` ignore Light, and the Light or Dark row
-is switched off with the reason while one is chosen. `fallsBackForAccessibility`: under Reduce
-Transparency or Increase Contrast (`SystemAppearance.prefersPlainSurfaces`, watched through
-`accessibilityDisplayOptionsDidChangeNotification`) `resolve` draws Minimal instead. Aurora is
-`surface.aurora`, drawn by `NotchAuroraLayer` inside `NotchSurfaceView`, so inside the surface's one
-clip and under the housing cover, which keeps a closed notch over a camera black: three blurred
-ellipses and a band along the edge, Shapes in a padded `drawingGroup`, in the song's
-`glowPrimary`/`glowSecondary` (teal, violet, magenta with nothing playing). It drifts at 15 fps only
-while open and playing and never under Reduce Motion (`NotchRootView.auroraState`); otherwise the
-timeline is paused and the bands hold where they were, resuming from there rather than jumping. The
-edge band is left out while Ambient Lighting lights the same outline. Measured with `--hold 12`:
-open and playing 15.6% against Minimal's 13.3%; System tab, playing, 1.3% against 0%; closed 0%.
-Minimalist is Minimal Dark's black with no hairline or shadow on the artwork and the fills behind
-rows, buttons and bars at about half (`.color(.clear, lift:)`); font weights and padding are the
-widgets' own and were not touched. `--check-settings-search aurora` lands on Light or Dark, whose
-keywords carry every style's name.
+**The 2026-10-29 panel styles are always dark, and step back for accessibility.** The user asked for
+five; Minimalist was built, judged "the same" as Minimal on sight and removed, and Bento Grid sits beside
+Bento ("keep both so i can look"). Aurora, Bento Grid, Brutalism and Retro Web are `NotchDesignLanguage`
+cases like the rest: that enum is the panel style setting, with its miniatures in the picker.
+`isAlwaysDark` makes `make` ignore Light, and the Light or Dark row is switched off with the reason
+while one is chosen. `fallsBackForAccessibility`: under Reduce Transparency or Increase Contrast
+(`SystemAppearance.prefersPlainSurfaces`, watched through `accessibilityDisplayOptionsDidChangeNotification`)
+`resolve` draws Minimal instead. **Aurora** is `surface.aurora`, drawn by `NotchAuroraLayer` inside
+`NotchSurfaceView`, so inside the surface's one clip and under the housing cover, which keeps a closed
+notch over a camera black: three blurred ellipses and a band along the edge, Shapes in a padded
+`drawingGroup`, in the song's `glowPrimary`/`glowSecondary` (teal, violet, magenta with nothing playing).
+It drifts at 15 fps only while open and playing and never under Reduce Motion (`NotchRootView.auroraState`);
+otherwise the timeline is paused and the bands hold, resuming from there rather than jumping. The edge
+band is left out while Ambient Lighting lights the same outline. Measured with `--hold 12`: open and
+playing 15.6% against Minimal's 13.3%; System tab, playing, 1.3% against 0%; closed 0%. **Bento Grid**
+is Bento's modules as flat grey (white about 8%), no borders, no artwork hairline, black surface and
+pill; tabs without modules (System) look like Minimal. **Brutalism** has 2 point off-white outlines,
+shadows that are the outline's shape offset 3 points with a radius of 0 (so solid, drawn by
+`NotchElementView`'s outer shadows, never `.shadow`), small corners. **Retro Web** has light-top,
+dark-bottom bevel strokes, a navy-black surface with `surface.scanlines` (a still tile of light lines,
+`NotchScanlines`; dark lines did not show on near-black) and no bevel on the surface edge, so nothing
+bright sits in the shoulder band. Both set `NotchStyle.accent` (yellow, phosphor green), which every
+notch view reads through `theme.accentColor(settings.appearance.resolvedAccent)`, and
+`NotchStyle.fontDesign` (monospaced), applied once at the root of `contentLayer`; `squaresPills` draws
+their capsules and discs as small-cornered rectangles, opt-in so Skeuomorphic's 0.7 corner scale is
+untouched. `--check-settings-search aurora` lands on Light or Dark, whose keywords carry every style's
+name. `Scripts/style-diff.sh` found Minimal Dark identical after all of it.
 
 **Minimal Dark is the notch as it always was, and that is checked, not assumed.** Its catalogue entry
 holds the old literal values, and `Scripts/style-diff.sh <a build from before>` captures 25 still
