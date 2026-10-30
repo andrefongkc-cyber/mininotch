@@ -11,7 +11,6 @@ enum NotchDesignLanguage: String, Codable, CaseIterable, Identifiable {
     case skeuomorphism
     case clear
     case aurora
-    case bentoGrid
     case brutalism
     case retroWeb
 
@@ -21,7 +20,7 @@ enum NotchDesignLanguage: String, Codable, CaseIterable, Identifiable {
     /// Light or Dark says, so that control is switched off for them.
     var isAlwaysDark: Bool {
         switch self {
-        case .aurora, .bentoGrid, .brutalism, .retroWeb: return true
+        case .aurora, .brutalism, .retroWeb: return true
         default: return false
         }
     }
@@ -40,7 +39,6 @@ enum NotchDesignLanguage: String, Codable, CaseIterable, Identifiable {
         case .skeuomorphism: return "Skeuomorphic"
         case .clear: return "Clear"
         case .aurora: return "Aurora"
-        case .bentoGrid: return "Bento Grid"
         case .brutalism: return "Brutalism"
         case .retroWeb: return "Retro Web"
         }
@@ -57,7 +55,6 @@ enum NotchDesignLanguage: String, Codable, CaseIterable, Identifiable {
         case .skeuomorphism: return "Physical keys, bevels and grain."
         case .clear: return "No panel at all, just what is on it."
         case .aurora: return "Soft colour drifting behind the panel."
-        case .bentoGrid: return "Flat grey tiles on black, evenly spaced."
         case .brutalism: return "Hard outlines, hard shadows, loud yellow."
         case .retroWeb: return "Bevelled buttons and scanlines, 1996."
         }

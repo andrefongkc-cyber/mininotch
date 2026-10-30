@@ -7,8 +7,29 @@ import Foundation
 /// release goes out, its `latest` moves here under its own name and the new notes take its place.
 extension ReleaseNotes {
     static let history: [ReleaseNotes] = [
-        latest, v0_8_0, v0_7_7, v0_7_6, v0_7_5, v0_7_4, v0_7_3, v0_7_2, v0_7_1, v0_7_0, v0_6_0, v0_5_0, v0_4_0, v0_3_0, v0_2_0,
+        latest, v0_8_1, v0_8_0, v0_7_7, v0_7_6, v0_7_5, v0_7_4, v0_7_3, v0_7_2, v0_7_1, v0_7_0, v0_6_0, v0_5_0, v0_4_0, v0_3_0, v0_2_0,
     ]
+
+    static let v0_8_1 = ReleaseNotes(
+        id: "0.8.1",
+        version: "0.8.1",
+        added: [],
+        improved: [
+            ReleaseNote(
+                symbol: "arrow.down.app",
+                title: "Updates Install Themselves",
+                detail: "New versions now download and install on their own, once the notch is closed and no timer or stopwatch is running, and What's New tells you what changed. If you chose Ask First before, that stays.",
+                howTo: "To be asked first instead: Settings > About > New Versions > Ask First."
+            ),
+            ReleaseNote(
+                symbol: "macwindow.on.rectangle",
+                title: "Update Window in Front",
+                detail: "With Ask First, the window offering a new version now always opens in front of your other apps.",
+                howTo: nil
+            ),
+        ],
+        removed: []
+    )
 
     static let v0_8_0 = ReleaseNotes(
         id: "0.8.0",

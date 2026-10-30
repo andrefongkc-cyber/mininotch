@@ -19,7 +19,6 @@ extension NotchStyle {
         case .skeuomorphism: style = skeuomorphism(isDark: isDark)
         case .clear: style = clear(isDark: isDark)
         case .aurora: style = aurora()
-        case .bentoGrid: style = bentoGrid()
         case .brutalism: style = brutalism()
         case .retroWeb: style = retroWeb()
         }
@@ -164,30 +163,6 @@ extension NotchStyle {
             track: NotchTrackStyle(),
             artwork: NotchArtworkStyle(),
             glow: NotchGlowStyle()
-        )
-    }
-
-    // MARK: Bento Grid
-
-    /// Bento with nothing but the tiles: every module and row a flat grey a step up from black
-    /// (white at about 8%), no borders, one corner radius, even gutters from `moduleGap`. The
-    /// surface is plain black, so the closed notch is too: a grid means nothing at that size.
-    /// Always dark.
-    private static func bentoGrid() -> NotchStyle {
-        let tile = Color(white: 0.08)
-        return NotchStyle(
-            language: .bentoGrid,
-            isDark: true,
-            ink: .white,
-            surface: .housing,
-            tile: NotchElementStyle(fill: .color(Color(white: 0.11), lift: 0.6)),
-            button: .plain,
-            module: NotchElementStyle(fill: .color(tile, lift: 0), drawsWhenIdle: true),
-            transport: NotchTransportStyle(),
-            track: NotchTrackStyle(groove: NotchElementStyle(fill: .color(Color(white: 0.16), lift: 0))),
-            artwork: NotchArtworkStyle(border: nil, shadow: nil),
-            glow: NotchGlowStyle(),
-            moduleGap: 8
         )
     }
 

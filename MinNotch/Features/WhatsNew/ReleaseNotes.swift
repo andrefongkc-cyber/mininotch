@@ -27,21 +27,40 @@ struct ReleaseNotes {
     var removed: [ReleaseNote]
 
     static let latest = ReleaseNotes(
-        id: "0.8.1",
-        version: "0.8.1",
-        added: [],
-        improved: [
+        id: "0.8.2",
+        version: "0.8.2",
+        added: [
             ReleaseNote(
-                symbol: "arrow.down.app",
-                title: "Updates Install Themselves",
-                detail: "New versions now download and install on their own, once the notch is closed and no timer or stopwatch is running, and What's New tells you what changed. If you chose Ask First before, that stays.",
-                howTo: "To be asked first instead: Settings > About > New Versions > Ask First."
+                symbol: "paintpalette",
+                title: "Four New Notch Styles",
+                detail: "Clear draws no panel at all, only what is on it. Aurora has soft colour drifting behind the panel in the colours of the song, Brutalism hard outlines and loud yellow, Retro Web bevelled buttons and scanlines. The last three are always dark, and turn plain under Reduce Transparency or Increase Contrast.",
+                howTo: "Settings > Appearance > Notch Style."
             ),
             ReleaseNote(
-                symbol: "macwindow.on.rectangle",
-                title: "Update Window in Front",
-                detail: "With Ask First, the window offering a new version now always opens in front of your other apps.",
+                symbol: "text.viewfinder",
+                title: "Answers",
+                detail: "Read Screen reads the window in front and answers the questions in it, using Apple Intelligence on your Mac. Nothing leaves your Mac. Needs macOS 26 with Apple Intelligence on, and Screen Recording.",
+                howTo: "Settings > Shelf & Notes > Show Answers, then the Answers tab. A shortcut can do it in one go: Settings > General > Keyboard Shortcuts."
+            ),
+        ],
+        improved: [
+            ReleaseNote(
+                symbol: "airpods",
+                title: "AirPods When They Connect",
+                detail: "Connecting AirPods or other Bluetooth headphones now shows their charge in the notch, and the System tab lists each accessory once, with left, right and case together.",
                 howTo: nil
+            ),
+            ReleaseNote(
+                symbol: "note.text",
+                title: "Tidier Notes",
+                detail: "Scrolling a long note or a list no longer closes the notch or switches tabs. The hint in an empty note fades as you click in, and there is no ring round the note while you type.",
+                howTo: nil
+            ),
+            ReleaseNote(
+                symbol: "pin",
+                title: "Another Menu Bar Pin",
+                detail: "Show on Displays Without a Notch can now be pinned to the menu bar icon's menu.",
+                howTo: "Settings > General > Menu Bar > Pin Settings to the Menu."
             ),
         ],
         removed: []

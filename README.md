@@ -104,12 +104,12 @@ Spotify's own buttons. macOS also asks once whether MiniNotch may control Chrome
 
 Also:
 
-- **Notch Style**: seven design languages, Minimal, Bento, Glass, Neumorphic, Clay, Skeuomorphic and Clear (no panel at all, just what is on it) _(next)_,
-  each dark or light or matching your Mac, and any of them on Liquid Glass, as see-through as you like, on macOS 26, in
+- **Notch Style**: ten design languages, Minimal, Bento, Glass, Neumorphic, Clay, Skeuomorphic, Clear (no panel at all, just what is on it),
+  and the always-dark Aurora, Brutalism and Retro Web; the first seven dark or light or matching your Mac, and any of them on Liquid Glass, as see-through as you like, on macOS 26, in
   Settings > Appearance.
 - **Keep the notch open** with ⌃⌥P, on whichever display it is on, while you work on another.
 - **Notes**: a scratchpad in its own tab, kept on your Mac between opens.
-- **Answers** _(next)_: Read Screen reads the window in front and answers the questions in it with
+- **Answers**: Read Screen reads the window in front and answers the questions in it with
   Apple Intelligence, on your Mac. Off by default; turn on Show Answers in Settings > Shelf & Notes.
   Needs macOS 26 with Apple Intelligence, and Screen Recording.
 - **Sound output**: switch between speakers, AirPods and displays, and set the volume, from
