@@ -1,6 +1,6 @@
 # MiniNotch workplan
 
-Status: releasing 0.8.2 (Bento Grid taken out, kept on the branch `bento-grid`); next: the Wave and Chase revamp when the user asks.
+Status: 0.8.2 released (Bento Grid kept on the branch `bento-grid`); next: the Wave and Chase revamp when the user asks.
 
 Living document. Update the checkboxes as work lands. `CLAUDE.md` holds the architecture
 rules and the traps; this file holds the sequence.
@@ -55,7 +55,7 @@ then the user picks before the other three are built.
 - [x] Brutalism.
 - [x] Retro Web.
 - [x] Bento Grid, beside Bento; taken out of 0.8.2 at the user's word, kept on the branch `bento-grid`.
-- [~] Release 0.8.2.
+- [x] Release 0.8.2.
 - [ ] The user's report of a bugged "memory tab" in Aurora: not reproduced in captures, awaiting a screenshot.
 
 ## Screen Answers (asked 2026-10-28)
