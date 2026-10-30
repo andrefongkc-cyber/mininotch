@@ -65,37 +65,86 @@ struct SystemWidgetView: View {
 
     // MARK: Bluetooth accessories
 
-    /// One chip per connected accessory that reports charge. Earbuds contribute a chip each
-    /// for left, right, and case, because an average would hide whichever one is nearly flat.
+    /// One chip per connected accessory, with each part's charge in it: earbuds show left, right
+    /// and case side by side rather than averaged, because an average hides whichever is nearly
+    /// flat. A chip each per part made AirPods four long chips, wider than the panel, and the
+    /// whole tab overflowed off both edges (2026-10-29). The row now never sets the width: a
+    /// name that does not fit is cut short, and anything past the edge is clipped.
     private var bluetoothRow: some View {
-        HStack(spacing: 14) {
-            ForEach(environment.bluetooth.devices.prefix(4)) { device in
+        HStack(spacing: 16) {
+            ForEach(Self.groups(environment.bluetooth.devices).prefix(3), id: \.name) { group in
                 HStack(spacing: 5) {
-                    Image(systemName: device.symbolName)
+                    Image(systemName: group.symbolName)
                         .font(.system(size: 12))
                         .foregroundStyle(theme.ink.opacity(0.55))
 
-                    Text(device.name)
+                    Text(group.name)
                         .font(.system(size: 11))
                         .foregroundStyle(theme.ink.opacity(0.7))
                         .lineLimit(1)
+                        .truncationMode(.tail)
+                        .layoutPriority(-1)
 
-                    Text("\(device.percentage)%")
-                        .font(.system(size: 11, weight: .medium))
-                        .monospacedDigit()
-                        .foregroundStyle(device.isLow ? Color(nsColor: .systemRed) : theme.ink.opacity(0.9))
-
-                    if device.isCharging {
-                        Image(systemName: "bolt.fill")
-                            .font(.system(size: 8))
-                            .foregroundStyle(Color(nsColor: .systemGreen))
+                    ForEach(group.parts) { part in
+                        HStack(spacing: 3) {
+                            if let label = Self.partLabel(part) {
+                                Text(label)
+                                    .font(.system(size: 10))
+                                    .foregroundStyle(theme.ink.opacity(0.45))
+                            }
+                            Text("\(part.percentage)%")
+                                .font(.system(size: 11, weight: .medium))
+                                .monospacedDigit()
+                                .foregroundStyle(part.isLow ? Color(nsColor: .systemRed) : theme.ink.opacity(0.9))
+                            if part.isCharging {
+                                Image(systemName: "bolt.fill")
+                                    .font(.system(size: 8))
+                                    .foregroundStyle(Color(nsColor: .systemGreen))
+                            }
+                        }
+                        .fixedSize()
                     }
                 }
-                .fixedSize()
             }
             Spacer(minLength: 0)
         }
+        .frame(maxWidth: .infinity, alignment: .leading)
         .frame(height: 20)
+        .clipped()
+    }
+
+    private struct DeviceGroup {
+        var name: String
+        var symbolName: String
+        var parts: [BluetoothDevice]
+    }
+
+    /// The parts of each device together, in the order the devices came, each part once. Names
+    /// are compared with apostrophes made the same, because the registry and the profiler can
+    /// write one device's name two ways.
+    private static func groups(_ devices: [BluetoothDevice]) -> [DeviceGroup] {
+        var groups: [DeviceGroup] = []
+        for device in devices {
+            if let index = groups.firstIndex(where: { BluetoothProfiler.sameName($0.name, device.baseName) }) {
+                guard !groups[index].parts.contains(where: { partLabel($0) == partLabel(device) }) else { continue }
+                groups[index].parts.append(device)
+            } else {
+                groups.append(DeviceGroup(name: device.baseName, symbolName: device.symbolName, parts: [device]))
+            }
+        }
+        let order = ["L", "R", "Case"]
+        return groups.map { group in
+            var sorted = group
+            sorted.parts.sort { (order.firstIndex(of: partLabel($0) ?? "") ?? -1) < (order.firstIndex(of: partLabel($1) ?? "") ?? -1) }
+            return sorted
+        }
+    }
+
+    private static func partLabel(_ device: BluetoothDevice) -> String? {
+        if device.name.hasSuffix(" (Left)") { return "L" }
+        if device.name.hasSuffix(" (Right)") { return "R" }
+        if device.name.hasSuffix(" (Case)") { return "Case" }
+        return nil
     }
 
     private var showsStats: Bool {

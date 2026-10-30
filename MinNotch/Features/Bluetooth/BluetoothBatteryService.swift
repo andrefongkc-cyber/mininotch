@@ -105,7 +105,23 @@ final class BluetoothBatteryService {
         settings?.battery.showBluetoothDeviceBattery ?? false
     }
 
+    #if DEBUG
+    /// AirPods with long names, the case that once stretched the System tab, for `--sample-devices`.
+    func applySample() {
+        devices = [
+            BluetoothDevice(id: "s-l", name: "Andre’s AirPods Pro 3 (Left)", percentage: 81, isCharging: false),
+            BluetoothDevice(id: "s-r", name: "Andre’s AirPods Pro 3 (Right)", percentage: 80, isCharging: false),
+            BluetoothDevice(id: "s-c", name: "Andre’s AirPods Pro 3 (Case)", percentage: 100, isCharging: true),
+            BluetoothDevice(id: "s-c2", name: "Andre’s AirPods Pro 3 (Case)", percentage: 100, isCharging: true),
+            BluetoothDevice(id: "s-m", name: "Magic Mouse", percentage: 12, isCharging: false),
+        ]
+    }
+    #endif
+
     func refresh() {
+        #if DEBUG
+        if CommandLine.arguments.contains("--sample-devices") { return }
+        #endif
         guard isEnabled else {
             if !devices.isEmpty { devices = [] }
             return
@@ -123,8 +139,9 @@ final class BluetoothBatteryService {
     }
 
     private static func merged(_ registry: [BluetoothDevice], _ headphones: [BluetoothDevice]) -> [BluetoothDevice] {
-        let names = Set(registry.map(\.baseName))
-        return (registry + headphones.filter { !names.contains($0.baseName) })
+        // Compared with apostrophes made the same: the registry and the report can write one
+        // device's name two ways, which listed the same AirPods twice.
+        return (registry + headphones.filter { phone in !registry.contains { BluetoothProfiler.sameName($0.baseName, phone.baseName) } })
             .sorted { $0.percentage < $1.percentage }
     }
 
@@ -400,7 +417,10 @@ enum BluetoothProfiler {
                 }
             }
         }
-        return found
+        // The report can list one device twice, under two addresses (it gave AirPods' case twice),
+        // so each part once, by name.
+        var seen = Set<String>()
+        return found.filter { seen.insert($0.name).inserted }
     }
 
     /// Core Audio and the report can write the same name with a different apostrophe.

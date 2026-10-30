@@ -279,6 +279,8 @@ enum DebugWindowCapture {
             // `--floating-expanded`: the window at its large size, as its expand button leaves it.
             if arguments.contains("--floating-expanded") { environment.floatingTimer.setExpanded(true) }
         }
+                // `--sample-devices` puts AirPods and a mouse in the System tab's accessory row.
+                if arguments.contains("--sample-devices") { environment.bluetooth.applySample() }
                 // `--sample-answers` shows the Answers tab with a fixed answer; `--answers-idle` with none.
                 if arguments.contains("--sample-answers") || arguments.contains("--answers-idle") {
             settings.advanced.screenAnswersEnabled = true

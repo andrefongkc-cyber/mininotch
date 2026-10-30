@@ -82,7 +82,7 @@ MiniNotch --capture-notch out.png [--collapsed] [--tab system] [--glow bars|off]
                                  [--lyrics-sheet] [--sample-stats] [--shadow] [--closed-lyrics]
                                  [--sample-shelf] [--output-sheet] [--lyrics-on builtIn|others] [--sample-weather]
                                  [--sample-power] [--keep-open] [--hud-style floatingPill] [--no-media]
-                                 [--sample-notes] [--blur-clipboard] [--sample-answers] [--answers-idle]
+                                 [--sample-notes] [--blur-clipboard] [--sample-answers] [--answers-idle] [--sample-devices]
                                  [--notch-style bento-light] [--liquid-glass] [--builtin]
                                  [--no-visualizer] [--no-lyrics] [--swipe-to notes --midway 0.15]
                                  [--live grow|reopen|swipe --hold 7 [--was-active]]
@@ -1451,7 +1451,12 @@ heard connecting from Core Audio, as a new Bluetooth audio device (twice, speake
 names are de-duplicated), and their charge is read from `system_profiler SPBluetoothDataType -json`
 (`BluetoothProfiler`, 0.2 s, off main, no permission when run as the app) two seconds later, again at
 five if nothing yet. The System tab's list merges the same report. `--check-bluetooth [--watch 60]`,
-launched with `open`, prints both and any popup a connection raises.
+launched with `open`, prints both and any popup a connection raises. **The System tab shows one chip per device**, its parts
+inside it ("L 81% R 80% Case 100%"): a chip per part made AirPods four long chips, the row was wider than
+the panel, and the whole tab overflowed off both edges in every style (2026-10-29). The row never sets
+the width now: a name too long is cut short, the rest is clipped. The profiler can list a device twice
+under two addresses, so its parts are de-duplicated by name. `--capture-notch --tab system
+--sample-devices` draws AirPods and a mouse.
 
 **Up Next is a peek, read only while it is open.** A transport control (`MediaControl.upNext`,
 added after Next to every arrangement once by settings schema 3) opens a row under the card with
