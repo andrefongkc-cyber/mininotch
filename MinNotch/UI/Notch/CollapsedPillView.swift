@@ -27,6 +27,8 @@ struct CollapsedPillContent: Equatable {
     /// The letters Answers picked, drawn first on the left whatever `isExtended` says: it has its
     /// own switch in the Answers tab, apart from the pill's indicators.
     var answerLetters: String? = nil
+    /// When Keep Reading next reads, counted down on the right, last, beside the letters' switch.
+    var answerNextRead: Date? = nil
 
     /// Distance from the pill's outer edge to its content.
     ///
@@ -50,6 +52,7 @@ struct CollapsedPillContent: Equatable {
     /// shared mutable state as far as Swift 6 is concerned.
     static var songFont: NSFont { .systemFont(ofSize: 11, weight: .semibold) }
     static var answerFont: NSFont { .systemFont(ofSize: 13, weight: .bold) }
+    static var countdownFont: NSFont { .monospacedDigitSystemFont(ofSize: 13, weight: .bold) }
 
     /// The pill as it stands right now, from the live services.
     ///
@@ -76,7 +79,9 @@ struct CollapsedPillContent: Equatable {
             isExtended: isExtended,
             leadingLayout: settings.general.pillLeading,
             trailingLayout: settings.general.pillTrailing,
-            answerLetters: answerLetters(environment: environment, settings: settings)
+            answerLetters: answerLetters(environment: environment, settings: settings),
+            answerNextRead: settings.advanced.screenAnswersEnabled && settings.advanced.answerLetterInNotch
+                ? environment.screenAnswers.nextReadAt : nil
         )
     }
 
@@ -130,7 +135,7 @@ struct CollapsedPillContent: Equatable {
     }
 
     var hasLeading: Bool { answerLetters != nil || !items(on: .leading).isEmpty }
-    var hasTrailing: Bool { !items(on: .trailing).isEmpty }
+    var hasTrailing: Bool { answerNextRead != nil || !items(on: .trailing).isEmpty }
 
     // MARK: Sizing
 
@@ -169,7 +174,9 @@ struct CollapsedPillContent: Equatable {
     private func contentWidth(on side: PillSide) -> CGFloat {
         let showing = items(on: side)
         let answer = side == .leading ? answerLetters.map { Self.measure($0, font: Self.answerFont) } : nil
-        let widths = (answer.map { [$0] } ?? []) + showing.map { width(of: $0) }
+        // At the widest the count gets, so the pill holds still as it counts down.
+        let countdown = side == .trailing && answerNextRead != nil ? Self.measure("00", font: Self.countdownFont) : nil
+        let widths = (answer.map { [$0] } ?? []) + showing.map { width(of: $0) } + (countdown.map { [$0] } ?? [])
         guard !widths.isEmpty else { return 0 }
 
         let gaps = Self.itemSpacing * CGFloat(widths.count - 1)
@@ -262,8 +269,9 @@ struct CollapsedPillView: View {
     private func flank(_ side: CollapsedPillContent.PillSide) -> some View {
         let showing = content.items(on: side)
         let answer = side == .leading ? content.answerLetters : nil
+        let nextRead = side == .trailing ? content.answerNextRead : nil
 
-        if showing.isEmpty, answer == nil {
+        if showing.isEmpty, answer == nil, nextRead == nil {
             Color.clear.frame(width: 0, height: 0)
         } else {
             HStack(spacing: CollapsedPillContent.itemSpacing) {
@@ -275,6 +283,16 @@ struct CollapsedPillView: View {
                 }
                 ForEach(showing) { indicator in
                     PillIndicatorView(indicator: indicator, content: content)
+                }
+                if let nextRead {
+                    // Seconds to Keep Reading's next read, 5 4 3 2 1, redrawn once a second.
+                    TimelineView(.periodic(from: .now, by: 1)) { timeline in
+                        Text("\(max(1, Int(ceil(nextRead.timeIntervalSince(timeline.date)))))")
+                            .font(Font(CollapsedPillContent.countdownFont))
+                            .foregroundStyle(theme.ink.opacity(0.7))
+                            .frame(width: CollapsedPillContent.measure("00", font: CollapsedPillContent.countdownFont), alignment: .trailing)
+                    }
+                    .transition(.opacity)
                 }
             }
             // Never let the row compress: a squeezed SF Symbol is what makes a glyph look

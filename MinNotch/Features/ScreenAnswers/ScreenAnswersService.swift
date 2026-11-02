@@ -47,6 +47,8 @@ final class ScreenAnswersService {
     /// The letters the closed notch is showing: set when an answer's letters change, cleared
     /// `letterShowTime` later, so the notch says it once and fades rather than holding it up.
     private(set) var notchLetters: [String] = []
+    /// When Keep Reading next reads, for the countdown on the closed notch.
+    private(set) var nextReadAt: Date?
     /// Keep Reading: the screen is read again every `watchInterval`, and answered again only when
     /// its text changed. For as long as MiniNotch runs, never saved, so it is never on at launch.
     private(set) var isWatching = false
@@ -60,7 +62,8 @@ final class ScreenAnswersService {
     /// What the notch last showed, so the same answer read again stays faded.
     @ObservationIgnored private var lastShownLetters: [String] = []
 
-    static let watchInterval: TimeInterval = 5
+    /// Seconds between Keep Reading's reads, from Settings (`answerReadInterval`).
+    @ObservationIgnored private(set) var watchInterval: TimeInterval = 5
     static let letterShowTime: TimeInterval = 5
 
     /// The longest text handed to the model. Its context is about 4,000 tokens for the
@@ -121,16 +124,32 @@ final class ScreenAnswersService {
     func setWatching(_ on: Bool, display displayID: CGDirectDisplayID) {
         watchTimer?.invalidate()
         watchTimer = nil
+        nextReadAt = nil
         isWatching = on
         guard on else { return }
         watchDisplay = displayID
         lastShownLetters = []
         read(on: displayID, quietly: false)
-        let timer = Timer.onMain(every: Self.watchInterval) { [weak self] in
-            guard let self, !self.phase.isBusy else { return }
+        scheduleWatch()
+    }
+
+    /// Changes the time between reads; a running Keep Reading starts counting again from now.
+    func setWatchInterval(_ seconds: TimeInterval) {
+        guard seconds != watchInterval else { return }
+        watchInterval = seconds
+        if isWatching { scheduleWatch() }
+    }
+
+    private func scheduleWatch() {
+        watchTimer?.invalidate()
+        nextReadAt = Date().addingTimeInterval(watchInterval)
+        let timer = Timer.onMain(every: watchInterval) { [weak self] in
+            guard let self else { return }
+            self.nextReadAt = Date().addingTimeInterval(self.watchInterval)
+            guard !self.phase.isBusy else { return }
             self.read(on: self.watchDisplay, quietly: true)
         }
-        timer.tolerance = 0.5
+        timer.tolerance = 0.2
         watchTimer = timer
     }
 
@@ -140,13 +159,13 @@ final class ScreenAnswersService {
         if case .unavailable(let reason) = Self.modelAvailability {
             task?.cancel()
             phase = .failed(reason)
-            setWatching(false, display: displayID)
+            if isWatching { setWatching(false, display: displayID) }
             return
         }
         guard CGPreflightScreenCaptureAccess() else {
             task?.cancel()
             phase = .needsPermission
-            setWatching(false, display: displayID)
+            if isWatching { setWatching(false, display: displayID) }
             return
         }
 
@@ -290,13 +309,23 @@ final class ScreenAnswersService {
                 answer = (answered + ["→ " + reply + "\n" + asked]).joined(separator: "\n\n")
             }
             answered.append("→ " + reply + "\n" + asked)
-            if hasOptions, let letter = QuestionSplitter.letter(in: reply) { letters.append(letter) }
+            if hasOptions {
+                let letter = QuestionSplitter.letter(in: reply, question: text)
+                if let letter { letters.append(letter) }
+                AppLog.answers.info("Question \(index + 1) has options: letter \(letter ?? "not found", privacy: .public)")
+            }
         }
     }
     #endif
 
     #if DEBUG
     /// A finished answer for the capture tools.
+    /// Keep Reading's countdown for the capture tools, with no timer and no read behind it.
+    func applySampleCountdown(seconds: TimeInterval) {
+        isWatching = true
+        nextReadAt = Date().addingTimeInterval(seconds)
+    }
+
     func applySample() {
         sourceName = "Safari"
         letters = ["C"]
@@ -527,10 +556,34 @@ enum QuestionSplitter {
             || question.range(of: #"(?m)^\)\s+\S"#, options: .regularExpression) != nil
     }
 
-    /// The option a reply picked, "A" from "A. It isn't growing…" or "C) Carbon dioxide".
-    static func letter(in reply: String) -> String? {
-        guard let match = reply.range(of: #"^\s*\(?([A-Ha-h])\s*[.):]"#, options: .regularExpression) else { return nil }
-        return reply[match].first(where: \.isLetter).map { String($0).uppercased() }
+    /// The option a reply picked: "A" from "A. It isn't growing…", "C) Carbon dioxide", "The
+    /// answer is B" or "Option D: …", or failing those, the option whose text the reply repeats.
+    /// The model words its replies differently from page to page, and a letter it was only
+    /// matched in the first form left the closed notch empty (2026-11-02).
+    static func letter(in reply: String, question: String = "") -> String? {
+        let patterns = [
+            #"^\s*\(?([A-Ha-h])\s*[.):]"#,
+            #"(?i)\b(?:answer|option|choice)\s*(?:is|:)?\s*\(?([A-H])\b"#,
+            #"^\s*\(?([A-H])\)?\s*$"#,
+        ]
+        let firstLine = reply.components(separatedBy: .newlines).first ?? reply
+        for pattern in patterns {
+            if let regex = try? NSRegularExpression(pattern: pattern, options: [.anchorsMatchLines]),
+               let match = regex.firstMatch(in: firstLine, range: NSRange(firstLine.startIndex..., in: firstLine)),
+               let range = Range(match.range(at: 1), in: firstLine) {
+                return firstLine[range].uppercased()
+            }
+        }
+        // The option whose text the reply repeats, from "B. It isn't producing young trees".
+        let lowered = reply.lowercased()
+        for line in question.components(separatedBy: .newlines) {
+            guard let match = line.range(of: #"^\s*\(?([A-Ha-h])\s*[.)]\s+"#, options: .regularExpression) else { continue }
+            let text = line[match.upperBound...].trimmingCharacters(in: .whitespaces).lowercased()
+            if text.count >= 4, lowered.contains(text), let letter = line[match].first(where: \.isLetter) {
+                return String(letter).uppercased()
+            }
+        }
+        return nil
     }
 
     /// The question without the number it was read with, since the answers are numbered again.

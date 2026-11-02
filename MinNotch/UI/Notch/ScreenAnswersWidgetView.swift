@@ -37,8 +37,8 @@ struct ScreenAnswersWidgetView: View {
 
             // The switches give up their words before anything else gives up room.
             ViewThatFits(in: .horizontal) {
-                HStack(spacing: 10) { watchToggle(compact: false); letterToggle(compact: false) }
-                HStack(spacing: 6) { watchToggle(compact: true); letterToggle(compact: true) }
+                HStack(spacing: 10) { watchToggle(compact: false); intervalButton; letterToggle(compact: false) }
+                HStack(spacing: 6) { watchToggle(compact: true); intervalButton; letterToggle(compact: true) }
             }
 
             if service.phase == .answered, !service.answer.isEmpty {
@@ -76,13 +76,35 @@ struct ScreenAnswersWidgetView: View {
         }
     }
 
-    /// Keep Reading: the screen is read again every 5 seconds and answered again when it changes.
+    /// Keep Reading: the screen is read again every few seconds and answered again when it changes.
     private func watchToggle(compact: Bool) -> some View {
         let isOn = service.isWatching
         return chip("Keep Reading", symbol: "arrow.triangle.2.circlepath", isOn: isOn, compact: compact,
-                    help: isOn ? "Stop reading the screen every 5 seconds" : "Read the screen again every 5 seconds, and answer again when it changes") {
+                    help: isOn ? "Stop reading the screen again and again" : "Read the screen again every few seconds, and answer again when it changes") {
             service.setWatching(!isOn, display: viewModel.geometry.displayID)
         }
+    }
+
+    /// How often Keep Reading reads: each click steps to the next of 3, 5, 10, 15 and 30 seconds.
+    private var intervalButton: some View {
+        @Bindable var settings = settings
+        let current = settings.advanced.answerReadInterval
+        let choices = AdvancedSettings.answerReadIntervals
+        return Button {
+            let next = choices.first(where: { $0 > current }) ?? choices[0]
+            settings.advanced.answerReadInterval = next
+        } label: {
+            Text("\(Int(current))s")
+                .font(.system(size: 11).monospacedDigit())
+                .foregroundStyle(theme.ink.opacity(service.isWatching ? 0.8 : 0.45))
+                .padding(.horizontal, 7)
+                .padding(.vertical, 4)
+                .background(NotchElementView(.button, shape: .capsule, emphasis: 0.04))
+                .contentShape(Capsule())
+        }
+        .buttonStyle(.plain)
+        .fixedSize()
+        .help("How often Keep Reading reads the screen. Click for the next: 3, 5, 10, 15 or 30 seconds.")
     }
 
     private func chip(_ title: String, symbol: String, isOn: Bool, compact: Bool, help: String, action: @escaping () -> Void) -> some View {
@@ -117,7 +139,7 @@ struct ScreenAnswersWidgetView: View {
             return "Answering…"
         case .answered:
             let source = app.map { "From \($0)" } ?? "From the screen"
-            return service.isWatching ? source + ", reading every 5 s" : source
+            return service.isWatching ? source + ", reading every \(Int(settings.advanced.answerReadInterval)) s" : source
         }
     }
 

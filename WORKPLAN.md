@@ -65,6 +65,7 @@ then the user picks before the other three are built.
   (FoundationModels, macOS 26 with Apple Intelligence). Nothing leaves the Mac. Off by default.
 - [x] A shortcut that opens the tab and reads the screen at once.
 - [x] `--check-answers` runs the reading and answering on a rendered page, without the screen.
+- [x] Keep Reading's countdown on the right of the closed notch, and its interval (3 to 30 s) from a button in the tab (2026-11-02).
 - [x] The letter fades after 5 s; Keep Reading reads the screen every 5 s and answers again when it changes (2026-11-02). Never tried by hand.
 - [x] The answer's letter on the left of the closed notch, its own switch in the Answers tab and Settings (2026-11-02).
 - [x] The user tries Read Screen for real (2026-11-02): Allow… now really asks, Chrome's full-screen toolbar strip is passed over, and a reading question gets its passage (an SAT question went from B and D to A).

@@ -103,6 +103,10 @@ struct AdvancedSettings: Codable, Equatable {
     /// pill's indicators off.
     var answerLetterInNotch: Bool = false
 
+    /// Seconds between Keep Reading's reads, picked in the Answers tab.
+    var answerReadInterval: Double = 5
+    static let answerReadIntervals: [Double] = [3, 5, 10, 15, 30]
+
     /// Show the CPU, GPU, memory, and network readout in the System tab.
     var showSystemStats: Bool = true
 
@@ -170,6 +174,7 @@ struct AdvancedSettings: Codable, Equatable {
         notesEnabled = c.value(.notesEnabled, true)
         screenAnswersEnabled = c.value(.screenAnswersEnabled, false)
         answerLetterInNotch = c.value(.answerLetterInNotch, false)
+        answerReadInterval = c.value(.answerReadInterval, 5, in: 2...60)
         showSystemStats = c.value(.showSystemStats, true)
         statsRefreshInterval = c.value(.statsRefreshInterval, 2, in: 0.5...5)
         showTemperatures = c.value(.showTemperatures, true)

@@ -287,6 +287,8 @@ enum DebugWindowCapture {
             if arguments.contains("--sample-answers") { environment.screenAnswers.applySample() }
             // `--answer-letter` puts the sample's letter on the closed notch; set either way.
             settings.advanced.answerLetterInNotch = arguments.contains("--answer-letter")
+            // `--answer-countdown` adds Keep Reading's count on the right, from 5.
+            if arguments.contains("--answer-countdown") { environment.screenAnswers.applySampleCountdown(seconds: 5) }
         }
                 if arguments.contains("--sample-notes") {
             settings.advanced.notesEnabled = true
