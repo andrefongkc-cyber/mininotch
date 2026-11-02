@@ -193,15 +193,27 @@ final class ScreenAnswersService {
         }
     }
 
-    /// Puts new letters on the closed notch and fades them after `letterShowTime`. The same
-    /// letters read again stay faded: the page has not moved on.
+    /// Puts new letters on the closed notch. They stay until the closed notch has shown them for
+    /// `letterShowTime` (`notchShowedLetters`), not from when they arrive: a read is started from
+    /// the open panel, which covers the closed notch, and a fade timed from the answer had run
+    /// out before anyone closed it (2026-11-02). The same letters read again stay faded.
     private func showLetters() {
         guard !letters.isEmpty, letters != lastShownLetters else { return }
         lastShownLetters = letters
-        notchLetters = letters
         letterFade?.cancel()
+        letterFade = nil
+        notchLetters = letters
+    }
+
+    /// Called by a closed notch while it draws the letters: they fade `letterShowTime` later.
+    /// Calling again while that is under way changes nothing.
+    func notchShowedLetters() {
+        guard !notchLetters.isEmpty, letterFade == nil else { return }
         let fade = DispatchWorkItem { [weak self] in
-            MainActor.assumeIsolated { self?.notchLetters = [] }
+            MainActor.assumeIsolated {
+                self?.notchLetters = []
+                self?.letterFade = nil
+            }
         }
         letterFade = fade
         DispatchQueue.main.asyncAfter(deadline: .now() + Self.letterShowTime, execute: fade)

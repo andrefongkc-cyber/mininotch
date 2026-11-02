@@ -113,6 +113,10 @@ struct NotchRootView: View {
         .onChange(of: surfaceHeight, initial: true) { _, height in
             if isExpanded { viewModel.lastPanelHeight = height }
         }
+        // Answers' letter fades once the closed notch has actually shown it for a while.
+        .onChange(of: showsAnswerLetters, initial: true) { _, showing in
+            if showing { environment.screenAnswers.notchShowedLetters() }
+        }
         .accessibilityElement(children: .contain)
         .accessibilityLabel(isExpanded ? "MiniNotch panel" : "MiniNotch")
     }
@@ -482,6 +486,11 @@ struct NotchRootView: View {
         content.songText = nil
         content.isPlaying = false
         return content
+    }
+
+    /// The closed notch is drawing Answers' letters right now, where they can be seen.
+    private var showsAnswerLetters: Bool {
+        !isExpanded && !isHiddenAtRest && environment.hud.current == nil && pillContent.answerLetters != nil
     }
 
     private var pillContent: CollapsedPillContent {
