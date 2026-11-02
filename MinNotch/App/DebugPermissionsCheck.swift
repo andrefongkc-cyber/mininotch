@@ -26,6 +26,8 @@ enum DebugPermissionsCheck {
         report("usage description: \(Bundle.main.object(forInfoDictionaryKey: "NSCalendarsFullAccessUsageDescription") != nil ? "present" : "MISSING")")
         report("calendar status:   \(describe(EKEventStore.authorizationStatus(for: .event)))")
         report("owner check:       \(OwnerCheck.method) (Clipboard > Blur Until Unlocked)")
+        // Preflight never prompts; it only says whether this copy may capture the screen now.
+        report("screen recording:  \(CGPreflightScreenCaptureAccess() ? "granted" : "not granted") (Answers > Read Screen)")
 
         guard shouldRequest else { exit(0) }
 
