@@ -24,6 +24,24 @@ enum DebugAnswersCheck {
         let arguments = CommandLine.arguments
         guard arguments.contains(flag) else { return false }
 
+        // `--calc` checks the calculator the model is given, on sums and on hostile input.
+        if arguments.contains("--calc") {
+            let cases = ["17 × 24", "(22 - 7) / 3", "15% * 240", "60 * 2.5", "3/4 + 2/3", "1234 + 5678",
+                         "sqrt(144)", "2^10", "-3 + -4", "1,000 * 3", "1/0", "2^5000", "((((1", "FUNCTION(1,'x')",
+                         "1e308*10", String(repeating: "(", count: 500) + "1", ""]
+            for expression in cases {
+                let shown = expression.count > 30 ? String(expression.prefix(30)) + "…" : expression
+                do { print("\(shown) = \(Calculator.format(try Calculator.evaluate(expression)))") }
+                catch { print("\(shown) → refused: \(error)") }
+            }
+            for question in ["Solve for x: 5x - 3 = 2x + 12", "Find x if 4x = 52", "3x + 7 = 22", "Solve: 2(x + 3) = 14",
+                             "x/4 = 3", "Solve for y: 7 - y = 10", "x^2 = 16", "2x + 3y = 6", "What is 5 = 5?",
+                             "Solve for x: 0.5x + 1.25 = 3"] {
+                print("\(question) → \(EquationSolver.solve(in: question)?.text ?? "left to the model")")
+            }
+            return true
+        }
+
         print("model: \(ScreenAnswersService.modelAvailability)")
 
         let image: CGImage
@@ -40,6 +58,7 @@ enum DebugAnswersCheck {
         }
 
         let service = ScreenAnswersService()
+        service.usesCalculator = !arguments.contains("--no-calc")
         var done = false
         let started = Date()
         Task {

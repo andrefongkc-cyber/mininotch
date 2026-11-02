@@ -54,6 +54,8 @@ final class ScreenAnswersService {
     private(set) var isWatching = false
 
     @ObservationIgnored private var task: Task<Void, Never>?
+    /// Off only in `--check-answers --no-calc`, to measure what the calculator is worth.
+    @ObservationIgnored var usesCalculator = true
     @ObservationIgnored private var watchTimer: Timer?
     @ObservationIgnored private var watchDisplay: CGDirectDisplayID = CGMainDisplayID()
     @ObservationIgnored private var letterFade: DispatchWorkItem?
@@ -85,6 +87,13 @@ final class ScreenAnswersService {
         The question has answer options. Answer from the text on the page when there is one. Start \
         with the letter and the text of the right option, then at most one line saying why. Write \
         plain text, no markdown.
+        """
+
+    /// Added for a question with numbers in it, which is also the only kind given the calculator:
+    /// given it on every question, the SAT reading question went from A to D (2026-11-02).
+    static let calculatorInstructions = """
+        For any arithmetic, call the calculate tool with the numbers and use its result; never \
+        work numbers out yourself.
         """
 
     static let summaryInstructions = """
@@ -206,7 +215,11 @@ final class ScreenAnswersService {
             } catch is CancellationError {
                 return
             } catch {
-                guard !Task.isCancelled, !quietly else { return }
+                guard !Task.isCancelled else { return }
+                // Forget the page, so a quiet read that failed (the model paused in Game Mode)
+                // is answered on the next tick rather than skipped as already seen.
+                self?.lastText = ""
+                guard !quietly else { return }
                 self?.phase = .failed(Self.message(for: error))
             }
         }
@@ -296,12 +309,22 @@ final class ScreenAnswersService {
             try Task.checkCancellation()
             let text = QuestionSplitter.withoutNumber(question.text)
             let hasOptions = QuestionSplitter.hasOptions(text)
-            let session = LanguageModelSession(instructions: hasOptions ? Self.choiceInstructions : Self.answerInstructions)
+            // The calculator does the arithmetic: the model on its own guessed at sums (2026-11-02).
+            let hasNumbers = usesCalculator && QuestionSplitter.hasArithmetic(text)
+            let instructions = (hasOptions ? Self.choiceInstructions : Self.answerInstructions)
+                + (hasNumbers ? "\n" + Self.calculatorInstructions : "")
+            let session = LanguageModelSession(tools: hasNumbers ? [CalculatorTool()] : [], instructions: instructions)
             // The passage above a question is what it asks about: without it a reading question
             // was answered from the options alone, and wrongly (2026-11-02).
             let prompt = question.passage.isEmpty ? text : "Text on the page:\n\(question.passage)\n\nQuestion:\n\(text)"
             // The answer comes first, the question it answers after it in one line.
             let asked = "\(questions.count > 1 ? "\(index + 1). " : "")" + (text.components(separatedBy: .newlines).first ?? text)
+            // An equation MiniNotch can solve exactly is never given to the model.
+            if !hasOptions, let solution = EquationSolver.solve(in: text) {
+                answered.append("→ " + solution.text + "\n" + asked)
+                answer = answered.joined(separator: "\n\n")
+                continue
+            }
             var reply = ""
             for try await snapshot in session.streamResponse(to: prompt, options: options) {
                 try Task.checkCancellation()
@@ -408,7 +431,24 @@ final class ScreenAnswersService {
         }
         #endif
         if error is ScreenCapture.Failure { return "Could not take a picture of the screen." }
+        // macOS pauses Apple's model for every app in Game Mode, and says so only deep in the
+        // error: "Not executed due to current system state [StandardGameMode]" (2026-11-02).
+        if Self.describesSystemPause(error as NSError) {
+            return "Apple's model is paused right now, which macOS does in Game Mode. Close the game, or try again in a moment."
+        }
         return error.localizedDescription
+    }
+}
+
+extension ScreenAnswersService {
+    /// Whether the model service refused because of the Mac's state rather than the request:
+    /// Game Mode, or a busy system. Walks the underlying errors, where the reason is kept.
+    nonisolated static func describesSystemPause(_ error: NSError) -> Bool {
+        if error.code == 1013, error.domain.contains("ModelManager") { return true }
+        if "\(error)".contains("GameMode") || "\(error)".contains("system state") { return true }
+        let underlying = (error.userInfo[NSMultipleUnderlyingErrorsKey] as? [NSError] ?? [])
+            + [error.userInfo[NSUnderlyingErrorKey] as? NSError].compactMap { $0 }
+        return underlying.contains { describesSystemPause($0) }
     }
 }
 
@@ -542,7 +582,13 @@ enum QuestionSplitter {
     }
 
     static func startsQuestion(_ line: String) -> Bool {
-        line.contains("?") || isNumbered(line)
+        line.contains("?") || isNumbered(line) || isInstruction(line)
+    }
+
+    /// "Solve for x: …", "Find the area…": a maths question asks without a question mark.
+    private static func isInstruction(_ line: String) -> Bool {
+        line.range(of: #"^(solve|find|calculate|compute|evaluate|simplify|factori[sz]e|expand|work out|determine|convert)\b"#,
+                   options: [.regularExpression, .caseInsensitive]) != nil
     }
 
     private static func isNumbered(_ line: String) -> Bool {
@@ -584,6 +630,19 @@ enum QuestionSplitter {
             }
         }
         return nil
+    }
+
+    /// Whether the question itself (not the page around it) has a sum in it: two numbers, or a
+    /// number and a word that asks for one. "Question 3" or "47,000 trees" alone is not maths.
+    static func hasArithmetic(_ question: String) -> Bool {
+        let body = withoutNumber(question)
+        let numbers = body.matches(of: #/\d+(?:[.,]\d+)*/#).count
+        let asks = body.range(of: #"(?i)(%|percent|how (many|much|far|long)|total|sum|product|average|[+×÷*/^=]|\d\s*[-x]\s*\d)"#,
+                               options: .regularExpression) != nil
+        // Algebra ("x^2", "2x", "3y + 1") is not arithmetic: given the calculator, the model
+        // rambled over a derivative and once dropped the letter.
+        let algebra = body.range(of: #"(?i)(\b[a-z]\s*\^|\d[a-z]\b|\b[a-z]\s*[-+*/]\s*\d)"#, options: .regularExpression) != nil
+        return !algebra && (numbers >= 2 || (numbers >= 1 && asks))
     }
 
     /// The question without the number it was read with, since the answers are numbered again.
