@@ -98,6 +98,11 @@ struct AdvancedSettings: Codable, Equatable {
     /// model. Off by default, because it needs Screen Recording and Apple Intelligence.
     var screenAnswersEnabled: Bool = false
 
+    /// The letter of each multiple-choice answer on the left of the closed notch, until the next
+    /// read. Its own switch, apart from Show Indicators When Closed, so the letter shows with the
+    /// pill's indicators off.
+    var answerLetterInNotch: Bool = false
+
     /// Show the CPU, GPU, memory, and network readout in the System tab.
     var showSystemStats: Bool = true
 
@@ -164,6 +169,7 @@ struct AdvancedSettings: Codable, Equatable {
         linkShelfLimit = c.value(.linkShelfLimit, 25, in: 5...100)
         notesEnabled = c.value(.notesEnabled, true)
         screenAnswersEnabled = c.value(.screenAnswersEnabled, false)
+        answerLetterInNotch = c.value(.answerLetterInNotch, false)
         showSystemStats = c.value(.showSystemStats, true)
         statsRefreshInterval = c.value(.statsRefreshInterval, 2, in: 0.5...5)
         showTemperatures = c.value(.showTemperatures, true)

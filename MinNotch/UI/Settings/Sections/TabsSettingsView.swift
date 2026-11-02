@@ -42,6 +42,17 @@ struct ScreenAnswersTabSettings: View {
                     ) {
                         SettingsToggle(isOn: $settings.advanced.screenAnswersEnabled)
                     }
+
+                    SettingsDivider()
+
+                    SettingsRow(
+                        title: "Show the Letter in the Notch",
+                        subtitle: "After a read, the letter of each multiple-choice answer shows on the left of the closed notch until the next one, even with Show Indicators When Closed off. Also in the Answers tab.",
+                        systemImage: "capsule.lefthalf.filled",
+                        isEnabled: settings.advanced.screenAnswersEnabled
+                    ) {
+                        SettingsToggle(isOn: $settings.advanced.answerLetterInNotch)
+                    }
                 }
 
         }

@@ -50,6 +50,7 @@ enum DebugAnswersCheck {
                 try await service.answerQuestions(in: text)
                 print(String(format: "answered in %.2f s (%@):\n---\n%@\n---",
                              Date().timeIntervalSince(thinking), String(describing: service.phase), service.answer))
+                print("letters for the notch: \(service.letters.isEmpty ? "none" : service.letters.joined(separator: " "))")
             } catch {
                 print("FAIL \(error)")
             }

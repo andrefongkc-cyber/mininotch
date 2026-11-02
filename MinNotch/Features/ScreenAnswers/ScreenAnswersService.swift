@@ -42,6 +42,8 @@ final class ScreenAnswersService {
     private(set) var answer = ""
     /// The app whose window was read, for the line above the answer.
     private(set) var sourceName: String?
+    /// The letter picked for each question with lettered options, in order, for the closed notch.
+    private(set) var letters: [String] = []
 
     @ObservationIgnored private var task: Task<Void, Never>?
 
@@ -98,6 +100,7 @@ final class ScreenAnswersService {
         task?.cancel()
         answer = ""
         sourceName = nil
+        letters = []
 
         if case .unavailable(let reason) = Self.modelAvailability {
             phase = .failed(reason)
@@ -205,6 +208,7 @@ final class ScreenAnswersService {
                 answer = (answered + ["→ " + reply + "\n" + asked]).joined(separator: "\n\n")
             }
             answered.append("→ " + reply + "\n" + asked)
+            if hasOptions, let letter = QuestionSplitter.letter(in: reply) { letters.append(letter) }
         }
     }
     #endif
@@ -213,6 +217,7 @@ final class ScreenAnswersService {
     /// A finished answer for the capture tools.
     func applySample() {
         sourceName = "Safari"
+        letters = ["C"]
         answer = """
             → Canberra
             1. What is the capital of Australia?
@@ -437,6 +442,12 @@ enum QuestionSplitter {
     static func hasOptions(_ question: String) -> Bool {
         question.range(of: #"(^|\s)[A-Ea-e][.)]\s+\S"#, options: .regularExpression) != nil
             || question.range(of: #"(?m)^\)\s+\S"#, options: .regularExpression) != nil
+    }
+
+    /// The option a reply picked, "A" from "A. It isn't growing…" or "C) Carbon dioxide".
+    static func letter(in reply: String) -> String? {
+        guard let match = reply.range(of: #"^\s*\(?([A-Ha-h])\s*[.):]"#, options: .regularExpression) else { return nil }
+        return reply[match].first(where: \.isLetter).map { String($0).uppercased() }
     }
 
     /// The question without the number it was read with, since the answers are numbered again.

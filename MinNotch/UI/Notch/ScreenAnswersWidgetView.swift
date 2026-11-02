@@ -35,6 +35,8 @@ struct ScreenAnswersWidgetView: View {
 
             Spacer(minLength: 0)
 
+            letterToggle
+
             if service.phase == .answered, !service.answer.isEmpty {
                 Button("Copy") { service.copyAnswer() }
                     .buttonStyle(.plain)
@@ -56,6 +58,29 @@ struct ScreenAnswersWidgetView: View {
                 .help("Read the window in front and answer its questions")
             }
         }
+    }
+
+    /// Shows the letter of each multiple-choice answer on the left of the closed notch. The same
+    /// switch as Settings > Shelf & Notes > Show the Letter in the Notch.
+    private var letterToggle: some View {
+        @Bindable var settings = settings
+        let isOn = settings.advanced.answerLetterInNotch
+        return Button {
+            settings.advanced.answerLetterInNotch.toggle()
+        } label: {
+            HStack(spacing: 4) {
+                TransportSymbol.image("capsule.lefthalf.filled", pointSize: 11)
+                Text("Letter in Notch")
+                    .font(.system(size: 11))
+            }
+            .foregroundStyle(isOn ? theme.accentColor(settings.appearance.resolvedAccent) : theme.ink.opacity(0.45))
+            .padding(.horizontal, 7)
+            .padding(.vertical, 4)
+            .background(NotchElementView(.button, shape: .capsule, emphasis: isOn ? 0.1 : 0.04))
+            .contentShape(Capsule())
+        }
+        .buttonStyle(.plain)
+        .help(isOn ? "Stop showing the answer's letter in the closed notch" : "Show the answer's letter on the left of the closed notch")
     }
 
     private var status: String {

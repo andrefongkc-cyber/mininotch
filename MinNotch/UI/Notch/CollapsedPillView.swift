@@ -24,6 +24,9 @@ struct CollapsedPillContent: Equatable {
     /// from here rather than from a fixed assignment in the view.
     var leadingLayout: [PillIndicator]
     var trailingLayout: [PillIndicator]
+    /// The letters Answers picked, drawn first on the left whatever `isExtended` says: it has its
+    /// own switch in the Answers tab, apart from the pill's indicators.
+    var answerLetters: String? = nil
 
     /// Distance from the pill's outer edge to its content.
     ///
@@ -46,6 +49,7 @@ struct CollapsedPillContent: Equatable {
     /// A function rather than a stored font: `NSFont` is not `Sendable`, so a static one is
     /// shared mutable state as far as Swift 6 is concerned.
     static var songFont: NSFont { .systemFont(ofSize: 11, weight: .semibold) }
+    static var answerFont: NSFont { .systemFont(ofSize: 13, weight: .bold) }
 
     /// The pill as it stands right now, from the live services.
     ///
@@ -71,8 +75,17 @@ struct CollapsedPillContent: Equatable {
             clockText: settings.general.pillClockText,
             isExtended: isExtended,
             leadingLayout: settings.general.pillLeading,
-            trailingLayout: settings.general.pillTrailing
+            trailingLayout: settings.general.pillTrailing,
+            answerLetters: answerLetters(environment: environment, settings: settings)
         )
+    }
+
+    /// "A", or "A C" for a page of several questions, while Show the Letter in the Notch is on.
+    @MainActor
+    private static func answerLetters(environment: AppEnvironment, settings: SettingsStore) -> String? {
+        guard settings.advanced.screenAnswersEnabled, settings.advanced.answerLetterInNotch else { return nil }
+        let letters = environment.screenAnswers.letters.prefix(4)
+        return letters.isEmpty ? nil : letters.joined(separator: " ")
     }
 
     // MARK: What is showing
@@ -116,7 +129,7 @@ struct CollapsedPillContent: Equatable {
         return detail
     }
 
-    var hasLeading: Bool { !items(on: .leading).isEmpty }
+    var hasLeading: Bool { answerLetters != nil || !items(on: .leading).isEmpty }
     var hasTrailing: Bool { !items(on: .trailing).isEmpty }
 
     // MARK: Sizing
@@ -155,11 +168,12 @@ struct CollapsedPillContent: Equatable {
     /// be baked in, and it stopped being true the moment either side could hold anything.
     private func contentWidth(on side: PillSide) -> CGFloat {
         let showing = items(on: side)
-        guard !showing.isEmpty else { return 0 }
+        let answer = side == .leading ? answerLetters.map { Self.measure($0, font: Self.answerFont) } : nil
+        let widths = (answer.map { [$0] } ?? []) + showing.map { width(of: $0) }
+        guard !widths.isEmpty else { return 0 }
 
-        let content = showing.reduce(CGFloat(0)) { $0 + width(of: $1) }
-        let gaps = Self.itemSpacing * CGFloat(showing.count - 1)
-        return content + gaps + Self.contentInset
+        let gaps = Self.itemSpacing * CGFloat(widths.count - 1)
+        return widths.reduce(0, +) + gaps + Self.contentInset
     }
 
     /// Width of each flank. Both sides get the same, even when only one has anything in it.
@@ -199,6 +213,7 @@ struct CollapsedPillContent: Equatable {
 /// is always extended, because it has nothing to hide behind.
 struct CollapsedPillView: View {
     @Environment(\.notchStyle) private var theme
+    @Environment(SettingsStore.self) private var settings
     let geometry: NotchGeometry
     let content: CollapsedPillContent
 
@@ -245,11 +260,17 @@ struct CollapsedPillView: View {
     @ViewBuilder
     private func flank(_ side: CollapsedPillContent.PillSide) -> some View {
         let showing = content.items(on: side)
+        let answer = side == .leading ? content.answerLetters : nil
 
-        if showing.isEmpty {
+        if showing.isEmpty, answer == nil {
             Color.clear.frame(width: 0, height: 0)
         } else {
             HStack(spacing: CollapsedPillContent.itemSpacing) {
+                if let answer {
+                    Text(answer)
+                        .font(Font(CollapsedPillContent.answerFont))
+                        .foregroundStyle(theme.accentColor(settings.appearance.resolvedAccent))
+                }
                 ForEach(showing) { indicator in
                     PillIndicatorView(indicator: indicator, content: content)
                 }
