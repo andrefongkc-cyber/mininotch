@@ -55,13 +55,15 @@ final class ScreenAnswersService {
     /// Two sets, because telling it about options made it invent a list of them, A to Z, for a
     /// question that had none.
     static let answerInstructions = """
-        Answer the question correctly and briefly, in one or two lines. For maths, give the \
-        result and the step that gets there. Write plain text, no markdown.
+        Answer the question correctly, using the text on the page when there is one. Reply with \
+        the answer alone, in a few words, such as "Canberra" or "x = 5". Write plain text, no \
+        markdown.
         """
 
     static let choiceInstructions = """
-        The question has answer options. Give the letter and the text of the right option, then \
-        at most one line saying why. Write plain text, no markdown.
+        The question has answer options. Answer from the text on the page when there is one. Start \
+        with the letter and the text of the right option, then at most one line saying why. Write \
+        plain text, no markdown.
         """
 
     static let summaryInstructions = """
@@ -115,6 +117,14 @@ final class ScreenAnswersService {
                 try Task.checkCancellation()
                 let text = try await Self.recognizeText(in: image)
                 try Task.checkCancellation()
+                // What was read from, never what was read: enough to tell a wrong window or an
+                // empty picture from a page with nothing on it.
+                let blank = ScreenCapture.isBlank(image)
+                AppLog.answers.info("Read \(target.appName ?? "?", privacy: .public), window \(target.windowID.map(String.init) ?? "none, whole display", privacy: .public): \(image.width)x\(image.height), blank \(blank), \(text.split(separator: "\n").count) lines")
+                if blank, text.isEmpty {
+                    self?.phase = .failed("The picture of the screen came back empty. Quit and reopen MiniNotch, which Screen Recording needs after it is switched on.")
+                    return
+                }
                 try await self?.answerQuestions(in: text)
             } catch is CancellationError {
                 return
@@ -165,7 +175,7 @@ final class ScreenAnswersService {
     @available(macOS 26, *)
     private func stream(_ text: String) async throws {
         let options = GenerationOptions(temperature: 0.2, maximumResponseTokens: 160)
-        let questions = QuestionSplitter.questions(in: String(text.prefix(Self.textLimit)))
+        let questions = QuestionSplitter.split(String(text.prefix(Self.textLimit)))
 
         guard !questions.isEmpty else {
             let summary = LanguageModelSession(instructions: Self.summaryInstructions)
@@ -180,17 +190,21 @@ final class ScreenAnswersService {
         var answered: [String] = []
         for (index, question) in questions.enumerated() {
             try Task.checkCancellation()
-            let question = QuestionSplitter.withoutNumber(question)
-            let heading = "\(index + 1). \(question)"
-            let hasOptions = QuestionSplitter.hasOptions(question)
+            let text = QuestionSplitter.withoutNumber(question.text)
+            let hasOptions = QuestionSplitter.hasOptions(text)
             let session = LanguageModelSession(instructions: hasOptions ? Self.choiceInstructions : Self.answerInstructions)
+            // The passage above a question is what it asks about: without it a reading question
+            // was answered from the options alone, and wrongly (2026-11-02).
+            let prompt = question.passage.isEmpty ? text : "Text on the page:\n\(question.passage)\n\nQuestion:\n\(text)"
+            // The answer comes first, the question it answers after it in one line.
+            let asked = "\(questions.count > 1 ? "\(index + 1). " : "")" + (text.components(separatedBy: .newlines).first ?? text)
             var reply = ""
-            for try await snapshot in session.streamResponse(to: question, options: options) {
+            for try await snapshot in session.streamResponse(to: prompt, options: options) {
                 try Task.checkCancellation()
                 reply = QuestionSplitter.tidy(snapshot.content)
-                answer = (answered + [heading + "\n→ " + reply]).joined(separator: "\n\n")
+                answer = (answered + ["→ " + reply + "\n" + asked]).joined(separator: "\n\n")
             }
-            answered.append(heading + "\n→ " + reply)
+            answered.append("→ " + reply + "\n" + asked)
         }
     }
     #endif
@@ -200,16 +214,14 @@ final class ScreenAnswersService {
     func applySample() {
         sourceName = "Safari"
         answer = """
+            → Canberra
             1. What is the capital of Australia?
-            → Canberra is the capital of Australia.
 
-            2. Solve for x: 3x + 7 = 22
             → x = 5
-            Subtract 7 from both sides, then divide by 3.
+            2. Solve for x: 3x + 7 = 22
 
-            3. Which gas do plants absorb from the air?
-            A) Oxygen B) Nitrogen C) Carbon dioxide D) Helium
             → C) Carbon dioxide
+            3. Which gas do plants absorb from the air?
             """
         phase = .answered
     }
@@ -217,22 +229,27 @@ final class ScreenAnswersService {
 
     // MARK: Permission
 
-    /// Asks for Screen Recording. macOS shows its dialog only the first time, so after that this
-    /// opens the place in System Settings where it is switched on. A grant takes effect when
-    /// MiniNotch is reopened, which macOS offers to do itself.
+    /// Asks for Screen Recording, then opens the place in System Settings where it is switched on.
+    /// A grant takes effect when MiniNotch is reopened, which macOS offers to do itself.
+    ///
+    /// `CGRequestScreenCaptureAccess` alone only checked, on macOS 26: after a `tccutil reset` the
+    /// log showed nothing but preflights, and no MiniNotch row appeared in the list (2026-11-02).
+    /// Asking ScreenCaptureKit what is on screen is a real request, which shows macOS's dialog
+    /// the first time and puts MiniNotch in the list either way.
     func requestPermission() {
-        let key = "screenAnswers.askedForRecording"
-        let askedBefore = UserDefaults.standard.bool(forKey: key)
-        UserDefaults.standard.set(true, forKey: key)
-
         ForegroundPrompt.begin(timeout: 20)
         if CGRequestScreenCaptureAccess() {
             ForegroundPrompt.end()
             phase = .idle
             return
         }
-        if askedBefore {
+        Task { @MainActor [weak self] in
+            let granted = (try? await SCShareableContent.excludingDesktopWindows(true, onScreenWindowsOnly: true)) != nil
             ForegroundPrompt.end()
+            if granted, CGPreflightScreenCaptureAccess() {
+                self?.phase = .idle
+                return
+            }
             if let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_ScreenCapture") {
                 NSWorkspace.shared.open(url)
             }
@@ -296,17 +313,40 @@ enum ScreenCapture {
               app.processIdentifier != getpid() else { return Target() }
         let display = CGDisplayBounds(displayID)
         let list = CGWindowListCopyWindowInfo([.optionOnScreenOnly, .excludeDesktopElements], kCGNullWindowID) as? [[String: Any]] ?? []
-        for info in list {
+        let windows: [(id: CGWindowID, area: CGFloat)] = list.compactMap { info in
             guard (info[kCGWindowOwnerPID as String] as? pid_t) == app.processIdentifier,
                   (info[kCGWindowLayer as String] as? Int) == 0,
                   let id = info[kCGWindowNumber as String] as? CGWindowID,
                   let boundsInfo = info[kCGWindowBounds as String] as? NSDictionary,
                   let bounds = CGRect(dictionaryRepresentation: boundsInfo),
                   bounds.width > 120, bounds.height > 120,
-                  bounds.intersects(display) else { continue }
-            return Target(windowID: id, appName: app.localizedName)
+                  bounds.intersects(display) else { return nil }
+            return (id, bounds.width * bounds.height)
+        }
+        // The front window that is a real window, not a strip in front of one: Chrome in full
+        // screen puts its toolbar in a window of its own, 158 points tall, in front of the page,
+        // and that was all Read Screen ever read (2026-11-02). A quarter of the app's largest
+        // window still lets a dialog in front be read.
+        let largest = windows.map(\.area).max() ?? 0
+        if let window = windows.first(where: { $0.area >= largest / 4 }) {
+            return Target(windowID: window.id, appName: app.localizedName)
         }
         return Target(appName: app.localizedName)
+    }
+
+    /// Whether `image` is one flat colour, which is what a capture without the permission in
+    /// force returns. Judged on a 16 × 16 copy.
+    nonisolated static func isBlank(_ image: CGImage) -> Bool {
+        let side = 16
+        var pixels = [UInt8](repeating: 0, count: side * side * 4)
+        guard let context = CGContext(data: &pixels, width: side, height: side, bitsPerComponent: 8,
+                                      bytesPerRow: side * 4, space: CGColorSpaceCreateDeviceRGB(),
+                                      bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue) else { return false }
+        context.draw(image, in: CGRect(x: 0, y: 0, width: side, height: side))
+        let first = Array(pixels[0..<3])
+        return stride(from: 0, to: pixels.count, by: 4).allSatisfy { index in
+            zip(pixels[index..<index + 3], first).allSatisfy { abs(Int($0) - Int($1)) < 6 }
+        }
     }
 
     static func image(displayID: CGDirectDisplayID, windowID: CGWindowID?) async throws -> CGImage {
@@ -341,26 +381,47 @@ enum ScreenCapture {
 /// options when asked to list the questions.
 enum QuestionSplitter {
     static let limit = 12
-    private static let maxLinesPerQuestion = 8
+    private static let maxLinesPerQuestion = 14
+    /// How much of the text before a question goes with it, in characters: enough for a reading
+    /// passage, little enough that the model's 4,096-token context has room left to answer.
+    static let passageLimit = 1_600
+
+    /// A question as read, and the text above it since the last question: the passage it asks
+    /// about, or only interface.
+    struct Question {
+        var text: String
+        var passage: String
+    }
 
     static func questions(in text: String) -> [String] {
-        var blocks: [[String]] = []
+        split(text).map(\.text)
+    }
+
+    static func split(_ text: String) -> [Question] {
+        var blocks: [(lines: [String], passage: [String])] = []
+        var pending: [String] = []
         for raw in text.components(separatedBy: .newlines) {
             let line = raw.trimmingCharacters(in: .whitespaces)
             guard !line.isEmpty else { continue }
             if startsQuestion(line) {
                 // A numbered line under a question that has not asked yet, like "Solve:" then
                 // "3x + 7 = 22", is its continuation, not a new question.
-                if let last = blocks.last, !last.joined().contains("?"), last.count == 1, !isNumbered(line), !line.contains("?") {
-                    blocks[blocks.count - 1].append(line)
+                if let last = blocks.last, pending.isEmpty, !last.lines.joined().contains("?"), last.lines.count == 1, !isNumbered(line), !line.contains("?") {
+                    blocks[blocks.count - 1].lines.append(line)
                 } else {
-                    blocks.append([line])
+                    blocks.append(([line], pending))
+                    pending = []
                 }
-            } else if !blocks.isEmpty, blocks[blocks.count - 1].count < maxLinesPerQuestion {
-                blocks[blocks.count - 1].append(line)
+            } else if !blocks.isEmpty, blocks[blocks.count - 1].lines.count < maxLinesPerQuestion, pending.isEmpty {
+                blocks[blocks.count - 1].lines.append(line)
+            } else {
+                pending.append(line)
             }
         }
-        return blocks.prefix(limit).map { $0.joined(separator: "\n") }
+        return blocks.prefix(limit).map { block in
+            Question(text: block.lines.joined(separator: "\n"),
+                     passage: String(block.passage.joined(separator: "\n").suffix(passageLimit)))
+        }
     }
 
     static func startsQuestion(_ line: String) -> Bool {
@@ -388,6 +449,7 @@ enum QuestionSplitter {
     static func tidy(_ reply: String) -> String {
         reply.replacingOccurrences(of: "**", with: "")
             .components(separatedBy: .newlines)
+            .map { $0.replacingOccurrences(of: #"^\s*(answer|step|working)\s*:\s*(?=\S)"#, with: "", options: [.regularExpression, .caseInsensitive]) }
             .filter { $0.range(of: #"^\s*((answer|option)\s*[A-Z]?\s*[:.)]?\s*([A-Z]\)?\.?)?|[.,;:]+)\s*$|^\s*option\s+[A-Z]\s*:"#, options: [.regularExpression, .caseInsensitive]) == nil }
             .joined(separator: "\n")
             .replacingOccurrences(of: #"\n{3,}"#, with: "\n\n", options: .regularExpression)

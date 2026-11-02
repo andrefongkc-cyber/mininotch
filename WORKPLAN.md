@@ -65,7 +65,7 @@ then the user picks before the other three are built.
   (FoundationModels, macOS 26 with Apple Intelligence). Nothing leaves the Mac. Off by default.
 - [x] A shortcut that opens the tab and reads the screen at once.
 - [x] `--check-answers` runs the reading and answering on a rendered page, without the screen.
-- [ ] The user tries Read Screen for real: Screen Recording granted, the right window read.
+- [x] The user tries Read Screen for real (2026-11-02): Allow… now really asks, Chrome's full-screen toolbar strip is passed over, and a reading question gets its passage (an SAT question went from B and D to A).
 
 ## Notch Visual Style System (asked 2026-10-05)
 
