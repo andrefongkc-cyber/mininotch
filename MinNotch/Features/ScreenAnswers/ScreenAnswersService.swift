@@ -42,10 +42,26 @@ final class ScreenAnswersService {
     private(set) var answer = ""
     /// The app whose window was read, for the line above the answer.
     private(set) var sourceName: String?
-    /// The letter picked for each question with lettered options, in order, for the closed notch.
+    /// The letter picked for each question with lettered options, in order.
     private(set) var letters: [String] = []
+    /// The letters the closed notch is showing: set when an answer's letters change, cleared
+    /// `letterShowTime` later, so the notch says it once and fades rather than holding it up.
+    private(set) var notchLetters: [String] = []
+    /// Keep Reading: the screen is read again every `watchInterval`, and answered again only when
+    /// its text changed. For as long as MiniNotch runs, never saved, so it is never on at launch.
+    private(set) var isWatching = false
 
     @ObservationIgnored private var task: Task<Void, Never>?
+    @ObservationIgnored private var watchTimer: Timer?
+    @ObservationIgnored private var watchDisplay: CGDirectDisplayID = CGMainDisplayID()
+    @ObservationIgnored private var letterFade: DispatchWorkItem?
+    /// The text of the last read, so a read that finds the same page costs no model time.
+    @ObservationIgnored private var lastText = ""
+    /// What the notch last showed, so the same answer read again stays faded.
+    @ObservationIgnored private var lastShownLetters: [String] = []
+
+    static let watchInterval: TimeInterval = 5
+    static let letterShowTime: TimeInterval = 5
 
     /// The longest text handed to the model. Its context is about 4,000 tokens for the
     /// instructions, the page and the answer together, and a token is three or four characters.
@@ -97,45 +113,98 @@ final class ScreenAnswersService {
 
     /// Reads the front window on `displayID` and answers what is in it.
     func ask(on displayID: CGDirectDisplayID) {
-        task?.cancel()
-        answer = ""
-        sourceName = nil
-        letters = []
+        lastShownLetters = []
+        read(on: displayID, quietly: false)
+    }
 
+    /// Starts or stops Keep Reading, from the display the tab was opened on.
+    func setWatching(_ on: Bool, display displayID: CGDirectDisplayID) {
+        watchTimer?.invalidate()
+        watchTimer = nil
+        isWatching = on
+        guard on else { return }
+        watchDisplay = displayID
+        lastShownLetters = []
+        read(on: displayID, quietly: false)
+        let timer = Timer.onMain(every: Self.watchInterval) { [weak self] in
+            guard let self, !self.phase.isBusy else { return }
+            self.read(on: self.watchDisplay, quietly: true)
+        }
+        timer.tolerance = 0.5
+        watchTimer = timer
+    }
+
+    /// One read. `quietly` is a Keep Reading tick: it leaves the answer on screen while it looks,
+    /// and changes nothing when the page's text is what it was, or when there is nothing to read.
+    private func read(on displayID: CGDirectDisplayID, quietly: Bool) {
         if case .unavailable(let reason) = Self.modelAvailability {
+            task?.cancel()
             phase = .failed(reason)
+            setWatching(false, display: displayID)
             return
         }
         guard CGPreflightScreenCaptureAccess() else {
+            task?.cancel()
             phase = .needsPermission
+            setWatching(false, display: displayID)
             return
         }
 
-        phase = .reading
         let target = ScreenCapture.frontWindow(on: displayID)
-        sourceName = target.appName
+        if !quietly {
+            task?.cancel()
+            answer = ""
+            letters = []
+            sourceName = target.appName
+            phase = .reading
+        }
         task = Task { [weak self] in
             do {
                 let image = try await ScreenCapture.image(displayID: displayID, windowID: target.windowID)
                 try Task.checkCancellation()
                 let text = try await Self.recognizeText(in: image)
                 try Task.checkCancellation()
+                guard let self else { return }
                 // What was read from, never what was read: enough to tell a wrong window or an
                 // empty picture from a page with nothing on it.
                 let blank = ScreenCapture.isBlank(image)
-                AppLog.answers.info("Read \(target.appName ?? "?", privacy: .public), window \(target.windowID.map(String.init) ?? "none, whole display", privacy: .public): \(image.width)x\(image.height), blank \(blank), \(text.split(separator: "\n").count) lines")
-                if blank, text.isEmpty {
-                    self?.phase = .failed("The picture of the screen came back empty. Quit and reopen MiniNotch, which Screen Recording needs after it is switched on.")
+                let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
+                if quietly {
+                    guard !trimmed.isEmpty, trimmed != self.lastText else { return }
+                }
+                AppLog.answers.info("Read \(target.appName ?? "?", privacy: .public), window \(target.windowID.map(String.init) ?? "none, whole display", privacy: .public): \(image.width)x\(image.height), blank \(blank), \(text.split(separator: "\n").count) lines\(quietly ? ", kept reading" : "", privacy: .public)")
+                if blank, trimmed.isEmpty {
+                    self.phase = .failed("The picture of the screen came back empty. Quit and reopen MiniNotch, which Screen Recording needs after it is switched on.")
                     return
                 }
-                try await self?.answerQuestions(in: text)
+                self.lastText = trimmed
+                if quietly {
+                    self.answer = ""
+                    self.letters = []
+                    self.sourceName = target.appName
+                }
+                try await self.answerQuestions(in: text)
             } catch is CancellationError {
                 return
             } catch {
-                guard !Task.isCancelled else { return }
+                guard !Task.isCancelled, !quietly else { return }
                 self?.phase = .failed(Self.message(for: error))
             }
         }
+    }
+
+    /// Puts new letters on the closed notch and fades them after `letterShowTime`. The same
+    /// letters read again stay faded: the page has not moved on.
+    private func showLetters() {
+        guard !letters.isEmpty, letters != lastShownLetters else { return }
+        lastShownLetters = letters
+        notchLetters = letters
+        letterFade?.cancel()
+        let fade = DispatchWorkItem { [weak self] in
+            MainActor.assumeIsolated { self?.notchLetters = [] }
+        }
+        letterFade = fade
+        DispatchQueue.main.asyncAfter(deadline: .now() + Self.letterShowTime, execute: fade)
     }
 
     /// Answers the questions in `text`, without the screen. Shared with `--check-answers`.
@@ -157,6 +226,7 @@ final class ScreenAnswersService {
         #endif
         try Task.checkCancellation()
         phase = .answered
+        showLetters()
     }
 
     func cancel() {
@@ -218,6 +288,7 @@ final class ScreenAnswersService {
     func applySample() {
         sourceName = "Safari"
         letters = ["C"]
+        showLetters()
         answer = """
             → Canberra
             1. What is the capital of Australia?

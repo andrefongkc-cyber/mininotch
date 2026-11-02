@@ -35,7 +35,11 @@ struct ScreenAnswersWidgetView: View {
 
             Spacer(minLength: 0)
 
-            letterToggle
+            // The switches give up their words before anything else gives up room.
+            ViewThatFits(in: .horizontal) {
+                HStack(spacing: 10) { watchToggle(compact: false); letterToggle(compact: false) }
+                HStack(spacing: 6) { watchToggle(compact: true); letterToggle(compact: true) }
+            }
 
             if service.phase == .answered, !service.answer.isEmpty {
                 Button("Copy") { service.copyAnswer() }
@@ -55,6 +59,7 @@ struct ScreenAnswersWidgetView: View {
                     Label("Read Screen", systemImage: "text.viewfinder")
                 }
                 .buttonStyle(NotchAccentButtonStyle(accent: theme.accentColor(settings.appearance.resolvedAccent)))
+                .fixedSize()
                 .help("Read the window in front and answer its questions")
             }
         }
@@ -62,16 +67,33 @@ struct ScreenAnswersWidgetView: View {
 
     /// Shows the letter of each multiple-choice answer on the left of the closed notch. The same
     /// switch as Settings > Shelf & Notes > Show the Letter in the Notch.
-    private var letterToggle: some View {
+    private func letterToggle(compact: Bool) -> some View {
         @Bindable var settings = settings
         let isOn = settings.advanced.answerLetterInNotch
-        return Button {
+        return chip("Letter in Notch", symbol: "capsule.lefthalf.filled", isOn: isOn, compact: compact,
+                    help: isOn ? "Stop showing the answer's letter in the closed notch" : "Show the answer's letter on the left of the closed notch for 5 seconds") {
             settings.advanced.answerLetterInNotch.toggle()
-        } label: {
+        }
+    }
+
+    /// Keep Reading: the screen is read again every 5 seconds and answered again when it changes.
+    private func watchToggle(compact: Bool) -> some View {
+        let isOn = service.isWatching
+        return chip("Keep Reading", symbol: "arrow.triangle.2.circlepath", isOn: isOn, compact: compact,
+                    help: isOn ? "Stop reading the screen every 5 seconds" : "Read the screen again every 5 seconds, and answer again when it changes") {
+            service.setWatching(!isOn, display: viewModel.geometry.displayID)
+        }
+    }
+
+    private func chip(_ title: String, symbol: String, isOn: Bool, compact: Bool, help: String, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
             HStack(spacing: 4) {
-                TransportSymbol.image("capsule.lefthalf.filled", pointSize: 11)
-                Text("Letter in Notch")
-                    .font(.system(size: 11))
+                TransportSymbol.image(symbol, pointSize: 11)
+                if !compact {
+                    Text(title)
+                        .font(.system(size: 11))
+                        .lineLimit(1)
+                }
             }
             .foregroundStyle(isOn ? theme.accentColor(settings.appearance.resolvedAccent) : theme.ink.opacity(0.45))
             .padding(.horizontal, 7)
@@ -80,7 +102,8 @@ struct ScreenAnswersWidgetView: View {
             .contentShape(Capsule())
         }
         .buttonStyle(.plain)
-        .help(isOn ? "Stop showing the answer's letter in the closed notch" : "Show the answer's letter on the left of the closed notch")
+        .fixedSize()
+        .help(help)
     }
 
     private var status: String {
@@ -93,7 +116,8 @@ struct ScreenAnswersWidgetView: View {
         case .thinking:
             return "Answering…"
         case .answered:
-            return app.map { "From \($0)" } ?? "From the screen"
+            let source = app.map { "From \($0)" } ?? "From the screen"
+            return service.isWatching ? source + ", reading every 5 s" : source
         }
     }
 

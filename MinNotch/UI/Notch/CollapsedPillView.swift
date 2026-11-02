@@ -84,7 +84,7 @@ struct CollapsedPillContent: Equatable {
     @MainActor
     private static func answerLetters(environment: AppEnvironment, settings: SettingsStore) -> String? {
         guard settings.advanced.screenAnswersEnabled, settings.advanced.answerLetterInNotch else { return nil }
-        let letters = environment.screenAnswers.letters.prefix(4)
+        let letters = environment.screenAnswers.notchLetters.prefix(4)
         return letters.isEmpty ? nil : letters.joined(separator: " ")
     }
 
@@ -243,6 +243,7 @@ struct CollapsedPillView: View {
         )
         .animation(Motion.content, value: content.hasLeading)
         .animation(Motion.content, value: content.hasTrailing)
+        .animation(Motion.content, value: content.answerLetters)
     }
 
     // MARK: Sides
@@ -270,6 +271,7 @@ struct CollapsedPillView: View {
                     Text(answer)
                         .font(Font(CollapsedPillContent.answerFont))
                         .foregroundStyle(theme.accentColor(settings.appearance.resolvedAccent))
+                        .transition(.opacity)
                 }
                 ForEach(showing) { indicator in
                     PillIndicatorView(indicator: indicator, content: content)

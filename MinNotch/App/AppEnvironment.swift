@@ -217,6 +217,10 @@ final class AppEnvironment {
     private func settingsChanged() {
         syncFocusGuard()
         syncStopwatchActivity()
+        // Keep Reading never outlives the Answers tab it belongs to.
+        if !settings.advanced.screenAnswersEnabled, screenAnswers.isWatching {
+            screenAnswers.setWatching(false, display: CGMainDisplayID())
+        }
         LaunchAtLogin.reconcile(settings)
         HotkeyManager.shared.apply(settings.shortcuts)
         menuBar.update()
