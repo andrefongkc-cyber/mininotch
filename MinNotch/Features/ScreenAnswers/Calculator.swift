@@ -196,6 +196,17 @@ enum EquationSolver {
 }
 
 #if canImport(FoundationModels)
+/// A multiple-choice reply: the reasoning first, so the letter is chosen after it, and a letter
+/// that can only be one of the options' letters.
+@available(macOS 26, *)
+@Generable
+struct ChoiceReply {
+    @Guide(description: "One or two sentences checking the options against the text, or naming the grammar rule that decides it")
+    var reasoning: String
+    @Guide(description: "The letter of the one right option", .anyOf(["A", "B", "C", "D", "E"]))
+    var letter: String
+}
+
 /// The calculator as Apple's model sees it.
 @available(macOS 26, *)
 struct CalculatorTool: Tool {

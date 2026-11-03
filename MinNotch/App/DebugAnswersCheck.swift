@@ -42,6 +42,12 @@ enum DebugAnswersCheck {
             return true
         }
 
+        // `--eval file.json [--runs 3]`: questions with known letters, each answered `runs` times.
+        if let index = arguments.firstIndex(of: "--eval"), index + 1 < arguments.count {
+            runEval(path: arguments[index + 1], runs: arguments.firstIndex(of: "--runs").flatMap { Int(arguments[$0 + 1]) } ?? 3)
+            return true
+        }
+
         print("model: \(ScreenAnswersService.modelAvailability)")
 
         let image: CGImage
@@ -80,6 +86,48 @@ enum DebugAnswersCheck {
         }
         if !done { print("FAIL no answer within two minutes") }
         return true
+    }
+
+    private struct EvalItem: Decodable { var page: String; var answer: String }
+
+    /// Prints one line per question, its letters over the runs, and the share right overall.
+    private static func runEval(path: String, runs: Int) {
+        let arguments = CommandLine.arguments
+        guard let data = FileManager.default.contents(atPath: path),
+              let items = try? JSONDecoder().decode([EvalItem].self, from: data) else {
+            print("FAIL could not read \(path)")
+            return
+        }
+        var done = false
+        Task {
+            var right = 0, total = 0
+            for (number, item) in items.enumerated() {
+                var got: [String] = []
+                var wrongReply: String?
+                for _ in 0..<runs {
+                    let service = ScreenAnswersService()
+                    service.usesReasonedChoice = arguments.contains("--reasoned")
+                    service.fillsBlanks = arguments.contains("--fill")
+                    do { try await service.answerQuestions(in: item.page) } catch { wrongReply = "error: \(error)" }
+                    let letter = service.letters.first ?? "?"
+                    got.append(letter)
+                    if letter != item.answer, wrongReply == nil { wrongReply = service.answer }
+                }
+                let hits = got.filter { $0 == item.answer }.count
+                right += hits
+                total += runs
+                print(String(format: "%2d  want %@  got %@  %d/%d", number + 1, item.answer, got.joined(separator: " "), hits, runs))
+                if arguments.contains("--show-wrong"), let wrongReply {
+                    print("      " + wrongReply.replacingOccurrences(of: "\n", with: "\n      ").prefix(400))
+                }
+            }
+            print(String(format: "right: %d of %d (%.0f%%)", right, total, 100 * Double(right) / Double(max(total, 1))))
+            done = true
+        }
+        let started = Date()
+        while !done, Date().timeIntervalSince(started) < 900 {
+            RunLoop.main.run(until: Date().addingTimeInterval(0.1))
+        }
     }
 
     /// The page as a screen would show it: dark text on white, at 2x.

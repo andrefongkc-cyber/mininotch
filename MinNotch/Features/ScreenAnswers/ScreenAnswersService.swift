@@ -316,7 +316,10 @@ final class ScreenAnswersService {
             let session = LanguageModelSession(tools: hasNumbers ? [CalculatorTool()] : [], instructions: instructions)
             // The passage above a question is what it asks about: without it a reading question
             // was answered from the options alone, and wrongly (2026-11-02).
-            let prompt = question.passage.isEmpty ? text : "Text on the page:\n\(question.passage)\n\nQuestion:\n\(text)"
+            var prompt = question.passage.isEmpty ? text : "Text on the page:\n\(question.passage)\n\nQuestion:\n\(text)"
+            if hasOptions, fillsBlanks, let filled = QuestionSplitter.filledIn(passage: question.passage, question: text) {
+                prompt = filled
+            }
             // The answer comes first, the question it answers after it in one line.
             let asked = "\(questions.count > 1 ? "\(index + 1). " : "")" + (text.components(separatedBy: .newlines).first ?? text)
             // An equation MiniNotch can solve exactly is never given to the model.
@@ -325,11 +328,29 @@ final class ScreenAnswersService {
                 answer = answered.joined(separator: "\n\n")
                 continue
             }
+            // A multiple-choice question reasons in a sentence, then picks a letter it cannot
+            // word any other way.
+            if hasOptions, usesReasonedChoice, let choice = try await reasonedChoice(prompt: prompt, question: text, tools: hasNumbers) {
+                answered.append("→ " + choice.shown + "\n" + asked)
+                answer = answered.joined(separator: "\n\n")
+                letters.append(choice.letter)
+                AppLog.answers.info("Question \(index + 1) has options: letter \(choice.letter, privacy: .public), reasoned")
+                continue
+            }
             var reply = ""
-            for try await snapshot in session.streamResponse(to: prompt, options: options) {
-                try Task.checkCancellation()
-                reply = QuestionSplitter.tidy(snapshot.content)
-                answer = (answered + ["→ " + reply + "\n" + asked]).joined(separator: "\n\n")
+            do {
+                reply = try await streamReply(session: session, prompt: prompt, options: options) { reply in
+                    self.answer = (answered + ["→ " + reply + "\n" + asked]).joined(separator: "\n\n")
+                }
+            } catch let error as LanguageModelSession.GenerationError {
+                // Apple's safety check flagged an innocent page (a farmhouse in a 1913 novel,
+                // 2026-11-02). Answering about text the user already has is what the relaxed
+                // check is for; it applies to plain text replies.
+                guard case .guardrailViolation = error else { throw error }
+                let relaxed = LanguageModelSession(model: Self.relaxedModel, tools: hasNumbers ? [CalculatorTool()] : [], instructions: instructions)
+                reply = try await streamReply(session: relaxed, prompt: prompt, options: options) { reply in
+                    self.answer = (answered + ["→ " + reply + "\n" + asked]).joined(separator: "\n\n")
+                }
             }
             answered.append("→ " + reply + "\n" + asked)
             if hasOptions {
@@ -339,7 +360,63 @@ final class ScreenAnswersService {
             }
         }
     }
+
+    @available(macOS 26, *)
+    private static let relaxedModel = SystemLanguageModel(guardrails: .permissiveContentTransformations)
+
+    @available(macOS 26, *)
+    private func streamReply(session: LanguageModelSession, prompt: String, options: GenerationOptions,
+                             onUpdate: (String) -> Void) async throws -> String {
+        var reply = ""
+        for try await snapshot in session.streamResponse(to: prompt, options: options) {
+            try Task.checkCancellation()
+            reply = QuestionSplitter.tidy(snapshot.content)
+            onUpdate(reply)
+        }
+        return reply
+    }
+
+    /// The letter, and the option as it is shown: "A. It isn't growing at the same rate…".
+    struct Choice {
+        var letter: String
+        var shown: String
+    }
+
+    /// A multiple-choice question answered as a sentence of reasoning and then a letter from a
+    /// fixed set. Nil when the model will not answer it this way (its safety check, mostly), so
+    /// the plain reply is tried instead.
+    @available(macOS 26, *)
+    private func reasonedChoice(prompt: String, question: String, tools: Bool) async throws -> Choice? {
+        let session = LanguageModelSession(tools: tools ? [CalculatorTool()] : [], instructions: Self.reasonedChoiceInstructions
+            + (tools ? "\n" + Self.calculatorInstructions : ""))
+        do {
+            let response = try await session.respond(to: prompt, generating: ChoiceReply.self,
+                                                     options: GenerationOptions(temperature: 0.2, maximumResponseTokens: 300))
+            try Task.checkCancellation()
+            let letter = response.content.letter.uppercased()
+            return Choice(letter: letter, shown: QuestionSplitter.option(letter, in: question) ?? letter)
+        } catch let error as LanguageModelSession.GenerationError {
+            if case .guardrailViolation = error { return nil }
+            if case .refusal = error { return nil }
+            throw error
+        }
+    }
+
+    static let reasonedChoiceInstructions = """
+        Answer a multiple-choice question about the text on the page. First check the options in \
+        a sentence or two: for a reading question, what the text actually says; for a grammar \
+        question, the rule that decides it, such as which noun the verb agrees with. Then give the \
+        letter of the one right option.
+        """
     #endif
+
+    /// Reasoning before the letter, measured on 2026-11-02 against twelve SAT-style questions:
+    /// 75% with it, 89% without, because the model talked itself out of right transitions. Off;
+    /// `--check-answers --reasoned` measures it again.
+    @ObservationIgnored var usesReasonedChoice = false
+    /// A blank's options shown as finished sentences (`QuestionSplitter.filledIn`): 83% against
+    /// 89% without on the same twelve, fixing a comma and losing a transition. Off; `--fill`.
+    @ObservationIgnored var fillsBlanks = false
 
     #if DEBUG
     /// A finished answer for the capture tools.
@@ -566,7 +643,15 @@ enum QuestionSplitter {
                 if let last = blocks.last, pending.isEmpty, !last.lines.joined().contains("?"), last.lines.count == 1, !isNumbered(line), !line.contains("?") {
                     blocks[blocks.count - 1].lines.append(line)
                 } else {
-                    blocks.append(([line], pending))
+                    // A question that wrapped on screen: "…conforms to the conventions of" then
+                    // "Standard English?". Its first half is not the end of a sentence, so it
+                    // belongs to the question, not to the passage above (2026-11-02).
+                    var start = [line]
+                    while line.contains("?"), let last = pending.last,
+                          last.range(of: #"[.!?:;"”)\]]$"#, options: .regularExpression) == nil, !isOptionLine(last) {
+                        start.insert(pending.removeLast(), at: 0)
+                    }
+                    blocks.append((start.count > 1 ? [start.joined(separator: " ")] : start, pending))
                     pending = []
                 }
             } else if !blocks.isEmpty, blocks[blocks.count - 1].lines.count < maxLinesPerQuestion, pending.isEmpty {
@@ -579,6 +664,10 @@ enum QuestionSplitter {
             Question(text: block.lines.joined(separator: "\n"),
                      passage: String(block.passage.joined(separator: "\n").suffix(passageLimit)))
         }
+    }
+
+    private static func isOptionLine(_ line: String) -> Bool {
+        line.range(of: #"^\(?[A-Ea-e]\s*[.)]\s+\S"#, options: .regularExpression) != nil
     }
 
     static func startsQuestion(_ line: String) -> Bool {
@@ -627,6 +716,46 @@ enum QuestionSplitter {
             let text = line[match.upperBound...].trimmingCharacters(in: .whitespaces).lowercased()
             if text.count >= 4, lowered.contains(text), let letter = line[match].first(where: \.isLetter) {
                 return String(letter).uppercased()
+            }
+        }
+        return nil
+    }
+
+    /// A fill-in-the-blank question as each option makes it: "A. … were surprised when …",
+    /// "B. … was surprised when …". Nil without a blank ("______") in the passage or options.
+    static func filledIn(passage: String, question: String) -> String? {
+        guard let blank = passage.range(of: #"_{3,}"#, options: .regularExpression) else { return nil }
+        // The sentence with the blank, from the sentence end before it to the one after.
+        let before = passage[..<blank.lowerBound]
+        let after = passage[blank.upperBound...]
+        let start = before.range(of: #"[.!?]\s"#, options: [.regularExpression, .backwards])?.upperBound ?? before.startIndex
+        let end = after.range(of: #"[.!?](\s|$)"#, options: .regularExpression)?.upperBound ?? after.endIndex
+        let head = String(passage[start..<blank.lowerBound])
+        let tail = String(passage[blank.upperBound..<end])
+        let options = question.components(separatedBy: .newlines).compactMap { line -> (String, String)? in
+            let trimmed = line.trimmingCharacters(in: .whitespaces)
+            guard let match = trimmed.range(of: #"^\(?[A-Ea-e]\s*[.)]\s*"#, options: .regularExpression),
+                  let letter = trimmed[match].first(where: \.isLetter) else { return nil }
+            return (String(letter).uppercased(), String(trimmed[match.upperBound...]))
+        }
+        guard options.count >= 2 else { return nil }
+        let asked = question.components(separatedBy: .newlines).first ?? question
+        let context = String(passage[..<start]).trimmingCharacters(in: .whitespacesAndNewlines)
+        let versions = options.map { letter, text in
+            "\(letter). " + (head + text + (text.hasSuffix(" ") || tail.hasPrefix(" ") || tail.hasPrefix(",") || tail.hasPrefix(".") ? "" : " ") + tail)
+                .replacingOccurrences(of: "  ", with: " ").trimmingCharacters(in: .whitespaces)
+        }
+        return (context.isEmpty ? "" : "Text on the page:\n\(context)\n\n")
+            + "\(asked)\nThe sentence with each option in the blank:\n" + versions.joined(separator: "\n")
+            + "\nWhich version is right? Answer with its letter and the option."
+    }
+
+    /// The option line for `letter`, "B. It isn't producing young trees anymore.", as read.
+    static func option(_ letter: String, in question: String) -> String? {
+        for line in question.components(separatedBy: .newlines) {
+            let trimmed = line.trimmingCharacters(in: .whitespaces)
+            if trimmed.range(of: "^\\(?\(letter)\\s*[.)]\\s+", options: [.regularExpression, .caseInsensitive]) != nil {
+                return trimmed
             }
         }
         return nil
