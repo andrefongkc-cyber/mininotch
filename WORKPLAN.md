@@ -1,6 +1,6 @@
 # MiniNotch workplan
 
-Status: Answers' Scroll & Read gathers a quiz page by page and answers as it goes, waiting for the user to try it on a real quiz; next: the Wave and Chase revamp when the user asks.
+Status: the Answers tab is one row of five buttons; Scroll & Read gathers a quiz page by page, waiting for the user to try it on a real quiz; next: the Wave and Chase revamp when the user asks.
 
 Living document. Update the checkboxes as work lands. `CLAUDE.md` holds the architecture
 rules and the traps; this file holds the sequence.
@@ -73,6 +73,7 @@ then the user picks before the other three are built.
 - [x] The letter fades after 5 s; Keep Reading reads the screen every 5 s and answers again when it changes (2026-11-02). Never tried by hand.
 - [x] The answer's letter on the left of the closed notch, its own switch in the Answers tab and Settings (2026-11-02).
 - [x] The user tries Read Screen for real (2026-11-02): Allow… now really asks, Chrome's full-screen toolbar strip is passed over, and a reading question gets its passage (an SAT question went from B and D to A).
+- [x] The tab shrunk to one row of its five buttons, no answer text or Copy (2026-11-03).
 
 ## Notch Visual Style System (asked 2026-10-05)
 
