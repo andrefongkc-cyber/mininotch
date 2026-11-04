@@ -73,6 +73,9 @@ final class ScreenAnswersService {
     /// Questions answered while gathering, by `liveKey`, and each question's text at the last
     /// read: one is answered once it reads the same twice, so its options have all come in.
     @ObservationIgnored private var liveAnswers: [String: (reply: String, letter: String?)] = [:]
+    /// Questions the model would not answer while gathering, so they are not asked again every
+    /// read; Answer gives each one more try.
+    @ObservationIgnored private var liveFailed: Set<String> = []
     @ObservationIgnored private var liveBlocks: [String: String] = [:]
     @ObservationIgnored private var liveTask: Task<Void, Never>?
     @ObservationIgnored private var gatherTimer: Timer?
@@ -320,9 +323,19 @@ final class ScreenAnswersService {
             do {
                 #if canImport(FoundationModels)
                 if #available(macOS 26, *) {
+                    var skipped = 0
                     for (key, question) in questions where self.liveAnswers[key] == nil {
                         try Task.checkCancellation()
-                        self.liveAnswers[key] = try await self.answerOne(question) { _ in }
+                        do {
+                            self.liveAnswers[key] = try await self.answerOne(question) { _ in }
+                        } catch let error as LanguageModelSession.GenerationError {
+                            // One question the model refuses ("Unsupported language" on a
+                            // scanned AP passage, 2026-11-03) is skipped, not the whole page.
+                            AppLog.answers.error("Skipped a question: \(String(describing: error), privacy: .public)")
+                            skipped += 1
+                            if skipped == questions.count { throw error }
+                            continue
+                        }
                         self.renderGathered(questions)
                     }
                 }
@@ -354,6 +367,7 @@ final class ScreenAnswersService {
         gatherer = PageGatherer()
         gatheredLineCount = 0
         liveAnswers = [:]
+        liveFailed = []
         liveBlocks = [:]
     }
 
@@ -413,15 +427,19 @@ final class ScreenAnswersService {
         let previous = liveBlocks
         liveBlocks = Dictionary(questions.map { ($0.key, $0.question.text) }, uniquingKeysWith: { first, _ in first })
         guard liveTask == nil,
-              let next = questions.first(where: { liveAnswers[$0.key] == nil && previous[$0.key] == $0.question.text
+              let next = questions.first(where: { liveAnswers[$0.key] == nil && !liveFailed.contains($0.key) && previous[$0.key] == $0.question.text
                   && QuestionSplitter.hasOptions(QuestionSplitter.withoutNumber($0.question.text)) }) else { return }
         #if canImport(FoundationModels)
         if #available(macOS 26, *) {
             liveTask = Task { [weak self] in
                 guard let self else { return }
                 defer { self.liveTask = nil }
-                guard let result = try? await self.answerOne(next.question, onUpdate: { _ in }),
-                      self.isGathering, !Task.isCancelled else { return }
+                let answered = try? await self.answerOne(next.question, onUpdate: { _ in })
+                guard self.isGathering, !Task.isCancelled else { return }
+                guard let result = answered else {
+                    self.liveFailed.insert(next.key)
+                    return
+                }
                 self.liveAnswers[next.key] = result
                 self.renderGathered(self.gatheredQuestions())
                 if self.phase == .idle { self.phase = .answered }
@@ -558,6 +576,11 @@ final class ScreenAnswersService {
         // answer from A to D half the time, though the words were the same (2026-11-03).
         let passage = QuestionSplitter.reflow(QuestionSplitter.withoutHeadings(question.passage))
         var prompt = passage.isEmpty ? text : "Text on the page:\n\(passage)\n\nQuestion:\n\(text)"
+        // "(lines 46-47)": the lines quoted beside the question, found by the passage's own line
+        // numbers, so a small model does not have to count 75 lines to find them (2026-11-03).
+        if let quoted = QuestionSplitter.referencedLines(question: text, passage: question.passage) {
+            prompt = "Text on the page:\n\(passage)\n\n\(quoted)\n\nQuestion:\n\(text)"
+        }
         if hasOptions, fillsBlanks, let filled = QuestionSplitter.filledIn(passage: question.passage, question: text) {
             prompt = filled
         }
@@ -889,7 +912,9 @@ enum QuestionSplitter {
     private static let maxLinesPerQuestion = 14
     /// How much of the text before a question goes with it, in characters: enough for a reading
     /// passage, little enough that the model's 4,096-token context has room left to answer.
-    static let passageLimit = 1_600
+    /// Raised from 1,600 for an AP passage of 75 numbered lines whose questions ask about line 46:
+    /// about a thousand tokens, which leaves room to answer.
+    static let passageLimit = 4_500
 
     /// A question as read, and the text above it since the last question: the passage it asks
     /// about, or only interface.
@@ -903,11 +928,11 @@ enum QuestionSplitter {
     }
 
     static func split(_ text: String, limit: Int = limit) -> [Question] {
+        let lines = tidyLines(text)
+        if let anchored = splitAtOptions(lines, limit: limit) { return anchored }
         var blocks: [(lines: [String], passage: [String])] = []
         var pending: [String] = []
-        for raw in text.components(separatedBy: .newlines) {
-            let line = raw.trimmingCharacters(in: .whitespaces)
-            guard !line.isEmpty else { continue }
+        for line in lines {
             if startsQuestion(line) {
                 // A numbered line under a question that has not asked yet, like "Solve:" then
                 // "3x + 7 = 22", is its continuation, not a new question.
@@ -938,6 +963,143 @@ enum QuestionSplitter {
             Question(text: block.lines.joined(separator: "\n"),
                      passage: String(block.passage.joined(separator: "\n").suffix(passageLimit)))
         }
+    }
+
+    /// The lines a question names ("line 15", "lines 46-47"), quoted from a passage printed with
+    /// a line number every five lines, as AP and SAT passages are. Each line read is a printed
+    /// line, so a line's number is counted from the nearest numbered one. Nil when the question
+    /// names no lines or the passage has no numbers to count from.
+    static func referencedLines(question: String, passage: String) -> String? {
+        let lines = passage.components(separatedBy: .newlines)
+            .map { $0.trimmingCharacters(in: .whitespaces) }
+            .filter { !$0.isEmpty }
+        var markers: [(index: Int, number: Int)] = []
+        for (index, line) in lines.enumerated() {
+            guard let match = line.range(of: #"^\d{1,3}(?=\s+\S)"#, options: .regularExpression),
+                  let number = Int(line[match]), number % 5 == 0,
+                  number > (markers.last?.number ?? 0) else { continue }
+            markers.append((index, number))
+        }
+        guard markers.count >= 2 else { return nil }
+        func number(at index: Int) -> Int {
+            let nearest = markers.min { abs($0.index - index) < abs($1.index - index) }!
+            return nearest.number + (index - nearest.index)
+        }
+        let numbered = lines.indices.map { (number(at: $0), lines[$0].replacingOccurrences(of: #"^\d{1,3}\s+"#, with: "", options: .regularExpression)) }
+
+        let pattern = #"(?i)\blines?\s+(\d{1,3})(?:\s*[-–—]\s*(\d{1,3}))?"#
+        guard let regex = try? NSRegularExpression(pattern: pattern) else { return nil }
+        let range = NSRange(question.startIndex..., in: question)
+        var quotes: [String] = []
+        for match in regex.matches(in: question, range: range) {
+            guard let first = Range(match.range(at: 1), in: question).flatMap({ Int(question[$0]) }) else { continue }
+            let last = Range(match.range(at: 2), in: question).flatMap { Int(question[$0]) } ?? first
+            guard last >= first, last - first < 30 else { continue }
+            let text = numbered.filter { (first...last).contains($0.0) }.map(\.1).joined(separator: " ")
+            guard !text.isEmpty else { continue }
+            let name = first == last ? "Line \(first)" : "Lines \(first)-\(last)"
+            quotes.append("\(name): \(text)")
+        }
+        return quotes.isEmpty ? nil : quotes.joined(separator: "\n")
+    }
+
+    /// The text's lines, trimmed, with what text recognition breaks put back: a question number
+    /// read on a line of its own ("1.", often several together ahead of the questions) is dropped,
+    /// and an option letter read apart from its text ("(C)", then "cannot be generalized…") is
+    /// joined to it. Both from a scanned AP passage in Chrome's PDF viewer (2026-11-03).
+    static func tidyLines(_ text: String) -> [String] {
+        var lines: [String] = []
+        var loneLetter: String?
+        for raw in text.components(separatedBy: .newlines) {
+            let line = raw.trimmingCharacters(in: .whitespaces)
+            guard !line.isEmpty else { continue }
+            if line.range(of: #"^(Q(uestion)?\s*)?\d{1,3}\s*[.):]?$"#, options: [.regularExpression, .caseInsensitive]) != nil { continue }
+            if line.range(of: #"^\(?[A-Ea-e]\s*[.)]$"#, options: .regularExpression) != nil {
+                if let pending = loneLetter { lines.append(pending) }
+                loneLetter = line
+                continue
+            }
+            if let pending = loneLetter {
+                lines.append(pending + " " + line)
+                loneLetter = nil
+            } else {
+                lines.append(line)
+            }
+        }
+        if let pending = loneLetter { lines.append(pending) }
+        return lines
+    }
+
+    /// A multiple-choice page split at its options: each run of lettered lines is one question's
+    /// options, its question is the line just above them (and the lines above that it wrapped from,
+    /// which start in lower case), and everything else is passage. Nil when the page has no run of
+    /// options, which leaves it to the "?" and numbering rules.
+    ///
+    /// Those rules took every "?" in a passage for a question, and a question with no "?" whose
+    /// number was read apart from it for passage: on a 75-line AP passage they found six questions
+    /// of fifteen, none of them with its options.
+    static func splitAtOptions(_ lines: [String], limit: Int) -> [Question]? {
+        // Where each run of options starts and ends; a lower-case line after an option is that
+        // option wrapping.
+        var runs: [(start: Int, end: Int)] = []
+        var index = 0
+        while index < lines.count {
+            guard isOptionLine(lines[index]) else { index += 1; continue }
+            let start = index
+            var end = index
+            var count = 0
+            while index < lines.count {
+                if isOptionLine(lines[index]) {
+                    count += 1
+                    end = index
+                } else if !startsLowercase(lines[index]) {
+                    break
+                }
+                index += 1
+            }
+            if count >= 2 { runs.append((start, end)) }
+            index = end + 1
+        }
+        guard !runs.isEmpty else { return nil }
+
+        var questions: [Question] = []
+        var previousEnd = -1
+        for run in runs {
+            let gap = Array(lines[(previousEnd + 1)..<run.start])
+            guard !gap.isEmpty else { previousEnd = run.end; continue }
+            var stemStart = gap.count - 1
+            while stemStart > 0, startsLowercase(gap[stemStart]), gap.count - stemStart < 4 { stemStart -= 1 }
+            let stem = gap[stemStart...].joined(separator: " ")
+            let options = relettered(Array(lines[run.start...run.end]))
+            questions.append(Question(text: ([stem] + options).prefix(maxLinesPerQuestion).joined(separator: "\n"),
+                                      passage: gap[..<stemStart].joined(separator: "\n")))
+            previousEnd = run.end
+        }
+        return Array(questions.prefix(limit)).map { question in
+            var question = question
+            question.passage = String(question.passage.suffix(passageLimit))
+            return question
+        }
+    }
+
+    /// Options lettered in order: a letter read as one already used ("(B)" for the last of five,
+    /// which is "(E)") is given the next one. Lines that wrap keep their place.
+    private static func relettered(_ lines: [String]) -> [String] {
+        var next: UInt8 = 65
+        return lines.map { line in
+            guard let match = line.range(of: #"^\(?([A-Ea-e])"#, options: .regularExpression), isOptionLine(line) else { return line }
+            let letterIndex = line[match].index(before: match.upperBound)
+            let read = Character(line[letterIndex].uppercased()).asciiValue ?? next
+            defer { next = max(next, read) + 1 }
+            guard read < next else { return line }
+            var fixed = line
+            fixed.replaceSubrange(letterIndex...letterIndex, with: String(UnicodeScalar(next)))
+            return fixed
+        }
+    }
+
+    private static func startsLowercase(_ line: String) -> Bool {
+        line.first?.isLowercase == true
     }
 
     /// A multiple-choice question without the short lines after its last option: "Question 1
@@ -1013,7 +1175,9 @@ enum QuestionSplitter {
     /// Whether the question offers lettered options, "B)" or "C." (the first letter is often lost
     /// in reading, which leaves a line starting with ")").
     static func hasOptions(_ question: String) -> Bool {
-        question.range(of: #"(^|\s)[A-Ea-e][.)]\s+\S"#, options: .regularExpression) != nil
+        // "(A) …" as well as "A. …": an AP test's options were all of the first kind, and every
+        // one of its questions went to the model as having none (2026-11-03).
+        question.range(of: #"(^|\s)\(?[A-Ea-e][.)]\s+\S"#, options: .regularExpression) != nil
             || question.range(of: #"(?m)^\)\s+\S"#, options: .regularExpression) != nil
     }
 

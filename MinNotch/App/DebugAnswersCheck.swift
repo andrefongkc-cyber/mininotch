@@ -144,6 +144,53 @@ enum DebugAnswersCheck {
             return true
         }
 
+        // `--gather-images a.png b.png … [--key ABC…] [--split-only]` reads each picture as a
+        // screen, gathers them as one page the way a scroll through a document does, then answers
+        // it as Scroll & Read's Answer would, question by question, against an optional key.
+        if let index = arguments.firstIndex(of: "--gather-images") {
+            let paths = arguments[(index + 1)...].prefix { !$0.hasPrefix("--") }
+            let key = arguments.firstIndex(of: "--key").map { Array(arguments[$0 + 1]).map(String.init) } ?? []
+            let service = ScreenAnswersService()
+            var done = false
+            Task {
+                var lines: [String] = []
+                for path in paths {
+                    guard let image = NSImage(contentsOfFile: path)?.cgImage(forProposedRect: nil, context: nil, hints: nil),
+                          let text = try? await ScreenAnswersService.recognizeText(in: image) else { print("FAIL \(path)"); continue }
+                    // Concatenated, not merged: pictures of separate pages share no lines to line up on.
+                    lines += text.components(separatedBy: .newlines)
+                }
+                let questions = QuestionSplitter.carryPassages(QuestionSplitter.split(lines.joined(separator: "\n"), limit: ScreenAnswersService.ReadLimits.gathered.questions))
+                print("\(lines.count) lines, \(questions.count) questions")
+                var right = 0
+                for (n, question) in questions.enumerated() {
+                    let first = question.text.components(separatedBy: .newlines).first ?? ""
+                    print(String(format: "%2d  passage %4d  options %@  %@", n + 1, question.passage.count,
+                                 QuestionSplitter.hasOptions(question.text) ? "y" : "n", String(first.prefix(70))))
+                    if arguments.contains("--show-lines"), let quoted = QuestionSplitter.referencedLines(question: question.text, passage: question.passage) {
+                        print("      " + quoted.replacingOccurrences(of: "\n", with: "\n      "))
+                    }
+                    guard !arguments.contains("--split-only") else { continue }
+                    #if canImport(FoundationModels)
+                    if #available(macOS 26, *) {
+                        do {
+                            let result = try await service.answerOne(question) { _ in }
+                            let expected = key.indices.contains(n) ? key[n] : "?"
+                            if result.letter == expected { right += 1 }
+                            print("      → \(result.letter ?? "-") (key \(expected))  \(result.reply.prefix(80).replacingOccurrences(of: "\n", with: " "))")
+                        } catch {
+                            print("      FAIL \(error)")
+                        }
+                    }
+                    #endif
+                }
+                if !key.isEmpty, !arguments.contains("--split-only") { print("right \(right) of \(key.count)") }
+                done = true
+            }
+            while !done { RunLoop.main.run(until: Date().addingTimeInterval(0.1)) }
+            return true
+        }
+
         // `--long` answers a gathered page of twenty questions, more than one screen's twelve.
         if arguments.contains("--long") {
             let page = (1...20).map { "\($0). What is \($0 * 7) + \($0 * 3)?" }.joined(separator: "\n")
