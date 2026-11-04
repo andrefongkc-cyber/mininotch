@@ -105,9 +105,12 @@ final class NotchViewModel {
     ///
     /// Capped by the geometry's ceiling, which is what lets the preview renderer squeeze the
     /// panel narrower than its content for the clip check.
+    /// The Answers tab is one row of five symbols, so its panel is as narrow as the top bar lets
+    /// it be (2026-11-03, "tighten the width"); its buttons tighten to fit.
     var expandedPanelWidth: CGFloat {
         min(
-            NotchGeometry.panelWidth(settings: settings, cutoutWidth: geometry.collapsedSize.width),
+            NotchGeometry.panelWidth(settings: settings, cutoutWidth: geometry.collapsedSize.width,
+                                     tightest: selectedTab == .answers),
             geometry.expandedSize.width
         )
     }

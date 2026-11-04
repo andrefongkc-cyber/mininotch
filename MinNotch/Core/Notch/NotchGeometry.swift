@@ -78,7 +78,7 @@ struct NotchGeometry: Equatable {
     ///
     /// The top bar puts controls either side of the cutout, so the panel also has to leave
     /// usable room on both flanks, which `make` adds on top.
-    @MainActor static func panelWidth(settings: SettingsStore, cutoutWidth: CGFloat) -> CGFloat {
+    @MainActor static func panelWidth(settings: SettingsStore, cutoutWidth: CGFloat, tightest: Bool = false) -> CGFloat {
         let minimum = TopStripLayout.minimumPanelWidth(
             leading: settings.appearance.topStripLeading,
             trailing: settings.appearance.topStripTrailing,
@@ -87,6 +87,8 @@ struct NotchGeometry: Equatable {
             showsDebug: settings.advanced.showDebugButtons,
             cutoutWidth: cutoutWidth
         )
+        // The narrowest the top bar allows, for a tab with almost nothing in it (Answers).
+        if tightest { return minimum }
         let preferred: CGFloat
         switch settings.appearance.panelSize {
         case .custom:
