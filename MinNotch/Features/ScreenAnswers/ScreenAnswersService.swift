@@ -61,7 +61,12 @@ final class ScreenAnswersService {
     private(set) var isGathering = false
     /// Lines gathered so far, for the tab and the closed notch.
     private(set) var gatheredLineCount = 0
-    @ObservationIgnored private var gathered: [String] = []
+    @ObservationIgnored private var gatherer = PageGatherer()
+    /// Questions answered while gathering, by `liveKey`, and each question's text at the last
+    /// read: one is answered once it reads the same twice, so its options have all come in.
+    @ObservationIgnored private var liveAnswers: [String: (reply: String, letter: String?)] = [:]
+    @ObservationIgnored private var liveBlocks: [String: String] = [:]
+    @ObservationIgnored private var liveTask: Task<Void, Never>?
     @ObservationIgnored private var gatherTimer: Timer?
     @ObservationIgnored private var gatherTarget = ScreenCapture.Target()
     @ObservationIgnored private var gatherDisplay: CGDirectDisplayID = CGMainDisplayID()
@@ -269,8 +274,7 @@ final class ScreenAnswersService {
         task?.cancel()
         gatherTarget = ScreenCapture.frontWindow(on: displayID)
         gatherDisplay = displayID
-        gathered = []
-        gatheredLineCount = 0
+        resetGathered()
         answer = ""
         letters = []
         sourceName = gatherTarget.appName
@@ -282,23 +286,49 @@ final class ScreenAnswersService {
         gatherTimer = timer
     }
 
-    /// Stops gathering and answers everything gathered.
+    /// Stops gathering and answers whatever was not answered as it went, in page order.
     func finishGathering() {
         guard isGathering else { return }
         stopGatherTimer()
-        let text = gathered.joined(separator: "\n")
-        AppLog.answers.info("Scroll and Read: \(self.gathered.count) lines gathered from \(self.gatherTarget.appName ?? "?", privacy: .public)")
-        lastShownLetters = []
-        readLimits = .gathered
-        lastText = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        liveTask?.cancel()
+        liveTask = nil
+        AppLog.answers.info("Scroll and Read: \(self.gatherer.pages.count) pages, \(self.gatherer.lineCount) lines from \(self.gatherTarget.appName ?? "?", privacy: .public)")
+        let questions = gatheredQuestions()
+        guard !questions.isEmpty else {
+            // No question in it at all: a summary of the page, as a single read would give.
+            let text = gatherer.pages.map { $0.joined(separator: "\n") }.joined(separator: "\n\n")
+            readLimits = .gathered
+            task = Task { [weak self] in
+                do { try await self?.answerQuestions(in: text) } catch {
+                    guard !Task.isCancelled else { return }
+                    self?.phase = .failed(Self.message(for: error))
+                }
+            }
+            return
+        }
+        phase = .thinking
         task = Task { [weak self] in
+            guard let self else { return }
             do {
-                try await self?.answerQuestions(in: text)
+                #if canImport(FoundationModels)
+                if #available(macOS 26, *) {
+                    for (key, question) in questions where self.liveAnswers[key] == nil {
+                        try Task.checkCancellation()
+                        self.liveAnswers[key] = try await self.answerOne(question) { _ in }
+                        self.renderGathered(questions)
+                    }
+                }
+                #endif
+                self.renderGathered(questions)
+                self.letters = questions.compactMap { self.liveAnswers[$0.key]?.letter }
+                self.lastShownLetters = []
+                self.phase = .answered
+                self.showLetters()
             } catch is CancellationError {
                 return
             } catch {
                 guard !Task.isCancelled else { return }
-                self?.phase = .failed(Self.message(for: error))
+                self.phase = .failed(Self.message(for: error))
             }
         }
     }
@@ -306,8 +336,17 @@ final class ScreenAnswersService {
     /// Stops gathering and throws away what was gathered.
     func cancelGathering() {
         stopGatherTimer()
-        gathered = []
+        liveTask?.cancel()
+        liveTask = nil
+        resetGathered()
+        if phase.isBusy || phase == .answered, answer.isEmpty { phase = .idle }
+    }
+
+    private func resetGathered() {
+        gatherer = PageGatherer()
         gatheredLineCount = 0
+        liveAnswers = [:]
+        liveBlocks = [:]
     }
 
     private func stopGatherTimer() {
@@ -316,8 +355,30 @@ final class ScreenAnswersService {
         isGathering = false
     }
 
-    /// One read of the gathered window, merged into what is there. Skipped while the last one
-    /// is still being read, which a large window on a slow Mac can take longer than a tick to do.
+    /// Every question gathered, in page order, each with the passage it is about (its own, or
+    /// the last real one before it), keyed by page and wording so it is answered once.
+    private func gatheredQuestions() -> [(key: String, question: QuestionSplitter.Question)] {
+        var keyed: [(String, QuestionSplitter.Question)] = []
+        for (page, lines) in gatherer.pages.enumerated() {
+            for question in QuestionSplitter.split(lines.joined(separator: "\n"), limit: ReadLimits.gathered.questions) {
+                let first = question.text.components(separatedBy: .newlines).first ?? question.text
+                keyed.append(("\(page):" + LineMerge.key(first), question))
+            }
+        }
+        let carried = QuestionSplitter.carryPassages(keyed.map(\.1))
+        return Array(zip(keyed.map(\.0), carried).prefix(ReadLimits.gathered.questions))
+    }
+
+    /// The answers so far, in the order the questions appear.
+    private func renderGathered(_ questions: [(key: String, question: QuestionSplitter.Question)]) {
+        answer = questions.enumerated().compactMap { index, item in
+            guard let result = liveAnswers[item.key] else { return nil }
+            return "→ " + result.reply + "\n" + Self.asked(item.question, number: index + 1)
+        }.joined(separator: "\n\n")
+    }
+
+    /// One read of the gathered window, added to its page. Skipped while the last one is still
+    /// being read, which a large window on a slow Mac can take longer than a tick to do.
     private func gatherOnce() {
         guard isGathering, !gatherInFlight else { return }
         gatherInFlight = true
@@ -330,10 +391,41 @@ final class ScreenAnswersService {
             let lines = text.components(separatedBy: .newlines)
                 .map { $0.trimmingCharacters(in: .whitespaces) }
                 .filter { !$0.isEmpty }
-            guard !lines.isEmpty else { return }
-            self.gathered = Array(LineMerge.merge(self.gathered, lines).prefix(Self.gatherLineLimit))
-            self.gatheredLineCount = self.gathered.count
+            guard !lines.isEmpty, self.gatherer.lineCount < Self.gatherLineLimit else { return }
+            self.gatherer.add(lines)
+            self.gatheredLineCount = self.gatherer.lineCount
+            self.answerSettledQuestions()
         }
+    }
+
+    /// Answers, one at a time, each gathered question that read the same as last time, so the
+    /// letter for a page shows while the user is still on it rather than at the end.
+    private func answerSettledQuestions() {
+        let questions = gatheredQuestions()
+        let previous = liveBlocks
+        liveBlocks = Dictionary(questions.map { ($0.key, $0.question.text) }, uniquingKeysWith: { first, _ in first })
+        guard liveTask == nil,
+              let next = questions.first(where: { liveAnswers[$0.key] == nil && previous[$0.key] == $0.question.text
+                  && QuestionSplitter.hasOptions(QuestionSplitter.withoutNumber($0.question.text)) }) else { return }
+        #if canImport(FoundationModels)
+        if #available(macOS 26, *) {
+            liveTask = Task { [weak self] in
+                guard let self else { return }
+                defer { self.liveTask = nil }
+                guard let result = try? await self.answerOne(next.question, onUpdate: { _ in }),
+                      self.isGathering, !Task.isCancelled else { return }
+                self.liveAnswers[next.key] = result
+                self.renderGathered(self.gatheredQuestions())
+                if self.phase == .idle { self.phase = .answered }
+                if let letter = result.letter {
+                    // The newest letter alone, even when it is the same as the last one.
+                    self.letters = [letter]
+                    self.lastShownLetters = []
+                    self.showLetters()
+                }
+            }
+        }
+        #endif
     }
 
     /// Puts new letters on the closed notch. They stay until the closed notch has shown them for
@@ -416,60 +508,80 @@ final class ScreenAnswersService {
         }
 
         var answered: [String] = []
-        for (index, question) in questions.enumerated() {
+        let carried = QuestionSplitter.carryPassages(questions)
+        for (index, question) in carried.enumerated() {
             try Task.checkCancellation()
-            let text = QuestionSplitter.withoutNumber(question.text)
-            let hasOptions = QuestionSplitter.hasOptions(text)
-            // The calculator does the arithmetic: the model on its own guessed at sums (2026-11-02).
-            let hasNumbers = usesCalculator && QuestionSplitter.hasArithmetic(text)
-            let instructions = (hasOptions ? Self.choiceInstructions : Self.answerInstructions)
-                + (hasNumbers ? "\n" + Self.calculatorInstructions : "")
-            let session = LanguageModelSession(tools: hasNumbers ? [CalculatorTool()] : [], instructions: instructions)
-            // The passage above a question is what it asks about: without it a reading question
-            // was answered from the options alone, and wrongly (2026-11-02).
-            var prompt = question.passage.isEmpty ? text : "Text on the page:\n\(question.passage)\n\nQuestion:\n\(text)"
-            if hasOptions, fillsBlanks, let filled = QuestionSplitter.filledIn(passage: question.passage, question: text) {
-                prompt = filled
+            let asked = Self.asked(question, number: questions.count > 1 ? index + 1 : nil)
+            let result = try await answerOne(question) { reply in
+                self.answer = (answered + ["→ " + reply + "\n" + asked]).joined(separator: "\n\n")
             }
-            // The answer comes first, the question it answers after it in one line.
-            let asked = "\(questions.count > 1 ? "\(index + 1). " : "")" + (text.components(separatedBy: .newlines).first ?? text)
-            // An equation MiniNotch can solve exactly is never given to the model.
-            if !hasOptions, let solution = EquationSolver.solve(in: text) {
-                answered.append("→ " + solution.text + "\n" + asked)
-                answer = answered.joined(separator: "\n\n")
-                continue
-            }
-            // A multiple-choice question reasons in a sentence, then picks a letter it cannot
-            // word any other way.
-            if hasOptions, usesReasonedChoice, let choice = try await reasonedChoice(prompt: prompt, question: text, tools: hasNumbers) {
-                answered.append("→ " + choice.shown + "\n" + asked)
-                answer = answered.joined(separator: "\n\n")
-                letters.append(choice.letter)
-                AppLog.answers.info("Question \(index + 1) has options: letter \(choice.letter, privacy: .public), reasoned")
-                continue
-            }
-            var reply = ""
-            do {
-                reply = try await streamReply(session: session, prompt: prompt, options: options) { reply in
-                    self.answer = (answered + ["→ " + reply + "\n" + asked]).joined(separator: "\n\n")
-                }
-            } catch let error as LanguageModelSession.GenerationError {
-                // Apple's safety check flagged an innocent page (a farmhouse in a 1913 novel,
-                // 2026-11-02). Answering about text the user already has is what the relaxed
-                // check is for; it applies to plain text replies.
-                guard case .guardrailViolation = error else { throw error }
-                let relaxed = LanguageModelSession(model: Self.relaxedModel, tools: hasNumbers ? [CalculatorTool()] : [], instructions: instructions)
-                reply = try await streamReply(session: relaxed, prompt: prompt, options: options) { reply in
-                    self.answer = (answered + ["→ " + reply + "\n" + asked]).joined(separator: "\n\n")
-                }
-            }
-            answered.append("→ " + reply + "\n" + asked)
-            if hasOptions {
-                let letter = QuestionSplitter.letter(in: reply, question: text)
-                if let letter { letters.append(letter) }
-                AppLog.answers.info("Question \(index + 1) has options: letter \(letter ?? "not found", privacy: .public)")
-            }
+            answered.append("→ " + result.reply + "\n" + asked)
+            answer = answered.joined(separator: "\n\n")
+            if let letter = result.letter { letters.append(letter) }
         }
+    }
+
+    /// The question as shown under its answer: its first line, numbered when there are several.
+    static func asked(_ question: QuestionSplitter.Question, number: Int?) -> String {
+        let text = QuestionSplitter.withoutNumber(question.text)
+        return (number.map { "\($0). " } ?? "") + (text.components(separatedBy: .newlines).first ?? text)
+    }
+
+    /// One question answered: by the equation solver when it can, else by Apple's model with
+    /// the passage above it. `onUpdate` sees the reply as it is written.
+    @available(macOS 26, *)
+    func answerOne(_ question: QuestionSplitter.Question, onUpdate: (String) -> Void) async throws -> (reply: String, letter: String?) {
+        // Without the page's interface around it: a "Question 1 of 3" under the options with a
+        // toolbar above the passage turned the Pando answer wrong half the time, and either one
+        // removed made it right six times in six (2026-11-03).
+        let text = QuestionSplitter.withoutInterface(QuestionSplitter.withoutNumber(question.text))
+        let hasOptions = QuestionSplitter.hasOptions(text)
+        let options = hasOptions && choosesGreedily
+            ? GenerationOptions(sampling: .greedy, maximumResponseTokens: 160)
+            : GenerationOptions(temperature: 0.2, maximumResponseTokens: 160)
+        // The calculator does the arithmetic: the model on its own guessed at sums (2026-11-02).
+        let hasNumbers = usesCalculator && QuestionSplitter.hasArithmetic(text)
+        let instructions = (hasOptions ? Self.choiceInstructions : Self.answerInstructions)
+            + (hasNumbers ? "\n" + Self.calculatorInstructions : "")
+        let session = LanguageModelSession(tools: hasNumbers ? [CalculatorTool()] : [], instructions: instructions)
+        // The passage above a question is what it asks about: without it a reading question
+        // was answered from the options alone, and wrongly (2026-11-02).
+        // Rejoined into sentences: a passage broken where the screen wrapped it moved the Pando
+        // answer from A to D half the time, though the words were the same (2026-11-03).
+        let passage = QuestionSplitter.reflow(QuestionSplitter.withoutHeadings(question.passage))
+        var prompt = passage.isEmpty ? text : "Text on the page:\n\(passage)\n\nQuestion:\n\(text)"
+        if hasOptions, fillsBlanks, let filled = QuestionSplitter.filledIn(passage: question.passage, question: text) {
+            prompt = filled
+        }
+        // An equation MiniNotch can solve exactly is never given to the model.
+        if !hasOptions, let solution = EquationSolver.solve(in: text) {
+            return (solution.text, nil)
+        }
+        // Reasoning before a constrained letter, measured worse and off (`usesReasonedChoice`).
+        if hasOptions, usesReasonedChoice, let choice = try await reasonedChoice(prompt: prompt, question: text, tools: hasNumbers) {
+            AppLog.answers.info("Question has options: letter \(choice.letter, privacy: .public), reasoned")
+            return (choice.shown, choice.letter)
+        }
+        var reply = ""
+        do {
+            reply = try await streamReply(session: session, prompt: prompt, options: options, onUpdate: onUpdate)
+        } catch let error as LanguageModelSession.GenerationError {
+            // Apple's safety check flagged an innocent page (a farmhouse in a 1913 novel,
+            // 2026-11-02). Answering about text the user already has is what the relaxed
+            // check is for; it applies to plain text replies.
+            guard case .guardrailViolation = error else { throw error }
+            let relaxed = LanguageModelSession(model: Self.relaxedModel, tools: hasNumbers ? [CalculatorTool()] : [], instructions: instructions)
+            reply = try await streamReply(session: relaxed, prompt: prompt, options: options, onUpdate: onUpdate)
+        }
+        guard hasOptions else { return (reply, nil) }
+        let letter = QuestionSplitter.letter(in: reply, question: text)
+        // A reply that is the letter alone shows the option's own words with it.
+        if let letter, reply.trimmingCharacters(in: .whitespacesAndNewlines).range(of: #"^\(?[A-Ea-e]\)?[.)]?$"#, options: .regularExpression) != nil,
+           let option = QuestionSplitter.option(letter, in: text) {
+            reply = option
+        }
+        AppLog.answers.info("Question has options: letter \(letter ?? "not found", privacy: .public)")
+        return (reply, letter)
     }
 
     @available(macOS 26, *)
@@ -525,6 +637,8 @@ final class ScreenAnswersService {
     /// 75% with it, 89% without, because the model talked itself out of right transitions. Off;
     /// `--check-answers --reasoned` measures it again.
     @ObservationIgnored var usesReasonedChoice = false
+    /// The most likely reply, every time, for multiple choice. Under test.
+    @ObservationIgnored var choosesGreedily = false
     /// A blank's options shown as finished sentences (`QuestionSplitter.filledIn`): 83% against
     /// 89% without on the same twelve, fixing a comma and losing a transition. Off; `--fill`.
     @ObservationIgnored var fillsBlanks = false
@@ -538,6 +652,28 @@ final class ScreenAnswersService {
         sourceName = "Google Chrome"
         phase = .idle
         answer = ""
+    }
+
+    /// Scroll and Read fed `reads` as if from the screen, each settling before the next, then
+    /// finished, for `--check-answers --quiz`. Returns the letters answered live, in order.
+    func simulateGather(_ reads: [[String]]) async -> [String] {
+        resetGathered()
+        isGathering = true
+        var live: [String] = []
+        for read in reads {
+            gatherer.add(read)
+            gatheredLineCount = gatherer.lineCount
+            answerSettledQuestions()
+            while let running = liveTask { await running.value }
+            if letters != live.suffix(1), let letter = letters.last, liveTask == nil, !letters.isEmpty {
+                live.append(letter)
+                letters = []
+            }
+        }
+        finishGathering()
+        while phase == .thinking || isGathering { try? await Task.sleep(for: .milliseconds(100)) }
+        if let task { await task.value }
+        return live
     }
 
     /// A gathered page answered with the gathered limits, for `--check-answers --long`.
@@ -772,9 +908,12 @@ enum QuestionSplitter {
                     // A question that wrapped on screen: "…conforms to the conventions of" then
                     // "Standard English?". Its first half is not the end of a sentence, so it
                     // belongs to the question, not to the passage above (2026-11-02).
+                    // Only a long line cut off mid-sentence, and only when the "?" line does not
+                    // start a question itself: a toolbar's "Practice Test" above "Based on the
+                    // text, …?" was joined onto it (2026-11-03).
                     var start = [line]
-                    while line.contains("?"), let last = pending.last,
-                          last.range(of: #"[.!?:;"”)\]]$"#, options: .regularExpression) == nil, !isOptionLine(last) {
+                    while line.contains("?"), start.count < 3, !startsAsQuestion(start[0]), let last = pending.last,
+                          last.count >= 40, last.range(of: #"[.!?:;"”)\]]$"#, options: .regularExpression) == nil, !isOptionLine(last) {
                         start.insert(pending.removeLast(), at: 0)
                     }
                     blocks.append((start.count > 1 ? [start.joined(separator: " ")] : start, pending))
@@ -790,6 +929,58 @@ enum QuestionSplitter {
             Question(text: block.lines.joined(separator: "\n"),
                      passage: String(block.passage.joined(separator: "\n").suffix(passageLimit)))
         }
+    }
+
+    /// A multiple-choice question without the short lines after its last option: "Question 1
+    /// of 3", "Next", "Mark for Review". A long line after it is the last option wrapping.
+    static func withoutInterface(_ question: String) -> String {
+        var lines = question.components(separatedBy: .newlines)
+        guard let lastOption = lines.lastIndex(where: isOptionLine) else { return question }
+        var end = lastOption + 1
+        while end < lines.count, lines[end].trimmingCharacters(in: .whitespaces).count >= 40 { end += 1 }
+        lines.removeSubrange(end...)
+        return lines.joined(separator: "\n")
+    }
+
+    /// A passage without the short lines above it that end no sentence: a toolbar's
+    /// "Practice Test", a section's "Reading and Writing".
+    static func withoutHeadings(_ passage: String) -> String {
+        var lines = passage.components(separatedBy: .newlines)
+        while let first = lines.first?.trimmingCharacters(in: .whitespaces),
+              first.count < 40, first.range(of: #"[.!?:;"”]$"#, options: .regularExpression) == nil, lines.count > 1 {
+            lines.removeFirst()
+        }
+        return lines.joined(separator: "\n")
+    }
+
+    /// Lines that the screen wrapped, joined back: a line that does not end a sentence runs on
+    /// into the next, unless it is short (a heading or a label) or the next starts a list item.
+    static func reflow(_ text: String) -> String {
+        var paragraphs: [String] = []
+        var current = ""
+        for raw in text.components(separatedBy: .newlines) {
+            let line = raw.trimmingCharacters(in: .whitespaces)
+            guard !line.isEmpty else {
+                if !current.isEmpty { paragraphs.append(current); current = "" }
+                continue
+            }
+            if current.isEmpty {
+                current = line
+            } else if current.count >= 40, current.range(of: #"[.!?:;"”)\]]$"#, options: .regularExpression) == nil, !isOptionLine(line) {
+                current += " " + line
+            } else {
+                paragraphs.append(current)
+                current = line
+            }
+        }
+        if !current.isEmpty { paragraphs.append(current) }
+        return paragraphs.joined(separator: "\n")
+    }
+
+    /// "Which…", "According to…": a line that opens a question rather than finishing one.
+    private static func startsAsQuestion(_ line: String) -> Bool {
+        line.range(of: #"^(which|what|why|how|who|whom|whose|when|where|according|based|in the|as used|is|are|does|do|did|can|could|would|should|will|select|choose|identify)\b"#,
+                   options: [.regularExpression, .caseInsensitive]) != nil
     }
 
     private static func isOptionLine(_ line: String) -> Bool {
@@ -874,6 +1065,24 @@ enum QuestionSplitter {
         return (context.isEmpty ? "" : "Text on the page:\n\(context)\n\n")
             + "\(asked)\nThe sentence with each option in the blank:\n" + versions.joined(separator: "\n")
             + "\nWhich version is right? Answer with its letter and the option."
+    }
+
+    /// Each question with no passage of its own, or only a line of interface, takes the last
+    /// real passage before it: "Questions 1 to 3 refer to the text", or a passage on one page
+    /// and its questions on the pages after (2026-11-03).
+    static let passageMinimum = 150
+
+    static func carryPassages(_ questions: [Question]) -> [Question] {
+        var last = ""
+        return questions.map { question in
+            var question = question
+            if question.passage.count >= passageMinimum {
+                last = question.passage
+            } else if !last.isEmpty {
+                question.passage = last
+            }
+            return question
+        }
     }
 
     /// The option line for `letter`, "B. It isn't producing young trees anymore.", as read.

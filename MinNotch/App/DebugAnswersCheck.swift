@@ -49,6 +49,44 @@ enum DebugAnswersCheck {
             return true
         }
 
+        // `--pages` gathers a quiz: a long passage scrolled on page one, then pages of questions
+        // that repeat their wording, a footer that changes and a step back.
+        if arguments.contains("--pages") {
+            let top = ["Practice Test", "Section 1, Module 1", "Time left 31:00"]
+            func footer(_ n: Int) -> [String] { ["Mark for Review", "Question \(n) of 4", "Back", "Next"] }
+            let passage = (1...36).map { "Passage line \($0): the town built a second bridge in year \(1900 + $0)." }
+            func question(_ n: Int) -> [String] {
+                ["Which choice best states the main idea of the text?",
+                 "A. Option \(n)A about bridges.", "B. Option \(n)B about rivers.",
+                 "C. Option \(n)C about towns.", "D. Option \(n)D about years."]
+            }
+            let page1 = passage + question(1)
+            var gatherer = PageGatherer()
+            // Page one, scrolled down a screen of 18 at a time by 8.
+            for start in stride(from: 0, through: page1.count - 18, by: 8) + [page1.count - 18] {
+                gatherer.add(top + Array(page1[start..<start + 18]) + footer(1))
+            }
+            gatherer.add(top + Array(page1[page1.count - 18..<page1.count]) + footer(1))   // the same screen again
+            for n in 2...4 { for _ in 0..<3 { gatherer.add(top + question(n) + footer(n)) } }   // each read three times
+            gatherer.add(top + question(2) + footer(2))   // back to page two
+            gatherer.add(top + question(4) + footer(4))   // and forward again
+            print("pages: \(gatherer.pages.count), wanted 4")
+            for (i, page) in gatherer.pages.enumerated() {
+                let questions = QuestionSplitter.carryPassages(QuestionSplitter.split(page.joined(separator: "\n")))
+                let options = page.filter { $0.range(of: #"^[A-D]\. Option"#, options: .regularExpression) != nil }
+                let passageLines = page.filter { $0.hasPrefix("Passage line") }.count
+                print("page \(i + 1): \(page.count) lines, passage lines \(passageLines), questions \(questions.count), options \(options.count)")
+            }
+            let all = gatherer.pages.map { $0.joined(separator: "\n") }
+            let questions = QuestionSplitter.carryPassages(all.flatMap { QuestionSplitter.split($0) })
+            let withPassage = questions.filter { $0.passage.contains("Passage line 36") || $0.passage.contains("Passage line 1:") }.count
+            print("questions \(questions.count), with the passage: \(withPassage)")
+            let pass = gatherer.pages.count == 4 && questions.count == 4 && withPassage == 4
+                && gatherer.pages[0].filter { $0.hasPrefix("Passage line") }.count == 36
+            print(pass ? "PASS" : "FAIL")
+            return true
+        }
+
         // `--calc` checks the calculator the model is given, on sums and on hostile input.
         if arguments.contains("--calc") {
             let cases = ["17 × 24", "(22 - 7) / 3", "15% * 240", "60 * 2.5", "3/4 + 2/3", "1234 + 5678",
@@ -70,6 +108,39 @@ enum DebugAnswersCheck {
         // `--eval file.json [--runs 3]`: questions with known letters, each answered `runs` times.
         if let index = arguments.firstIndex(of: "--eval"), index + 1 < arguments.count {
             runEval(path: arguments[index + 1], runs: arguments.firstIndex(of: "--runs").flatMap { Int(arguments[$0 + 1]) } ?? 3)
+            return true
+        }
+
+        // `--quiz` runs a three-page quiz through Scroll and Read: the passage on page one, then
+        // questions about it on the next two, each screen read three times.
+        if arguments.contains("--quiz") {
+            let top = ["Practice Test", "Reading and Writing"]
+            let passage = ["Utah is home to Pando, a colony of about 47,000 quaking aspen trees that all share a single root system.",
+                           "Pando is one of the largest single organisms by mass on Earth, but ecologists are worried that its growth",
+                           "is declining in part because of grazing by animals. The ecologists say that strong fences could prevent deer",
+                           "from eating young trees and help Pando start thriving again."]
+            let pages: [[String]] = [
+                passage + ["According to the text, why are ecologists worried about Pando?",
+                           "A. It isn't growing at the same rate it used to.", "B. It isn't producing young trees anymore.",
+                           "C. It can't grow into new areas because it is blocked by fences.", "D. Its root system can't support many more new trees.",
+                           "Question 1 of 3"],
+                ["Based on the text, what do the ecologists suggest could help Pando?",
+                 "A. Planting new trees beside it", "B. Building fences to keep deer away",
+                 "C. Removing its oldest trees", "D. Watering its roots", "Question 2 of 3"],
+                ["According to the text, about how many trees make up Pando?",
+                 "A. 4,700", "B. 47", "C. 47,000", "D. 470,000", "Question 3 of 3"],
+            ]
+            let reads = pages.flatMap { page in Array(repeating: top + page, count: 3) }
+            let service = ScreenAnswersService()
+            var done = false
+            Task {
+                let live = await service.simulateGather(reads)
+                print("letters as it went: \(live.joined(separator: " ")), wanted A B C")
+                print("letters at the end: \(service.letters.joined(separator: " "))")
+                print(service.answer)
+                done = true
+            }
+            while !done { RunLoop.main.run(until: Date().addingTimeInterval(0.1)) }
             return true
         }
 
@@ -149,6 +220,7 @@ enum DebugAnswersCheck {
                     let service = ScreenAnswersService()
                     service.usesReasonedChoice = arguments.contains("--reasoned")
                     service.fillsBlanks = arguments.contains("--fill")
+                    if arguments.contains("--greedy") { service.choosesGreedily = true }
                     do { try await service.answerQuestions(in: item.page) } catch { wrongReply = "error: \(error)" }
                     let letter = service.letters.first ?? "?"
                     got.append(letter)

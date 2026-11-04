@@ -144,9 +144,9 @@ struct ScreenAnswersWidgetView: View {
     private var status: String {
         let app = service.sourceName
         switch service.phase {
-        case .idle where service.isGathering:
+        case .idle where service.isGathering, .answered where service.isGathering:
             let source = app.map { " from \($0)" } ?? ""
-            return "Gathering\(source): \(service.gatheredLineCount) lines. Scroll the page, then Answer."
+            return "Gathering\(source): \(service.gatheredLineCount) lines, answering as you go"
         case .idle, .needsPermission, .failed:
             return "Answers the questions in the window in front, on this Mac"
         case .reading:
@@ -166,7 +166,7 @@ struct ScreenAnswersWidgetView: View {
         switch service.phase {
         case .idle where service.isGathering:
             message(
-                "Scroll slowly through the whole page, top to bottom. MiniNotch reads it as it moves and keeps every new line. Then open the notch and click Answer.",
+                "Scroll through the passage, then go through the questions page by page. Each question is answered once it has been on screen for a moment, and its letter shows on the notch. Click Answer when you are done.",
                 symbol: "scroll"
             )
         case .idle:
