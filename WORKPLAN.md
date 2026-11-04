@@ -75,6 +75,7 @@ then the user picks before the other three are built.
 - [x] The user tries Read Screen for real (2026-11-02): Allow… now really asks, Chrome's full-screen toolbar strip is passed over, and a reading question gets its passage (an SAT question went from B and D to A).
 - [x] The tab shrunk to one row of its five buttons, no answer text or Copy (2026-11-03).
 - [x] A scanned AP passage in Chrome's PDF viewer: split at its options, (A)-style options counted, the lines a question names quoted (2026-11-03).
+- [x] The closed notch's answer letters and scroll glyph drawn like the countdown, dim ink, not the accent (2026-11-04).
 
 ## Notch Visual Style System (asked 2026-10-05)
 
