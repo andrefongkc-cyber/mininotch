@@ -18,23 +18,16 @@ struct ScreenAnswersWidgetView: View {
     private var service: ScreenAnswersService { environment.screenAnswers }
 
     var body: some View {
-        // The switches give up their words before anything else gives up room.
-        ViewThatFits(in: .horizontal) {
-            row(compact: false)
-            row(compact: true)
+        // Symbols only (2026-11-03, "just be all symbols"); each says what it is in its tooltip.
+        HStack(spacing: 6) {
+            gatherToggle(compact: true)
+            watchToggle(compact: true)
+            intervalButton
+            letterToggle(compact: true)
+            mainButton
         }
         .frame(maxWidth: .infinity, alignment: .center)
         .onAppear { service.refreshPermission() }
-    }
-
-    private func row(compact: Bool) -> some View {
-        HStack(spacing: compact ? 6 : 8) {
-            gatherToggle(compact: compact)
-            watchToggle(compact: compact)
-            intervalButton
-            letterToggle(compact: compact)
-            mainButton
-        }
     }
 
     /// Read Screen; Answer while gathering; Stop while busy; Allow… without the permission.
@@ -45,29 +38,26 @@ struct ScreenAnswersWidgetView: View {
             Button {
                 service.cancel()
             } label: {
-                HStack(spacing: 5) {
-                    ProgressView().controlSize(.mini)
-                    Text("Stop")
-                }
+                Image(systemName: "stop.fill")
             }
             .buttonStyle(style)
             .fixedSize()
             .help(service.phase == .reading ? "Reading the screen. Click to stop." : "Answering. Click to stop.")
         } else if service.phase == .needsPermission {
-            Button("Allow…") { service.requestPermission() }
+            Button { service.requestPermission() } label: { Image(systemName: "lock") }
                 .buttonStyle(style)
                 .fixedSize()
-                .help("MiniNotch needs Screen Recording to read the window. Allow it, switch MiniNotch on in System Settings, then reopen MiniNotch.")
+                .help("Allow… MiniNotch needs Screen Recording to read the window. Allow it, switch MiniNotch on in System Settings, then reopen MiniNotch.")
         } else {
             Button {
                 service.ask(on: viewModel.geometry.displayID)
             } label: {
                 if service.isGathering {
-                    Label("Answer", systemImage: "checkmark")
+                    Image(systemName: "checkmark")
                 } else if case .failed = service.phase {
-                    Label("Read Screen", systemImage: "exclamationmark.triangle")
+                    Image(systemName: "exclamationmark.triangle")
                 } else {
-                    Label("Read Screen", systemImage: "text.viewfinder")
+                    Image(systemName: "text.viewfinder")
                 }
             }
             .buttonStyle(style)
@@ -78,10 +68,10 @@ struct ScreenAnswersWidgetView: View {
 
     private var mainHelp: String {
         if service.isGathering {
-            return "Gathered \(service.gatheredLineCount) lines. Stop gathering and answer the whole page."
+            return "Answer: gathered \(service.gatheredLineCount) lines. Stop gathering and answer the whole page."
         }
-        if case .failed(let reason) = service.phase { return reason }
-        return "Read the window in front and answer its questions. Nothing leaves this Mac."
+        if case .failed(let reason) = service.phase { return "Read Screen. Last time: " + reason }
+        return "Read Screen: read the window in front and answer its questions. Nothing leaves this Mac."
     }
 
     /// Shows the letter of each multiple-choice answer on the left of the closed notch. The same
