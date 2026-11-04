@@ -24,6 +24,31 @@ enum DebugAnswersCheck {
         let arguments = CommandLine.arguments
         guard arguments.contains(flag) else { return false }
 
+        // `--merge` checks Scroll and Read's stitching on a page read as overlapping screens.
+        if arguments.contains("--merge") {
+            let chrome = ["Course Home", "Quiz 4: Reading", "Time left 12:00"]
+            let page = (1...60).map { "Line \($0) of the passage, with words that differ." }
+            // Screens of 20 lines, scrolled down 7 at a time, then back up 9 at a time.
+            var starts = Array(stride(from: 0, through: 40, by: 7)) + [40]
+            starts += Array(stride(from: 31, through: 0, by: -9))
+            var kept: [String] = []
+            for (n, start) in starts.enumerated() {
+                var screen = chrome + Array(page[start..<min(start + 20, page.count)])
+                // Text recognition is not identical between reads: a lost full stop, a case change.
+                if n % 2 == 1 { screen = screen.map { $0.replacingOccurrences(of: ".", with: "") } }
+                if n % 3 == 2 { screen[3] = screen[3].uppercased() }
+                kept = LineMerge.merge(kept, screen)
+            }
+            let keys = kept.map(LineMerge.key)
+            let wanted = (chrome + page).map(LineMerge.key)
+            print("screens: \(starts.count), lines kept: \(kept.count), wanted: \(wanted.count)")
+            print(keys == wanted ? "PASS the page, once, in order" : "FAIL\n" + kept.joined(separator: "\n"))
+            // A jump further than a screen keeps both, the new one after.
+            let jumped = LineMerge.merge(Array(page[0..<10]), Array(page[30..<40]))
+            print(jumped.count == 20 ? "PASS a jump keeps both" : "FAIL a jump kept \(jumped.count)")
+            return true
+        }
+
         // `--calc` checks the calculator the model is given, on sums and on hostile input.
         if arguments.contains("--calc") {
             let cases = ["17 × 24", "(22 - 7) / 3", "15% * 240", "60 * 2.5", "3/4 + 2/3", "1234 + 5678",
@@ -45,6 +70,22 @@ enum DebugAnswersCheck {
         // `--eval file.json [--runs 3]`: questions with known letters, each answered `runs` times.
         if let index = arguments.firstIndex(of: "--eval"), index + 1 < arguments.count {
             runEval(path: arguments[index + 1], runs: arguments.firstIndex(of: "--runs").flatMap { Int(arguments[$0 + 1]) } ?? 3)
+            return true
+        }
+
+        // `--long` answers a gathered page of twenty questions, more than one screen's twelve.
+        if arguments.contains("--long") {
+            let page = (1...20).map { "\($0). What is \($0 * 7) + \($0 * 3)?" }.joined(separator: "\n")
+            let service = ScreenAnswersService()
+            var done = false
+            Task {
+                do { try await service.answerGathered(page) } catch { print("FAIL \(error)") }
+                let answers = service.answer.components(separatedBy: "\n").filter { $0.hasPrefix("→") }
+                let right = (1...20).filter { n in answers.indices.contains(n - 1) && answers[n - 1].contains("\(n * 10)") }.count
+                print("answered \(answers.count) of 20, right \(right)")
+                done = true
+            }
+            while !done { RunLoop.main.run(until: Date().addingTimeInterval(0.1)) }
             return true
         }
 

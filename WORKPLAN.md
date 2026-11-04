@@ -1,6 +1,6 @@
 # MiniNotch workplan
 
-Status: 0.8.2 released (Bento Grid kept on the branch `bento-grid`); next: the Wave and Chase revamp when the user asks.
+Status: Answers' Scroll & Read built, waiting for the user to try it on a real long page; next: the Wave and Chase revamp when the user asks.
 
 Living document. Update the checkboxes as work lands. `CLAUDE.md` holds the architecture
 rules and the traps; this file holds the sequence.
@@ -65,6 +65,7 @@ then the user picks before the other three are built.
   (FoundationModels, macOS 26 with Apple Intelligence). Nothing leaves the Mac. Off by default.
 - [x] A shortcut that opens the tab and reads the screen at once.
 - [x] `--check-answers` runs the reading and answering on a rendered page, without the screen.
+- [x] Scroll & Read: gather a page while the user scrolls, stitched by `LineMerge`, answered whole (up to 30 questions) (2026-11-03). Not yet tried on a real page.
 - [x] English: a twelve-question SAT set and `--eval`; the safety check's false refusals answered through the relaxed model, wrapped questions joined: 75% to 83 to 89%, misses now only grammar (2026-11-02).
 - [x] Maths: exact linear equations, a calculator for arithmetic, Game Mode explained (2026-11-02). Ten maths questions 10 of 10 three times; SAT and quiz unchanged.
 - [x] Keep Reading's countdown on the right of the closed notch, and its interval (3 to 30 s) from a button in the tab (2026-11-02).

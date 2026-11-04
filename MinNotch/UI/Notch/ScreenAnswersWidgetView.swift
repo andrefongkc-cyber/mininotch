@@ -37,8 +37,8 @@ struct ScreenAnswersWidgetView: View {
 
             // The switches give up their words before anything else gives up room.
             ViewThatFits(in: .horizontal) {
-                HStack(spacing: 10) { watchToggle(compact: false); intervalButton; letterToggle(compact: false) }
-                HStack(spacing: 6) { watchToggle(compact: true); intervalButton; letterToggle(compact: true) }
+                HStack(spacing: 10) { gatherToggle(compact: false); watchToggle(compact: false); intervalButton; letterToggle(compact: false) }
+                HStack(spacing: 6) { gatherToggle(compact: true); watchToggle(compact: true); intervalButton; letterToggle(compact: true) }
             }
 
             if service.phase == .answered, !service.answer.isEmpty {
@@ -56,11 +56,15 @@ struct ScreenAnswersWidgetView: View {
                 Button {
                     service.ask(on: viewModel.geometry.displayID)
                 } label: {
-                    Label("Read Screen", systemImage: "text.viewfinder")
+                    if service.isGathering {
+                        Label("Answer", systemImage: "checkmark")
+                    } else {
+                        Label("Read Screen", systemImage: "text.viewfinder")
+                    }
                 }
                 .buttonStyle(NotchAccentButtonStyle(accent: theme.accentColor(settings.appearance.resolvedAccent)))
                 .fixedSize()
-                .help("Read the window in front and answer its questions")
+                .help(service.isGathering ? "Stop gathering and answer the whole page" : "Read the window in front and answer its questions")
             }
         }
     }
@@ -73,6 +77,15 @@ struct ScreenAnswersWidgetView: View {
         return chip("Letter in Notch", symbol: "capsule.lefthalf.filled", isOn: isOn, compact: compact,
                     help: isOn ? "Stop showing the answer's letter in the closed notch" : "Show the answer's letter on the left of the closed notch for 5 seconds") {
             settings.advanced.answerLetterInNotch.toggle()
+        }
+    }
+
+    /// Scroll and Read: gathers the window while it is scrolled, for a page longer than a screen.
+    private func gatherToggle(compact: Bool) -> some View {
+        let isOn = service.isGathering
+        return chip("Scroll & Read", symbol: "scroll", isOn: isOn, compact: compact,
+                    help: isOn ? "Stop gathering and throw away what was gathered" : "Scroll through a long page and MiniNotch reads all of it; then click Answer") {
+            if isOn { service.cancelGathering() } else { service.startGathering(on: viewModel.geometry.displayID) }
         }
     }
 
@@ -131,6 +144,9 @@ struct ScreenAnswersWidgetView: View {
     private var status: String {
         let app = service.sourceName
         switch service.phase {
+        case .idle where service.isGathering:
+            let source = app.map { " from \($0)" } ?? ""
+            return "Gathering\(source): \(service.gatheredLineCount) lines. Scroll the page, then Answer."
         case .idle, .needsPermission, .failed:
             return "Answers the questions in the window in front, on this Mac"
         case .reading:
@@ -148,6 +164,11 @@ struct ScreenAnswersWidgetView: View {
     @ViewBuilder
     private var content: some View {
         switch service.phase {
+        case .idle where service.isGathering:
+            message(
+                "Scroll slowly through the whole page, top to bottom. MiniNotch reads it as it moves and keeps every new line. Then open the notch and click Answer.",
+                symbol: "scroll"
+            )
         case .idle:
             message(
                 "Open the question in any app, then click Read Screen. MiniNotch reads the window in front and Apple Intelligence answers. Nothing leaves this Mac.",

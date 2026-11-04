@@ -289,6 +289,8 @@ enum DebugWindowCapture {
             settings.advanced.answerLetterInNotch = arguments.contains("--answer-letter")
             // `--answer-countdown` adds Keep Reading's count on the right, from 5.
             if arguments.contains("--answer-countdown") { environment.screenAnswers.applySampleCountdown(seconds: 5) }
+            // `--answer-gathering` shows Scroll and Read part way, 124 lines in.
+            if arguments.contains("--answer-gathering") { environment.screenAnswers.applySampleGathering(lines: 124) }
         }
                 if arguments.contains("--sample-notes") {
             settings.advanced.notesEnabled = true

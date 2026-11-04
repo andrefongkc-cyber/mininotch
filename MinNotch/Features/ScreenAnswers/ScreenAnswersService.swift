@@ -54,6 +54,30 @@ final class ScreenAnswersService {
     private(set) var isWatching = false
 
     @ObservationIgnored private var task: Task<Void, Never>?
+
+    /// Scroll and Read: while on, the window that was in front when it started is read about
+    /// once a second and every new line is kept (`LineMerge`), so a page longer than the screen
+    /// is gathered as the user scrolls it. Answer ends it and answers everything gathered.
+    private(set) var isGathering = false
+    /// Lines gathered so far, for the tab and the closed notch.
+    private(set) var gatheredLineCount = 0
+    @ObservationIgnored private var gathered: [String] = []
+    @ObservationIgnored private var gatherTimer: Timer?
+    @ObservationIgnored private var gatherTarget = ScreenCapture.Target()
+    @ObservationIgnored private var gatherDisplay: CGDirectDisplayID = CGMainDisplayID()
+    @ObservationIgnored private var gatherInFlight = false
+    static let gatherInterval: TimeInterval = 0.8
+    /// The most a gathered page keeps: about forty screens of text.
+    static let gatherLineLimit = 2_000
+
+    /// How much of the text one answer takes: a screen's worth, or a gathered page's.
+    struct ReadLimits: Sendable {
+        var characters: Int
+        var questions: Int
+        static let screen = ReadLimits(characters: 6_000, questions: 12)
+        static let gathered = ReadLimits(characters: 60_000, questions: 30)
+    }
+    @ObservationIgnored private var readLimits = ReadLimits.screen
     /// Off only in `--check-answers --no-calc`, to measure what the calculator is worth.
     @ObservationIgnored var usesCalculator = true
     @ObservationIgnored private var watchTimer: Timer?
@@ -125,7 +149,9 @@ final class ScreenAnswersService {
 
     /// Reads the front window on `displayID` and answers what is in it.
     func ask(on displayID: CGDirectDisplayID) {
+        if isGathering { finishGathering(); return }
         lastShownLetters = []
+        readLimits = .screen
         read(on: displayID, quietly: false)
     }
 
@@ -136,6 +162,8 @@ final class ScreenAnswersService {
         nextReadAt = nil
         isWatching = on
         guard on else { return }
+        if isGathering { cancelGathering() }
+        readLimits = .screen
         watchDisplay = displayID
         lastShownLetters = []
         read(on: displayID, quietly: false)
@@ -225,6 +253,89 @@ final class ScreenAnswersService {
         }
     }
 
+    // MARK: Scroll and Read
+
+    /// Starts gathering the window in front on `displayID`; Keep Reading stops while it runs.
+    func startGathering(on displayID: CGDirectDisplayID) {
+        if case .unavailable(let reason) = Self.modelAvailability {
+            phase = .failed(reason)
+            return
+        }
+        guard CGPreflightScreenCaptureAccess() else {
+            phase = .needsPermission
+            return
+        }
+        if isWatching { setWatching(false, display: displayID) }
+        task?.cancel()
+        gatherTarget = ScreenCapture.frontWindow(on: displayID)
+        gatherDisplay = displayID
+        gathered = []
+        gatheredLineCount = 0
+        answer = ""
+        letters = []
+        sourceName = gatherTarget.appName
+        phase = .idle
+        isGathering = true
+        gatherOnce()
+        let timer = Timer.onMain(every: Self.gatherInterval) { [weak self] in self?.gatherOnce() }
+        timer.tolerance = 0.2
+        gatherTimer = timer
+    }
+
+    /// Stops gathering and answers everything gathered.
+    func finishGathering() {
+        guard isGathering else { return }
+        stopGatherTimer()
+        let text = gathered.joined(separator: "\n")
+        AppLog.answers.info("Scroll and Read: \(self.gathered.count) lines gathered from \(self.gatherTarget.appName ?? "?", privacy: .public)")
+        lastShownLetters = []
+        readLimits = .gathered
+        lastText = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        task = Task { [weak self] in
+            do {
+                try await self?.answerQuestions(in: text)
+            } catch is CancellationError {
+                return
+            } catch {
+                guard !Task.isCancelled else { return }
+                self?.phase = .failed(Self.message(for: error))
+            }
+        }
+    }
+
+    /// Stops gathering and throws away what was gathered.
+    func cancelGathering() {
+        stopGatherTimer()
+        gathered = []
+        gatheredLineCount = 0
+    }
+
+    private func stopGatherTimer() {
+        gatherTimer?.invalidate()
+        gatherTimer = nil
+        isGathering = false
+    }
+
+    /// One read of the gathered window, merged into what is there. Skipped while the last one
+    /// is still being read, which a large window on a slow Mac can take longer than a tick to do.
+    private func gatherOnce() {
+        guard isGathering, !gatherInFlight else { return }
+        gatherInFlight = true
+        let target = gatherTarget, displayID = gatherDisplay
+        Task { [weak self] in
+            defer { self?.gatherInFlight = false }
+            guard let image = try? await ScreenCapture.image(displayID: displayID, windowID: target.windowID),
+                  let text = try? await Self.recognizeText(in: image),
+                  let self, self.isGathering else { return }
+            let lines = text.components(separatedBy: .newlines)
+                .map { $0.trimmingCharacters(in: .whitespaces) }
+                .filter { !$0.isEmpty }
+            guard !lines.isEmpty else { return }
+            self.gathered = Array(LineMerge.merge(self.gathered, lines).prefix(Self.gatherLineLimit))
+            self.gatheredLineCount = self.gathered.count
+        }
+    }
+
     /// Puts new letters on the closed notch. They stay until the closed notch has shown them for
     /// `letterShowTime` (`notchShowedLetters`), not from when they arrive: a read is started from
     /// the open panel, which covers the closed notch, and a fade timed from the answer had run
@@ -292,7 +403,7 @@ final class ScreenAnswersService {
     @available(macOS 26, *)
     private func stream(_ text: String) async throws {
         let options = GenerationOptions(temperature: 0.2, maximumResponseTokens: 160)
-        let questions = QuestionSplitter.split(String(text.prefix(Self.textLimit)))
+        let questions = QuestionSplitter.split(String(text.prefix(readLimits.characters)), limit: readLimits.questions)
 
         guard !questions.isEmpty else {
             let summary = LanguageModelSession(instructions: Self.summaryInstructions)
@@ -420,6 +531,21 @@ final class ScreenAnswersService {
 
     #if DEBUG
     /// A finished answer for the capture tools.
+    /// Scroll and Read part way through, for the capture tools: no timer, no read.
+    func applySampleGathering(lines: Int) {
+        isGathering = true
+        gatheredLineCount = lines
+        sourceName = "Google Chrome"
+        phase = .idle
+        answer = ""
+    }
+
+    /// A gathered page answered with the gathered limits, for `--check-answers --long`.
+    func answerGathered(_ text: String) async throws {
+        readLimits = .gathered
+        try await answerQuestions(in: text)
+    }
+
     /// Keep Reading's countdown for the capture tools, with no timer and no read behind it.
     func applySampleCountdown(seconds: TimeInterval) {
         isWatching = true
@@ -631,7 +757,7 @@ enum QuestionSplitter {
         split(text).map(\.text)
     }
 
-    static func split(_ text: String) -> [Question] {
+    static func split(_ text: String, limit: Int = limit) -> [Question] {
         var blocks: [(lines: [String], passage: [String])] = []
         var pending: [String] = []
         for raw in text.components(separatedBy: .newlines) {

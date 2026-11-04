@@ -29,6 +29,8 @@ struct CollapsedPillContent: Equatable {
     var answerLetters: String? = nil
     /// When Keep Reading next reads, counted down on the right, last, beside the letters' switch.
     var answerNextRead: Date? = nil
+    /// Lines Scroll and Read has gathered, on the right while it runs, so it is plainly still on.
+    var answerGathered: Int? = nil
 
     /// Distance from the pill's outer edge to its content.
     ///
@@ -81,7 +83,9 @@ struct CollapsedPillContent: Equatable {
             trailingLayout: settings.general.pillTrailing,
             answerLetters: answerLetters(environment: environment, settings: settings),
             answerNextRead: settings.advanced.screenAnswersEnabled && settings.advanced.answerLetterInNotch
-                ? environment.screenAnswers.nextReadAt : nil
+                ? environment.screenAnswers.nextReadAt : nil,
+            answerGathered: settings.advanced.screenAnswersEnabled && environment.screenAnswers.isGathering
+                ? environment.screenAnswers.gatheredLineCount : nil
         )
     }
 
@@ -135,7 +139,7 @@ struct CollapsedPillContent: Equatable {
     }
 
     var hasLeading: Bool { answerLetters != nil || !items(on: .leading).isEmpty }
-    var hasTrailing: Bool { answerNextRead != nil || !items(on: .trailing).isEmpty }
+    var hasTrailing: Bool { answerNextRead != nil || answerGathered != nil || !items(on: .trailing).isEmpty }
 
     // MARK: Sizing
 
@@ -176,7 +180,11 @@ struct CollapsedPillContent: Equatable {
         let answer = side == .leading ? answerLetters.map { Self.measure($0, font: Self.answerFont) } : nil
         // At the widest the count gets, so the pill holds still as it counts down.
         let countdown = side == .trailing && answerNextRead != nil ? Self.measure("00", font: Self.countdownFont) : nil
-        let widths = (answer.map { [$0] } ?? []) + showing.map { width(of: $0) } + (countdown.map { [$0] } ?? [])
+        // The glyph and the count at the widest it gets, four digits.
+        let gathered = side == .trailing && answerGathered != nil
+            ? Self.glyphWidth + Self.detailSpacing + Self.measure("0000", font: Self.countdownFont) : nil
+        let widths = (answer.map { [$0] } ?? []) + showing.map { width(of: $0) }
+            + (countdown.map { [$0] } ?? []) + (gathered.map { [$0] } ?? [])
         guard !widths.isEmpty else { return 0 }
 
         let gaps = Self.itemSpacing * CGFloat(widths.count - 1)
@@ -270,8 +278,9 @@ struct CollapsedPillView: View {
         let showing = content.items(on: side)
         let answer = side == .leading ? content.answerLetters : nil
         let nextRead = side == .trailing ? content.answerNextRead : nil
+        let gathered = side == .trailing ? content.answerGathered : nil
 
-        if showing.isEmpty, answer == nil, nextRead == nil {
+        if showing.isEmpty, answer == nil, nextRead == nil, gathered == nil {
             Color.clear.frame(width: 0, height: 0)
         } else {
             HStack(spacing: CollapsedPillContent.itemSpacing) {
@@ -280,6 +289,18 @@ struct CollapsedPillView: View {
                         .font(Font(CollapsedPillContent.answerFont))
                         .foregroundStyle(theme.accentColor(settings.appearance.resolvedAccent))
                         .transition(.opacity)
+                }
+                if let gathered {
+                    HStack(spacing: CollapsedPillContent.detailSpacing) {
+                        TransportSymbol.image("scroll", pointSize: 11)
+                            .foregroundStyle(theme.accentColor(settings.appearance.resolvedAccent))
+                            .frame(width: CollapsedPillContent.glyphWidth)
+                        Text("\(gathered)")
+                            .font(Font(CollapsedPillContent.countdownFont))
+                            .foregroundStyle(theme.ink.opacity(0.7))
+                            .frame(width: CollapsedPillContent.measure("0000", font: CollapsedPillContent.countdownFont), alignment: .leading)
+                    }
+                    .transition(.opacity)
                 }
                 ForEach(showing) { indicator in
                     PillIndicatorView(indicator: indicator, content: content)
