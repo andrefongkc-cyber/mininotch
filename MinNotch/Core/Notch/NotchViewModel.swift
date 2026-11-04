@@ -105,15 +105,23 @@ final class NotchViewModel {
     ///
     /// Capped by the geometry's ceiling, which is what lets the preview renderer squeeze the
     /// panel narrower than its content for the clip check.
-    /// The Answers tab is one row of five symbols, so its panel is as narrow as the top bar lets
-    /// it be (2026-11-03, "tighten the width"); its buttons tighten to fit.
+    /// The Answers tab is one row of five symbols with no top bar, so its panel is as wide as
+    /// that row (2026-11-03, "i want the notch to be as wide as this"), and never narrower than
+    /// the camera housing it hangs from. Leaving it is a swipe left or right.
     var expandedPanelWidth: CGFloat {
-        min(
-            NotchGeometry.panelWidth(settings: settings, cutoutWidth: geometry.collapsedSize.width,
-                                     tightest: selectedTab == .answers),
-            geometry.expandedSize.width
-        )
+        let width: CGFloat
+        if selectedTab == .answers {
+            let inset = Metrics.notchPanelPadding + Metrics.notchShoulderRadius
+            width = max(ScreenAnswersWidgetView.rowWidth + inset * 2,
+                        geometry.collapsedSize.width + Metrics.notchShoulderRadius * 2 + 24)
+        } else {
+            width = NotchGeometry.panelWidth(settings: settings, cutoutWidth: geometry.collapsedSize.width)
+        }
+        return min(width, geometry.expandedSize.width)
     }
+
+    /// Whether the open panel draws its top bar: not on the Answers tab, which is left by a swipe.
+    var showsTopStrip: Bool { selectedTab != .answers }
 
     func update(geometry: NotchGeometry) {
         self.geometry = geometry

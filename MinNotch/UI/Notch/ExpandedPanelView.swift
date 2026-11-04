@@ -32,7 +32,13 @@ struct ExpandedPanelView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            topStrip
+            // The Answers tab has no top bar; the band behind the housing stays, empty, and a
+            // `Spacer` so clicks there still reach the desktop.
+            if viewModel.showsTopStrip {
+                topStrip
+            } else {
+                Spacer(minLength: 0).frame(height: Self.topStripHeight(for: geometry))
+            }
 
             // A new tab and the panel's new height arrive together, on the surface's spring. The
             // old tab goes quickly rather than on that spring: left to fade for the half second

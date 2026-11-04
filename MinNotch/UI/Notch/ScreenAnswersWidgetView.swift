@@ -14,6 +14,8 @@ struct ScreenAnswersWidgetView: View {
     let viewModel: NotchViewModel
 
     static let preferredHeight: CGFloat = 30
+    /// The row of five symbols, for the panel's width on this tab (`NotchViewModel.expandedPanelWidth`).
+    static let rowWidth: CGFloat = 184
 
     private var service: ScreenAnswersService { environment.screenAnswers }
 
