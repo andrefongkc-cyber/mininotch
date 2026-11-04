@@ -37,7 +37,15 @@ final class ScreenAnswersService {
         case unavailable(String)
     }
 
-    private(set) var phase: Phase = .idle
+    private(set) var phase: Phase = .idle {
+        didSet {
+            // The tab is symbols only, so the reason is a tooltip; the log keeps it too. These are
+            // MiniNotch's own messages and the framework's error, never the page's text.
+            if case .failed(let reason) = phase, phase != oldValue {
+                AppLog.answers.error("Failed: \(reason, privacy: .public)")
+            }
+        }
+    }
     /// The answer so far.
     private(set) var answer = ""
     /// The app whose window was read, for the line above the answer.
@@ -755,6 +763,7 @@ final class ScreenAnswersService {
     }
 
     private static func message(for error: Error) -> String {
+        AppLog.answers.error("Error: \(String(describing: error), privacy: .public)")
         #if canImport(FoundationModels)
         if #available(macOS 26, *), let error = error as? LanguageModelSession.GenerationError {
             switch error {
