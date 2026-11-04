@@ -53,7 +53,7 @@ struct CollapsedPillContent: Equatable {
     /// A function rather than a stored font: `NSFont` is not `Sendable`, so a static one is
     /// shared mutable state as far as Swift 6 is concerned.
     static var songFont: NSFont { .systemFont(ofSize: 11, weight: .semibold) }
-    static var answerFont: NSFont { .systemFont(ofSize: 13, weight: .bold) }
+    static var answerFont: NSFont { countdownFont }
     static var countdownFont: NSFont { .monospacedDigitSystemFont(ofSize: 13, weight: .bold) }
 
     /// The pill as it stands right now, from the live services.
@@ -285,15 +285,17 @@ struct CollapsedPillView: View {
         } else {
             HStack(spacing: CollapsedPillContent.itemSpacing) {
                 if let answer {
+                    // Drawn as the countdown is, dim ink rather than the accent, so the
+                    // letters read as a quiet hint and not as a highlight.
                     Text(answer)
                         .font(Font(CollapsedPillContent.answerFont))
-                        .foregroundStyle(theme.accentColor(settings.appearance.resolvedAccent))
+                        .foregroundStyle(theme.ink.opacity(0.7))
                         .transition(.opacity)
                 }
                 if let gathered {
                     HStack(spacing: CollapsedPillContent.detailSpacing) {
                         TransportSymbol.image("scroll", pointSize: 11)
-                            .foregroundStyle(theme.accentColor(settings.appearance.resolvedAccent))
+                            .foregroundStyle(theme.ink.opacity(0.7))
                             .frame(width: CollapsedPillContent.glyphWidth)
                         Text("\(gathered)")
                             .font(Font(CollapsedPillContent.countdownFont))
