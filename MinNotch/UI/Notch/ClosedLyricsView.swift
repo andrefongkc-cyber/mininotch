@@ -37,7 +37,7 @@ struct ClosedLyricsView: View {
                 let index = lyrics.index(at: time)
 
                 VStack(spacing: 2) {
-                    LyricsText.line(lyrics, at: index, time: time, ink: theme.ink)
+                    LyricsText.line(lyrics, at: index, time: time, ink: theme.ink, byWord: environment.settings.media.highlightsWords)
                         .font(.system(size: 13, weight: .semibold))
                         .lineLimit(1)
                         .truncationMode(.tail)

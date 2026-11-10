@@ -1766,7 +1766,7 @@ to AppleScript, and a streamed track's `lyrics` property is almost always empty,
 `MediaSettings.lyricsSource`. When there is nothing to show, the strip renders
 `LyricsStatus.message` rather than collapsing, so an empty strip always explains itself.
 
-The strip highlights the individual word being sung. Enhanced LRC carries `<mm:ss.xx>` word
+**Lyrics light up by line by default** (2026-11-10, the user's "only by line and not by word"): `MediaSettings.highlightsWords` (Music > Lyrics > Light Up Each Word, off) is passed to `LyricsText.line(…, byWord:)` by the strip, the closed lyrics and the full list. With it on, the strip highlights the individual word being sung. Enhanced LRC carries `<mm:ss.xx>` word
 stamps and is used directly when present, but almost no source provides it, so `LRCParser`
 otherwise spreads each line across the gap to the next one in proportion to word length.
 That estimate is what makes the highlight work on ordinary LRC, which is everything LRCLIB

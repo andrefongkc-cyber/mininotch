@@ -228,6 +228,12 @@ struct MediaSettings: Codable, Equatable {
     /// Show time-synced lyrics under the track info when the source provides them.
     var showLyrics: Bool = false
 
+    /// Light up the word being sung, or just show the line being sung. Line by default
+    /// (2026-11-10, the user's "only by line and not by word"): the word timing is mostly an
+    /// estimate spread across the line, and a wrong word draws the eye more than no word. The
+    /// notch's strip, the closed lyrics and the full list; the lock screen draws lines anyway.
+    var highlightsWords: Bool = false
+
     /// Where lyrics come from. Local only by default.
     var lyricsSource: LyricsSource = .playerOnly
 
@@ -324,6 +330,7 @@ struct MediaSettings: Codable, Equatable {
         preferredSource = c.value(.preferredSource, MediaSourceKind.auto)
         showLyrics = c.value(.showLyrics, false)
         lyricsSource = c.value(.lyricsSource, LyricsSource.playerOnly)
+        highlightsWords = c.value(.highlightsWords, false)
         lyricsOffset = c.value(.lyricsOffset, 0, in: -2...2)
         useAudioClockForLyrics = c.value(.useAudioClockForLyrics, true)
         matchLyricsToAudio = c.value(.matchLyricsToAudio, false)

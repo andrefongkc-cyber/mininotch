@@ -1,6 +1,6 @@
 # MiniNotch workplan
 
-Status: the Answers tab is one row of five buttons; Scroll & Read gathers a quiz page by page, waiting for the user to try it on a real quiz; next: the Wave and Chase revamp when the user asks.
+Status: the pop-outs drag themselves and lyrics light up by line by default, both waiting for the user to try them; next: fix the lyrics timing (below), then the Wave and Chase revamp when the user asks.
 
 Living document. Update the checkboxes as work lands. `CLAUDE.md` holds the architecture
 rules and the traps; this file holds the sequence.
@@ -77,6 +77,11 @@ then the user picks before the other three are built.
 - [x] A scanned AP passage in Chrome's PDF viewer: split at its options, (A)-style options counted, the lines a question names quoted (2026-11-03).
 - [x] The closed notch's answer letters and scroll glyph drawn like the countdown, dim ink, not the accent (2026-11-04).
 - [x] The pop-out windows (Now Playing, Timer) are no longer held below the menu bar: `FreelyMovingPanel` and `.movesWindow()`, a drag of their own (2026-11-10). Needs trying by hand.
+
+- [x] Lyrics in the notch light up by line by default; Music > Lyrics > Light Up Each Word brings the word-by-word highlight back (`MediaSettings.highlightsWords`, 2026-11-10). The lock screen is unchanged.
+
+## Lyrics timing (asked 2026-11-10)
+- [ ] Fix the lyrics timing. The user says it is off; find out how (early, late, drifting, one song or all, which player) before touching anything. Start from `NowPlayingController.lyricsTime(at:)`, the audio latency correction, the `LyricsSyncCalibrator` (only ever measured on one sung song, so its thresholds are the first suspect), and `log show --predicate 'subsystem == "com.minnotch.MinNotch"' --info` for what it answered.
 
 ## Notch Visual Style System (asked 2026-10-05)
 

@@ -762,7 +762,7 @@ struct LyricsStripView: View {
 
             HStack(alignment: .top, spacing: 8) {
                 VStack(alignment: .leading, spacing: 3) {
-                    LyricsText.line(lyrics, at: index, time: elapsed, ink: theme.ink)
+                    LyricsText.line(lyrics, at: index, time: elapsed, ink: theme.ink, byWord: settings.media.highlightsWords)
                         .font(.system(size: 12, weight: .medium))
                         .lineLimit(1)
                         .truncationMode(.tail)
@@ -854,13 +854,15 @@ struct LyricsStripView: View {
 enum LyricsText {
     /// Builds the line as one concatenated `Text` rather than a stack of word views, so it
     /// wraps, truncates, and kerns exactly as ordinary text does.
-    static func line(_ lyrics: Lyrics, at index: Int?, time: TimeInterval, ink: Color) -> Text {
+    /// With `byWord` off the line is drawn whole, as one bright line, and the timing only
+    /// decides which line it is.
+    static func line(_ lyrics: Lyrics, at index: Int?, time: TimeInterval, ink: Color, byWord: Bool) -> Text {
         guard let index, lyrics.lines.indices.contains(index) else {
             return Text(lyrics.lines.first?.text ?? "").foregroundStyle(ink.opacity(0.85))
         }
 
         let line = lyrics.lines[index]
-        guard !line.words.isEmpty else {
+        guard byWord, !line.words.isEmpty else {
             return Text(line.text).foregroundStyle(ink.opacity(0.9))
         }
 
@@ -961,7 +963,7 @@ struct LyricsSheetView: View {
         let isCurrent = index == current
         let isSung = current.map { index < $0 } ?? false
         let text: Text = isCurrent
-            ? LyricsText.line(lyrics, at: index, time: time, ink: theme.ink)
+            ? LyricsText.line(lyrics, at: index, time: time, ink: theme.ink, byWord: environment.settings.media.highlightsWords)
             : Text(line.text).foregroundStyle(theme.ink.opacity(isSung ? 0.5 : 0.32))
 
         let label = text

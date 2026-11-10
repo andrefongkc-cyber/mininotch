@@ -96,6 +96,17 @@ struct MediaSettingsView: View {
                 SettingsDivider()
 
                 SettingsRow(
+                    title: "Light Up Each Word",
+                    subtitle: "Follow the song word by word. Off, the line being sung is shown whole. The lock screen always shows whole lines.",
+                    systemImage: "character.cursor.ibeam",
+                    isEnabled: settings.media.enabled && settings.media.showLyrics
+                ) {
+                    SettingsToggle(isOn: $settings.media.highlightsWords)
+                }
+
+                SettingsDivider()
+
+                SettingsRow(
                     title: "Lyrics Source",
                     subtitle: "Where to look when your player has no lyrics stored.",
                     systemImage: "magnifyingglass",

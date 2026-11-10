@@ -35,7 +35,9 @@ private struct MovesWindow: ViewModifier {
                     // the window, so a translation measured in it would chase itself.
                     let pointer = NSEvent.mouseLocation
                     if drag == nil {
-                        guard let window = NSApp.orderedWindows.first(where: {
+                        // `NSApp.windows`, not `orderedWindows`, which leaves panels out: the
+                        // first version used it, found no window, and nothing moved.
+                        guard let window = NSApp.windows.first(where: {
                             $0 is FreelyMovingPanel && $0.isVisible && $0.frame.contains(pointer)
                         }) else { return }
                         drag = (window, pointer, window.frame.origin)

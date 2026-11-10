@@ -65,6 +65,7 @@ enum SettingsSearchIndex {
         .init(tab: .music, section: "Player", title: "System Now Playing", subtitle: "", symbolName: "waveform"),
         .init(tab: .music, section: "Source", title: "Automation Permission", subtitle: "macOS is blocking MiniNotch from controlling Music and Spotify.", symbolName: "exclamationmark.triangle"),
         .init(tab: .music, section: "Lyrics", title: "Show Lyrics", subtitle: "Display the current line under the track info when lyrics are available.", symbolName: "quote.bubble"),
+        .init(tab: .music, section: "Lyrics", title: "Light Up Each Word", subtitle: "Follow the song word by word. Off, the line being sung is shown whole. The lock screen always shows whole lines.", symbolName: "character.cursor.ibeam", keywords: ["karaoke", "highlight", "word", "line", "trace"]),
         .init(tab: .music, section: "Lyrics", title: "Show Lyrics When Closed", subtitle: "The line being sung, under the closed notch, while a song with synced lyrics plays.", symbolName: "text.below.photo"),
         .init(tab: .music, section: "Lyrics", title: "Show Lyrics On", subtitle: "Which displays show the lyrics with the notch closed, when more than one is connected.", symbolName: "display.2", keywords: ["monitor", "external", "screen", "display", "built-in"]),
         .init(tab: .music, section: "Lyrics Timing", title: "Timing Offset", subtitle: "Shift lyrics earlier or later. Lyric files are timed by hand and disagree between sources.", symbolName: "timer"),
