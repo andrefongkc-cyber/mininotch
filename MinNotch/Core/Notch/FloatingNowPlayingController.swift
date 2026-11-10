@@ -113,7 +113,8 @@ final class FloatingNowPlayingController {
         panel.isOpaque = false
         panel.backgroundColor = .clear
         panel.hasShadow = true
-        panel.isMovableByWindowBackground = true
+        // Moved by `.movesWindow()`, not by the window server, which holds it under the menu bar.
+        panel.isMovableByWindowBackground = false
         panel.hidesOnDeactivate = false
         panel.animationBehavior = .utilityWindow
         panel.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary]
@@ -241,6 +242,7 @@ private struct FloatingNowPlayingView: View {
             )
             .overlay(alignment: .topLeading) { closeButton }
             .clipShape(RoundedRectangle(cornerRadius: Self.cornerRadius, style: .continuous))
+            .movesWindow()
             .onHover { isHovering = $0 }
             .onChange(of: environment.nowPlaying.showsUpNext) { onLayoutChange() }
             .onChange(of: environment.nowPlaying.showsOutputSheet) { onLayoutChange() }

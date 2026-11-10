@@ -46,7 +46,8 @@ final class FloatingTimerController {
         panel.isOpaque = false
         panel.backgroundColor = .clear
         panel.hasShadow = true
-        panel.isMovableByWindowBackground = true
+        // Moved by `.movesWindow()`, not by the window server, which holds it under the menu bar.
+        panel.isMovableByWindowBackground = false
         panel.hidesOnDeactivate = false
         panel.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary]
         panel.minSize = Self.minimumSize
@@ -144,6 +145,7 @@ private struct FloatingTimerView: View {
                              edge: RoundedRectangle(cornerRadius: 18, style: .continuous))
         )
         .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
+        .movesWindow()
         .onHover { isHovering = $0 }
         .onGeometryChange(for: Bool.self) { proxy in
             FloatingTimerController.isExpanded(height: proxy.size.height)

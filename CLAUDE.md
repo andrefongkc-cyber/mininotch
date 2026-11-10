@@ -1597,7 +1597,14 @@ own); breaks and pauses are let go. The user picked "switching apps" as what cou
 `--check-focus` posts the switches; `--capture-notch --stopwatch`, `--focus` and `--floating-timer`
 draw the rest.
 
-**The pop-out windows go anywhere on the screen** (2026-11-10): both are a `FreelyMovingPanel`, whose `constrainFrameRect` returns the frame unchanged, because AppKit otherwise pushes a window back below the menu bar and the Now Playing card, inside 56 points of glow room and its drag strip, stopped well short of the top. Only reasoned through; a drag cannot be simulated without moving the user's pointer.
+**The pop-out windows go anywhere on the screen** (2026-11-10): both are a `FreelyMovingPanel`,
+moved by `.movesWindow()`, a SwiftUI drag gesture under everything else in the card (buttons and the
+scrubber still win) that sets the window's origin from the pointer. `isMovableByWindowBackground` is
+off: that drag is run by the window server, which holds a window below the menu bar, and with the
+Now Playing card inside 56 points of glow room and its drag strip, the card stopped about 80 points
+short of the top ("its still stuck"). Overriding `constrainFrameRect` alone did not change that. An
+AppKit `sendEvent` drag was tried and dropped: `NSHostingView` answers `mouseDownCanMoveWindow` yes
+everywhere, buttons included, so it cannot tell a control from the background.
 
 **The pop-out window resizes, and the time fills it** (2026-10-15, "make it so u can expand it").
 The window is borderless and `.resizable`, so its edges drag (minimum 440 × 184); the expand button
