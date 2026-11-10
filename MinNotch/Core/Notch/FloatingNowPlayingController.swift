@@ -100,7 +100,7 @@ final class FloatingNowPlayingController {
         }
 
         let initial = size
-        let panel = NSPanel(
+        let panel = FreelyMovingPanel(
             contentRect: CGRect(origin: .zero, size: initial),
             // Non-activating for the same reason the notch is: reaching for the transport
             // controls should never pull focus out of whatever the user is typing in.

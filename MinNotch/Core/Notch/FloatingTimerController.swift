@@ -35,7 +35,7 @@ final class FloatingTimerController {
 
     private func show() {
         if let panel { panel.orderFrontRegardless(); return }
-        let panel = NSPanel(
+        let panel = FreelyMovingPanel(
             contentRect: CGRect(origin: .zero, size: Self.size),
             styleMask: [.borderless, .resizable, .nonactivatingPanel, .utilityWindow],
             backing: .buffered,

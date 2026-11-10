@@ -76,6 +76,7 @@ then the user picks before the other three are built.
 - [x] The tab shrunk to one row of its five buttons, no answer text or Copy (2026-11-03).
 - [x] A scanned AP passage in Chrome's PDF viewer: split at its options, (A)-style options counted, the lines a question names quoted (2026-11-03).
 - [x] The closed notch's answer letters and scroll glyph drawn like the countdown, dim ink, not the accent (2026-11-04).
+- [x] The pop-out windows (Now Playing, Timer) are no longer held below the menu bar: `FreelyMovingPanel` (2026-11-10). Needs trying by hand.
 
 ## Notch Visual Style System (asked 2026-10-05)
 
