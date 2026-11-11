@@ -950,8 +950,11 @@ struct LyricsSheetView: View {
         }
         .frame(height: Self.height)
         .overlay(alignment: .topTrailing) {
-            Self.toggleButton(isOpen: true, ink: theme.ink) {
-                environment.nowPlaying.isShowingLyricsSheet = false
+            HStack(spacing: 4) {
+                if lyrics.isSynced { timingNudge }
+                Self.toggleButton(isOpen: true, ink: theme.ink) {
+                    environment.nowPlaying.isShowingLyricsSheet = false
+                }
             }
         }
         .accessibilityElement(children: .contain)
@@ -985,6 +988,41 @@ struct LyricsSheetView: View {
         } else {
             label
         }
+    }
+
+    /// Earlier and Later, for a song whose lyrics run ahead of the singing or behind it, a
+    /// quarter second a press, remembered for that song (2026-11-10, "early and late for
+    /// different songs"). The number is the correction now in use, measured or nudged.
+    private var timingNudge: some View {
+        let controller = environment.nowPlaying
+        let correction = controller.lyricsAudioCorrection
+        return HStack(spacing: 2) {
+            nudgeButton("minus", help: "Words too early? Show them a quarter second later") {
+                controller.nudgeLyrics(by: -0.25)
+            }
+            Text(String(format: "%+.2f", correction))
+                .font(.system(size: 9, weight: .medium).monospacedDigit())
+                .foregroundStyle(theme.ink.opacity(controller.lyricsNudge == nil ? 0.4 : 0.75))
+                .frame(width: 34)
+                .help(controller.lyricsNudge == nil
+                      ? "Seconds the lyrics are moved by, as measured from the audio"
+                      : "Seconds the lyrics are moved by, as you set for this song")
+            nudgeButton("plus", help: "Words too late? Show them a quarter second sooner") {
+                controller.nudgeLyrics(by: 0.25)
+            }
+        }
+    }
+
+    private func nudgeButton(_ symbol: String, help: String, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            TransportSymbol.image(symbol, pointSize: 9, weight: .semibold)
+                .foregroundStyle(theme.ink.opacity(0.55))
+                .frame(width: 20, height: 20)
+                .background(RoundedRectangle(cornerRadius: 5, style: .continuous).fill(theme.ink.opacity(0.08)))
+                .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .help(help)
     }
 
     /// The expand button on the strip and the collapse button on the list.

@@ -11,9 +11,30 @@ import SwiftUI
 /// background (`isMovableByWindowBackground`) is run by the window server, which holds the
 /// window under the menu bar itself. So the window is moved by `.movesWindow()`, a drag
 /// gesture under everything else in the view (a button or the scrubber still takes its own
-/// drag), which sets the origin directly, and nothing constrains that. The pointer cannot leave
-/// the screen, so some of the window is always left on it to drag back.
+/// drag), which sets the origin directly, and nothing constrains that. What it draws stops at the
+/// screen's edges (`drawnInset`, `keptOnScreen`).
 final class FreelyMovingPanel: NSPanel {
+    /// Transparent room around what the window draws (the Now Playing card's glow margin).
+    /// A drag keeps what is drawn on the screen, edge to edge, up to the menu bar, and lets
+    /// this room hang off it (2026-11-10, "make the bounding box the dimensions of the popup
+    /// and not just my mouse").
+    var drawnInset: CGFloat = 0
+
+    /// The origin for `proposed`, moved just enough that the drawn part of the window stays
+    /// on the screen under the pointer.
+    func keptOnScreen(_ proposed: NSPoint, pointer: NSPoint) -> NSPoint {
+        guard let screen = NSScreen.screens.first(where: { $0.frame.contains(pointer) }) ?? screen
+        else { return proposed }
+        // The visible frame: the menu bar and the Dock draw over a floating window, so a card
+        // dragged under either was half hidden.
+        let bounds = screen.visibleFrame
+        let drawn = CGSize(width: frame.width - drawnInset * 2, height: frame.height - drawnInset * 2)
+        guard drawn.width <= bounds.width, drawn.height <= bounds.height else { return proposed }
+        let x = min(max(proposed.x + drawnInset, bounds.minX), bounds.maxX - drawn.width) - drawnInset
+        let y = min(max(proposed.y + drawnInset, bounds.minY), bounds.maxY - drawn.height) - drawnInset
+        return NSPoint(x: x, y: y)
+    }
+
     override func constrainFrameRect(_ frameRect: NSRect, to screen: NSScreen?) -> NSRect {
         frameRect
     }
@@ -43,8 +64,12 @@ private struct MovesWindow: ViewModifier {
                         drag = (window, pointer, window.frame.origin)
                     }
                     guard let drag else { return }
-                    drag.window.setFrameOrigin(NSPoint(x: drag.origin.x + pointer.x - drag.pointer.x,
-                                                       y: drag.origin.y + pointer.y - drag.pointer.y))
+                    var origin = NSPoint(x: drag.origin.x + pointer.x - drag.pointer.x,
+                                         y: drag.origin.y + pointer.y - drag.pointer.y)
+                    if let panel = drag.window as? FreelyMovingPanel {
+                        origin = panel.keptOnScreen(origin, pointer: pointer)
+                    }
+                    drag.window.setFrameOrigin(origin)
                 }
                 .onEnded { _ in
                     if let window = drag?.window, !window.frameAutosaveName.isEmpty {

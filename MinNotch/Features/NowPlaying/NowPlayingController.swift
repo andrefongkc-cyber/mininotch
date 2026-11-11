@@ -24,9 +24,12 @@ final class NowPlayingController {
                 if let lyricsMemoryKey, let remembered = LyricsSyncMemory.offset(for: lyricsMemoryKey) {
                     calibrator.restore(offset: remembered)
                 }
+                lyricsNudge = lyricsMemoryKey.flatMap { LyricsSyncMemory.offset(for: LyricsSyncMemory.nudgeKey($0)) }
+                typicalLyricsOffset = LyricsSyncMemory.typicalOffset()
             } else {
                 calibrator.reset()
                 lyricsMemoryKey = nil
+                lyricsNudge = nil
             }
             publishLyricsSync()
         }
@@ -36,6 +39,11 @@ final class NowPlayingController {
     /// changes with every window the tap analyses; `lyricsSync` is what views read.
     @ObservationIgnored private var calibrator = LyricsSyncCalibrator()
     @ObservationIgnored private var lyricsMemoryKey: String?
+    /// The user's own correction for this song and file, from the lyrics list's Earlier and
+    /// Later buttons. Wins over the measurement, and is remembered apart from it.
+    private(set) var lyricsNudge: TimeInterval?
+    /// What the measurement has found for other songs, applied to one it has not answered yet.
+    @ObservationIgnored private var typicalLyricsOffset: TimeInterval?
     /// The measurement's answer, for the strip and the Settings row.
     private(set) var lyricsSync = LyricsSyncSummary()
     /// Why the lyric strip looks the way it does. Without this the strip silently renders
@@ -614,9 +622,28 @@ final class NowPlayingController {
     /// Correction measured from the audio itself, or zero while the feature is off or the
     /// measurement has not settled. Added on top of the user's own offset rather than replacing
     /// it: theirs is a preference, this is a property of the file.
+    ///
+    /// The user's nudge for this song comes first, whatever the setting. Until the measurement
+    /// answers, which takes two or three minutes of a song, the offset it found most often on
+    /// other songs stands in: the user's first 31 answers (2026-11-10) were all between 0 and
+    /// -0.55 s, so LRCLIB files run early against Apple Music, and starting from zero left every
+    /// new song early until it was measured.
     var lyricsAudioCorrection: TimeInterval {
+        if let lyricsNudge { return lyricsNudge }
         guard settings?.media.matchLyricsToAudio == true else { return 0 }
-        return lyricsSync.offset ?? 0
+        return lyricsSync.offset ?? typicalLyricsOffset ?? 0
+    }
+
+    /// Moves this song's lyrics later (`seconds` below zero, for lyrics that come too early) or
+    /// earlier, from wherever they are now, and remembers it for this song and file.
+    func nudgeLyrics(by seconds: TimeInterval) {
+        guard lyrics?.isSynced == true else { return }
+        let nudge = ((lyricsAudioCorrection + seconds) * 100).rounded() / 100
+        lyricsNudge = nudge
+        if let lyricsMemoryKey {
+            LyricsSyncMemory.store(nudge, for: LyricsSyncMemory.nudgeKey(lyricsMemoryKey))
+        }
+        AppLog.media.info("Lyric timing nudged to \(String(format: "%+.2f s", nudge), privacy: .public)")
     }
 
     /// Records the level of the singing the audio tap heard, for the lyric measurement.

@@ -496,6 +496,18 @@ enum LyricsSyncMemory {
         return String(hash, radix: 16)
     }
 
+    /// Where the user's own nudge for a song is kept, beside the measured answer.
+    static func nudgeKey(_ key: String) -> String { "nudge-" + key }
+
+    /// The median measured answer, once there are at least five; nudges are left out, since
+    /// they say what one person heard on one song rather than how the files run.
+    static func typicalOffset(defaults: UserDefaults = .standard) -> TimeInterval? {
+        guard let entries = defaults.dictionary(forKey: defaultsKey) as? [String: [Double]] else { return nil }
+        let measured = entries.filter { !$0.key.hasPrefix("nudge-") }.compactMap(\.value.first).sorted()
+        guard measured.count >= 5 else { return nil }
+        return measured[measured.count / 2]
+    }
+
     static func offset(for key: String, defaults: UserDefaults = .standard) -> TimeInterval? {
         guard let entry = (defaults.dictionary(forKey: defaultsKey) as? [String: [Double]])?[key], let first = entry.first else { return nil }
         return first

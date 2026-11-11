@@ -1599,7 +1599,10 @@ draw the rest.
 
 **The pop-out windows go anywhere on the screen** (2026-11-10): both are a `FreelyMovingPanel`,
 moved by `.movesWindow()`, a SwiftUI drag gesture under everything else in the card (buttons and the
-scrubber still win) that sets the window's origin from the pointer. `isMovableByWindowBackground` is
+scrubber still win) that sets the window's origin from the pointer, keeping the drawn card inside the
+screen's visible frame (`drawnInset`, the glow room, may hang off it; the user's "the bounding box the
+dimensions of the popup and not just my mouse"). The window is found in `NSApp.windows`:
+`orderedWindows` leaves panels out, and the first version moved nothing. `isMovableByWindowBackground` is
 off: that drag is run by the window server, which holds a window below the menu bar, and with the
 Now Playing card inside 56 points of glow room and its drag strip, the card stopped about 80 points
 short of the top ("its still stuck"). Overriding `constrainFrameRect` alone did not change that. An
@@ -1765,6 +1768,15 @@ to AppleScript, and a streamed track's `lyrics` property is almost always empty,
 `LRCLIBClient` is the path that actually works, and it is opt-in via
 `MediaSettings.lyricsSource`. When there is nothing to show, the strip renders
 `LyricsStatus.message` rather than collapsing, so an empty strip always explains itself.
+
+**A song the measurement has not answered starts at the usual answer, and any song can be nudged**
+(2026-11-10, Apple Music lyrics "early and late for different songs"). The user's 31 remembered
+answers all lay between 0 and -0.55 s, so LRCLIB files run early against Apple Music, and every new
+song showed early for the two or three minutes the measurement takes. `lyricsAudioCorrection` is now
+the user's nudge for the song, else the measured answer, else `LyricsSyncMemory.typicalOffset` (the
+median of five or more measured answers). The full lyrics list has − and + buttons around the
+correction in use, a quarter second a press (`nudgeLyrics`), kept in the same store under
+`nudge-<key>` and applied whether or not Fix Timing Automatically is on.
 
 **Lyrics light up by line by default** (2026-11-10, the user's "only by line and not by word"): `MediaSettings.highlightsWords` (Music > Lyrics > Light Up Each Word, off) is passed to `LyricsText.line(…, byWord:)` by the strip, the closed lyrics and the full list. With it on, the strip highlights the individual word being sung. Enhanced LRC carries `<mm:ss.xx>` word
 stamps and is used directly when present, but almost no source provides it, so `LRCParser`

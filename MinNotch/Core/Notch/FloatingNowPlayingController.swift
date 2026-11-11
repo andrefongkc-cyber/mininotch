@@ -109,6 +109,7 @@ final class FloatingNowPlayingController {
             defer: false
         )
         panel.isFloatingPanel = true
+        panel.drawnInset = Self.glowRoom
         panel.level = .floating
         panel.isOpaque = false
         panel.backgroundColor = .clear
