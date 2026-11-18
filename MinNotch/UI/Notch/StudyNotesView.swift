@@ -59,7 +59,7 @@ struct StudyNotesView: View {
     /// One chip per section, scrolling the page so that section is at the top.
     private func sectionBar(_ proxy: ScrollViewProxy) -> some View {
         ScrollView(.horizontal) {
-            HStack(spacing: 6) {
+            HStack(spacing: 4) {
                 ForEach(notes.sections) { section in
                     Button {
                         withAnimation(.easeInOut(duration: 0.3)) { proxy.scrollTo(Self.anchor(section.id), anchor: .top) }
@@ -68,7 +68,7 @@ struct StudyNotesView: View {
                             .font(.system(size: 11, weight: .medium))
                             .foregroundStyle(theme.ink.opacity(0.75))
                             .lineLimit(1)
-                            .padding(.horizontal, 9)
+                            .padding(.horizontal, 7)
                             .padding(.vertical, 4)
                             .background(NotchElementView(.button, shape: .capsule, emphasis: 0.08))
                             .contentShape(Capsule())

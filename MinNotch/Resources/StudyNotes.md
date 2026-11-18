@@ -369,6 +369,37 @@
    * While [claim] was true for [group/region], it was not true for [other group/region] because [reason].
    * This change was limited, though, since [continuity] still [remained/persisted] because [reason].
 
+# LEQ Structure {Outline}
+
+* Intro paragraph
+   * Context: 2–4 sentences on what was happening before or around the prompt's time period, specific (names, dates, events), leading into the topic.
+   * Thesis: last sentence of the intro. Answers the prompt, takes a position, and names your two lines of reasoning (claim 1 and claim 2). Add a "although…" or "however…" for complexity.
+* Body paragraph 1: Claim 1
+   * Claim: topic sentence stating your first reason, in the words of the thesis.
+   * Evidence: a specific event, law, person, or date from the period.
+   * Commentary: explain how that evidence proves the claim ("This shows that… because…").
+   * Evidence: a second specific example, ideally from a different part of the time period.
+   * Commentary: explain it, and link it back to the thesis.
+* Body paragraph 2: Claim 2
+   * Claim: topic sentence stating your second reason.
+   * Evidence: a specific example.
+   * Commentary: explain how it proves the claim.
+   * Evidence: another specific example.
+   * Commentary: explain it, and connect it back to the thesis.
+* Complexity (optional third body paragraph, or a few sentences)
+   * Claim: a counterargument, a continuity next to a change, or a different group or region the claim does not fit.
+   * Evidence: an example of it.
+   * Commentary: explain why it complicates or qualifies your thesis rather than disproving it.
+* Conclusion
+   * Restate the thesis in new words and say why it mattered for what came next.
+* Rubric points to aim for
+   * Thesis (1): a defensible claim with a line of reasoning, in the intro.
+   * Contextualization (1): broader context before or during the period, more than a passing phrase.
+   * Evidence (2): at least two specific examples, and using them to support the argument.
+   * Analysis and reasoning (2): explaining how the evidence proves the thesis using causation, comparison, or continuity and change, plus complexity.
+* For a CCOT prompt
+   * Body paragraph 1 is the change, body paragraph 2 is the continuity (or two kinds of change), and the commentary should say why things changed or why they stayed the same.
+
 # Sample LEQs {LEQs}
 
 * How to use these
