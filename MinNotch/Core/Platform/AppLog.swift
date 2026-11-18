@@ -12,5 +12,4 @@ enum AppLog {
     static let battery = Logger(subsystem: subsystem, category: "battery")
     static let hotkeys = Logger(subsystem: subsystem, category: "hotkeys")
     static let settings = Logger(subsystem: subsystem, category: "settings")
-    static let answers = Logger(subsystem: subsystem, category: "answers")
 }

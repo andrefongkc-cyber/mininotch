@@ -341,7 +341,7 @@
    * …; however, [counterargument], which shows that [more nuanced claim].
    * …, but this change was limited because [group/region] still [continuity].
 
-# Contextualization Frames
+# Contextualization Frames {Context}
 
 * Before [period/event], [broader development], which set the stage for [topic].
 * In the years leading up to [year], [trend/conflict] created tension over [issue], leading to [topic of the prompt].
@@ -368,3 +368,45 @@
    * However, [counter-evidence], which complicates the argument because [explanation].
    * While [claim] was true for [group/region], it was not true for [other group/region] because [reason].
    * This change was limited, though, since [continuity] still [remained/persisted] because [reason].
+
+# Sample LEQs {LEQs}
+
+* How to use these
+   * The newer prompts cover a longer stretch of time, so pick evidence from both the start and the end of the period, not just one event.
+   * Each response here is the core of an essay: thesis, context, two pieces of evidence, and the analysis that ties them to the thesis.
+* Prompt 1: Evaluate the extent to which British imperial policy changed the relationship between Britain and its North American colonies from 1651 to 1776.
+   * Thesis: Although Britain had regulated colonial trade since the Navigation Acts, its relationship with the colonies changed greatly after 1763, as the end of salutary neglect and new taxes like the Stamp Act turned loyal colonists into rebels who declared independence.
+   * Context: In the 1600s England set up colonies mainly for profit, like the Virginia Company at Jamestown, and colonists grew used to governing themselves through bodies like the House of Burgesses and the Mayflower Compact.
+   * Evidence 1: The Navigation Acts (1651) required colonial goods to travel on British ships and enumerated goods to go only to England, but under salutary neglect Britain rarely enforced them, so colonists smuggled and traded freely.
+   * Evidence 2: After the French and Indian War left Britain in debt, Parliament passed the Proclamation of 1763, the Stamp Act (1765), and the Intolerable Acts (1774), taxing and controlling the colonies directly.
+   * Analysis: This shows a real change, because before 1763 the colonists accepted British rule while it stayed loose, but once Britain enforced its power without colonial representation, groups like the Sons of Liberty organized resistance, which led directly to Common Sense and the Declaration of Independence in 1776.
+* Prompt 2: Evaluate the extent to which ideas about religion and liberty shaped American society from 1630 to 1800.
+   * Thesis: Religious ideas strongly shaped American society from 1630 to 1800, as Puritan efforts to build a "city upon a hill" gave way to dissent and religious tolerance, and the First Great Awakening encouraged colonists to question authority in ways that fed revolutionary ideas of liberty.
+   * Context: Many early colonists came to North America to practice their religion freely, and in New England the church and the colonial government were closely tied together.
+   * Evidence 1: John Winthrop's "City Upon a Hill" (1630) described Massachusetts Bay as a model Puritan community, yet Roger Williams was banished for arguing for separation of church and state and founded Rhode Island (1636) as a haven for religious tolerance.
+   * Evidence 2: In the 1730s and 1740s the First Great Awakening, led by George Whitefield and Jonathan Edwards, stressed a personal relationship with God over obedience to church officials, and it appealed to people of every class.
+   * Analysis: This mattered beyond religion, because once colonists believed they could challenge church authority, it became easier to challenge political authority too, which helped prepare them to accept the Declaration of Independence's claim that people could overthrow a government that abused its power.
+* Prompt 3: Evaluate the extent to which the Constitution resolved the problems facing the United States from 1781 to 1800.
+   * Thesis: The Constitution largely fixed the weaknesses of the Articles of Confederation by creating a stronger federal government that could tax and enforce its laws, but it did not settle disagreements over federal power, which split Americans into rival political parties by 1800.
+   * Context: After independence, Americans feared a strong central government like Britain's, so the Articles of Confederation (1781) gave the national government very little power.
+   * Evidence 1: Shays' Rebellion (1786–1787) showed that the national government under the Articles could not raise an army or deal with debt, which pushed leaders to write a new constitution with compromises like the Great Compromise.
+   * Evidence 2: Under the Constitution, Washington used federal troops to stop the Whiskey Rebellion (1794), but Hamilton's Economic Plan and the Alien and Sedition Acts (1798) caused fierce debates over how much power the federal government should have.
+   * Analysis: The Whiskey Rebellion shows that the new government could now enforce its laws, which the Articles never could, but the fights over Hamilton's bank and the Alien and Sedition Acts show the problem of federal power was only partly solved, since it produced the party conflict behind Jefferson's "Revolution of 1800."
+* Prompt 4: Evaluate the extent to which economic changes transformed American society from 1800 to 1848.
+   * Thesis: The Market Revolution transformed American society from 1800 to 1848 by connecting regions through new transportation and creating factory work in the North, while it also deepened the South's dependence on cotton and slavery.
+   * Context: In the early 1800s most Americans lived on farms and produced mainly for themselves or local markets, and travel between regions was slow and expensive.
+   * Evidence 1: New transportation like the Erie Canal and the steamboat, along with Henry Clay's American System of internal improvements, let farmers ship goods to distant markets and tied the Northeast to the West.
+   * Evidence 2: The cotton gin made growing cotton far more profitable, which expanded slavery across the South, while textile mills like Lowell employed young women in the North.
+   * Analysis: This shows the Market Revolution changed society unevenly, because the North moved toward wage labor and industry while the South grew more tied to slave labor, which widened the sectional differences that later appeared in conflicts like the Missouri Compromise.
+* Prompt 5: Evaluate the extent to which territorial expansion increased sectional tensions in the United States from 1820 to 1861.
+   * Thesis: Territorial expansion was the main cause of rising sectional tension from 1820 to 1861, because every new territory reopened the question of whether slavery would spread, and the compromises meant to settle it failed one after another until the South seceded.
+   * Context: Since the Constitution, the North and South had kept a balance of power in Congress, and many Americans believed in Manifest Destiny, the idea that the United States was meant to expand west.
+   * Evidence 1: The Missouri Compromise (1820) kept the balance between free and slave states and banned slavery north of 36°30', but the land won in the Mexican-American War led to the Wilmot Proviso and the Compromise of 1850, including a stronger Fugitive Slave Act that angered the North.
+   * Evidence 2: The Kansas-Nebraska Act (1854) repealed the Missouri Compromise line and used popular sovereignty, which led to violence in Bleeding Kansas, and Dred Scott v. Sandford (1857) ruled that Congress could not ban slavery in the territories.
+   * Analysis: Each step west forced the nation to decide the future of slavery, and as compromises collapsed into violence, Northerners and Southerners came to see each other as threats, which is why Lincoln's election in 1860 on a promise to stop slavery's spread led Southern states to secede.
+* Prompt 6: Evaluate the extent to which the Civil War and Reconstruction changed the lives of African Americans from 1861 to 1877.
+   * Thesis: The Civil War and Reconstruction changed the legal status of African Americans by ending slavery and granting citizenship and voting rights, but these changes were limited because Black Codes, sharecropping, and Klan violence kept many in poverty and without real power by 1877.
+   * Context: Before the war, nearly four million African Americans were enslaved in the South, and the Dred Scott decision (1857) had ruled that Black Americans could not be citizens.
+   * Evidence 1: The Emancipation Proclamation (1863), the 13th Amendment (1865), and the 14th and 15th Amendments ended slavery, made African Americans citizens, and gave Black men the right to vote, with help from the Freedmen's Bureau and its schools.
+   * Evidence 2: Southern states passed Black Codes to control freed people's labor, sharecropping trapped many families in debt, and the Ku Klux Klan used terror to stop Black men from voting.
+   * Analysis: This shows that change was real on paper but limited in practice, because once the Compromise of 1877 removed federal troops from the South, nothing protected the new rights, and Southern Democrats rolled them back through Jim Crow laws.

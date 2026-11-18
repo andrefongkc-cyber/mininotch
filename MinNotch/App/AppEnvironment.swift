@@ -37,7 +37,6 @@ final class AppEnvironment {
     let systemAppearance = SystemAppearance()
     let linkShelf = LinkShelfService()
     let notes = NotesService()
-    let screenAnswers = ScreenAnswersService()
     let updates = UpdateService()
     let timer = TimerService()
     let stopwatch = Stopwatch()
@@ -217,10 +216,6 @@ final class AppEnvironment {
     private func settingsChanged() {
         syncFocusGuard()
         syncStopwatchActivity()
-        // Keep Reading never outlives the Answers tab it belongs to.
-        if !settings.advanced.screenAnswersEnabled, screenAnswers.isWatching {
-            screenAnswers.setWatching(false, display: CGMainDisplayID())
-        }
         LaunchAtLogin.reconcile(settings)
         HotkeyManager.shared.apply(settings.shortcuts)
         menuBar.update()

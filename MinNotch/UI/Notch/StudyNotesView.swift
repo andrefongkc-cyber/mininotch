@@ -117,10 +117,13 @@ struct StudyNotes {
         let id: Int
         let kind: Kind
         let text: String
+        /// A heading's own chip label, written after it in braces: `# Contextualization Frames {Context}`.
+        var label: String? = nil
 
-        /// "Unit 1–2" from "Unit 1–2: 1491–1754", and the first word of anything else
-        /// ("Thesis", "Contextualization", "Commentary"), so every chip fits the panel.
+        /// The label if the heading has one, else "Unit 1–2" from "Unit 1–2: 1491–1754", and the
+        /// first word of anything else, so every chip fits the panel.
         var shortTitle: String {
+            if let label { return label }
             if let colon = text.firstIndex(of: ":") { return String(text[..<colon]) }
             return text.split(separator: " ").first.map(String.init) ?? text
         }
@@ -143,9 +146,15 @@ struct StudyNotes {
             guard !trimmed.isEmpty else { continue }
             let kind: Line.Kind
             let body: String
+            var label: String?
             if trimmed.hasPrefix("# ") {
                 kind = .heading
-                body = String(trimmed.dropFirst(2))
+                var heading = String(trimmed.dropFirst(2))
+                if heading.hasSuffix("}"), let open = heading.lastIndex(of: "{") {
+                    label = String(heading[heading.index(after: open)..<heading.index(before: heading.endIndex)])
+                    heading = String(heading[..<open]).trimmingCharacters(in: .whitespaces)
+                }
+                body = heading
             } else if trimmed.hasPrefix("* ") || trimmed.hasPrefix("- ") {
                 let indent = raw.prefix { $0 == " " || $0 == "\t" }.count
                 kind = .point(level: min(indent / 3, 3))
@@ -154,7 +163,7 @@ struct StudyNotes {
                 kind = .text
                 body = trimmed
             }
-            lines.append(Line(id: lines.count, kind: kind, text: body))
+            lines.append(Line(id: lines.count, kind: kind, text: body, label: label))
         }
         return StudyNotes(lines: lines)
     }

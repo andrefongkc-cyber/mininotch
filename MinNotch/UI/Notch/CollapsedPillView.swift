@@ -24,13 +24,6 @@ struct CollapsedPillContent: Equatable {
     /// from here rather than from a fixed assignment in the view.
     var leadingLayout: [PillIndicator]
     var trailingLayout: [PillIndicator]
-    /// The letters Answers picked, drawn first on the left whatever `isExtended` says: it has its
-    /// own switch in the Answers tab, apart from the pill's indicators.
-    var answerLetters: String? = nil
-    /// When Keep Reading next reads, counted down on the right, last, beside the letters' switch.
-    var answerNextRead: Date? = nil
-    /// Lines Scroll and Read has gathered, on the right while it runs, so it is plainly still on.
-    var answerGathered: Int? = nil
 
     /// Distance from the pill's outer edge to its content.
     ///
@@ -53,8 +46,6 @@ struct CollapsedPillContent: Equatable {
     /// A function rather than a stored font: `NSFont` is not `Sendable`, so a static one is
     /// shared mutable state as far as Swift 6 is concerned.
     static var songFont: NSFont { .systemFont(ofSize: 11, weight: .semibold) }
-    static var answerFont: NSFont { countdownFont }
-    static var countdownFont: NSFont { .monospacedDigitSystemFont(ofSize: 13, weight: .bold) }
 
     /// The pill as it stands right now, from the live services.
     ///
@@ -80,18 +71,8 @@ struct CollapsedPillContent: Equatable {
             clockText: settings.general.pillClockText,
             isExtended: isExtended,
             leadingLayout: settings.general.pillLeading,
-            trailingLayout: settings.general.pillTrailing,
-            answerLetters: answerLetters(environment: environment, settings: settings),
-            answerNextRead: nil,
-            answerGathered: nil
+            trailingLayout: settings.general.pillTrailing
         )
-    }
-
-    /// Nothing since the screen reading behind these letters gave way to the Study tab
-    /// (2026-11-18); the slot stays so the pill's sizing keeps one shape.
-    @MainActor
-    private static func answerLetters(environment: AppEnvironment, settings: SettingsStore) -> String? {
-        nil
     }
 
     // MARK: What is showing
@@ -135,8 +116,8 @@ struct CollapsedPillContent: Equatable {
         return detail
     }
 
-    var hasLeading: Bool { answerLetters != nil || !items(on: .leading).isEmpty }
-    var hasTrailing: Bool { answerNextRead != nil || answerGathered != nil || !items(on: .trailing).isEmpty }
+    var hasLeading: Bool { !items(on: .leading).isEmpty }
+    var hasTrailing: Bool { !items(on: .trailing).isEmpty }
 
     // MARK: Sizing
 
@@ -174,14 +155,7 @@ struct CollapsedPillContent: Equatable {
     /// be baked in, and it stopped being true the moment either side could hold anything.
     private func contentWidth(on side: PillSide) -> CGFloat {
         let showing = items(on: side)
-        let answer = side == .leading ? answerLetters.map { Self.measure($0, font: Self.answerFont) } : nil
-        // At the widest the count gets, so the pill holds still as it counts down.
-        let countdown = side == .trailing && answerNextRead != nil ? Self.measure("00", font: Self.countdownFont) : nil
-        // The glyph and the count at the widest it gets, four digits.
-        let gathered = side == .trailing && answerGathered != nil
-            ? Self.glyphWidth + Self.detailSpacing + Self.measure("0000", font: Self.countdownFont) : nil
-        let widths = (answer.map { [$0] } ?? []) + showing.map { width(of: $0) }
-            + (countdown.map { [$0] } ?? []) + (gathered.map { [$0] } ?? [])
+        let widths = showing.map { width(of: $0) }
         guard !widths.isEmpty else { return 0 }
 
         let gaps = Self.itemSpacing * CGFloat(widths.count - 1)
@@ -255,7 +229,6 @@ struct CollapsedPillView: View {
         )
         .animation(Motion.content, value: content.hasLeading)
         .animation(Motion.content, value: content.hasTrailing)
-        .animation(Motion.content, value: content.answerLetters)
     }
 
     // MARK: Sides
@@ -273,46 +246,12 @@ struct CollapsedPillView: View {
     @ViewBuilder
     private func flank(_ side: CollapsedPillContent.PillSide) -> some View {
         let showing = content.items(on: side)
-        let answer = side == .leading ? content.answerLetters : nil
-        let nextRead = side == .trailing ? content.answerNextRead : nil
-        let gathered = side == .trailing ? content.answerGathered : nil
-
-        if showing.isEmpty, answer == nil, nextRead == nil, gathered == nil {
+        if showing.isEmpty {
             Color.clear.frame(width: 0, height: 0)
         } else {
             HStack(spacing: CollapsedPillContent.itemSpacing) {
-                if let answer {
-                    // Drawn as the countdown is, dim ink rather than the accent, so the
-                    // letters read as a quiet hint and not as a highlight.
-                    Text(answer)
-                        .font(Font(CollapsedPillContent.answerFont))
-                        .foregroundStyle(theme.ink.opacity(0.7))
-                        .transition(.opacity)
-                }
-                if let gathered {
-                    HStack(spacing: CollapsedPillContent.detailSpacing) {
-                        TransportSymbol.image("scroll", pointSize: 11)
-                            .foregroundStyle(theme.ink.opacity(0.7))
-                            .frame(width: CollapsedPillContent.glyphWidth)
-                        Text("\(gathered)")
-                            .font(Font(CollapsedPillContent.countdownFont))
-                            .foregroundStyle(theme.ink.opacity(0.7))
-                            .frame(width: CollapsedPillContent.measure("0000", font: CollapsedPillContent.countdownFont), alignment: .leading)
-                    }
-                    .transition(.opacity)
-                }
                 ForEach(showing) { indicator in
                     PillIndicatorView(indicator: indicator, content: content)
-                }
-                if let nextRead {
-                    // Seconds to Keep Reading's next read, 5 4 3 2 1, redrawn once a second.
-                    TimelineView(.periodic(from: .now, by: 1)) { timeline in
-                        Text("\(max(1, Int(ceil(nextRead.timeIntervalSince(timeline.date)))))")
-                            .font(Font(CollapsedPillContent.countdownFont))
-                            .foregroundStyle(theme.ink.opacity(0.7))
-                            .frame(width: CollapsedPillContent.measure("00", font: CollapsedPillContent.countdownFont), alignment: .trailing)
-                    }
-                    .transition(.opacity)
                 }
             }
             // Never let the row compress: a squeezed SF Symbol is what makes a glyph look
