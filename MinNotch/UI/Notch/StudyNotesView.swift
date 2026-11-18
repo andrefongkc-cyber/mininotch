@@ -16,14 +16,26 @@ struct StudyNotesView: View {
 
     private let notes = StudyNotes.bundled
 
+    #if DEBUG
+    /// A section to open on, for `--capture-notch --study --study-jump <n>`.
+    nonisolated(unsafe) static var debugJump: Int?
+    #endif
+
+    /// The page's rows are named `"line-<n>"`, never the bare number: the chips are a `ForEach`
+    /// over the same lines, so they carry those numbers as their own identities, and
+    /// `scrollTo(n)` found the chip in the bar above and scrolled the bar instead of the page
+    /// (2026-11-18, "pressing the buttons on top doesn't hyperlink"). A plain `VStack`, not a
+    /// lazy one, so a section far down has been laid out when it is jumped to.
+    private static func anchor(_ id: Int) -> String { "line-\(id)" }
+
     var body: some View {
         ScrollViewReader { proxy in
             VStack(alignment: .leading, spacing: 8) {
                 sectionBar(proxy)
                 ScrollView {
-                    LazyVStack(alignment: .leading, spacing: 3) {
+                    VStack(alignment: .leading, spacing: 3) {
                         ForEach(notes.lines) { line in
-                            row(line).id(line.id)
+                            row(line).id(Self.anchor(line.id))
                         }
                     }
                     .padding(.bottom, 12)
@@ -33,6 +45,13 @@ struct StudyNotesView: View {
                 .scrollIndicators(.automatic)
                 .frame(height: Self.preferredHeight - 36)
             }
+            #if DEBUG
+            .onAppear {
+                if let jump = Self.debugJump, notes.sections.indices.contains(jump) {
+                    proxy.scrollTo(Self.anchor(notes.sections[jump].id), anchor: .top)
+                }
+            }
+            #endif
         }
         .frame(height: Self.preferredHeight, alignment: .top)
     }
@@ -43,7 +62,7 @@ struct StudyNotesView: View {
             HStack(spacing: 6) {
                 ForEach(notes.sections) { section in
                     Button {
-                        withAnimation(.easeInOut(duration: 0.3)) { proxy.scrollTo(section.id, anchor: .top) }
+                        withAnimation(.easeInOut(duration: 0.3)) { proxy.scrollTo(Self.anchor(section.id), anchor: .top) }
                     } label: {
                         Text(section.shortTitle)
                             .font(.system(size: 11, weight: .medium))

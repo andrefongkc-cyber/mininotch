@@ -1224,7 +1224,9 @@ the `.answers` case, the `screenAnswersEnabled` switch (now Show Study Notes) an
 Study Notes), so saved settings carry over; it has the top bar and the panel's usual width again. The
 letter in the notch, Keep Reading's interval and the scanner's tab view are gone; `ScreenAnswersService`,
 its debug checks and the notes below are kept for now, unused by the app. `--capture-notch --study --tab
-answers` draws it.
+answers` draws it, and `--study-jump <n>` opens it at the nth section as its chip does. The page's
+rows are named `"line-<n>"`, never the bare number: the chips are a `ForEach` over the same lines and
+carry those numbers, so `scrollTo(n)` found the chip and scrolled the bar instead of the page.
 
 **Answers reads the window in front and answers it on this Mac** (2026-10-28, the user's "answers to
 questions on the screen, on mac would be fine"). Shelf & Notes > Show Answers (`screenAnswersEnabled`,

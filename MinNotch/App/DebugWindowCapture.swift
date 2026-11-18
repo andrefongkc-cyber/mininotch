@@ -284,6 +284,10 @@ enum DebugWindowCapture {
                 // `--study` shows the Study tab, which took the Answers tab's place.
                 if arguments.contains("--study") {
             settings.advanced.screenAnswersEnabled = true
+            // `--study-jump <n>` opens it scrolled to the nth section, as its chip would.
+            if let i = arguments.firstIndex(of: "--study-jump"), i + 1 < arguments.count {
+                StudyNotesView.debugJump = Int(arguments[i + 1])
+            }
         }
                 if arguments.contains("--sample-notes") {
             settings.advanced.notesEnabled = true
