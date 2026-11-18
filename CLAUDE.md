@@ -1219,7 +1219,7 @@ thesis sentence frames and sentence frames for the commentary"). `StudyNotesView
 `MinNotch/Resources/StudyNotes.md` (copied into the app by the synchronized folder), a Markdown subset
 parsed by `StudyNotes.parse`: `# ` a section, `* ` a point, three spaces of indent a level down. A row of
 section chips jumps through the page; a heading can name its chip in braces
-(`# Contextualization Frames {Context}`). The page ends with eight sample LEQs over long periods, the last two CCOTs on slavery (1619–1865, 1800–1877)
+(`# Contextualization Frames {Context}`). The page ends with nine sample LEQs over long periods, three of them CCOTs (slavery 1619–1865 and 1800–1877, women's rights 1800–1877), each with a specific context paragraph
 (thesis, context, two pieces of evidence, analysis), written 2026-11-18. Edit the notes by editing that file and rebuilding. The tab keeps
 the `.answers` case, the `screenAnswersEnabled` switch (now Show Study Notes) and the hotkey (now Open
 Study Notes), so saved settings carry over; it has the top bar and the panel's usual width again. The
