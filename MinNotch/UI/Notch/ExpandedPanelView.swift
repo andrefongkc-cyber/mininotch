@@ -88,7 +88,7 @@ struct ExpandedPanelView: View {
         case .notes:
             NotesWidgetView(viewModel: viewModel)
         case .answers:
-            ScreenAnswersWidgetView(viewModel: viewModel)
+            StudyNotesView()
         }
     }
 

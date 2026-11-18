@@ -35,7 +35,7 @@ enum NotchTab: String, Codable, CaseIterable, Identifiable {
         case .timer: return "Timer"
         case .weather: return "Weather"
         case .notes: return "Notes"
-        case .answers: return "Answers"
+        case .answers: return "Study"
         }
     }
 
@@ -50,7 +50,7 @@ enum NotchTab: String, Codable, CaseIterable, Identifiable {
         case .timer: return "timer"
         case .weather: return "cloud.sun"
         case .notes: return "note.text"
-        case .answers: return "text.viewfinder"
+        case .answers: return "book"
         }
     }
 }

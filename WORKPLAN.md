@@ -1,6 +1,6 @@
 # MiniNotch workplan
 
-Status: the pop-outs drag themselves inside the screen, lyrics light up by line, and lyrics timing has a better start and a per-song nudge, all waiting for the user to try them; next: more on lyrics timing if it is still off (below), then the Wave and Chase revamp when the user asks.
+Status: the Answers scanner is replaced by a Study tab of APUSH notes, waiting for the user to try it; next: more on lyrics timing if it is still off.
 
 Living document. Update the checkboxes as work lands. `CLAUDE.md` holds the architecture
 rules and the traps; this file holds the sequence.
@@ -79,6 +79,8 @@ then the user picks before the other three are built.
 - [x] The pop-out windows (Now Playing, Timer) are no longer held below the menu bar: `FreelyMovingPanel` and `.movesWindow()`, a drag of their own (2026-11-10). Needs trying by hand.
 
 - [x] Lyrics in the notch light up by line by default; Music > Lyrics > Light Up Each Word brings the word-by-word highlight back (`MediaSettings.highlightsWords`, 2026-11-10). The lock screen is unchanged.
+
+- [x] The Answers tab's screen scanning replaced by a Study tab: a scrollable page of the user's APUSH notes (Units 1–5, Unit 5 filled in), thesis, contextualization and commentary sentence frames, read from `MinNotch/Resources/StudyNotes.md` (2026-11-18). `ScreenAnswersService` and `--check-answers` are still in the code, unused by the app; delete them if the user does not want the scanner back.
 
 ## Lyrics timing (asked 2026-11-10)
 - [~] Fix the lyrics timing (Apple Music, "early and late for different songs"). Done 2026-11-10: a song not yet measured starts at the median of the measured answers (`LyricsSyncMemory.typicalOffset`, -0.30 s here, where it used to start at 0), and the full lyrics list has − and + buttons, a quarter second a press, remembered per song (`nudgeLyrics`, `lyricsNudge`). Left: whether that is enough on real songs; if not, find out how (early, late, drifting, one song or all, which player) before touching anything. Start from `NowPlayingController.lyricsTime(at:)`, the audio latency correction, the `LyricsSyncCalibrator` (only ever measured on one sung song, so its thresholds are the first suspect), and `log show --predicate 'subsystem == "com.minnotch.MinNotch"' --info` for what it answered.

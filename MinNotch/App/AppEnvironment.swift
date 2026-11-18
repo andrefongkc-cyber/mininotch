@@ -217,7 +217,6 @@ final class AppEnvironment {
     private func settingsChanged() {
         syncFocusGuard()
         syncStopwatchActivity()
-        screenAnswers.setWatchInterval(settings.advanced.answerReadInterval)
         // Keep Reading never outlives the Answers tab it belongs to.
         if !settings.advanced.screenAnswersEnabled, screenAnswers.isWatching {
             screenAnswers.setWatching(false, display: CGMainDisplayID())
@@ -521,7 +520,7 @@ final class AppEnvironment {
             notes.requestFocus()
         case .answerScreen:
             guard settings.advanced.screenAnswersEnabled else { return }
-            if let displayID = notchWindows.openAnswers() { screenAnswers.ask(on: displayID) }
+            _ = notchWindows.openAnswers()
         case .toggleShelf, .startTimer:
             // Handled once the matching feature lands; the binding is already recordable.
             AppLog.app.debug("Action \(action.rawValue, privacy: .public) is not implemented yet")

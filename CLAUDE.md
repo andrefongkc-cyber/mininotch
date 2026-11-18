@@ -1214,6 +1214,18 @@ Advanced > Show Notes, on by default, and in the tutorial's Recommended set, sin
 costs nothing. A capture's sample note (`--sample-notes`) is never marked loaded, so it can never be
 saved over the real one; `--check-notes` proves it with a scratch file.
 
+**The Answers tab is now the Study tab** (2026-11-18, the user's "replace the page scanning feature
+with just like a scrollable page that is embeded into the files of the information here, also add in
+thesis sentence frames and sentence frames for the commentary"). `StudyNotesView` draws
+`MinNotch/Resources/StudyNotes.md` (copied into the app by the synchronized folder), a Markdown subset
+parsed by `StudyNotes.parse`: `# ` a section, `* ` a point, three spaces of indent a level down. A row of
+section chips jumps through the page. Edit the notes by editing that file and rebuilding. The tab keeps
+the `.answers` case, the `screenAnswersEnabled` switch (now Show Study Notes) and the hotkey (now Open
+Study Notes), so saved settings carry over; it has the top bar and the panel's usual width again. The
+letter in the notch, Keep Reading's interval and the scanner's tab view are gone; `ScreenAnswersService`,
+its debug checks and the notes below are kept for now, unused by the app. `--capture-notch --study --tab
+answers` draws it.
+
 **Answers reads the window in front and answers it on this Mac** (2026-10-28, the user's "answers to
 questions on the screen, on mac would be fine"). Shelf & Notes > Show Answers (`screenAnswersEnabled`,
 off) adds an Answers tab; Read Screen, or the Answer What's on Screen shortcut (unbound), runs

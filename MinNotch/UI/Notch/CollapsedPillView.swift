@@ -82,19 +82,16 @@ struct CollapsedPillContent: Equatable {
             leadingLayout: settings.general.pillLeading,
             trailingLayout: settings.general.pillTrailing,
             answerLetters: answerLetters(environment: environment, settings: settings),
-            answerNextRead: settings.advanced.screenAnswersEnabled && settings.advanced.answerLetterInNotch
-                ? environment.screenAnswers.nextReadAt : nil,
-            answerGathered: settings.advanced.screenAnswersEnabled && environment.screenAnswers.isGathering
-                ? environment.screenAnswers.gatheredLineCount : nil
+            answerNextRead: nil,
+            answerGathered: nil
         )
     }
 
-    /// "A", or "A C" for a page of several questions, while Show the Letter in the Notch is on.
+    /// Nothing since the screen reading behind these letters gave way to the Study tab
+    /// (2026-11-18); the slot stays so the pill's sizing keeps one shape.
     @MainActor
     private static func answerLetters(environment: AppEnvironment, settings: SettingsStore) -> String? {
-        guard settings.advanced.screenAnswersEnabled, settings.advanced.answerLetterInNotch else { return nil }
-        let letters = environment.screenAnswers.notchLetters.prefix(4)
-        return letters.isEmpty ? nil : letters.joined(separator: " ")
+        nil
     }
 
     // MARK: What is showing

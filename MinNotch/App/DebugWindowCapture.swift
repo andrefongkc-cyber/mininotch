@@ -281,16 +281,9 @@ enum DebugWindowCapture {
         }
                 // `--sample-devices` puts AirPods and a mouse in the System tab's accessory row.
                 if arguments.contains("--sample-devices") { environment.bluetooth.applySample() }
-                // `--sample-answers` shows the Answers tab with a fixed answer; `--answers-idle` with none.
-                if arguments.contains("--sample-answers") || arguments.contains("--answers-idle") {
+                // `--study` shows the Study tab, which took the Answers tab's place.
+                if arguments.contains("--study") {
             settings.advanced.screenAnswersEnabled = true
-            if arguments.contains("--sample-answers") { environment.screenAnswers.applySample() }
-            // `--answer-letter` puts the sample's letter on the closed notch; set either way.
-            settings.advanced.answerLetterInNotch = arguments.contains("--answer-letter")
-            // `--answer-countdown` adds Keep Reading's count on the right, from 5.
-            if arguments.contains("--answer-countdown") { environment.screenAnswers.applySampleCountdown(seconds: 5) }
-            // `--answer-gathering` shows Scroll and Read part way, 124 lines in.
-            if arguments.contains("--answer-gathering") { environment.screenAnswers.applySampleGathering(lines: 124) }
         }
                 if arguments.contains("--sample-notes") {
             settings.advanced.notesEnabled = true

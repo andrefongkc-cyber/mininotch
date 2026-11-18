@@ -29,41 +29,22 @@ struct ScreenAnswersTabSettings: View {
     @Environment(SettingsStore.self) private var settings
     var body: some View {
         @Bindable var settings = settings
-        TabSettingsSection(title: "Answers", subtitle: "The questions on your screen, answered on this Mac.") {
+        TabSettingsSection(title: "Study", subtitle: "Your notes, one scroll away.") {
                 SettingsCard(
-                    header: "Answers",
-                    footer: footer
+                    header: "Study",
+                    footer: "The notes are part of the app, so nothing is read from your screen or sent anywhere."
                 ) {
                     SettingsRow(
-                        title: "Show Answers",
-                        subtitle: "An Answers tab in the open panel. Read Screen reads the window in front and answers the questions in it with Apple Intelligence. The Answer What's on Screen shortcut in General > Keyboard Shortcuts does it in one press.",
-                        systemImage: "text.viewfinder",
+                        title: "Show Study Notes",
+                        subtitle: "A Study tab in the open panel: the APUSH notes by unit, with thesis and commentary sentence frames. The Open Study Notes shortcut in General > Keyboard Shortcuts opens it.",
+                        systemImage: "book",
                         badge: FeatureFlag.screenAnswers.badge
                     ) {
                         SettingsToggle(isOn: $settings.advanced.screenAnswersEnabled)
                     }
-
-                    SettingsDivider()
-
-                    SettingsRow(
-                        title: "Show the Letter in the Notch",
-                        subtitle: "After a read, the letter of each multiple-choice answer shows on the left of the closed notch for 5 seconds, even with Show Indicators When Closed off. Also in the Answers tab.",
-                        systemImage: "capsule.lefthalf.filled",
-                        isEnabled: settings.advanced.screenAnswersEnabled
-                    ) {
-                        SettingsToggle(isOn: $settings.advanced.answerLetterInNotch)
-                    }
                 }
 
         }
-    }
-
-    private var footer: String {
-        let privacy = "Needs Screen Recording, asked for the first time you read the screen. The window is read and answered on this Mac by Apple's own model; nothing is sent anywhere, and neither the picture nor its text is kept."
-        if case .unavailable(let reason) = ScreenAnswersService.modelAvailability {
-            return reason + " " + privacy
-        }
-        return privacy
     }
 }
 
