@@ -294,6 +294,15 @@ final class AppEnergySampler: @unchecked Sendable {
         return reading
     }
 
+    /// Every field of the kernel's `struct coalition_resource_usage` for one coalition, or nil.
+    /// Also read by `SystemDetailsSampler` for each app's processor and graphics time.
+    static func rawUsage(ofCoalition id: UInt64) -> [UInt64]? {
+        guard let resourceUsage else { return nil }
+        var usage = [UInt64](repeating: 0, count: 64)
+        let status = usage.withUnsafeMutableBytes { resourceUsage(id, $0.baseAddress!, $0.count) }
+        return status == 0 ? usage : nil
+    }
+
     /// Processor and graphics energy, with what others spent on the coalition's behalf moved onto
     /// it and what it spent on theirs moved off, in nanojoules.
     static func energy(ofCoalition id: UInt64) -> UInt64? {

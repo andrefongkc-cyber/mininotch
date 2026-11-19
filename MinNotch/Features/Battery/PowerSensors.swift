@@ -56,6 +56,18 @@ final class PowerSensors: @unchecked Sendable {
         }
     }
 
+    /// Each fan's speed in revolutions a minute, off the main thread: `FNum` fans, `F<n>Ac`
+    /// each. An empty list on a Mac without fans, such as a MacBook Air.
+    func readFans(_ completion: @escaping @Sendable ([Double]) -> Void) {
+        queue.async { [self] in
+            guard openIfNeeded(), let count = value(Self.fourCharacterCode("FNum")), count > 0 else {
+                completion([]); return
+            }
+            let fans = (0..<min(Int(count), 4)).compactMap { value(Self.fourCharacterCode("F\($0)Ac")) }
+            completion(fans.filter { $0 >= 0 && $0 < 20_000 })
+        }
+    }
+
     /// Lets the SMC connection go once nothing is showing the figures.
     func close() {
         queue.async { [self] in
@@ -178,6 +190,8 @@ final class PowerSensors: @unchecked Sendable {
             return Double(Int16(bitPattern: UInt16(integer(2))))
         case ("ui16", 2):
             return Double(UInt16(integer(2)))
+        case ("ui8 ", 1):
+            return Double(bytes[0])
         case (let fixed, 2) where fixed.hasPrefix("sp") || fixed.hasPrefix("fp"):
             guard let fractionBits = Int(String(fixed.suffix(1)), radix: 16) else { return nil }
             // These are big-endian on the Intel Macs that use them.

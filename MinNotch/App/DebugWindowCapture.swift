@@ -90,6 +90,14 @@ enum DebugWindowCapture {
             environment.systemStats.applySampleHistory()
         }
 
+        // `--expanded-system` opens the System tab's expanded view, with fixed details
+        // (`--live-details` keeps the real ones); `--scroll-system <points>` scrolls it down.
+        if arguments.contains("--expanded-system") {
+            environment.systemDetails.isExpanded = true
+            if !arguments.contains("--live-details") { environment.systemDetails.applySample() }
+            SystemWidgetView.debugScrollToEnd = arguments.contains("--scroll-system")
+        }
+
         // `--sample-power` plugs the sample battery into a 60 W charger, with fixed watts.
         if arguments.contains("--sample-power") {
             environment.battery.applySampleCharging(settings: settings)

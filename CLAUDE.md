@@ -83,6 +83,7 @@ MiniNotch --capture-notch out.png [--collapsed] [--tab system] [--glow bars|off]
                                  [--sample-shelf] [--output-sheet] [--lyrics-on builtIn|others] [--sample-weather]
                                  [--sample-power] [--keep-open] [--hud-style floatingPill] [--no-media]
                                  [--sample-notes] [--blur-clipboard] [--study [--study-jump 2]] [--sample-devices]
+                                 [--expanded-system [--live-details] [--scroll-system]]
                                  [--notch-style bento-light] [--liquid-glass] [--builtin]
                                  [--no-visualizer] [--no-lyrics] [--swipe-to notes --midway 0.15]
                                  [--live grow|reopen|swipe --hold 7 [--was-active]]
@@ -115,6 +116,7 @@ MiniNotch --check-weather London | 51.5 -0.13 [--fahrenheit]       # a real fore
 MiniNotch --check-tab-order                                        # the swipe steps through tabs as the bar draws them
 MiniNotch --check-temps                                            # every temperature sensor, and the three the System tab shows
 MiniNotch --check-stats-history                                    # the graphs' history survives the System tab closing
+MiniNotch --check-system-details                                   # the expanded System tab's readings, with a busy child process
 MiniNotch --check-power [seconds]                                  # charger in, Mac use, battery, from the SMC
 MiniNotch --check-keep-open                                        # Keep the Notch Open: holds, lets go, pin, shortcut default
 MiniNotch --check-notes                                            # the note is saved, read back, never overwritten by a capture
@@ -1745,6 +1747,28 @@ because the Mac's own draw swings by several watts a second. The row's height is
 panel is the right height on its first frame. The charger's rating is public
 (`IOPSCopyExternalPowerAdapterDetails`). `--check-power` prints each figure, what it is made of,
 and the loss; `--sample-power` captures the row with fixed numbers.
+
+**The System tab expands** (2026-11-18, the user's "make the computer spec page expandable", top
+three apps by CPU, GPU and memory, then everything else suggested). The button beside the battery's
+figures sets `SystemDetailsService.isExpanded` (not saved), and the tab becomes a `ScrollView` the
+height of the panel (`SystemWidgetView.expandedHeight`) holding the compact readings and
+`SystemDetailsView`. That samples only while on screen, every refresh interval (1.5 s at least), on
+`SystemDetailsSampler`'s own queue, about 45 ms a reading on an M4. **Top apps** are resource
+coalitions added up by app, as Apps Using the Battery does (`AppEnergySampler.rawUsage`): CPU is
+`cpu_time` (Mach time units, plus billed to me, less billed to others) per second, 100% a core as in
+Activity Monitor; GPU is `gpu_time` (nanoseconds) per second; memory is each process's
+`ri_phys_footprint`, summed. `--check-system-details` runs `/usr/bin/yes` and wants System Services
+at about 100%: it read 106%. Quit (on hover, apps only, never MiniNotch or Finder) is
+`NSRunningApplication.terminate`, so an app can still ask to save. **Battery health** follows System
+Settings, not the power source: on Apple silicon `MaxCapacity` is already the percentage shown (100%
+here, where raw against design is 95%), and the condition is Service Recommended under 80% or with
+`PermanentFailureStatus` set. The power source's `BatteryHealth` said "Check Battery" on this M4 while
+System Settings said Normal, so it is not read. Cores are grouped by the device tree's `cluster-type`
+(the M4's six efficiency cores are 0 to 5). Fans are SMC `FNum` and `F<n>Ac` (`ui8 ` added to the
+decoder); a MacBook Air has none. Power on battery is SMC `PSTR`. Memory pressure is
+`kern.memorystatus_vm_pressure_level`, swap `vm.swapusage`, disk speed the block storage drivers'
+`Statistics`. `--capture-notch --tab system --expanded-system [--live-details] [--scroll-system]`
+draws it.
 
 **Each System reading has its graph under it.** `StatChart` draws the last five minutes by time,
 newest at the right edge, and breaks the line where samples are more than 20 s apart (the Mac

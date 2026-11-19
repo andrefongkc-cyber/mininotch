@@ -565,7 +565,8 @@ struct NotchRootView: View {
         case .system:
             height = SystemWidgetView.preferredHeight(
                 bluetoothDeviceCount: environment.bluetooth.devices.count,
-                showsChargingPower: environment.battery.showsChargingPower
+                showsChargingPower: environment.battery.showsChargingPower,
+                expanded: environment.systemDetails.isExpanded
             )
         case .shelf, .links:
             height = ShelfTabView.preferredHeight(settings: settings)

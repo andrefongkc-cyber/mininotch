@@ -9,8 +9,17 @@ struct SystemWidgetView: View {
 
     private var status: BatteryStatus { environment.battery.status }
 
+    #if DEBUG
+    /// For `--capture-notch --expanded-system --scroll-system`.
+    nonisolated(unsafe) static var debugScrollToEnd = false
+    #endif
+
+    /// The expanded view's height: as tall as the panel goes, with everything in it scrolling.
+    static let expandedHeight: CGFloat = 352
+
     /// Height the widget needs, excluding the panel's padding and top strip.
-    static func preferredHeight(bluetoothDeviceCount: Int, showsChargingPower: Bool) -> CGFloat {
+    static func preferredHeight(bluetoothDeviceCount: Int, showsChargingPower: Bool, expanded: Bool = false) -> CGFloat {
+        if expanded { return expandedHeight }
         var batteryBlock: CGFloat = 54
         if showsChargingPower { batteryBlock += 8 + chargingPowerHeight }
         // The readout, then the graph under it.
@@ -29,7 +38,47 @@ struct SystemWidgetView: View {
         return height
     }
 
+    private var details: SystemDetailsService { environment.systemDetails }
+
     var body: some View {
+        Group {
+            if details.isExpanded {
+                // The compact readings first, then the details, all in one scrolling page.
+                ScrollViewReader { proxy in
+                    ScrollView {
+                        VStack(alignment: .leading, spacing: 12) {
+                            compact
+                            Divider().overlay(theme.ink.opacity(0.12))
+                            SystemDetailsView()
+                            Color.clear.frame(height: 1).id("end")
+                        }
+                        .padding(.bottom, 8)
+                    }
+                    .scrollIndicators(.automatic)
+                    .frame(height: Self.expandedHeight)
+                    #if DEBUG
+                    .onAppear { if Self.debugScrollToEnd { proxy.scrollTo("end", anchor: .bottom) } }
+                    #endif
+                }
+            } else {
+                compact
+            }
+        }
+        // Sampling is tied to this view being on screen, so nothing is measured while the
+        // panel is closed or another tab is showing.
+        .onAppear {
+            if showsStats { environment.systemStats.beginSampling() }
+            environment.bluetooth.beginSampling()
+            environment.battery.beginPowerSampling()
+        }
+        .onDisappear {
+            if showsStats { environment.systemStats.endSampling() }
+            environment.bluetooth.endSampling()
+            environment.battery.endPowerSampling()
+        }
+    }
+
+    private var compact: some View {
         VStack(alignment: .leading, spacing: 12) {
             if status.isPresent {
                 batteryDetail
@@ -47,20 +96,25 @@ struct SystemWidgetView: View {
                 bluetoothRow
             }
 
-            Spacer(minLength: 0)
+            if !details.isExpanded { Spacer(minLength: 0) }
         }
-        // Sampling is tied to this view being on screen, so nothing is measured while the
-        // panel is closed or another tab is showing.
-        .onAppear {
-            if showsStats { environment.systemStats.beginSampling() }
-            environment.bluetooth.beginSampling()
-            environment.battery.beginPowerSampling()
+    }
+
+    /// Opens or closes the expanded view, beside the battery's figures.
+    private var expandButton: some View {
+        let isOpen = details.isExpanded
+        return Button {
+            withAnimation(Motion.content) { details.isExpanded.toggle() }
+        } label: {
+            TransportSymbol.image(isOpen ? "arrow.down.right.and.arrow.up.left" : "arrow.up.left.and.arrow.down.right",
+                                  pointSize: 10, weight: .semibold)
+                .foregroundStyle(theme.ink.opacity(0.6))
+                .frame(width: 24, height: 22)
+                .background(NotchElementView(.button, shape: .rounded(6), emphasis: 0.08))
+                .contentShape(Rectangle())
         }
-        .onDisappear {
-            if showsStats { environment.systemStats.endSampling() }
-            environment.bluetooth.endSampling()
-            environment.battery.endPowerSampling()
-        }
+        .buttonStyle(.plain)
+        .help(isOpen ? "Show less" : "Show more: top apps, cores, storage, battery health and more")
     }
 
     // MARK: Bluetooth accessories
@@ -196,6 +250,8 @@ struct SystemWidgetView: View {
                         .padding(.vertical, 3)
                         .background(Capsule().fill(Color(nsColor: .systemYellow).opacity(0.18)))
                 }
+
+                expandButton
             }
 
             GeometryReader { proxy in
@@ -321,6 +377,7 @@ struct SystemWidgetView: View {
                     .foregroundStyle(theme.ink.opacity(0.5))
             }
             Spacer()
+            expandButton
         }
     }
 

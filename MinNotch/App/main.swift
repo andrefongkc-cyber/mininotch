@@ -12,6 +12,7 @@ if MainActor.assumeIsolated({ DebugPreviewRenderer.runIfRequested() }) { exit(0)
 if MainActor.assumeIsolated({ DebugLyricsCheck.runIfRequested() }) { exit(0) }
 if MainActor.assumeIsolated({ DebugWindowCapture.runIfRequested() }) { exit(0) }
 if MainActor.assumeIsolated({ DebugStatsCheck.runIfRequested() }) { exit(0) }
+if MainActor.assumeIsolated({ DebugSystemDetailsCheck.runIfRequested() }) { exit(0) }
 if MainActor.assumeIsolated({ DebugPermissionsCheck.runIfRequested() }) { exit(0) }
 if MainActor.assumeIsolated({ DebugAudioCheck.runIfRequested() }) { exit(0) }
 if MainActor.assumeIsolated({ DebugGlowCheck.runIfRequested() }) { exit(0) }

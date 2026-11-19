@@ -1,6 +1,6 @@
 # MiniNotch workplan
 
-Status: the Answers scanner is replaced by a Study tab of APUSH notes, waiting for the user to try it; next: more on lyrics timing if it is still off.
+Status: the System tab expands (top apps, cores, memory pressure, storage, battery health, heat, fans, power, uptime), waiting for the user to try it; next: more on lyrics timing if it is still off.
 
 Living document. Update the checkboxes as work lands. `CLAUDE.md` holds the architecture
 rules and the traps; this file holds the sequence.
@@ -81,6 +81,9 @@ then the user picks before the other three are built.
 - [x] Lyrics in the notch light up by line by default; Music > Lyrics > Light Up Each Word brings the word-by-word highlight back (`MediaSettings.highlightsWords`, 2026-11-10). The lock screen is unchanged.
 
 - [x] The Answers tab's screen scanning replaced by a Study tab: a scrollable page of the user's APUSH notes (Units 1–5, Unit 5 filled in), thesis, contextualization and commentary sentence frames, read from `MinNotch/Resources/StudyNotes.md` (2026-11-18). The scanning code was then deleted at the user's request, and nine sample LEQs over long periods (CCOTs on slavery 1619–1865 and 1800–1877 and women's rights 1800–1877; contexts made specific) were added to the page (2026-11-18).
+
+## Expandable System tab (asked 2026-11-18)
+- [x] An expand button on the System tab opens a taller, scrolling view: top 3 apps by CPU, GPU and memory (with Quit), memory pressure and swap, storage and disk read/write, battery health, per-core bars, fan speed, thermal state, power on battery and time left, uptime.
 
 ## Lyrics timing (asked 2026-11-10)
 - [~] Fix the lyrics timing (Apple Music, "early and late for different songs"). Done 2026-11-10: a song not yet measured starts at the median of the measured answers (`LyricsSyncMemory.typicalOffset`, -0.30 s here, where it used to start at 0), and the full lyrics list has − and + buttons, a quarter second a press, remembered per song (`nudgeLyrics`, `lyricsNudge`). Left: whether that is enough on real songs; if not, find out how (early, late, drifting, one song or all, which player) before touching anything. Start from `NowPlayingController.lyricsTime(at:)`, the audio latency correction, the `LyricsSyncCalibrator` (only ever measured on one sung song, so its thresholds are the first suspect), and `log show --predicate 'subsystem == "com.minnotch.MinNotch"' --info` for what it answered.

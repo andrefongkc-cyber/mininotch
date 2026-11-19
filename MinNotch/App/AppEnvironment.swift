@@ -18,6 +18,7 @@ final class AppEnvironment {
     let calendarService = CalendarService()
     let battery = BatteryService()
     let systemStats = SystemStatsService()
+    let systemDetails = SystemDetailsService()
     let bluetooth = BluetoothBatteryService()
     let shelf = ShelfService()
     let hud = HUDCoordinator()
@@ -125,6 +126,7 @@ final class AppEnvironment {
         battery.onStatusChange = { [weak self] status in self?.appEnergy.update(battery: status) }
         battery.start(settings: settings)
         systemStats.start(settings: settings)
+        systemDetails.start { [weak self] in self?.battery.status.isPluggedIn ?? true }
         bluetooth.start(settings: settings)
         shelf.start(settings: settings)
         hud.start(settings: settings)
