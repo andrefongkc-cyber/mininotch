@@ -44,6 +44,7 @@ final class SpaceSwitchBlocker: @unchecked Sendable {
             | (CGEventMask(1) << Self.dockControlType)
             | (CGEventMask(1) << CGEventType.keyDown.rawValue)
             | (CGEventMask(1) << CGEventType.keyUp.rawValue)
+            | (CGEventMask(1) << Self.systemDefinedType)
         guard let tap = CGEvent.tapCreate(
             tap: .cgSessionEventTap,
             place: .headInsertEventTap,
@@ -78,12 +79,16 @@ final class SpaceSwitchBlocker: @unchecked Sendable {
 
     private static let gestureType: CGEventType.RawValue = 29
     private static let dockControlType: CGEventType.RawValue = 30
+    private static let systemDefinedType: CGEventType.RawValue = 14
     /// `kCGEventGestureHIDType`, and the value it has for a dock swipe.
     private static let gestureHIDTypeField = CGEventField(rawValue: 110)!
     private static let dockSwipeHIDType: Int64 = 23
 
-    /// ←, →, and the number row's 1 to 9.
-    private static let desktopKeys: Set<Int64> = [123, 124, 18, 19, 20, 21, 23, 22, 26, 28, 25]
+    /// With Control: ←, →, ↑ (Mission Control), ↓ (App Exposé) and the number row's 1 to 9.
+    private static let desktopKeys: Set<Int64> = [123, 124, 126, 125, 18, 19, 20, 21, 23, 22, 26, 28, 25]
+    /// The keyboard's own Mission Control key (F3 on a MacBook), which needs no modifier: from
+    /// Mission Control any desktop is a click away (2026-11-19, "the mission control button works").
+    private static let missionControlKey: Int64 = 160
 
     private func handle(type: CGEventType, event: CGEvent) -> Unmanaged<CGEvent>? {
         if type == .tapDisabledByTimeout || type == .tapDisabledByUserInput {
@@ -93,6 +98,13 @@ final class SpaceSwitchBlocker: @unchecked Sendable {
         switch type.rawValue {
         case Self.dockControlType:
             return nil
+        case Self.systemDefinedType:
+            // Logged, not dropped: on some keyboards the Mission Control key may arrive this way
+            // rather than as key 160, and the log is how a report of it still working gets an
+            // answer. The volume and brightness keys come through here too, and must keep working.
+            let data = NSEvent(cgEvent: event)?.data1 ?? 0
+            AppLog.app.info("Focus: system key \((data & 0xFFFF0000) >> 16) passed")
+            return Unmanaged.passUnretained(event)
         case Self.gestureType:
             return event.getIntegerValueField(Self.gestureHIDTypeField) == Self.dockSwipeHIDType
                 ? nil : Unmanaged.passUnretained(event)
@@ -101,7 +113,11 @@ final class SpaceSwitchBlocker: @unchecked Sendable {
             let onlyControl = flags.contains(.maskControl)
                 && !flags.contains(.maskCommand) && !flags.contains(.maskAlternate)
             let key = event.getIntegerValueField(.keyboardEventKeycode)
-            return onlyControl && Self.desktopKeys.contains(key) ? nil : Unmanaged.passUnretained(event)
+            if key == Self.missionControlKey || (onlyControl && Self.desktopKeys.contains(key)) {
+                if type == .keyDown { AppLog.app.info("Focus: dropped key \(key) that changes desktop") }
+                return nil
+            }
+            return Unmanaged.passUnretained(event)
         default:
             return Unmanaged.passUnretained(event)
         }

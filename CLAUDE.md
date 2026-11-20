@@ -1605,7 +1605,7 @@ draw the rest.
 cannot swipe desktop screens"). While Timer > Focus is on, whether or not anything is running,
 `SpaceSwitchBlocker` (a session event tap, `AppEnvironment.syncSpaceSwitchBlocker`) drops the Dock's
 swipe events (type 30, and type 29 gestures whose field 110 is 23, the dock swipe; these are what
-Mac Mouse Fix posts to switch desktops) and Control with ←, → or 1 to 9. That also stops the swipe up
+Mac Mouse Fix posts to switch desktops) and Control with ←, →, ↑, ↓ or 1 to 9, and the Mission Control key (key 160, any modifier; added after "the mission control button works"). That also stops the swipe up
 to Mission Control. It needs Accessibility, like the volume keys; without it, switching Focus on asks
 once a launch and starts the tap within two seconds of the switch being turned on. Never tried
 against a real swipe: testing it would move the user's own desktops.
