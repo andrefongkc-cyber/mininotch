@@ -1601,6 +1601,15 @@ own); breaks and pauses are let go. The user picked "switching apps" as what cou
 `--check-focus` posts the switches; `--capture-notch --stopwatch`, `--focus` and `--floating-timer`
 draw the rest.
 
+**Focus also keeps you on your desktop** (2026-11-19, the user's "when u press the focus button … u
+cannot swipe desktop screens"). While Timer > Focus is on, whether or not anything is running,
+`SpaceSwitchBlocker` (a session event tap, `AppEnvironment.syncSpaceSwitchBlocker`) drops the Dock's
+swipe events (type 30, and type 29 gestures whose field 110 is 23, the dock swipe; these are what
+Mac Mouse Fix posts to switch desktops) and Control with ←, → or 1 to 9. That also stops the swipe up
+to Mission Control. It needs Accessibility, like the volume keys; without it, switching Focus on asks
+once a launch and starts the tap within two seconds of the switch being turned on. Never tried
+against a real swipe: testing it would move the user's own desktops.
+
 **The pop-out windows go anywhere on the screen** (2026-11-10): both are a `FreelyMovingPanel`,
 moved by `.movesWindow()`, a SwiftUI drag gesture under everything else in the card (buttons and the
 scrubber still win) that sets the window's origin from the pointer, keeping the drawn card inside the

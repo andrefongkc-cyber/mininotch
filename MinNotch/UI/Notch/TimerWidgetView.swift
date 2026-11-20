@@ -64,7 +64,7 @@ struct TimerWidgetView: View {
             Chip(
                 label: "Focus",
                 systemImage: "scope",
-                help: "Focus: pop the timer out when it starts, and start it over if you switch to another app",
+                help: "Focus: pop the timer out when it starts, start it over if you switch to another app, and stop swiping to another desktop while Focus is on",
                 isActive: settings.timer.focusMode
             ) {
                 settings.timer.focusMode.toggle()

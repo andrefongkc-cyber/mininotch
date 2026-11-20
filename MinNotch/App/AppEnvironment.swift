@@ -42,6 +42,8 @@ final class AppEnvironment {
     let timer = TimerService()
     let stopwatch = Stopwatch()
     let focusGuard = FocusGuard()
+    /// Stops desktop swipes while Focus is on.
+    let spaceSwitchBlocker = SpaceSwitchBlocker()
     let appEnergy = AppEnergyMonitor()
 
     @ObservationIgnored private(set) lazy var notchWindows = NotchWindowManager(environment: self)
@@ -217,6 +219,7 @@ final class AppEnvironment {
     /// of them is simpler and less bug-prone than tracking which key changed.
     private func settingsChanged() {
         syncFocusGuard()
+        syncSpaceSwitchBlocker()
         syncStopwatchActivity()
         LaunchAtLogin.reconcile(settings)
         HotkeyManager.shared.apply(settings.shortcuts)
@@ -558,6 +561,33 @@ final class AppEnvironment {
 
     /// Focus: watching while a countdown, a focus interval or the stopwatch runs, popping the
     /// timer out the first time one starts, and letting go when everything has stopped.
+    /// Focus keeps the user on this desktop for as long as it is switched on (2026-11-19).
+    /// Needs Accessibility; switching Focus on without it asks for it, once a launch.
+    private func syncSpaceSwitchBlocker() {
+        guard settings.timer.enabled, settings.timer.focusMode else {
+            spaceSwitchBlocker.stop()
+            return
+        }
+        if spaceSwitchBlocker.start() { return }
+        if !askedAccessibilityForFocus {
+            askedAccessibilityForFocus = true
+            SystemKeyInterceptor.requestTrust()
+            waitForFocusAccessibility()
+        }
+    }
+
+    @ObservationIgnored private var askedAccessibilityForFocus = false
+
+    /// Checks every two seconds for a minute after asking, so the block starts as soon as the
+    /// switch in Privacy & Security is turned on, with no relaunch.
+    private func waitForFocusAccessibility(attempts: Int = 30) {
+        guard attempts > 0 else { return }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 2) { [weak self] in
+            guard let self, self.settings.timer.focusMode, !self.spaceSwitchBlocker.isRunning else { return }
+            if !self.spaceSwitchBlocker.start() { self.waitForFocusAccessibility(attempts: attempts - 1) }
+        }
+    }
+
     private func syncFocusGuard() {
         guard settings.timer.focusMode, timer.isActive || stopwatch.hasTime else {
             focusGuard.clear()
